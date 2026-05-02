@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/provider_factory.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
@@ -106,10 +107,28 @@ class _NewRunPageState extends State<NewRunPage> {
           'run-${DateTime.now().millisecondsSinceEpoch}',
     );
 
+    final settings = SettingsRepository();
+    final judgeProviderId = await settings.getJudgeProviderId();
+    final judgeModelId = await settings.getJudgeModelId();
+    ModelProvider? judgeProvider;
+    if (judgeProviderId != null && judgeModelId != null) {
+      for (final candidate in _providers) {
+        if (candidate.id == judgeProviderId) {
+          judgeProvider = candidate;
+          break;
+        }
+      }
+    }
+    final evaluatorConfig = EvaluatorConfig(
+      judgeProvider: judgeProvider,
+      judgeModel: judgeProvider == null ? null : judgeModelId,
+    );
+
     bloc.add(StartRun(
       tasks: [OffByOnePaginationTask()],
       providers: selected,
       modelByProvider: modelMap,
+      evaluatorConfig: evaluatorConfig,
     ));
 
     if (mounted) {
