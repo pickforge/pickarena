@@ -18,6 +18,7 @@ class RunInProgress extends RunState {
     required this.total,
     required this.results,
     this.currentLabel,
+    this.currentRawResponse,
   });
 
   final String runId;
@@ -25,9 +26,17 @@ class RunInProgress extends RunState {
   final int total;
   final List<TaskRunResult> results;
   final String? currentLabel;
+  final String? currentRawResponse;
 
   @override
-  List<Object?> get props => [runId, completed, total, results, currentLabel];
+  List<Object?> get props => [
+        runId,
+        completed,
+        total,
+        results,
+        currentLabel,
+        currentRawResponse,
+      ];
 }
 
 class RunCompleted extends RunState {

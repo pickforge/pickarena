@@ -58,6 +58,17 @@ class RunBloc extends Bloc<RunEvent, RunState> {
               extractDartCode(response.rawText) ?? response.rawText;
           final responseWithCode = copyWithCode(response, extracted);
 
+          // Show model output while evaluators run
+          emit(RunInProgress(
+            runId: runId,
+            completed: completed,
+            total: total,
+            results: List.unmodifiable(results),
+            currentLabel:
+                'Evaluating ${provider.displayName} on ${task.id}…',
+            currentRawResponse: response.rawText,
+          ));
+
           final dir = await workdirManager.createTaskWorkdir(
             runId: runId,
             providerId: provider.id,
