@@ -2,6 +2,19 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+sealed class PrepareResult {
+  const PrepareResult();
+}
+
+class PrepareOk extends PrepareResult {
+  const PrepareOk();
+}
+
+class PrepareFailed extends PrepareResult {
+  const PrepareFailed(this.stderr);
+  final String stderr;
+}
+
 class WorkdirManager {
   WorkdirManager({required this.root});
 
@@ -34,5 +47,27 @@ class WorkdirManager {
     }
 
     return dir;
+  }
+
+  Future<PrepareResult> prepare(Directory workDir) async {
+    final offline = await Process.run(
+      'dart',
+      ['pub', 'get', '--offline'],
+      workingDirectory: workDir.path,
+    );
+    if (offline.exitCode == 0) return const PrepareOk();
+
+    final online = await Process.run(
+      'dart',
+      ['pub', 'get'],
+      workingDirectory: workDir.path,
+    );
+    if (online.exitCode == 0) return const PrepareOk();
+
+    return PrepareFailed(
+      online.stderr.toString().isEmpty
+          ? offline.stderr.toString()
+          : online.stderr.toString(),
+    );
   }
 }
