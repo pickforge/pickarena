@@ -1,8 +1,8 @@
 import 'package:dart_arena/core/code_extractor.dart';
-import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/model_response.dart';
+import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_state.dart';
@@ -16,6 +16,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     required this.runDao,
     required this.now,
     required this.idGenerator,
+    this.weights = defaultEvaluatorWeights,
   }) : super(const RunIdle()) {
     on<StartRun>(_onStart);
   }
@@ -24,6 +25,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
   final RunDao runDao;
   final DateTime Function() now;
   final String Function() idGenerator;
+  final Map<String, double> weights;
 
   Future<void> _onStart(StartRun event, Emitter<RunState> emit) async {
     final runId = idGenerator();
@@ -57,18 +59,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
           );
           final extracted =
               extractDartCode(response.rawText) ?? response.rawText;
-          final responseWithCode = copyWithCode(response, extracted);
-
-          // Show model output while evaluators run
-          emit(RunInProgress(
-            runId: runId,
-            completed: completed,
-            total: total,
-            results: List.unmodifiable(results),
-            currentLabel:
-                'Evaluating ${provider.displayName} on ${task.id}…',
-            currentRawResponse: response.rawText,
-          ));
+          final responseWithCode = _copyWithCode(response, extracted);
 
           final dir = await workdirManager.createTaskWorkdir(
             runId: runId,
@@ -80,35 +71,47 @@ class RunBloc extends Bloc<RunEvent, RunState> {
             generatedCodePath: task.generatedCodePath,
           );
 
+          final evaluators = task.evaluatorsFor(event.evaluatorConfig);
+          final prepResult = await workdirManager.prepare(dir);
           final evaluations = <EvaluationResult>[];
-          for (final evaluator in task.evaluatorsFor(const EvaluatorConfig())) {
-            final result = await evaluator.evaluate(
-              EvaluationContext(
-                workDir: dir,
-                response: responseWithCode,
-                task: task,
-              ),
-            );
-            evaluations.add(result);
+
+          if (prepResult is PrepareFailed) {
+            for (final evaluator in evaluators) {
+              evaluations.add(EvaluationResult(
+                evaluatorId: evaluator.id,
+                passed: false,
+                score: 0.0,
+                rationale: 'prepare failed',
+                details: {'stderr': prepResult.stderr},
+              ));
+            }
+          } else {
+            for (final evaluator in evaluators) {
+              final result = await evaluator.evaluate(
+                EvaluationContext(
+                  workDir: dir,
+                  response: responseWithCode,
+                  task: task,
+                ),
+              );
+              evaluations.add(result);
+            }
           }
 
-          final aggregate = evaluations.isEmpty
-              ? 0.0
-              : evaluations.map((e) => e.score).reduce((a, b) => a + b) /
-                  evaluations.length;
+          final aggregateScore = aggregate(evaluations, weights);
 
-          final result = TaskRunResult(
+          final taskResult = TaskRunResult(
             runId: runId,
             providerId: provider.id,
             modelId: modelId,
             taskId: task.id,
             response: responseWithCode,
             evaluations: evaluations,
-            aggregateScore: aggregate,
+            aggregateScore: aggregateScore,
             completedAt: now(),
           );
-          results.add(result);
-          await runDao.persistTaskRun(result);
+          results.add(taskResult);
+          await runDao.persistTaskRun(taskResult);
           completed++;
           emit(RunInProgress(
             runId: runId,
@@ -126,7 +129,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
   }
 }
 
-ModelResponse copyWithCode(ModelResponse r, String? code) => ModelResponse(
+ModelResponse _copyWithCode(ModelResponse r, String? code) => ModelResponse(
       rawText: r.rawText,
       extractedCode: code,
       promptTokens: r.promptTokens,

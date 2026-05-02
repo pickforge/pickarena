@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:dart_arena/core/benchmark_task.dart';
-import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/providers/model_provider.dart';
@@ -41,7 +41,7 @@ class _FakeProvider implements ModelProvider {
       );
 }
 
-class _AlwaysPassEvaluator implements Evaluator {
+class _AlwaysPass implements Evaluator {
   @override
   String get id => 'pass';
   @override
@@ -58,21 +58,27 @@ class _StubTask extends BenchmarkTask {
   String get prompt => 'do thing';
   @override
   Map<String, String> get fixtures => const {
-        'pubspec.yaml': 'name: tmp\nenvironment:\n  sdk: ">=3.5.0 <4.0.0"\n',
+        'pubspec.yaml':
+            'name: tmp\nenvironment:\n  sdk: ">=3.5.0 <4.0.0"\n',
       };
   @override
   String get generatedCodePath => 'lib/answer.dart';
   @override
   String? get judgeRubric => null;
   @override
-  List<Evaluator> evaluatorsFor(EvaluatorConfig config) =>
-      [_AlwaysPassEvaluator()];
+  List<Evaluator> evaluatorsFor(EvaluatorConfig config) => [_AlwaysPass()];
+}
+
+class _BrokenPubspecTask extends _StubTask {
+  @override
+  Map<String, String> get fixtures => const {
+        'pubspec.yaml': 'this is not valid pubspec yaml: : :\n',
+      };
 }
 
 void main() {
-  test('happy path: one model x one task -> RunCompleted with score 1.0',
-      () async {
-    final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_');
+  test('happy path emits RunCompleted with aggregate 1.0', () async {
+    final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_ok_');
     final db = AppDatabase(NativeDatabase.memory());
     final bloc = RunBloc(
       workdirManager: WorkdirManager(root: tmp),
@@ -88,12 +94,12 @@ void main() {
       tasks: [_StubTask()],
       providers: [_FakeProvider()],
       modelByProvider: const {'fake': 'fake-1'},
+      evaluatorConfig: const EvaluatorConfig(),
     ));
 
-    await Future<void>.delayed(const Duration(seconds: 1));
+    await Future<void>.delayed(const Duration(seconds: 2));
     expect(states.last, isA<RunCompleted>());
     final completed = states.last as RunCompleted;
-    expect(completed.results, hasLength(1));
     expect(completed.results.first.aggregateScore, 1.0);
 
     await sub.cancel();
@@ -101,4 +107,41 @@ void main() {
     await db.close();
     tmp.deleteSync(recursive: true);
   });
+
+  test('prepare failure produces synthetic per-evaluator results',
+      () async {
+    final tmp =
+        await Directory.systemTemp.createTemp('dart_arena_bloc_prep_');
+    final db = AppDatabase(NativeDatabase.memory());
+    final bloc = RunBloc(
+      workdirManager: WorkdirManager(root: tmp),
+      runDao: RunDao(db),
+      now: () => DateTime.now(),
+      idGenerator: () => 'run-test',
+    );
+
+    final states = <RunState>[];
+    final sub = bloc.stream.listen(states.add);
+
+    bloc.add(StartRun(
+      tasks: [_BrokenPubspecTask()],
+      providers: [_FakeProvider()],
+      modelByProvider: const {'fake': 'fake-1'},
+      evaluatorConfig: const EvaluatorConfig(),
+    ));
+
+    await Future<void>.delayed(const Duration(seconds: 2));
+    expect(states.last, isA<RunCompleted>());
+    final completed = states.last as RunCompleted;
+    final r = completed.results.single;
+    expect(r.evaluations, hasLength(1));
+    expect(r.evaluations.single.passed, isFalse);
+    expect(r.evaluations.single.rationale, 'prepare failed');
+    expect(r.aggregateScore, 0.0);
+
+    await sub.cancel();
+    await bloc.close();
+    await db.close();
+    tmp.deleteSync(recursive: true);
+  }, timeout: const Timeout(Duration(minutes: 2)));
 }
