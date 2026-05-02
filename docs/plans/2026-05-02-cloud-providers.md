@@ -287,13 +287,52 @@ class OpenCodeZenProvider extends OpenAiCompatibleProvider {
           baseUrl: 'https://opencode.ai/zen/v1',
           apiKey: apiKey,
         );
+
+  /// Return only models routed through /chat/completions.
+  /// Zen also proxies Claude (via /v1/messages) and GPT-5 (via /v1/responses),
+  /// which use incompatible API shapes.
+  @override
+  Future<List<String>> listModels() async {
+    try {
+      final all = await super.listModels();
+      if (all.isEmpty) return _chatModels;
+      // Filter to known chat-compatible models if the API doesn't provide
+      // endpoint metadata per model.
+      final chatCompatiblePrefixes = [
+        'qwen', 'minimax', 'glm', 'kimi',
+        'big-pickle', 'ling-', 'hy3', 'nemotron',
+      ];
+      final filtered = all.where((id) =>
+          chatCompatiblePrefixes.any((p) => id.startsWith(p))).toList();
+      return filtered.isNotEmpty ? filtered : _chatModels;
+    } catch (_) {
+      return _chatModels;
+    }
+  }
+
+  static const _chatModels = <String>[
+    'qwen3.6-plus',
+    'qwen3.5-plus',
+    'minimax-m2.7',
+    'minimax-m2.5',
+    'minimax-m2.5-free',
+    'glm-5.1',
+    'glm-5',
+    'kimi-k2.6',
+    'kimi-k2.5',
+    'big-pickle',
+    'ling-2.6-flash',
+    'hy3-preview-free',
+    'nemotron-3-super-free',
+  ];
 }
 ```
 
 - [ ] **Step 3: PASS + analyze + commit**
 
 ```bash
-git commit -am "feat(providers): add OpenCodeZenProvider"
+git add lib/providers/opencode_zen_provider.dart test/providers/opencode_zen_provider_test.dart
+git commit -m "feat(providers): add OpenCodeZenProvider"
 ```
 
 ---
@@ -304,9 +343,30 @@ git commit -am "feat(providers): add OpenCodeZenProvider"
 - Create: `lib/providers/openai_provider.dart`
 - Create: `test/providers/openai_provider_test.dart`
 
-Same pattern as Task 2. baseUrl `https://api.openai.com/v1`.
+- [ ] **Step 1: Test**
 
 ```dart
+// test/providers/openai_provider_test.dart
+import 'package:dart_arena/providers/openai_provider.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('OpenAIProvider has correct identity and base URL', () {
+    final p = OpenAIProvider(apiKey: 'sk-test');
+    expect(p.id, 'openai');
+    expect(p.displayName, 'OpenAI');
+    expect(p.baseUrl, 'https://api.openai.com/v1');
+  });
+}
+```
+
+- [ ] **Step 2: Implement**
+
+```dart
+// lib/providers/openai_provider.dart
+import 'package:dart_arena/providers/openai_compatible_provider.dart';
+import 'package:dio/dio.dart';
+
 class OpenAIProvider extends OpenAiCompatibleProvider {
   OpenAIProvider({required String apiKey, Dio? dio})
       : super(
@@ -319,7 +379,12 @@ class OpenAIProvider extends OpenAiCompatibleProvider {
 }
 ```
 
-Test, analyze, commit `feat(providers): add OpenAIProvider`.
+- [ ] **Step 3: PASS + analyze + commit**
+
+```bash
+git add lib/providers/openai_provider.dart test/providers/openai_provider_test.dart
+git commit -m "feat(providers): add OpenAIProvider"
+```
 
 ---
 
@@ -329,9 +394,33 @@ Test, analyze, commit `feat(providers): add OpenAIProvider`.
 - Create: `lib/providers/openrouter_provider.dart`
 - Create: `test/providers/openrouter_provider_test.dart`
 
-Identical pattern but adds two recommended OpenRouter headers via `extraHeaders`:
+- [ ] **Step 1: Test (asserts X-Title header)**
 
 ```dart
+// test/providers/openrouter_provider_test.dart
+import 'package:dart_arena/providers/openrouter_provider.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('OpenRouterProvider has correct identity, base URL, and X-Title header', () {
+    final p = OpenRouterProvider(apiKey: 'sk-test');
+    expect(p.id, 'openrouter');
+    expect(p.displayName, 'OpenRouter');
+    expect(p.baseUrl, 'https://openrouter.ai/api/v1');
+    // Verify X-Title is wired into extraHeaders
+    final headers = p.extraHeaders;
+    expect(headers['X-Title'], 'dart_arena');
+  });
+}
+```
+
+- [ ] **Step 2: Implement**
+
+```dart
+// lib/providers/openrouter_provider.dart
+import 'package:dart_arena/providers/openai_compatible_provider.dart';
+import 'package:dio/dio.dart';
+
 class OpenRouterProvider extends OpenAiCompatibleProvider {
   OpenRouterProvider({required String apiKey, Dio? dio})
       : super(
@@ -347,13 +436,63 @@ class OpenRouterProvider extends OpenAiCompatibleProvider {
 }
 ```
 
-Test asserts headers include `X-Title`. Commit `feat(providers): add OpenRouterProvider`.
+- [ ] **Step 3: PASS + analyze + commit**
+
+```bash
+git add lib/providers/openrouter_provider.dart test/providers/openrouter_provider_test.dart
+git commit -m "feat(providers): add OpenRouterProvider"
+```
 
 ---
 
 ## Task 5: DeepSeekProvider
 
-Same pattern. baseUrl `https://api.deepseek.com/v1`. Commit `feat(providers): add DeepSeekProvider`.
+**Files:**
+- Create: `lib/providers/deepseek_provider.dart`
+- Create: `test/providers/deepseek_provider_test.dart`
+
+- [ ] **Step 1: Test**
+
+```dart
+// test/providers/deepseek_provider_test.dart
+import 'package:dart_arena/providers/deepseek_provider.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('DeepSeekProvider has correct identity and base URL', () {
+    final p = DeepSeekProvider(apiKey: 'sk-test');
+    expect(p.id, 'deepseek');
+    expect(p.displayName, 'DeepSeek');
+    expect(p.baseUrl, 'https://api.deepseek.com/v1');
+  });
+}
+```
+
+- [ ] **Step 2: Implement**
+
+```dart
+// lib/providers/deepseek_provider.dart
+import 'package:dart_arena/providers/openai_compatible_provider.dart';
+import 'package:dio/dio.dart';
+
+class DeepSeekProvider extends OpenAiCompatibleProvider {
+  DeepSeekProvider({required String apiKey, Dio? dio})
+      : super(
+          dio,
+          id: 'deepseek',
+          displayName: 'DeepSeek',
+          baseUrl: 'https://api.deepseek.com/v1',
+          apiKey: apiKey,
+        );
+}
+```
+
+- [ ] **Step 3: PASS + analyze + commit**
+
+```bash
+git add lib/providers/deepseek_provider.dart test/providers/deepseek_provider_test.dart
+git commit -m "feat(providers): add DeepSeekProvider"
+```
 
 ---
 
@@ -494,7 +633,8 @@ class AnthropicProvider implements ModelProvider {
 - [ ] **Step 3: PASS + analyze + commit**
 
 ```bash
-git commit -am "feat(providers): add AnthropicProvider"
+git add lib/providers/anthropic_provider.dart test/providers/anthropic_provider_test.dart
+git commit -m "feat(providers): add AnthropicProvider"
 ```
 
 ---
@@ -532,14 +672,14 @@ void main() {
         exitCode: 0,
       ),
     );
-    final r = await p.generate(prompt: 'hi', model: 'gpt-5');
+    final r = await p.generate(prompt: 'hi', model: 'gpt-5.5');
     expect(r.rawText, 'hello from droid');
   });
 
   test('listModels returns curated list', () async {
     final p = DroidExecProvider();
     final m = await p.listModels();
-    expect(m, contains('gpt-5'));
+    expect(m, contains('gpt-5.5'));
   });
 }
 ```
@@ -595,10 +735,12 @@ class DroidExecProvider implements ModelProvider {
 
   @override
   Future<List<String>> listModels() async => const [
-        'gpt-5',
-        'claude-sonnet-4-5',
-        'claude-opus-4-5',
-        'gemini-3-pro',
+        'gpt-5.5',
+        'gpt-5.4',
+        'gpt-5.3-codex',
+        'claude-sonnet-4-6',
+        'claude-opus-4-7',
+        'gemini-3-flash',
       ];
 
   @override
@@ -636,7 +778,8 @@ class DroidExecProvider implements ModelProvider {
 - [ ] **Step 3: PASS + analyze + commit**
 
 ```bash
-git commit -am "feat(providers): add DroidExecProvider"
+git add lib/providers/droid_exec_provider.dart test/providers/droid_exec_provider_test.dart
+git commit -m "feat(providers): add DroidExecProvider"
 ```
 
 ---
@@ -716,7 +859,8 @@ class SettingsRepository {
 - [ ] **Step 3: PASS + analyze + commit**
 
 ```bash
-git commit -am "feat(storage): per-provider API key + base URL overrides"
+git add lib/storage/settings.dart test/storage/settings_test.dart
+git commit -m "feat(storage): per-provider API key + base URL overrides"
 ```
 
 ---
@@ -820,7 +964,8 @@ Future<List<ModelProvider>> buildEnabledProviders(
 - [ ] **Step 3: PASS + analyze + commit**
 
 ```bash
-git commit -am "feat(providers): add provider factory wired to settings"
+git add lib/providers/provider_factory.dart test/providers/provider_factory_test.dart
+git commit -m "feat(providers): add provider factory wired to settings"
 ```
 
 ---
@@ -996,17 +1141,33 @@ final Map<String, bool> _checked = {};
 final Map<String, String> _models = {};
 ```
 
-When the user taps Run, build the StartRun event:
+When the user taps Run, build the `StartRun` event. **Reuse the existing `RunBloc` construction logic unchanged** from the current `_NewRunPageState.onPressed` — it creates the `AppDatabase`, `RunDao`, `WorkdirManager`, and `RunBloc` with proper directories and ID generation. Only replace the old single-provider `bloc.add(...)` call with the multi-provider version:
 
 ```dart
+// --- existing bloc setup (unchanged from Plan 1) ---
+final settings = SettingsRepository();
+final docs = await getApplicationSupportDirectory();
+final root = Directory(p.join(docs.path, 'workdirs'))
+  ..createSync(recursive: true);
+final db = AppDatabase();
+final bloc = RunBloc(
+  workdirManager: WorkdirManager(root: root),
+  runDao: RunDao(db),
+  now: () => DateTime.now(),
+  idGenerator: () => 'run-${DateTime.now().millisecondsSinceEpoch}',
+);
+
+// --- new: multi-provider selection ---
 final selected = _providers.where((p) => _checked[p.id] == true).toList();
 final modelMap = {
   for (final p in selected) p.id: _models[p.id] ?? '',
 };
 if (selected.isEmpty || modelMap.values.any((m) => m.trim().isEmpty)) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Pick at least one provider + model')),
-  );
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Pick at least one provider + model')),
+    );
+  }
   return;
 }
 bloc.add(StartRun(
@@ -1014,6 +1175,7 @@ bloc.add(StartRun(
   providers: selected,
   modelByProvider: modelMap,
 ));
+if (mounted) context.push('/run', extra: bloc);
 ```
 
 - [ ] Implement (no widget test; covered by Task 14 manual smoke).
