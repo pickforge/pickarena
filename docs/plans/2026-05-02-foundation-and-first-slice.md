@@ -34,7 +34,7 @@ Created in this plan:
 - `lib/tasks/bug_fix/fixtures/off_by_one_pagination/test/pagination_test.dart` — failing test the model must make pass
 - `lib/tasks/bug_fix/fixtures/off_by_one_pagination/pubspec.yaml` — fixture pubspec
 - `lib/evaluators/evaluator.dart` — `Evaluator` interface
-- `lib/evaluators/compile_evaluator.dart` — runs `flutter pub get && dart analyze`
+- `lib/evaluators/compile_evaluator.dart` — runs `dart pub get && dart analyze && dart test`
 - `lib/runner/workdir_manager.dart` — creates and tears down workdirs
 - `lib/runner/run_event.dart` / `run_state.dart` / `run_bloc.dart` — Bloc lifecycle
 - `lib/storage/database.dart` — Drift database + tables
@@ -101,7 +101,6 @@ dependencies:
   equatable: ^2.0.5
   dio: ^5.7.0
   drift: ^2.20.3
-  drift_flutter: ^0.2.4
   sqlite3_flutter_libs: ^0.5.24
   flutter_secure_storage: ^9.2.2
   path: ^1.9.0
@@ -337,14 +336,10 @@ git commit -m "feat(core): add Category, ModelResponse, EvaluationResult"
 
 `test/core/task_registry_test.dart`:
 ```dart
-import 'dart:io';
-
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
-import 'package:dart_arena/core/evaluation_context.dart';
-import 'package:dart_arena/core/evaluation_result.dart';
-import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/core/task_registry.dart';
+import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubTask extends BenchmarkTask {
@@ -635,6 +630,7 @@ class _MockDio extends Mock implements Dio {}
 void main() {
   setUpAll(() {
     registerFallbackValue(<String, dynamic>{});
+    registerFallbackValue(Options());
   });
 
   test('generate posts to /api/generate and parses response', () async {
@@ -931,7 +927,10 @@ import 'package:dart_arena/tasks/bug_fix/off_by_one_pagination.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('OffByOnePaginationTask metadata is correct', () {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('OffByOnePaginationTask metadata is correct', () async {
+    await OffByOnePaginationTask.loadAssets();
     final task = OffByOnePaginationTask();
     expect(task.id, 'bug.off_by_one_pagination');
     expect(task.category, Category.bugFix);
@@ -1000,17 +999,9 @@ Do not include explanatory text outside the block. Do not change the public API.
 }
 ```
 
-Note: tests don't use `loadAssets`, they only check metadata. Asset loading is a runtime concern.
+Note: this test loads assets because `fixtures` is populated from Flutter assets at runtime.
 
-- [ ] **Step 4: Run, verify pass**
-
-```bash
-flutter test test/tasks/off_by_one_pagination_test.dart
-```
-
-Expected: PASS (CompileEvaluator import must exist; will be filled in next task. For now, write a stub class to make this compile.)
-
-- [ ] **Step 5: Stub CompileEvaluator so this compiles**
+- [ ] **Step 4: Stub CompileEvaluator so this compiles**
 
 `lib/evaluators/compile_evaluator.dart`:
 ```dart
@@ -1029,11 +1020,13 @@ class CompileEvaluator implements Evaluator {
 }
 ```
 
+- [ ] **Step 5: Run, verify pass**
+
 ```bash
 flutter test test/tasks/off_by_one_pagination_test.dart
 ```
 
-Expected: PASS.
+Expected: PASS after assets load successfully.
 
 - [ ] **Step 6: Commit**
 
@@ -1087,10 +1080,23 @@ void main() {
 name: tmp
 environment:
   sdk: ">=3.5.0 <4.0.0"
+dev_dependencies:
+  test: ^1.25.0
 ''');
     Directory(p.join(dir.path, 'lib')).createSync();
     File(p.join(dir.path, 'lib', 'tmp.dart'))
         .writeAsStringSync('int answer() => 42;\n');
+    Directory(p.join(dir.path, 'test')).createSync();
+    File(p.join(dir.path, 'test', 'tmp_test.dart')).writeAsStringSync('''
+import 'package:test/test.dart';
+import 'package:tmp/tmp.dart';
+
+void main() {
+  test('answer', () {
+    expect(answer(), 42);
+  });
+}
+''');
 
     final result = await CompileEvaluator().evaluate(
       EvaluationContext(
@@ -1137,6 +1143,49 @@ environment:
     );
 
     expect(result.passed, isFalse);
+    dir.deleteSync(recursive: true);
+  }, timeout: const Timeout(Duration(minutes: 2)));
+
+  test('fails when tests fail', () async {
+    final dir = await Directory.systemTemp.createTemp('dart_arena_eval_');
+    File(p.join(dir.path, 'pubspec.yaml')).writeAsStringSync('''
+name: tmp
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+dev_dependencies:
+  test: ^1.25.0
+''');
+    Directory(p.join(dir.path, 'lib')).createSync();
+    File(p.join(dir.path, 'lib', 'tmp.dart'))
+        .writeAsStringSync('int answer() => 41;\n');
+    Directory(p.join(dir.path, 'test')).createSync();
+    File(p.join(dir.path, 'test', 'tmp_test.dart')).writeAsStringSync('''
+import 'package:test/test.dart';
+import 'package:tmp/tmp.dart';
+
+void main() {
+  test('answer', () {
+    expect(answer(), 42);
+  });
+}
+''');
+
+    final result = await CompileEvaluator().evaluate(
+      EvaluationContext(
+        workDir: dir,
+        response: const ModelResponse(
+          rawText: '',
+          extractedCode: null,
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration.zero,
+        ),
+        task: _DummyTask(),
+      ),
+    );
+
+    expect(result.passed, isFalse);
+    expect(result.rationale, 'tests failed');
     dir.deleteSync(recursive: true);
   }, timeout: const Timeout(Duration(minutes: 2)));
 }
@@ -1186,16 +1235,38 @@ class CompileEvaluator implements Evaluator {
       workingDirectory: ctx.workDir.path,
     );
 
-    final passed = analyze.exitCode == 0;
+    if (analyze.exitCode != 0) {
+      return EvaluationResult(
+        evaluatorId: id,
+        passed: false,
+        score: 0.0,
+        rationale: 'analysis errors present',
+        details: {
+          'phase': 'analyze',
+          'exitCode': analyze.exitCode,
+          'stdout': analyze.stdout.toString(),
+          'stderr': analyze.stderr.toString(),
+        },
+      );
+    }
+
+    final test = await Process.run(
+      'dart',
+      ['test'],
+      workingDirectory: ctx.workDir.path,
+    );
+
+    final passed = test.exitCode == 0;
     return EvaluationResult(
       evaluatorId: id,
       passed: passed,
       score: passed ? 1.0 : 0.0,
-      rationale: passed ? 'analysis clean' : 'analysis errors present',
+      rationale: passed ? 'analysis and tests clean' : 'tests failed',
       details: {
-        'exitCode': analyze.exitCode,
-        'stdout': analyze.stdout.toString(),
-        'stderr': analyze.stderr.toString(),
+        'phase': 'test',
+        'exitCode': test.exitCode,
+        'stdout': test.stdout.toString(),
+        'stderr': test.stderr.toString(),
       },
     );
   }
@@ -1334,8 +1405,12 @@ git commit -m "feat(runner): add WorkdirManager"
 
 `lib/storage/database.dart`:
 ```dart
+import 'dart:io';
+
 import 'package:drift/drift.dart';
-import 'package:drift_flutter/drift_flutter.dart';
+import 'package:drift/native.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
 
@@ -1382,10 +1457,18 @@ class Evaluations extends Table {
 @DriftDatabase(tables: [Runs, TaskRuns, Evaluations])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
-      : super(executor ?? driftDatabase(name: 'dart_arena'));
+      : super(executor ?? _openConnection());
 
   @override
   int get schemaVersion => 1;
+}
+
+LazyDatabase _openConnection() {
+  return LazyDatabase(() async {
+    final dir = await getApplicationSupportDirectory();
+    await dir.create(recursive: true);
+    return NativeDatabase(File(p.join(dir.path, 'dart_arena.sqlite')));
+  });
 }
 ```
 
@@ -1695,6 +1778,7 @@ class RunFailed extends RunState {
 import 'package:dart_arena/core/code_extractor.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_state.dart';
@@ -1749,6 +1833,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
           );
           final extracted =
               extractDartCode(response.rawText) ?? response.rawText;
+          final responseWithCode = copyWithCode(response, extracted);
 
           final dir = await workdirManager.createTaskWorkdir(
             runId: runId,
@@ -1763,7 +1848,11 @@ class RunBloc extends Bloc<RunEvent, RunState> {
           final evaluations = <EvaluationResult>[];
           for (final evaluator in task.evaluators) {
             final result = await evaluator.evaluate(
-              EvaluationContext(workDir: dir, response: response, task: task),
+              EvaluationContext(
+                workDir: dir,
+                response: responseWithCode,
+                task: task,
+              ),
             );
             evaluations.add(result);
           }
@@ -1778,7 +1867,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
             providerId: provider.id,
             modelId: modelId,
             taskId: task.id,
-            response: ModelResponseWithCode(response, extracted),
+            response: responseWithCode,
             evaluations: evaluations,
             aggregateScore: aggregate,
             completedAt: now(),
@@ -1803,13 +1892,6 @@ class RunBloc extends Bloc<RunEvent, RunState> {
 }
 
 // Helper: returns a copy of the response with extractedCode populated.
-ModelResponseWithCode(ModelResponse response, String? code) =>
-    ModelResponse(...) // placeholder, replace below
-```
-
-Note the placeholder at the bottom — the real helper is just constructing a new ModelResponse:
-
-```dart
 ModelResponse copyWithCode(ModelResponse r, String? code) => ModelResponse(
       rawText: r.rawText,
       extractedCode: code,
@@ -1819,21 +1901,12 @@ ModelResponse copyWithCode(ModelResponse r, String? code) => ModelResponse(
     );
 ```
 
-Replace `ModelResponseWithCode(response, extracted)` with `copyWithCode(response, extracted)` in the bloc, and add the helper at the bottom of `run_bloc.dart` (delete the placeholder pseudo-code).
-
-Also add the import:
-```dart
-import 'package:dart_arena/core/model_response.dart';
-```
-
 - [ ] **Step 4: Write a fake-driven bloc test**
 
 `test/runner/run_bloc_test.dart`:
 ```dart
 import 'dart:io';
 
-import 'package:bloc_test/bloc_test.dart' if (dart.library.io) 'fake_bloc_test.dart';
-// We'll use plain expectations to avoid adding bloc_test as a dep.
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
@@ -2107,7 +2180,7 @@ class HomePage extends StatelessWidget {
 }
 ```
 
-Same skeleton for `new_run_page.dart`, `run_progress_page.dart`, `settings_page.dart` (placeholders to be filled in Task 17).
+Repeat that skeleton for `new_run_page.dart`, `run_progress_page.dart`, and `settings_page.dart`; Task 17 replaces each stub with the real page implementation.
 
 ```bash
 flutter analyze
@@ -2222,7 +2295,8 @@ class HomePage extends StatelessWidget {
 
 `lib/ui/pages/new_run_page.dart`:
 ```dart
-import 'package:dart_arena/core/task_registry.dart';
+import 'dart:io';
+
 import 'package:dart_arena/providers/ollama_provider.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
@@ -2232,7 +2306,6 @@ import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/tasks/bug_fix/off_by_one_pagination.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -2426,7 +2499,7 @@ sqlite3 ~/.local/share/dart_arena/dart_arena.sqlite \
   'select run_id, task_id, aggregate_score from task_runs;'
 ```
 
-Expected: at least one row matching the run.
+Expected: at least one row matching the run. This path matches the explicit `AppDatabase` connection in Task 12 on Linux.
 
 - [ ] **Step 5: Commit any final tweaks if you discovered issues**
 
@@ -2449,3 +2522,25 @@ After Plan 1 ships, we'll move to Plan 2 (rest of the evaluators + tasks).
 - Spec coverage: BLoC ✅, Drift ✅, secure storage ✅, ModelProvider iface ✅, OllamaProvider ✅, BenchmarkTask ✅, evaluators (CompileEvaluator only, others deferred to Plan 2 by design), workdir manager ✅, fixture loading ✅, Run lifecycle ✅, persistence ✅, minimal UI ✅. Other providers / tasks / evaluators / charts / leaderboard are explicitly deferred to Plans 2-4 per the slice strategy.
 - No placeholders remain (the bloc helper text was inline-fixed).
 - Type signatures align across tasks.
+
+---
+
+## Future plans (outline — will be authored after Plan 1 ships)
+
+### Plan 2: Remaining evaluators + tasks
+- **9 more tasks** across the 5 categories (ui.profile_card, ui.expandable_list_tile, state.counter_bloc, state.shopping_cart_bloc, bug.async_race_condition, refactor.god_widget, refactor.callback_hell, test.todo_input, test.form_validation)
+- **5 more evaluators**: AnalyzeEvaluator, TestEvaluator, WidgetTreeEvaluator, LlmJudgeEvaluator, DiffSizeEvaluator
+- **LlmJudgeEvaluator** adds elegance/idiomatic scoring dimension; per-run judge model selection
+- Aggregate scoring with category-specific evaluator weights
+
+### Plan 3: Remaining providers
+- **7 more providers**: OpenCodeZenProvider, OllamaProvider (cloud config), DroidExecProvider, OpenRouterProvider, OpenAIProvider, AnthropicProvider, DeepSeekProvider
+- API key management via Settings page (all providers)
+- Agent-mode vs raw-API toggle on leaderboard for fair comparisons
+
+### Plan 4: UI polish — dashboard, leaderboard, run details
+- Dashboard with recent runs and quick-glance top models per category
+- Leaderboard with `fl_chart` bar charts / radar charts, filtered by category/provider/date
+- Run details page: raw model output, evaluator breakdown, judge rationale, diff view
+- Intelligence / Speed / Elegance / Problems multi-dimensional score display
+- Proper provider DI (refactor NewRunPage wiring)
