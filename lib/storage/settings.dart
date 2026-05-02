@@ -13,4 +13,22 @@ class SettingsRepository {
 
   Future<void> setOllamaBaseUrl(String value) =>
       _storage.write(key: _ollamaBaseUrl, value: value);
+
+  String _apiKeyKey(String providerId) => 'api_key:$providerId';
+  String _baseUrlKey(String providerId) => 'base_url:$providerId';
+
+  Future<String?> getApiKey(String providerId) =>
+      _storage.read(key: _apiKeyKey(providerId));
+
+  Future<void> setApiKey(String providerId, String value) =>
+      _storage.write(key: _apiKeyKey(providerId), value: value);
+
+  Future<void> clearApiKey(String providerId) =>
+      _storage.delete(key: _apiKeyKey(providerId));
+
+  Future<String?> getBaseUrlOverride(String providerId) =>
+      _storage.read(key: _baseUrlKey(providerId));
+
+  Future<void> setBaseUrlOverride(String providerId, String value) =>
+      _storage.write(key: _baseUrlKey(providerId), value: value);
 }
