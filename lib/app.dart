@@ -1,3 +1,4 @@
+import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/ui/pages/home_page.dart';
 import 'package:dart_arena/ui/pages/new_run_page.dart';
 import 'package:dart_arena/ui/pages/run_progress_page.dart';
@@ -11,7 +12,10 @@ final _router = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (_, __) => const HomePage()),
     GoRoute(path: '/new-run', builder: (_, __) => const NewRunPage()),
-    GoRoute(path: '/run', builder: (_, __) => const RunProgressPage()),
+    GoRoute(
+      path: '/run',
+      builder: (context, state) => RunProgressPage(bloc: state.extra! as RunBloc),
+    ),
     GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
   ],
 );
