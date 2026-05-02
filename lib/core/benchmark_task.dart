@@ -1,4 +1,5 @@
 import 'package:dart_arena/core/category.dart';
+import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 
 abstract class BenchmarkTask {
@@ -6,6 +7,7 @@ abstract class BenchmarkTask {
   Category get category;
   String get prompt;
   Map<String, String> get fixtures;
-  List<Evaluator> get evaluators;
   String? get judgeRubric;
+  String get generatedCodePath;
+  List<Evaluator> evaluatorsFor(EvaluatorConfig config);
 }

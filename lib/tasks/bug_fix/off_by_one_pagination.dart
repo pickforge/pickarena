@@ -1,5 +1,6 @@
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
+import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/evaluators/compile_evaluator.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:flutter/services.dart';
@@ -36,8 +37,12 @@ Do not include explanatory text outside the block. Do not change the public API.
   }
 
   @override
-  List<Evaluator> get evaluators => [CompileEvaluator()];
+  String get generatedCodePath => 'lib/pagination.dart';
 
   @override
   String? get judgeRubric => null;
+
+  @override
+  List<Evaluator> evaluatorsFor(EvaluatorConfig config) =>
+      [CompileEvaluator()];
 }

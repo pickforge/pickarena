@@ -1,4 +1,5 @@
 import 'package:dart_arena/core/code_extractor.dart';
+import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/model_response.dart';
@@ -76,11 +77,11 @@ class RunBloc extends Bloc<RunEvent, RunState> {
             taskId: task.id,
             fixtures: task.fixtures,
             generatedCode: extracted,
-            generatedCodePath: 'lib/pagination.dart',
+            generatedCodePath: task.generatedCodePath,
           );
 
           final evaluations = <EvaluationResult>[];
-          for (final evaluator in task.evaluators) {
+          for (final evaluator in task.evaluatorsFor(const EvaluatorConfig())) {
             final result = await evaluator.evaluate(
               EvaluationContext(
                 workDir: dir,

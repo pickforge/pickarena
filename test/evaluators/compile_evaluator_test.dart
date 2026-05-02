@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
+import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/evaluators/compile_evaluator.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
@@ -19,9 +20,11 @@ class _DummyTask extends BenchmarkTask {
   @override
   Map<String, String> get fixtures => const {};
   @override
-  List<Evaluator> get evaluators => const [];
+  String get generatedCodePath => 'lib/answer.dart';
   @override
   String? get judgeRubric => null;
+  @override
+  List<Evaluator> evaluatorsFor(EvaluatorConfig config) => const [];
 }
 
 void main() {

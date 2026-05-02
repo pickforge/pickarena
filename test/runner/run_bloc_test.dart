@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_arena/core/benchmark_task.dart';
+import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
@@ -60,9 +61,12 @@ class _StubTask extends BenchmarkTask {
         'pubspec.yaml': 'name: tmp\nenvironment:\n  sdk: ">=3.5.0 <4.0.0"\n',
       };
   @override
-  List<Evaluator> get evaluators => [_AlwaysPassEvaluator()];
+  String get generatedCodePath => 'lib/answer.dart';
   @override
   String? get judgeRubric => null;
+  @override
+  List<Evaluator> evaluatorsFor(EvaluatorConfig config) =>
+      [_AlwaysPassEvaluator()];
 }
 
 void main() {
