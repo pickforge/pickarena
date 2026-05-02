@@ -19,6 +19,8 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const _JudgeSection(),
+          const Divider(),
           _OllamaLocalSection(repo: _repo),
           const Divider(),
           _ApiKeySection(
@@ -62,6 +64,106 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: Text('Uses local droid CLI; no key needed in app.'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _JudgeSection extends StatefulWidget {
+  const _JudgeSection();
+  @override
+  State<_JudgeSection> createState() => _JudgeSectionState();
+}
+
+class _JudgeSectionState extends State<_JudgeSection> {
+  final _repo = SettingsRepository();
+  final _modelController = TextEditingController();
+  String? _providerId;
+
+  static const _knownProviders = <String>[
+    'ollama_local',
+    'ollama_cloud',
+    'opencode_zen',
+    'openai',
+    'openrouter',
+    'deepseek',
+    'anthropic',
+    'droid',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final pid = await _repo.getJudgeProviderId();
+    final mid = await _repo.getJudgeModelId();
+    setState(() {
+      _providerId = pid;
+      _modelController.text = mid ?? '';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Judge Model',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String?>(
+              key: ValueKey(_providerId),
+              initialValue: _knownProviders.contains(_providerId)
+                  ? _providerId
+                  : null,
+              decoration: const InputDecoration(
+                labelText: 'Judge provider',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('(none — disable judge)'),
+                ),
+                ..._knownProviders.map(
+                  (p) => DropdownMenuItem<String?>(value: p, child: Text(p)),
+                ),
+              ],
+              onChanged: (v) => setState(() => _providerId = v),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _modelController,
+              decoration: const InputDecoration(
+                labelText: 'Judge model id',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () async {
+                await _repo.setJudgeProviderId(_providerId);
+                await _repo.setJudgeModelId(
+                  _modelController.text.trim().isEmpty
+                      ? null
+                      : _modelController.text.trim(),
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Judge saved')),
+                  );
+                }
+              },
+              child: const Text('Save judge'),
+            ),
+          ],
+        ),
       ),
     );
   }
