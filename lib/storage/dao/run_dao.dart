@@ -1,0 +1,74 @@
+import 'dart:convert';
+
+import 'package:dart_arena/core/task_run_result.dart';
+import 'package:dart_arena/storage/database.dart';
+import 'package:drift/drift.dart';
+
+class RunDao {
+  RunDao(this._db);
+  final AppDatabase _db;
+
+  Future<void> startRun({required String runId, required DateTime startedAt}) {
+    return _db.into(_db.runs).insert(
+          RunsCompanion.insert(id: runId, startedAt: startedAt),
+        );
+  }
+
+  Future<void> finishRun(String runId, DateTime completedAt) {
+    return (_db.update(_db.runs)..where((r) => r.id.equals(runId))).write(
+      RunsCompanion(completedAt: Value(completedAt)),
+    );
+  }
+
+  Future<void> persistTaskRun(TaskRunResult r) async {
+    final taskRunId =
+        '${r.runId}-${r.providerId}-${r.modelId}-${r.taskId}-${r.completedAt.microsecondsSinceEpoch}';
+    await _db.into(_db.taskRuns).insert(
+          TaskRunsCompanion.insert(
+            id: taskRunId,
+            runId: r.runId,
+            providerId: r.providerId,
+            modelId: r.modelId,
+            taskId: r.taskId,
+            responseText: r.response.rawText,
+            promptTokens: Value(r.response.promptTokens),
+            completionTokens: Value(r.response.completionTokens),
+            latencyMs: r.response.latency.inMilliseconds,
+            aggregateScore: r.aggregateScore,
+            completedAt: r.completedAt,
+          ),
+        );
+    for (var i = 0; i < r.evaluations.length; i++) {
+      final e = r.evaluations[i];
+      await _db.into(_db.evaluations).insert(
+            EvaluationsCompanion.insert(
+              id: '$taskRunId-${e.evaluatorId}-$i',
+              taskRunId: taskRunId,
+              evaluatorId: e.evaluatorId,
+              passed: e.passed,
+              score: e.score,
+              rationale: Value(e.rationale),
+              detailsJson: jsonEncode(e.details),
+            ),
+          );
+    }
+  }
+
+  Future<List<TaskRun>> taskRunsForRun(String runId) {
+    return (_db.select(_db.taskRuns)..where((t) => t.runId.equals(runId)))
+        .get();
+  }
+
+  Future<List<Evaluation>> evaluationsForTaskRun(String taskRunId) {
+    return (_db.select(_db.evaluations)
+          ..where((e) => e.taskRunId.equals(taskRunId)))
+        .get();
+  }
+
+  Future<List<Run>> recentRuns({int limit = 20}) {
+    return (_db.select(_db.runs)
+          ..orderBy([(r) => OrderingTerm.desc(r.startedAt)])
+          ..limit(limit))
+        .get();
+  }
+}
