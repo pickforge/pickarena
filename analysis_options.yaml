@@ -5,6 +5,7 @@ analyzer:
     - "lib/storage/database.g.dart"
     - "**/*.g.dart"
     - "lib/tasks/**"
+    - "build/**"
   language:
     strict-casts: true
     strict-inference: true
