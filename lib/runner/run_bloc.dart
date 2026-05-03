@@ -4,9 +4,11 @@ import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_run_result.dart';
+import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_state.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
+import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -17,6 +19,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     required this.now,
     required this.idGenerator,
     this.weights = defaultEvaluatorWeights,
+    this.planDao,
   }) : super(const RunIdle()) {
     on<StartRun>(_onStart);
   }
@@ -26,6 +29,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
   final DateTime Function() now;
   final String Function() idGenerator;
   final Map<String, double> weights;
+  final PlanDao? planDao;
 
   Future<void> _onStart(StartRun event, Emitter<RunState> emit) async {
     final runId = idGenerator();
@@ -44,6 +48,18 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     try {
       for (final task in event.tasks) {
         await task.ensureLoaded();
+        String? planId;
+        String? planMarkdown;
+        if (event.useReferencePlan && task.referencePlan != null) {
+          planMarkdown = task.referencePlan!.markdown;
+          if (planDao != null) {
+            planId = await planDao!.upsertReferencePlan(
+              taskId: task.id,
+              version: task.referencePlan!.version,
+              artifact: task.referencePlan!.markdown,
+            );
+          }
+        }
         for (final provider in event.providers) {
           final modelId = event.modelByProvider[provider.id]!;
           emit(RunInProgress(
@@ -55,7 +71,10 @@ class RunBloc extends Bloc<RunEvent, RunState> {
           ));
 
           final response = await provider.generate(
-            prompt: task.prompt,
+            prompt: buildPromptWithPlan(
+              taskPrompt: task.prompt,
+              planMarkdown: planMarkdown,
+            ),
             model: modelId,
           );
           final extracted =
@@ -110,6 +129,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
             evaluations: evaluations,
             aggregateScore: aggregateScore,
             completedAt: now(),
+            planId: planId,
           );
           results.add(taskResult);
           await runDao.persistTaskRun(taskResult);

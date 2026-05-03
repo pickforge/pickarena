@@ -44,6 +44,7 @@ class RunDao {
             latencyMs: r.response.latency.inMilliseconds,
             aggregateScore: r.aggregateScore,
             completedAt: r.completedAt,
+            planId: Value(r.planId),
           ),
         );
     for (var i = 0; i < r.evaluations.length; i++) {

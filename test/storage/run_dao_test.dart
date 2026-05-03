@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/task_run_result.dart';
+import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:drift/native.dart';
@@ -137,6 +138,40 @@ void main() {
     await dao.startRun(runId: 'a', startedAt: DateTime(2026, 5, 1));
     final all = await dao.recentRuns(labelQuery: '');
     expect(all, hasLength(1));
+    await db.close();
+  });
+
+  test('persistTaskRun stores planId when set on TaskRunResult', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    final planDao = PlanDao(db);
+    await dao.startRun(runId: 'r-pid', startedAt: DateTime(2026, 1, 1));
+    final planId = await planDao.upsertReferencePlan(
+      taskId: 'task-x',
+      version: 1,
+      artifact: 'plan',
+    );
+    await dao.persistTaskRun(TaskRunResult(
+      runId: 'r-pid',
+      providerId: 'p',
+      modelId: 'm',
+      taskId: 'task-x',
+      response: const ModelResponse(
+        rawText: '',
+        extractedCode: null,
+        promptTokens: 0,
+        completionTokens: 0,
+        latency: Duration.zero,
+      ),
+      evaluations: const [],
+      aggregateScore: 1.0,
+      completedAt: DateTime(2026, 1, 1, 0, 1),
+      planId: planId,
+    ));
+
+    final rows = await dao.taskRunsForRun('r-pid');
+    expect(rows.single.planId, planId);
+
     await db.close();
   });
 }

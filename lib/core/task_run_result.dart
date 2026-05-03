@@ -12,6 +12,7 @@ class TaskRunResult extends Equatable {
     required this.evaluations,
     required this.aggregateScore,
     required this.completedAt,
+    this.planId,
   });
 
   final String runId;
@@ -22,6 +23,7 @@ class TaskRunResult extends Equatable {
   final List<EvaluationResult> evaluations;
   final double aggregateScore;
   final DateTime completedAt;
+  final String? planId;
 
   @override
   List<Object?> get props => [
@@ -33,5 +35,6 @@ class TaskRunResult extends Equatable {
         evaluations,
         aggregateScore,
         completedAt,
+        planId,
       ];
 }
