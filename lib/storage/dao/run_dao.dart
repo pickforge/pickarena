@@ -92,4 +92,11 @@ class RunDao {
     return (_db.select(_db.taskRuns)..where((t) => t.id.equals(id)))
         .getSingleOrNull();
   }
+
+  Future<List<Run>> inProgressRuns() {
+    return (_db.select(_db.runs)
+          ..where((r) => r.completedAt.isNull())
+          ..orderBy([(r) => OrderingTerm.desc(r.startedAt)]))
+        .get();
+  }
 }

@@ -1,7 +1,7 @@
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
-import 'package:dart_arena/ui/pages/home_page.dart';
+import 'package:dart_arena/ui/pages/dashboard_page.dart';
 import 'package:dart_arena/ui/pages/leaderboard_page.dart';
 import 'package:dart_arena/ui/pages/new_run_page.dart';
 import 'package:dart_arena/ui/pages/run_details_page.dart';
@@ -18,7 +18,10 @@ final TaskRegistry _registry = buildDefaultTaskRegistry();
 final _router = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(path: '/', builder: (_, __) => const HomePage()),
+    GoRoute(
+      path: '/',
+      builder: (_, __) => DashboardPage(registry: _registry),
+    ),
     GoRoute(path: '/new-run', builder: (_, __) => const NewRunPage()),
     GoRoute(
       path: '/run',
