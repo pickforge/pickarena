@@ -4,6 +4,7 @@ const Map<String, double> defaultEvaluatorWeights = {
   'compile': 0.5,
   'analyze': 0.5,
   'test': 1.0,
+  'test_author': 4.0,
   'widget_tree': 1.0,
   'llm_judge': 0.7,
   'diff_size': 0.3,
