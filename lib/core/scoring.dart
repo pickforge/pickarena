@@ -1,3 +1,5 @@
+import 'dart:math' show sqrt;
+
 import 'package:dart_arena/core/evaluation_result.dart';
 
 const Map<String, double> defaultEvaluatorWeights = {
@@ -23,4 +25,20 @@ double aggregate(
     den += w;
   }
   return den == 0 ? 0.0 : num / den;
+}
+
+enum StageCombine { geometricMean, product, weightedSum }
+
+double combineStages({
+  required double planScore,
+  required double executeScore,
+  StageCombine mode = StageCombine.geometricMean,
+}) {
+  final p = planScore.clamp(0.01, 1.0);
+  final e = executeScore.clamp(0.01, 1.0);
+  return switch (mode) {
+    StageCombine.geometricMean => sqrt(p * e),
+    StageCombine.product => p * e,
+    StageCombine.weightedSum => 0.5 * p + 0.5 * e,
+  };
 }
