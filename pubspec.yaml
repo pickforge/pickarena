@@ -94,3 +94,7 @@ flutter:
     - lib/tasks/bug_fix/fixtures/async_race_condition/pubspec.yaml
     - lib/tasks/bug_fix/fixtures/async_race_condition/lib/search_controller.dart
     - lib/tasks/bug_fix/fixtures/async_race_condition/test/search_controller_test.dart
+    - lib/tasks/planning_and_execution/fixtures/add_evaluator_type/pubspec.yaml
+    - lib/tasks/planning_and_execution/fixtures/add_evaluator_type/lib/evaluator.dart
+    - lib/tasks/planning_and_execution/fixtures/add_evaluator_type/test/coverage_evaluator_test.dart
+    - lib/tasks/planning_and_execution/plans/add_evaluator_type.v1.md
