@@ -3,7 +3,8 @@ enum Category {
   stateManagement,
   bugFix,
   refactor,
-  widgetTesting;
+  widgetTesting,
+  planningAndExecution;
 
   String get label => switch (this) {
         Category.uiFromSpec => 'UI from spec',
@@ -11,5 +12,6 @@ enum Category {
         Category.bugFix => 'Bug fix',
         Category.refactor => 'Refactor',
         Category.widgetTesting => 'Widget testing',
+        Category.planningAndExecution => 'Planning & execution',
       };
 }

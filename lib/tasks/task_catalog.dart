@@ -1,6 +1,8 @@
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/tasks/bug_fix/async_race_condition.dart';
 import 'package:dart_arena/tasks/bug_fix/off_by_one_pagination.dart';
+import 'package:dart_arena/tasks/planning_and_execution/add_evaluator_type.dart';
+import 'package:dart_arena/tasks/planning_and_execution/add_filter_dimension.dart';
 import 'package:dart_arena/tasks/refactor/callback_hell.dart';
 import 'package:dart_arena/tasks/refactor/god_widget.dart';
 import 'package:dart_arena/tasks/state_management/counter_bloc.dart';
@@ -22,5 +24,7 @@ TaskRegistry buildDefaultTaskRegistry() {
   registry.register(TodoInputTestTask());
   registry.register(FormValidationTestTask());
   registry.register(AsyncRaceConditionTask());
+  registry.register(AddEvaluatorTypeTask());
+  registry.register(AddFilterDimensionTask());
   return registry;
 }
