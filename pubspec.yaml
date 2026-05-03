@@ -82,3 +82,6 @@ flutter:
     - lib/tasks/refactor/fixtures/god_widget/pubspec.yaml
     - lib/tasks/refactor/fixtures/god_widget/lib/god_widget.dart
     - lib/tasks/refactor/fixtures/god_widget/test/god_widget_test.dart
+    - lib/tasks/refactor/fixtures/callback_hell/pubspec.yaml
+    - lib/tasks/refactor/fixtures/callback_hell/lib/data_pipeline.dart
+    - lib/tasks/refactor/fixtures/callback_hell/test/data_pipeline_test.dart

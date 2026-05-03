@@ -5,6 +5,7 @@ import 'package:dart_arena/tasks/state_management/shopping_cart_bloc.dart';
 import 'package:dart_arena/tasks/ui_from_spec/expandable_list_tile.dart';
 import 'package:dart_arena/tasks/ui_from_spec/profile_card.dart';
 import 'package:dart_arena/tasks/refactor/god_widget.dart';
+import 'package:dart_arena/tasks/refactor/callback_hell.dart';
 
 TaskRegistry buildDefaultTaskRegistry() {
   final registry = TaskRegistry();
@@ -14,5 +15,6 @@ TaskRegistry buildDefaultTaskRegistry() {
   registry.register(ProfileCardTask());
   registry.register(ExpandableListTileTask());
   registry.register(GodWidgetTask());
+  registry.register(CallbackHellTask());
   return registry;
 }
