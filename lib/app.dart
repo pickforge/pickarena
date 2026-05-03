@@ -1,5 +1,7 @@
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
+import 'package:dart_arena/runner/run_event.dart';
+import 'package:dart_arena/runner/start_run_config.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
@@ -30,8 +32,30 @@ final _router = GoRouter(
     GoRoute(path: '/new-run', builder: (_, __) => const NewRunPage()),
     GoRoute(
       path: '/run',
-      builder: (context, state) =>
-          RunProgressPage(bloc: state.extra! as RunBloc),
+      builder: (context, state) {
+        final cfg = state.extra! as StartRunConfig;
+        return BlocProvider<RunBloc>(
+          create: (ctx) {
+            final bloc = RunBloc(
+              workdirManager: ctx.read<WorkdirManager>(),
+              runDao: ctx.read<RunDao>(),
+              weights: cfg.weights,
+              now: () => DateTime.now(),
+              idGenerator: () =>
+                  'run-${DateTime.now().millisecondsSinceEpoch}',
+            );
+            bloc.add(StartRun(
+              tasks: cfg.tasks,
+              providers: cfg.providers,
+              modelByProvider: cfg.modelByProvider,
+              evaluatorConfig: cfg.evaluatorConfig,
+              name: cfg.name,
+            ));
+            return bloc;
+          },
+          child: const RunProgressPage(),
+        );
+      },
     ),
     GoRoute(path: '/runs', builder: (_, __) => const RunHistoryPage()),
     GoRoute(

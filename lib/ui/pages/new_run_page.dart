@@ -1,13 +1,11 @@
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
+import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/provider_factory.dart';
-import 'package:dart_arena/runner/run_bloc.dart';
-import 'package:dart_arena/runner/run_event.dart';
-import 'package:dart_arena/runner/workdir_manager.dart';
-import 'package:dart_arena/storage/dao/run_dao.dart';
+import 'package:dart_arena/runner/start_run_config.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:flutter/material.dart';
@@ -143,15 +141,6 @@ class _NewRunPageState extends State<NewRunPage> {
         .toList();
 
     final settings = context.read<SettingsRepository>();
-    final workdir = context.read<WorkdirManager>();
-    final runDao = context.read<RunDao>();
-
-    final bloc = RunBloc(
-      workdirManager: workdir,
-      runDao: runDao,
-      now: () => DateTime.now(),
-      idGenerator: () => 'run-${DateTime.now().millisecondsSinceEpoch}',
-    );
 
     final judgeProviderId = await settings.getJudgeProviderId();
     final judgeModelId = await settings.getJudgeModelId();
@@ -169,17 +158,19 @@ class _NewRunPageState extends State<NewRunPage> {
       judgeModel: judgeProvider == null ? null : judgeModelId,
     );
 
-    bloc.add(StartRun(
-      tasks: selectedTasks,
-      providers: selectedProviders,
-      modelByProvider: modelMap,
-      evaluatorConfig: evaluatorConfig,
-      name: _label.trim().isEmpty ? null : _label.trim(),
-    ));
-
     if (!mounted) return;
     final goRouter = GoRouter.of(context);
-    goRouter.push('/run', extra: bloc);
+    goRouter.push(
+      '/run',
+      extra: StartRunConfig(
+        tasks: selectedTasks,
+        providers: selectedProviders,
+        modelByProvider: modelMap,
+        evaluatorConfig: evaluatorConfig,
+        weights: defaultEvaluatorWeights,
+        name: _label.trim().isEmpty ? null : _label.trim(),
+      ),
+    );
   }
 }
 

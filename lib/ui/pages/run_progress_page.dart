@@ -5,41 +5,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class RunProgressPage extends StatelessWidget {
-  const RunProgressPage({required this.bloc, super.key});
-  final RunBloc bloc;
+  const RunProgressPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: bloc,
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Run')),
-        body: BlocBuilder<RunBloc, RunState>(
-          builder: (context, state) {
-            return switch (state) {
-              RunIdle() => const Center(child: Text('idle')),
-              RunInProgress(
-                :final completed,
-                :final total,
-                :final currentLabel,
-                :final currentRawResponse,
-              ) =>
-                _ProgressView(
-                  completed: completed,
-                  total: total,
-                  label: currentLabel,
-                  rawResponse: currentRawResponse,
-                ),
-              RunCompleted(:final results) =>
-                ListView.builder(
-                  itemCount: results.length,
-                  itemBuilder: (_, i) => _ResultCard(result: results[i]),
-                ),
-              RunFailed(:final error) =>
-                Center(child: Text('Failed: $error')),
-            };
-          },
-        ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Run')),
+      body: BlocBuilder<RunBloc, RunState>(
+        builder: (context, state) {
+          return switch (state) {
+            RunIdle() => const Center(child: Text('idle')),
+            RunInProgress(
+              :final completed,
+              :final total,
+              :final currentLabel,
+              :final currentRawResponse,
+            ) =>
+              _ProgressView(
+                completed: completed,
+                total: total,
+                label: currentLabel,
+                rawResponse: currentRawResponse,
+              ),
+            RunCompleted(:final results) =>
+              ListView.builder(
+                itemCount: results.length,
+                itemBuilder: (_, i) => _ResultCard(result: results[i]),
+              ),
+            RunFailed(:final error) =>
+              Center(child: Text('Failed: $error')),
+          };
+        },
       ),
     );
   }
