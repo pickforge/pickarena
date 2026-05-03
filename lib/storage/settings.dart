@@ -13,6 +13,7 @@ class SettingsRepository {
   static const _judgeProviderId = 'judge_provider_id';
   static const _judgeModelId = 'judge_model_id';
   static const _evaluatorWeightsJson = 'evaluator_weights_json';
+  static const _readmePath = 'readme_path';
 
   Future<String> getOllamaBaseUrl() async =>
       (await _storage.read(key: _ollamaBaseUrl)) ?? 'http://localhost:11434';
@@ -77,4 +78,14 @@ class SettingsRepository {
         key: _evaluatorWeightsJson,
         value: jsonEncode(overrides),
       );
+
+  Future<String?> getReadmePath() => _storage.read(key: _readmePath);
+
+  Future<void> setReadmePath(String? value) async {
+    if (value == null || value.isEmpty) {
+      await _storage.delete(key: _readmePath);
+    } else {
+      await _storage.write(key: _readmePath, value: value);
+    }
+  }
 }
