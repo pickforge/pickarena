@@ -3,6 +3,7 @@ import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/start_run_config.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
+import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/settings.dart';
@@ -39,6 +40,7 @@ final _router = GoRouter(
             final bloc = RunBloc(
               workdirManager: ctx.read<WorkdirManager>(),
               runDao: ctx.read<RunDao>(),
+              planDao: ctx.read<PlanDao>(),
               weights: cfg.weights,
               now: () => DateTime.now(),
               idGenerator: () =>
@@ -49,6 +51,7 @@ final _router = GoRouter(
               providers: cfg.providers,
               modelByProvider: cfg.modelByProvider,
               evaluatorConfig: cfg.evaluatorConfig,
+              useReferencePlan: cfg.useReferencePlan,
               name: cfg.name,
             ));
             return bloc;
@@ -102,6 +105,9 @@ class App extends StatelessWidget {
         RepositoryProvider<SettingsRepository>.value(value: settings),
         RepositoryProvider<RunDao>(
           create: (ctx) => RunDao(ctx.read<AppDatabase>()),
+        ),
+        RepositoryProvider<PlanDao>(
+          create: (ctx) => PlanDao(ctx.read<AppDatabase>()),
         ),
       ],
       child: MaterialApp.router(

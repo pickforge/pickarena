@@ -29,6 +29,7 @@ class _NewRunPageState extends State<NewRunPage> {
   final Set<String> _selectedTaskIds = {};
   String _label = '';
   bool _loading = true;
+  bool _useReferencePlan = false;
 
   @override
   void initState() {
@@ -93,6 +94,13 @@ class _NewRunPageState extends State<NewRunPage> {
                             _selectedTaskIds.remove(id);
                           }
                         }),
+                      ),
+                      const SizedBox(height: 8),
+                      _PlanToggle(
+                        registry: _registry,
+                        selectedTaskIds: _selectedTaskIds,
+                        value: _useReferencePlan,
+                        onChanged: (v) => setState(() => _useReferencePlan = v),
                       ),
                       const Divider(height: 32),
                       const Text(
@@ -169,6 +177,7 @@ class _NewRunPageState extends State<NewRunPage> {
         modelByProvider: modelMap,
         evaluatorConfig: evaluatorConfig,
         weights: weights,
+        useReferencePlan: _useReferencePlan,
         name: _label.trim().isEmpty ? null : _label.trim(),
       ),
     );
@@ -314,6 +323,45 @@ class _ProviderRowState extends State<_ProviderRow> {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _PlanToggle extends StatelessWidget {
+  const _PlanToggle({
+    required this.registry,
+    required this.selectedTaskIds,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final TaskRegistry registry;
+  final Set<String> selectedTaskIds;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected =
+        registry.all().where((t) => selectedTaskIds.contains(t.id)).toList();
+    final withPlan = selected.where((t) => t.hasReferencePlan).length;
+    final canEnable = withPlan > 0;
+    final label = canEnable
+        ? 'Use reference plan ($withPlan of ${selected.length} selected tasks)'
+        : 'Use reference plan';
+    return SwitchListTile(
+      title: Text(label),
+      subtitle: canEnable
+          ? const Text(
+              'Inject a curated plan into the prompt to isolate execution skill from planning skill.',
+              style: TextStyle(fontSize: 12),
+            )
+          : const Text(
+              'Select a planning task to enable.',
+              style: TextStyle(fontSize: 12),
+            ),
+      value: canEnable && value,
+      onChanged: canEnable ? onChanged : null,
     );
   }
 }
