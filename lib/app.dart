@@ -1,5 +1,8 @@
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
+import 'package:dart_arena/runner/workdir_manager.dart';
+import 'package:dart_arena/storage/database.dart';
+import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:dart_arena/ui/pages/dashboard_page.dart';
 import 'package:dart_arena/ui/pages/leaderboard_page.dart';
@@ -25,7 +28,8 @@ final _router = GoRouter(
     GoRoute(path: '/new-run', builder: (_, __) => const NewRunPage()),
     GoRoute(
       path: '/run',
-      builder: (context, state) => RunProgressPage(bloc: state.extra! as RunBloc),
+      builder: (context, state) =>
+          RunProgressPage(bloc: state.extra! as RunBloc),
     ),
     GoRoute(path: '/runs', builder: (_, __) => const RunHistoryPage()),
     GoRoute(
@@ -52,7 +56,16 @@ final _router = GoRouter(
 );
 
 class App extends StatelessWidget {
-  const App({super.key});
+  const App({
+    required this.database,
+    required this.workdir,
+    required this.settings,
+    super.key,
+  });
+
+  final AppDatabase database;
+  final WorkdirManager workdir;
+  final SettingsRepository settings;
 
   @override
   Widget build(BuildContext context) {
