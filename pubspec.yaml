@@ -73,3 +73,6 @@ flutter:
     - lib/tasks/state_management/fixtures/shopping_cart_bloc/pubspec.yaml
     - lib/tasks/state_management/fixtures/shopping_cart_bloc/lib/cart_bloc.dart
     - lib/tasks/state_management/fixtures/shopping_cart_bloc/test/cart_bloc_test.dart
+    - lib/tasks/ui_from_spec/fixtures/profile_card/pubspec.yaml
+    - lib/tasks/ui_from_spec/fixtures/profile_card/lib/profile_card.dart
+    - lib/tasks/ui_from_spec/fixtures/profile_card/test/profile_card_test.dart
