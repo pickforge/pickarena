@@ -59,4 +59,43 @@ void main() {
       expect(d.reliability, 0.5);
     });
   });
+
+  group('speed', () {
+    test('latency at floor produces speed = 1.0', () {
+      final d = Dimensions.fromTaskRuns([
+        _tr(id: '1', aggregate: 1.0, latencyMs: Dimensions.latencyLoMs.toInt()),
+      ], const {});
+      expect(d.speed, 1.0);
+    });
+
+    test('latency at ceiling produces speed = 0.0', () {
+      final d = Dimensions.fromTaskRuns([
+        _tr(id: '1', aggregate: 1.0, latencyMs: Dimensions.latencyHiMs.toInt()),
+      ], const {});
+      expect(d.speed, 0.0);
+    });
+
+    test('latency above ceiling clamps to 0.0', () {
+      final d = Dimensions.fromTaskRuns([
+        _tr(id: '1', aggregate: 1.0, latencyMs: 120000),
+      ], const {});
+      expect(d.speed, 0.0);
+    });
+
+    test('latency below floor clamps to 1.0', () {
+      final d = Dimensions.fromTaskRuns([
+        _tr(id: '1', aggregate: 1.0, latencyMs: 500),
+      ], const {});
+      expect(d.speed, 1.0);
+    });
+
+    test('uses median across task runs', () {
+      final d = Dimensions.fromTaskRuns([
+        _tr(id: '1', aggregate: 1.0, latencyMs: 1000),
+        _tr(id: '2', aggregate: 1.0, latencyMs: 5000),
+        _tr(id: '3', aggregate: 1.0, latencyMs: 50000),
+      ], const {});
+      expect(d.speed, closeTo(0.948, 0.01));
+    });
+  });
 }

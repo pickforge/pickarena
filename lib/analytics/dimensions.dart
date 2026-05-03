@@ -72,12 +72,21 @@ Dimensions _computeDimensions(
   List<TaskRun> taskRuns,
   Map<String, List<Evaluation>> evalsByTaskRunId,
 ) {
-  final reliabilityPasses =
-      taskRuns.where((t) => t.aggregateScore >= Dimensions.reliabilityThreshold).length;
+  final reliabilityPasses = taskRuns
+      .where((t) => t.aggregateScore >= Dimensions.reliabilityThreshold)
+      .length;
   final reliability = reliabilityPasses / taskRuns.length;
+
+  final latencies = taskRuns.map((t) => t.latencyMs.toDouble()).toList()
+    ..sort();
+  final median = latencies[latencies.length ~/ 2];
+  final span = Dimensions.latencyHiMs - Dimensions.latencyLoMs;
+  final raw = 1 - (median - Dimensions.latencyLoMs) / span;
+  final speed = raw.clamp(0.0, 1.0).toDouble();
+
   return Dimensions(
     intelligence: 0,
-    speed: 0,
+    speed: speed,
     elegance: 0,
     reliability: reliability,
     problems: 0,
