@@ -1,4 +1,5 @@
 import 'package:dart_arena/storage/settings.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -58,6 +59,8 @@ class _SettingsPageState extends State<SettingsPage> {
             providerId: 'anthropic',
             label: 'Anthropic',
           ),
+          const Divider(),
+          _ReadmeSection(repo: _repo),
           const Divider(),
           const ListTile(
             title: Text('Factory Droid'),
@@ -287,6 +290,93 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
             if (mounted) router.pop();
           },
           child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReadmeSection extends StatefulWidget {
+  const _ReadmeSection({required this.repo});
+  final SettingsRepository repo;
+
+  @override
+  State<_ReadmeSection> createState() => _ReadmeSectionState();
+}
+
+class _ReadmeSectionState extends State<_ReadmeSection> {
+  final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.repo.getReadmePath().then((v) {
+      if (!mounted) return;
+      setState(() => _controller.text = v ?? '');
+    });
+  }
+
+  Future<void> _browse() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['md'],
+      dialogTitle: 'Select README.md',
+    );
+    if (result == null || result.files.isEmpty) return;
+    final path = result.files.single.path;
+    if (path == null) return;
+    setState(() => _controller.text = path);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'README publishing',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                decoration: const InputDecoration(
+                  labelText: 'README path',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton(
+              onPressed: _browse,
+              child: const Text('Browse...'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'The "Publish to README" button replaces content between\n'
+          '  <!-- BENCHMARK_RESULTS:START -->\n'
+          '  <!-- BENCHMARK_RESULTS:END -->\n'
+          'markers in the file above. Add these markers manually to your '
+          'README before publishing.',
+          style: TextStyle(fontSize: 12),
+        ),
+        const SizedBox(height: 8),
+        FilledButton(
+          onPressed: () async {
+            await widget.repo.setReadmePath(
+              _controller.text.trim().isEmpty ? null : _controller.text.trim(),
+            );
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('README path saved')),
+            );
+          },
+          child: const Text('Save README path'),
         ),
       ],
     );
