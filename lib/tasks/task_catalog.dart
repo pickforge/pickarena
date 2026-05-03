@@ -7,6 +7,7 @@ import 'package:dart_arena/tasks/ui_from_spec/profile_card.dart';
 import 'package:dart_arena/tasks/refactor/god_widget.dart';
 import 'package:dart_arena/tasks/refactor/callback_hell.dart';
 import 'package:dart_arena/tasks/widget_testing/todo_input.dart';
+import 'package:dart_arena/tasks/widget_testing/form_validation.dart';
 
 TaskRegistry buildDefaultTaskRegistry() {
   final registry = TaskRegistry();
@@ -18,5 +19,6 @@ TaskRegistry buildDefaultTaskRegistry() {
   registry.register(GodWidgetTask());
   registry.register(CallbackHellTask());
   registry.register(TodoInputTestTask());
+  registry.register(FormValidationTestTask());
   return registry;
 }

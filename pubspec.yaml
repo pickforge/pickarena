@@ -88,3 +88,6 @@ flutter:
     - lib/tasks/widget_testing/fixtures/todo_input/pubspec.yaml
     - lib/tasks/widget_testing/fixtures/todo_input/lib/todo_input.dart
     - lib/tasks/widget_testing/fixtures/todo_input/test/_reference/todo_input_reference_test.dart
+    - lib/tasks/widget_testing/fixtures/form_validation/pubspec.yaml
+    - lib/tasks/widget_testing/fixtures/form_validation/lib/signup_form.dart
+    - lib/tasks/widget_testing/fixtures/form_validation/test/_reference/signup_form_reference_test.dart
