@@ -87,6 +87,48 @@ class LeaderboardRepository {
     return out;
   }
 
+  Future<ModelDetail> detail({
+    required String providerId,
+    required String modelId,
+    required LeaderboardFilter filter,
+    Set<String>? taskIdsForCategory,
+    Map<String, Category>? categoryByTaskId,
+  }) async {
+    final scoped = filter.copyWith(providerId: providerId);
+    final taskRuns =
+        (await _filteredTaskRuns(scoped, taskIdsForCategory)).where(
+      (t) => t.providerId == providerId && t.modelId == modelId,
+    ).toList();
+    final evals = taskRuns.isEmpty
+        ? const <String, List<Evaluation>>{}
+        : await _evaluationsByTaskRunId(taskRuns.map((t) => t.id));
+    final ranking = ModelRanking(
+      providerId: providerId,
+      modelId: modelId,
+      dimensions: Dimensions.fromTaskRuns(taskRuns, evals),
+      taskRunCount: taskRuns.length,
+    );
+
+    final byTask = <String, List<TaskRun>>{};
+    for (final tr in taskRuns) {
+      byTask.putIfAbsent(tr.taskId, () => <TaskRun>[]).add(tr);
+    }
+    final perTask = <PerTaskScore>[];
+    byTask.forEach((taskId, rs) {
+      rs.sort((a, b) => b.completedAt.compareTo(a.completedAt));
+      final latest = rs.first;
+      perTask.add(PerTaskScore(
+        taskId: taskId,
+        category: categoryByTaskId?[taskId],
+        aggregateScore: latest.aggregateScore,
+        lastRunId: latest.runId,
+        lastTaskRunId: latest.id,
+      ));
+    });
+    perTask.sort((a, b) => b.aggregateScore.compareTo(a.aggregateScore));
+    return ModelDetail(ranking: ranking, perTask: perTask);
+  }
+
   Future<List<TaskRun>> _filteredTaskRuns(
     LeaderboardFilter filter,
     Set<String>? taskIdsForCategory,
