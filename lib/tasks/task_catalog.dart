@@ -6,6 +6,7 @@ import 'package:dart_arena/tasks/ui_from_spec/expandable_list_tile.dart';
 import 'package:dart_arena/tasks/ui_from_spec/profile_card.dart';
 import 'package:dart_arena/tasks/refactor/god_widget.dart';
 import 'package:dart_arena/tasks/refactor/callback_hell.dart';
+import 'package:dart_arena/tasks/widget_testing/todo_input.dart';
 
 TaskRegistry buildDefaultTaskRegistry() {
   final registry = TaskRegistry();
@@ -16,5 +17,6 @@ TaskRegistry buildDefaultTaskRegistry() {
   registry.register(ExpandableListTileTask());
   registry.register(GodWidgetTask());
   registry.register(CallbackHellTask());
+  registry.register(TodoInputTestTask());
   return registry;
 }

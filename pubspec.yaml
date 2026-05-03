@@ -85,3 +85,6 @@ flutter:
     - lib/tasks/refactor/fixtures/callback_hell/pubspec.yaml
     - lib/tasks/refactor/fixtures/callback_hell/lib/data_pipeline.dart
     - lib/tasks/refactor/fixtures/callback_hell/test/data_pipeline_test.dart
+    - lib/tasks/widget_testing/fixtures/todo_input/pubspec.yaml
+    - lib/tasks/widget_testing/fixtures/todo_input/lib/todo_input.dart
+    - lib/tasks/widget_testing/fixtures/todo_input/test/_reference/todo_input_reference_test.dart
