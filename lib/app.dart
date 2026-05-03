@@ -1,5 +1,8 @@
+import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
+import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:dart_arena/ui/pages/home_page.dart';
+import 'package:dart_arena/ui/pages/leaderboard_page.dart';
 import 'package:dart_arena/ui/pages/new_run_page.dart';
 import 'package:dart_arena/ui/pages/run_details_page.dart';
 import 'package:dart_arena/ui/pages/task_run_details_page.dart';
@@ -9,6 +12,8 @@ import 'package:dart_arena/ui/pages/settings_page.dart';
 import 'package:dart_arena/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+final TaskRegistry _registry = buildDefaultTaskRegistry();
 
 final _router = GoRouter(
   initialLocation: '/',
@@ -30,6 +35,13 @@ final _router = GoRouter(
       builder: (c, state) => TaskRunDetailsPage(
         runId: state.pathParameters['runId']!,
         taskRunId: state.pathParameters['taskRunId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/leaderboard',
+      builder: (context, state) => LeaderboardPage(
+        registry: _registry,
+        initialQuery: state.uri.queryParameters,
       ),
     ),
     GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
