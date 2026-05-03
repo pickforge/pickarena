@@ -14,6 +14,7 @@ Grow the benchmark suite from 1 task to 10 by adding 9 new `BenchmarkTask` imple
 - 9 new task classes, each with its own fixture asset tree.
 - A small, shared `FixtureLoader` helper used by all 10 tasks (the existing one is migrated).
 - A tiny lifecycle hook on `BenchmarkTask` (`ensureLoaded`) so `task_catalog.dart` does not need to know per-task asset loading details.
+- A `BenchmarkTask.isFlutter` flag (default `false`) so `WorkdirManager.prepare`, `CompileEvaluator`, and `TestEvaluator` can dispatch to `flutter` instead of `dart` for Flutter fixtures.
 - Per-task pubspec asset wiring in the host app's `pubspec.yaml`.
 - Registration of all 10 tasks in `buildDefaultTaskRegistry()`.
 
@@ -66,6 +67,18 @@ for (final task in registry.all) {
 ```
 
 This makes the catalog file free of per-task knowledge of how fixtures are loaded.
+
+#### `BenchmarkTask.isFlutter` dispatch flag
+
+`BenchmarkTask` gains `bool get isFlutter => false;`. Flutter-fixture tasks override it. The runner and the existing Dart-based evaluators read it and dispatch to the right binary:
+
+- `WorkdirManager.prepare`: `flutter pub get` if `task.isFlutter`, else `dart pub get` (with offline-first behavior preserved).
+- `CompileEvaluator`: `flutter analyze --fatal-infos` if `task.isFlutter`, else `dart analyze --fatal-infos`.
+- `TestEvaluator`: `flutter test --reporter=json` if `task.isFlutter`, else `dart test --reporter=json`.
+
+`WidgetTreeEvaluator` already uses `flutter` and is unchanged. The runner already passes `task` into `EvaluationContext`, and `WorkdirManager.prepare` is updated to accept the task (or its `isFlutter` flag) at call time.
+
+Tasks where `isFlutter == true`: `ui.profile_card`, `ui.expandable_list_tile`, `refactor.god_widget`, `test.todo_input`, `test.form_validation`. Pure-Dart tasks (`isFlutter == false`): `bug.off_by_one_pagination`, `state.counter_bloc`, `state.shopping_cart_bloc`, `refactor.callback_hell`, `bug.async_race_condition`. The bloc fixtures depend on the pure-Dart `bloc` package (not `flutter_bloc`) to keep them out of the Flutter toolchain. The flag is set per task at the class level.
 
 ### 3.2 Uniform task file layout
 
@@ -205,7 +218,7 @@ UI tasks rely on widget tests via standard `TestEvaluator` (since each fixture i
 
 Ordered by risk: shared infra first; lowest-risk task next; trickiest fixture last. Each step is independently verifiable.
 
-1. **Shared infra** — add `FixtureLoader` and `BenchmarkTask.ensureLoaded`; migrate `OffByOnePaginationTask`. **Checkpoint:** existing run produces identical scores.
+1. **Shared infra** — add `FixtureLoader`, `BenchmarkTask.ensureLoaded`, and `BenchmarkTask.isFlutter`; thread the flag through `WorkdirManager.prepare`, `CompileEvaluator`, and `TestEvaluator`; migrate `OffByOnePaginationTask`. **Checkpoint:** existing run produces identical scores.
 2. **`state.counter_bloc`** — pure Dart, regression-graded. **Checkpoint:** task in registry; manual run against one provider yields green compile + analyze + test + judge.
 3. **`state.shopping_cart_bloc`** — same shape, broader surface.
 4. **`ui.profile_card`** — first Flutter fixture. **Checkpoint:** materialize fixture and run `flutter test` locally before any model attempts it.
