@@ -1,5 +1,6 @@
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
+import 'package:dart_arena/ui/widgets/run_row.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -89,8 +90,9 @@ class _RunHistoryPageState extends State<RunHistoryPage> {
                 return ListView.separated(
                   itemCount: rows.length,
                   separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, i) => _RunTile(
-                    data: rows[i],
+                  itemBuilder: (context, i) => RunRow(
+                    run: rows[i].run,
+                    taskRuns: rows[i].taskRuns,
                     onTap: () => context.push('/runs/${rows[i].run.id}'),
                   ),
                 );
@@ -109,42 +111,4 @@ class _RunRowData {
   final List<TaskRun> taskRuns;
 }
 
-class _RunTile extends StatelessWidget {
-  const _RunTile({required this.data, required this.onTap});
 
-  final _RunRowData data;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final run = data.run;
-    final title = run.name ?? 'Run ${run.id}';
-    final taskCount = data.taskRuns.map((t) => t.taskId).toSet().length;
-    final modelCount = data.taskRuns
-        .map((t) => '${t.providerId}/${t.modelId}')
-        .toSet()
-        .length;
-    final avg = data.taskRuns.isEmpty
-        ? null
-        : data.taskRuns
-                .map((t) => t.aggregateScore)
-                .reduce((a, b) => a + b) /
-            data.taskRuns.length;
-    final ts = run.startedAt.toIso8601String();
-    return ListTile(
-      title: Text(title),
-      subtitle: Text(
-        '$ts \u00b7 $taskCount tasks \u00b7 $modelCount models'
-        '${avg == null ? '' : ' \u00b7 avg ${avg.toStringAsFixed(2)}'}',
-      ),
-      trailing: run.completedAt == null
-          ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.chevron_right),
-      onTap: onTap,
-    );
-  }
-}
