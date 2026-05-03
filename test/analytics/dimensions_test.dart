@@ -154,4 +154,77 @@ void main() {
       expect(d.intelligence, 0.0);
     });
   });
+
+  group('elegance + problems', () {
+    test('mean of llm_judge and diff_size when both present', () {
+      final tr = _tr(id: '1', aggregate: 1.0);
+      final d = Dimensions.fromTaskRuns([tr], {
+        '1': [
+          _ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 0.8),
+          _ev(taskRunId: '1', evaluatorId: 'diff_size', score: 0.2),
+        ],
+      });
+      expect(d.elegance, closeTo(0.5, 0.0001));
+    });
+
+    test('uses only judge when diff_size missing', () {
+      final tr = _tr(id: '1', aggregate: 1.0);
+      final d = Dimensions.fromTaskRuns([tr], {
+        '1': [
+          _ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 0.8),
+        ],
+      });
+      expect(d.elegance, 0.8);
+    });
+
+    test('zero when neither judge nor diff_size present', () {
+      final tr = _tr(id: '1', aggregate: 1.0);
+      final d = Dimensions.fromTaskRuns([tr], {
+        '1': [_ev(taskRunId: '1', evaluatorId: 'compile', score: 1.0)],
+      });
+      expect(d.elegance, 0.0);
+    });
+
+    test('problems counts failed evaluations across all task runs', () {
+      final tr1 = _tr(id: '1', aggregate: 1.0);
+      final tr2 = _tr(id: '2', aggregate: 0.0);
+      final d = Dimensions.fromTaskRuns([tr1, tr2], {
+        '1': [
+          _ev(taskRunId: '1', evaluatorId: 'compile', score: 1.0, passed: true),
+          _ev(taskRunId: '1', evaluatorId: 'analyze', score: 0.0, passed: false),
+        ],
+        '2': [
+          _ev(taskRunId: '2', evaluatorId: 'compile', score: 0.0, passed: false),
+          _ev(taskRunId: '2', evaluatorId: 'test', score: 0.0, passed: false),
+        ],
+      });
+      expect(d.problems, 3);
+    });
+  });
+
+  test('overall is mean of the four dimensions', () {
+    final d = Dimensions(
+      intelligence: 1.0,
+      speed: 0.6,
+      elegance: 0.4,
+      reliability: 0.0,
+      problems: 0,
+    );
+    expect(d.overall, 0.5);
+  });
+
+  test('byDimension dispatches correctly', () {
+    const d = Dimensions(
+      intelligence: 0.1,
+      speed: 0.2,
+      elegance: 0.3,
+      reliability: 0.4,
+      problems: 5,
+    );
+    expect(d.byDimension(ScoreDimension.intelligence), 0.1);
+    expect(d.byDimension(ScoreDimension.speed), 0.2);
+    expect(d.byDimension(ScoreDimension.elegance), 0.3);
+    expect(d.byDimension(ScoreDimension.reliability), 0.4);
+    expect(d.byDimension(ScoreDimension.overall), closeTo(0.25, 0.0001));
+  });
 }

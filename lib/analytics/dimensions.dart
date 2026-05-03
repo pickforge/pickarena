@@ -90,8 +90,16 @@ Dimensions _computeDimensions(
 
   var intelligenceNum = 0.0;
   var intelligenceDen = 0.0;
+  var eleganceSum = 0.0;
+  var eleganceCount = 0;
+  var problems = 0;
   for (final tr in taskRuns) {
     for (final e in evalsByTaskRunId[tr.id] ?? const <Evaluation>[]) {
+      if (!e.passed) problems++;
+      if (e.evaluatorId == 'llm_judge' || e.evaluatorId == 'diff_size') {
+        eleganceSum += e.score;
+        eleganceCount++;
+      }
       if (!_correctnessEvaluatorIds.contains(e.evaluatorId)) continue;
       final w = defaultEvaluatorWeights[e.evaluatorId] ?? 1.0;
       intelligenceNum += e.score * w;
@@ -100,12 +108,13 @@ Dimensions _computeDimensions(
   }
   final intelligence =
       intelligenceDen == 0 ? 0.0 : intelligenceNum / intelligenceDen;
+  final elegance = eleganceCount == 0 ? 0.0 : eleganceSum / eleganceCount;
 
   return Dimensions(
     intelligence: intelligence,
     speed: speed,
-    elegance: 0,
+    elegance: elegance,
     reliability: reliability,
-    problems: 0,
+    problems: problems,
   );
 }
