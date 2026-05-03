@@ -6,14 +6,26 @@ import 'package:dart_arena/evaluators/_test_reporter_parser.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 
 class TestEvaluator implements Evaluator {
+  TestEvaluator({this.testPath});
+
+  /// If provided, only this path is passed to `<tool> test`. When null, the
+  /// runner runs the default test set (the entire `test/` directory).
+  final String? testPath;
+
   @override
   String get id => 'test';
 
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
+    final exe = ctx.task.isFlutter ? 'flutter' : 'dart';
+    final args = <String>[
+      'test',
+      if (testPath != null) testPath!,
+      '--reporter=json',
+    ];
     final res = await Process.run(
-      'dart',
-      ['test', '--reporter=json'],
+      exe,
+      args,
       workingDirectory: ctx.workDir.path,
     );
     final summary = parseTestReporterJson(res.stdout.toString());
@@ -32,6 +44,8 @@ class TestEvaluator implements Evaluator {
         'errored': summary.errored,
         'failures': summary.failures,
         'exit_code': res.exitCode,
+        'tool': exe,
+        if (testPath != null) 'test_path': testPath,
       },
     );
   }

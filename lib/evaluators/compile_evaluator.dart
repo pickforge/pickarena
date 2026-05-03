@@ -10,8 +10,9 @@ class CompileEvaluator implements Evaluator {
 
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
+    final exe = ctx.task.isFlutter ? 'flutter' : 'dart';
     final analyze = await Process.run(
-      'dart',
+      exe,
       ['analyze', '--fatal-infos'],
       workingDirectory: ctx.workDir.path,
     );
@@ -26,6 +27,7 @@ class CompileEvaluator implements Evaluator {
         'exitCode': analyze.exitCode,
         'stdout': analyze.stdout.toString(),
         'stderr': analyze.stderr.toString(),
+        'tool': exe,
       },
     );
   }

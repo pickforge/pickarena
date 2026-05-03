@@ -37,6 +37,7 @@ class WidgetTreeEvaluator implements Evaluator {
         'errored': summary.errored,
         'failures': summary.failures,
         'exit_code': res.exitCode,
+        'tool': 'flutter',
       },
     );
   }
