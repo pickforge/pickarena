@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
@@ -10,13 +8,11 @@ import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
-import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 class NewRunPage extends StatefulWidget {
   const NewRunPage({super.key, this.registry, this.providers});
@@ -48,12 +44,15 @@ class _NewRunPageState extends State<NewRunPage> {
       _providers = widget.providers!;
       _loading = false;
     } else {
-      _loadProviders();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadProviders();
+      });
     }
   }
 
   Future<void> _loadProviders() async {
-    final p = await buildEnabledProviders(SettingsRepository());
+    final settings = context.read<SettingsRepository>();
+    final p = await buildEnabledProviders(settings);
     if (!mounted) return;
     setState(() {
       _providers = p;
@@ -143,18 +142,17 @@ class _NewRunPageState extends State<NewRunPage> {
         .where((t) => _selectedTaskIds.contains(t.id))
         .toList();
 
-    final docs = await getApplicationSupportDirectory();
-    final root = Directory(p.join(docs.path, 'workdirs'))
-      ..createSync(recursive: true);
-    final db = AppDatabase();
+    final settings = context.read<SettingsRepository>();
+    final workdir = context.read<WorkdirManager>();
+    final runDao = context.read<RunDao>();
+
     final bloc = RunBloc(
-      workdirManager: WorkdirManager(root: root),
-      runDao: RunDao(db),
+      workdirManager: workdir,
+      runDao: runDao,
       now: () => DateTime.now(),
       idGenerator: () => 'run-${DateTime.now().millisecondsSinceEpoch}',
     );
 
-    final settings = SettingsRepository();
     final judgeProviderId = await settings.getJudgeProviderId();
     final judgeModelId = await settings.getJudgeModelId();
     ModelProvider? judgeProvider;
