@@ -29,7 +29,7 @@
 - `lib/ui/widgets/diff_view.dart`
 - `lib/ui/widgets/run_matrix.dart`
 - `lib/ui/pages/run_history_page.dart`
-- `lib/ui/pages/run_details_page.dart` — currently a stub
+- `lib/ui/pages/run_details_page.dart`
 - `lib/ui/pages/task_run_details_page.dart`
 - Tests in `test/` mirroring each new file
 
@@ -924,7 +924,6 @@ git commit -m "feat(core): add computeUnifiedDiff line-mode pure helper"
 Create `test/export/csv_exporter_test.dart`:
 
 ```dart
-import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/export/csv_exporter.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
@@ -956,9 +955,33 @@ RunSummary _summary({String? name}) {
     taskRuns: [taskRun],
     evaluationsByTaskRunId: {
       'tr1': const [
-        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
-        EvaluationResult(evaluatorId: 'analyze', passed: true, score: 0.9),
-        EvaluationResult(evaluatorId: 'test', passed: true, score: 1.0),
+        Evaluation(
+          id: 'e1',
+          taskRunId: 'tr1',
+          evaluatorId: 'compile',
+          passed: true,
+          score: 1.0,
+          rationale: null,
+          detailsJson: '{}',
+        ),
+        Evaluation(
+          id: 'e2',
+          taskRunId: 'tr1',
+          evaluatorId: 'analyze',
+          passed: true,
+          score: 0.9,
+          rationale: null,
+          detailsJson: '{}',
+        ),
+        Evaluation(
+          id: 'e3',
+          taskRunId: 'tr1',
+          evaluatorId: 'test',
+          passed: true,
+          score: 1.0,
+          rationale: null,
+          detailsJson: '{}',
+        ),
       ],
     },
   );
@@ -1134,7 +1157,6 @@ git commit -m "feat(export): add runSummaryToCsv pure exporter"
 Create `test/export/md_exporter_test.dart`:
 
 ```dart
-import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/export/md_exporter.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
@@ -1166,9 +1188,33 @@ RunSummary _summary({String? name}) {
     taskRuns: [taskRun],
     evaluationsByTaskRunId: {
       'tr1': const [
-        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
-        EvaluationResult(evaluatorId: 'analyze', passed: true, score: 0.9),
-        EvaluationResult(evaluatorId: 'test', passed: true, score: 1.0),
+        Evaluation(
+          id: 'e1',
+          taskRunId: 'tr1',
+          evaluatorId: 'compile',
+          passed: true,
+          score: 1.0,
+          rationale: null,
+          detailsJson: '{}',
+        ),
+        Evaluation(
+          id: 'e2',
+          taskRunId: 'tr1',
+          evaluatorId: 'analyze',
+          passed: true,
+          score: 0.9,
+          rationale: null,
+          detailsJson: '{}',
+        ),
+        Evaluation(
+          id: 'e3',
+          taskRunId: 'tr1',
+          evaluatorId: 'test',
+          passed: true,
+          score: 1.0,
+          rationale: null,
+          detailsJson: '{}',
+        ),
       ],
     },
   );
@@ -3092,6 +3138,7 @@ import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/core/unified_diff.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
+import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:dart_arena/ui/widgets/diff_view.dart';
 import 'package:dart_arena/ui/widgets/evaluator_card.dart';
 import 'package:dart_arena/ui/widgets/score_chip.dart';
@@ -3131,7 +3178,7 @@ class _TaskRunDetailsPageState extends State<TaskRunDetailsPage> {
     } else {
       _dao = widget.dao!;
     }
-    _registry = widget.registry ?? TaskRegistry();
+    _registry = widget.registry ?? buildDefaultTaskRegistry();
     _future = _load();
   }
 
