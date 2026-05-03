@@ -9,5 +9,7 @@ abstract class BenchmarkTask {
   Map<String, String> get fixtures;
   String? get judgeRubric;
   String get generatedCodePath;
+  bool get isFlutter => false;
+  Future<void> ensureLoaded() async {}
   List<Evaluator> evaluatorsFor(EvaluatorConfig config);
 }
