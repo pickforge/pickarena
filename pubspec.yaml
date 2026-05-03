@@ -76,3 +76,6 @@ flutter:
     - lib/tasks/ui_from_spec/fixtures/profile_card/pubspec.yaml
     - lib/tasks/ui_from_spec/fixtures/profile_card/lib/profile_card.dart
     - lib/tasks/ui_from_spec/fixtures/profile_card/test/profile_card_test.dart
+    - lib/tasks/ui_from_spec/fixtures/expandable_list_tile/pubspec.yaml
+    - lib/tasks/ui_from_spec/fixtures/expandable_list_tile/lib/expandable_list_tile.dart
+    - lib/tasks/ui_from_spec/fixtures/expandable_list_tile/test/expandable_list_tile_test.dart
