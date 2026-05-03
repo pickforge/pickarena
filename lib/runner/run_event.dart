@@ -15,6 +15,7 @@ class StartRun extends RunEvent {
     required this.providers,
     required this.modelByProvider,
     required this.evaluatorConfig,
+    this.useReferencePlan = false,
     this.name,
   });
 
@@ -22,11 +23,18 @@ class StartRun extends RunEvent {
   final List<ModelProvider> providers;
   final Map<String, String> modelByProvider;
   final EvaluatorConfig evaluatorConfig;
+  final bool useReferencePlan;
   final String? name;
 
   @override
-  List<Object?> get props =>
-      [tasks, providers, modelByProvider, evaluatorConfig, name];
+  List<Object?> get props => [
+        tasks,
+        providers,
+        modelByProvider,
+        evaluatorConfig,
+        useReferencePlan,
+        name,
+      ];
 }
 
 class CancelRun extends RunEvent {

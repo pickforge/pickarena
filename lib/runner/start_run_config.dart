@@ -9,6 +9,7 @@ class StartRunConfig {
     required this.modelByProvider,
     required this.evaluatorConfig,
     required this.weights,
+    this.useReferencePlan = false,
     this.name,
   });
 
@@ -17,5 +18,6 @@ class StartRunConfig {
   final Map<String, String> modelByProvider;
   final EvaluatorConfig evaluatorConfig;
   final Map<String, double> weights;
+  final bool useReferencePlan;
   final String? name;
 }
