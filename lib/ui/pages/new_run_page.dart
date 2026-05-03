@@ -1,13 +1,13 @@
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
-import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/provider_factory.dart';
 import 'package:dart_arena/runner/start_run_config.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -158,6 +158,8 @@ class _NewRunPageState extends State<NewRunPage> {
       judgeModel: judgeProvider == null ? null : judgeModelId,
     );
 
+    final weights = await _safeWeights(settings);
+
     if (!mounted) return;
     final goRouter = GoRouter.of(context);
     goRouter.push(
@@ -167,10 +169,19 @@ class _NewRunPageState extends State<NewRunPage> {
         providers: selectedProviders,
         modelByProvider: modelMap,
         evaluatorConfig: evaluatorConfig,
-        weights: defaultEvaluatorWeights,
+        weights: weights,
         name: _label.trim().isEmpty ? null : _label.trim(),
       ),
     );
+  }
+
+  Future<Map<String, double>> _safeWeights(SettingsRepository repo) async {
+    try {
+      return await repo.getEvaluatorWeights();
+    } catch (e, st) {
+      debugPrint('Failed to load evaluator weights: $e\n$st');
+      return const {};
+    }
   }
 }
 
