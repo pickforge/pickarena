@@ -91,3 +91,6 @@ flutter:
     - lib/tasks/widget_testing/fixtures/form_validation/pubspec.yaml
     - lib/tasks/widget_testing/fixtures/form_validation/lib/signup_form.dart
     - lib/tasks/widget_testing/fixtures/form_validation/test/_reference/signup_form_reference_test.dart
+    - lib/tasks/bug_fix/fixtures/async_race_condition/pubspec.yaml
+    - lib/tasks/bug_fix/fixtures/async_race_condition/lib/search_controller.dart
+    - lib/tasks/bug_fix/fixtures/async_race_condition/test/search_controller_test.dart
