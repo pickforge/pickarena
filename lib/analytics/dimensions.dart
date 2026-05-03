@@ -72,5 +72,14 @@ Dimensions _computeDimensions(
   List<TaskRun> taskRuns,
   Map<String, List<Evaluation>> evalsByTaskRunId,
 ) {
-  return Dimensions.zero;
+  final reliabilityPasses =
+      taskRuns.where((t) => t.aggregateScore >= Dimensions.reliabilityThreshold).length;
+  final reliability = reliabilityPasses / taskRuns.length;
+  return Dimensions(
+    intelligence: 0,
+    speed: 0,
+    elegance: 0,
+    reliability: reliability,
+    problems: 0,
+  );
 }
