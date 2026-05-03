@@ -1,3 +1,4 @@
+import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
 
 const _evaluatorIds = <String>[
@@ -31,7 +32,7 @@ String runSummaryToMarkdown(RunSummary s) {
   );
   for (final tr in s.taskRuns) {
     final evals = <String, double>{};
-    for (final e in s.evaluationsByTaskRunId[tr.id] ?? const []) {
+    for (final e in s.evaluationsByTaskRunId[tr.id] ?? const <Evaluation>[]) {
       evals[e.evaluatorId] = e.score;
     }
     String fmt(String id) => (evals[id] ?? 0).toStringAsFixed(2);
