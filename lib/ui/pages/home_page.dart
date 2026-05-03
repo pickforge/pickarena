@@ -17,9 +17,19 @@ class HomePage extends StatelessWidget {
         ],
       ),
       body: Center(
-        child: FilledButton(
-          onPressed: () => context.push('/new-run'),
-          child: const Text('New Run'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FilledButton(
+              onPressed: () => context.push('/new-run'),
+              child: const Text('New Run'),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: () => context.push('/runs'),
+              child: const Text('View history'),
+            ),
+          ],
         ),
       ),
     );
