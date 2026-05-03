@@ -98,3 +98,7 @@ flutter:
     - lib/tasks/planning_and_execution/fixtures/add_evaluator_type/lib/evaluator.dart
     - lib/tasks/planning_and_execution/fixtures/add_evaluator_type/test/coverage_evaluator_test.dart
     - lib/tasks/planning_and_execution/plans/add_evaluator_type.v1.md
+    - lib/tasks/planning_and_execution/fixtures/add_filter_dimension/pubspec.yaml
+    - lib/tasks/planning_and_execution/fixtures/add_filter_dimension/lib/filter.dart
+    - lib/tasks/planning_and_execution/fixtures/add_filter_dimension/test/category_filter_test.dart
+    - lib/tasks/planning_and_execution/plans/add_filter_dimension.v1.md
