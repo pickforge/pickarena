@@ -1,20 +1,35 @@
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
+import 'package:dart_arena/core/fixture_loader.dart';
 import 'package:dart_arena/evaluators/analyze_evaluator.dart';
 import 'package:dart_arena/evaluators/compile_evaluator.dart';
 import 'package:dart_arena/evaluators/diff_size_evaluator.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/evaluators/llm_judge_evaluator.dart';
 import 'package:dart_arena/evaluators/test_evaluator.dart';
-import 'package:flutter/services.dart';
 
 class OffByOnePaginationTask extends BenchmarkTask {
+  static const _root = 'lib/tasks/bug_fix/fixtures/off_by_one_pagination';
+  static final _loader = FixtureLoader(
+    assetRoot: _root,
+    files: const [
+      'pubspec.yaml',
+      'lib/pagination.dart',
+      'test/pagination_test.dart',
+    ],
+  );
+
+  Map<String, String> _fixtures = const {};
+
   @override
   String get id => 'bug.off_by_one_pagination';
 
   @override
   Category get category => Category.bugFix;
+
+  @override
+  bool get isFlutter => false;
 
   @override
   String get prompt => '''
@@ -27,17 +42,11 @@ Do not include explanatory text outside the block. Do not change the public API.
 
   @override
   Map<String, String> get fixtures => _fixtures;
-  static final Map<String, String> _fixtures = {};
 
-  static Future<void> loadAssets() async {
+  @override
+  Future<void> ensureLoaded() async {
     if (_fixtures.isNotEmpty) return;
-    const base = 'lib/tasks/bug_fix/fixtures/off_by_one_pagination';
-    _fixtures['pubspec.yaml'] =
-        await rootBundle.loadString('$base/pubspec.yaml');
-    _fixtures['lib/pagination.dart'] =
-        await rootBundle.loadString('$base/lib/pagination.dart');
-    _fixtures['test/pagination_test.dart'] =
-        await rootBundle.loadString('$base/test/pagination_test.dart');
+    _fixtures = await _loader.load();
   }
 
   @override

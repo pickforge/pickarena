@@ -7,8 +7,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('OffByOnePaginationTask metadata', () async {
-    await OffByOnePaginationTask.loadAssets();
     final task = OffByOnePaginationTask();
+    await task.ensureLoaded();
     expect(task.id, 'bug.off_by_one_pagination');
     expect(task.category, Category.bugFix);
     expect(task.generatedCodePath, 'lib/pagination.dart');

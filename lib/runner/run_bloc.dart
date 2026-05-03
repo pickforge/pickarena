@@ -43,6 +43,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
 
     try {
       for (final task in event.tasks) {
+        await task.ensureLoaded();
         for (final provider in event.providers) {
           final modelId = event.modelByProvider[provider.id]!;
           emit(RunInProgress(
