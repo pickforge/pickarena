@@ -1,6 +1,8 @@
 import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/ui/widgets/evaluator_weights_section.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -11,7 +13,13 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final _repo = SettingsRepository();
+  late final SettingsRepository _repo;
+
+  @override
+  void initState() {
+    super.initState();
+    _repo = context.read<SettingsRepository>();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +29,8 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(16),
         children: [
           const _JudgeSection(),
+          const Divider(),
+          const EvaluatorWeightsSection(),
           const Divider(),
           _OllamaLocalSection(repo: _repo),
           const Divider(),
