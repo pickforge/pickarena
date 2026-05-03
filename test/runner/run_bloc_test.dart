@@ -76,6 +76,21 @@ class _BrokenPubspecTask extends _StubTask {
       };
 }
 
+class _AlwaysLow implements Evaluator {
+  @override
+  String get id => 'low';
+  @override
+  Future<EvaluationResult> evaluate(EvaluationContext ctx) async =>
+      const EvaluationResult(evaluatorId: 'low', passed: false, score: 0.2);
+}
+
+class _TwoEvaluatorTask extends _StubTask {
+  _TwoEvaluatorTask(this._evals);
+  final List<Evaluator> _evals;
+  @override
+  List<Evaluator> evaluatorsFor(EvaluatorConfig config) => _evals;
+}
+
 void main() {
   test('happy path emits RunCompleted with aggregate 1.0', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_ok_');
@@ -173,6 +188,43 @@ void main() {
     final row = await dao.runById('run-named');
     expect(row, isNotNull);
     expect(row!.name, 'experiment-7');
+
+    await sub.cancel();
+    await bloc.close();
+    await db.close();
+    tmp.deleteSync(recursive: true);
+  });
+
+  test('custom weights propagate to aggregate', () async {
+    final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_w_');
+    final db = AppDatabase(NativeDatabase.memory());
+
+    final passEval = _AlwaysPass();
+    final lowEval = _AlwaysLow();
+
+    final bloc = RunBloc(
+      workdirManager: WorkdirManager(root: tmp),
+      runDao: RunDao(db),
+      now: DateTime.now,
+      idGenerator: () => 'run-w',
+      weights: const {'pass': 4.0, 'low': 1.0},
+    );
+
+    final states = <RunState>[];
+    final sub = bloc.stream.listen(states.add);
+
+    bloc.add(StartRun(
+      tasks: [_TwoEvaluatorTask([passEval, lowEval])],
+      providers: [_FakeProvider()],
+      modelByProvider: const {'fake': 'fake-1'},
+      evaluatorConfig: const EvaluatorConfig(),
+    ));
+
+    await Future<void>.delayed(const Duration(seconds: 2));
+    expect(states.last, isA<RunCompleted>());
+    final completed = states.last as RunCompleted;
+    // (1.0 * 4 + 0.2 * 1) / (4 + 1) = 4.2 / 5 = 0.84
+    expect(completed.results.single.aggregateScore, closeTo(0.84, 1e-9));
 
     await sub.cancel();
     await bloc.close();
