@@ -49,16 +49,17 @@ class WorkdirManager {
     return dir;
   }
 
-  Future<PrepareResult> prepare(Directory workDir) async {
+  Future<PrepareResult> prepare(Directory workDir, {bool isFlutter = false}) async {
+    final exe = isFlutter ? 'flutter' : 'dart';
     final offline = await Process.run(
-      'dart',
+      exe,
       ['pub', 'get', '--offline'],
       workingDirectory: workDir.path,
     );
     if (offline.exitCode == 0) return const PrepareOk();
 
     final online = await Process.run(
-      'dart',
+      exe,
       ['pub', 'get'],
       workingDirectory: workDir.path,
     );

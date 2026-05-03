@@ -73,7 +73,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
           );
 
           final evaluators = task.evaluatorsFor(event.evaluatorConfig);
-          final prepResult = await workdirManager.prepare(dir);
+          final prepResult = await workdirManager.prepare(dir, isFlutter: task.isFlutter);
           final evaluations = <EvaluationResult>[];
 
           if (prepResult is PrepareFailed) {
