@@ -203,7 +203,7 @@ void main() {
   });
 
   test('overall is mean of the four dimensions', () {
-    final d = Dimensions(
+    const d = Dimensions(
       intelligence: 1.0,
       speed: 0.6,
       elegance: 0.4,

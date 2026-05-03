@@ -83,7 +83,7 @@ Dimensions _computeDimensions(
   final latencies = taskRuns.map((t) => t.latencyMs.toDouble()).toList()
     ..sort();
   final median = latencies[latencies.length ~/ 2];
-  final span = Dimensions.latencyHiMs - Dimensions.latencyLoMs;
+  const span = Dimensions.latencyHiMs - Dimensions.latencyLoMs;
   final speed = (1 - (median - Dimensions.latencyLoMs) / span)
       .clamp(0.0, 1.0)
       .toDouble();
