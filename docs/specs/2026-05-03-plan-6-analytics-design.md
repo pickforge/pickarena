@@ -210,7 +210,7 @@ lib/ui/widgets/ranked_models_list.dart (new — left-pane list)
 - Showcase strip uses `LeaderboardRepository.rank(filter: dim=overall, category=X, since=all)` once per category and picks the top row. Tap → `/leaderboard?category=X&dim=overall&sel=<provider>:<model>`.
 - Recent runs strip is the existing `_RunRowData` rendering extracted from `RunHistoryPage`'s `_RunTile` (refactored to a shared widget). Tap → `/runs/:runId`.
 - Empty state (zero runs across all categories): single illustrated card with "Run your first benchmark" CTA. Showcase strip is hidden, recent activity strip is hidden.
-- In-progress banner: shown if `_db.runs` has any row with `completedAt == null`. Tap → `/run` (existing `RunProgressPage`). When multiple runs are in flight (rare), the banner shows the most recent one and a count.
+- In-progress banner: shown if `_db.runs` has any row with `completedAt == null`. Tap → `/runs/<runId>` (the existing `RunDetailsPage` already renders an "in progress" sub-banner gracefully). The banner does **not** route to `/run` because that route requires a live `RunBloc` via `state.extra`, which isn't reachable cross-page. When multiple runs are in flight (rare), the banner shows the most recent one and a count.
 
 #### 3.4.2 Leaderboard layout (`/leaderboard`)
 
