@@ -33,7 +33,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     var completed = 0;
     final results = <TaskRunResult>[];
 
-    await runDao.startRun(runId: runId, startedAt: now());
+    await runDao.startRun(runId: runId, startedAt: now(), name: event.name);
     emit(RunInProgress(
       runId: runId,
       completed: 0,

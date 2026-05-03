@@ -15,12 +15,18 @@ class StartRun extends RunEvent {
     required this.providers,
     required this.modelByProvider,
     required this.evaluatorConfig,
+    this.name,
   });
 
   final List<BenchmarkTask> tasks;
   final List<ModelProvider> providers;
   final Map<String, String> modelByProvider;
   final EvaluatorConfig evaluatorConfig;
+  final String? name;
+
+  @override
+  List<Object?> get props =>
+      [tasks, providers, modelByProvider, evaluatorConfig, name];
 }
 
 class CancelRun extends RunEvent {

@@ -144,4 +144,39 @@ void main() {
     await db.close();
     tmp.deleteSync(recursive: true);
   }, timeout: const Timeout(Duration(minutes: 2)));
+
+  test('StartRun.name is persisted via runDao.startRun', () async {
+    final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_name_');
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    final bloc = RunBloc(
+      workdirManager: WorkdirManager(root: tmp),
+      runDao: dao,
+      now: DateTime.now,
+      idGenerator: () => 'run-named',
+    );
+
+    final states = <RunState>[];
+    final sub = bloc.stream.listen(states.add);
+
+    bloc.add(StartRun(
+      tasks: [_StubTask()],
+      providers: [_FakeProvider()],
+      modelByProvider: const {'fake': 'fake-1'},
+      evaluatorConfig: const EvaluatorConfig(),
+      name: 'experiment-7',
+    ));
+
+    await Future.delayed(const Duration(seconds: 1));
+    expect(states.last, isA<RunCompleted>());
+
+    final row = await dao.runById('run-named');
+    expect(row, isNotNull);
+    expect(row!.name, 'experiment-7');
+
+    await sub.cancel();
+    await bloc.close();
+    await db.close();
+    tmp.deleteSync(recursive: true);
+  });
 }
