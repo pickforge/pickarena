@@ -1,6 +1,6 @@
 import 'package:dart_arena/analytics/dimensions.dart';
 import 'package:dart_arena/storage/database.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart' hide Evaluation;
 
 TaskRun _tr({
   required String id,
@@ -19,6 +19,22 @@ TaskRun _tr({
       latencyMs: latencyMs,
       aggregateScore: aggregate,
       completedAt: DateTime(2026, 5, 3),
+    );
+
+Evaluation _ev({
+  required String taskRunId,
+  required String evaluatorId,
+  required double score,
+  bool? passed,
+}) =>
+    Evaluation(
+      id: '$taskRunId-$evaluatorId',
+      taskRunId: taskRunId,
+      evaluatorId: evaluatorId,
+      passed: passed ?? (score >= 0.5),
+      score: score,
+      rationale: null,
+      detailsJson: '{}',
     );
 
 void main() {
@@ -96,6 +112,46 @@ void main() {
         _tr(id: '3', aggregate: 1.0, latencyMs: 50000),
       ], const {});
       expect(d.speed, closeTo(0.948, 0.01));
+    });
+  });
+
+  group('intelligence', () {
+    test('mean of correctness evaluators across all task runs', () {
+      final tr1 = _tr(id: '1', aggregate: 1.0);
+      final tr2 = _tr(id: '2', aggregate: 0.5);
+      final d = Dimensions.fromTaskRuns([tr1, tr2], {
+        '1': [
+          _ev(taskRunId: '1', evaluatorId: 'compile', score: 1.0),
+          _ev(taskRunId: '1', evaluatorId: 'test', score: 0.5),
+        ],
+        '2': [
+          _ev(taskRunId: '2', evaluatorId: 'compile', score: 1.0),
+          _ev(taskRunId: '2', evaluatorId: 'test', score: 0.5),
+        ],
+      });
+      expect(d.intelligence, closeTo(2.0 / 3.0, 0.01));
+    });
+
+    test('ignores non-correctness evaluators (judge, diff_size)', () {
+      final tr = _tr(id: '1', aggregate: 1.0);
+      final d = Dimensions.fromTaskRuns([tr], {
+        '1': [
+          _ev(taskRunId: '1', evaluatorId: 'compile', score: 1.0),
+          _ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 0.0),
+          _ev(taskRunId: '1', evaluatorId: 'diff_size', score: 0.0),
+        ],
+      });
+      expect(d.intelligence, 1.0);
+    });
+
+    test('no correctness evaluators present yields 0.0', () {
+      final tr = _tr(id: '1', aggregate: 0.0);
+      final d = Dimensions.fromTaskRuns([tr], {
+        '1': [
+          _ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 1.0),
+        ],
+      });
+      expect(d.intelligence, 0.0);
     });
   });
 }

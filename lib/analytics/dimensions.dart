@@ -1,4 +1,5 @@
 import 'package:dart_arena/storage/database.dart';
+import 'package:dart_arena/core/scoring.dart';
 import 'package:equatable/equatable.dart';
 
 enum ScoreDimension {
@@ -68,6 +69,8 @@ class Dimensions extends Equatable {
       [intelligence, speed, elegance, reliability, problems];
 }
 
+const _correctnessEvaluatorIds = {'compile', 'analyze', 'test', 'test_author', 'widget_tree'};
+
 Dimensions _computeDimensions(
   List<TaskRun> taskRuns,
   Map<String, List<Evaluation>> evalsByTaskRunId,
@@ -81,11 +84,25 @@ Dimensions _computeDimensions(
     ..sort();
   final median = latencies[latencies.length ~/ 2];
   final span = Dimensions.latencyHiMs - Dimensions.latencyLoMs;
-  final raw = 1 - (median - Dimensions.latencyLoMs) / span;
-  final speed = raw.clamp(0.0, 1.0).toDouble();
+  final speed = (1 - (median - Dimensions.latencyLoMs) / span)
+      .clamp(0.0, 1.0)
+      .toDouble();
+
+  var intelligenceNum = 0.0;
+  var intelligenceDen = 0.0;
+  for (final tr in taskRuns) {
+    for (final e in evalsByTaskRunId[tr.id] ?? const <Evaluation>[]) {
+      if (!_correctnessEvaluatorIds.contains(e.evaluatorId)) continue;
+      final w = defaultEvaluatorWeights[e.evaluatorId] ?? 1.0;
+      intelligenceNum += e.score * w;
+      intelligenceDen += w;
+    }
+  }
+  final intelligence =
+      intelligenceDen == 0 ? 0.0 : intelligenceNum / intelligenceDen;
 
   return Dimensions(
-    intelligence: 0,
+    intelligence: intelligence,
     speed: speed,
     elegance: 0,
     reliability: reliability,
