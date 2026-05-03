@@ -12,6 +12,7 @@ class Runs extends Table {
   DateTimeColumn get startedAt => dateTime()();
   DateTimeColumn get completedAt => dateTime().nullable()();
   TextColumn get judgeModel => text().nullable()();
+  TextColumn get name => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -53,7 +54,16 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.addColumn(runs, runs.name);
+          }
+        },
+      );
 }
 
 LazyDatabase _openConnection() {

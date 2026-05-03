@@ -50,12 +50,22 @@ class $RunsTable extends Runs with TableInfo<$RunsTable, Run> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     startedAt,
     completedAt,
     judgeModel,
+    name,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -97,6 +107,12 @@ class $RunsTable extends Runs with TableInfo<$RunsTable, Run> {
         judgeModel.isAcceptableOrUnknown(data['judge_model']!, _judgeModelMeta),
       );
     }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    }
     return context;
   }
 
@@ -122,6 +138,10 @@ class $RunsTable extends Runs with TableInfo<$RunsTable, Run> {
         DriftSqlType.string,
         data['${effectivePrefix}judge_model'],
       ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      ),
     );
   }
 
@@ -136,11 +156,13 @@ class Run extends DataClass implements Insertable<Run> {
   final DateTime startedAt;
   final DateTime? completedAt;
   final String? judgeModel;
+  final String? name;
   const Run({
     required this.id,
     required this.startedAt,
     this.completedAt,
     this.judgeModel,
+    this.name,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -152,6 +174,9 @@ class Run extends DataClass implements Insertable<Run> {
     }
     if (!nullToAbsent || judgeModel != null) {
       map['judge_model'] = Variable<String>(judgeModel);
+    }
+    if (!nullToAbsent || name != null) {
+      map['name'] = Variable<String>(name);
     }
     return map;
   }
@@ -166,6 +191,7 @@ class Run extends DataClass implements Insertable<Run> {
       judgeModel: judgeModel == null && nullToAbsent
           ? const Value.absent()
           : Value(judgeModel),
+      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
     );
   }
 
@@ -179,6 +205,7 @@ class Run extends DataClass implements Insertable<Run> {
       startedAt: serializer.fromJson<DateTime>(json['startedAt']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
       judgeModel: serializer.fromJson<String?>(json['judgeModel']),
+      name: serializer.fromJson<String?>(json['name']),
     );
   }
   @override
@@ -189,6 +216,7 @@ class Run extends DataClass implements Insertable<Run> {
       'startedAt': serializer.toJson<DateTime>(startedAt),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
       'judgeModel': serializer.toJson<String?>(judgeModel),
+      'name': serializer.toJson<String?>(name),
     };
   }
 
@@ -197,11 +225,13 @@ class Run extends DataClass implements Insertable<Run> {
     DateTime? startedAt,
     Value<DateTime?> completedAt = const Value.absent(),
     Value<String?> judgeModel = const Value.absent(),
+    Value<String?> name = const Value.absent(),
   }) => Run(
     id: id ?? this.id,
     startedAt: startedAt ?? this.startedAt,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
     judgeModel: judgeModel.present ? judgeModel.value : this.judgeModel,
+    name: name.present ? name.value : this.name,
   );
   Run copyWithCompanion(RunsCompanion data) {
     return Run(
@@ -213,6 +243,7 @@ class Run extends DataClass implements Insertable<Run> {
       judgeModel: data.judgeModel.present
           ? data.judgeModel.value
           : this.judgeModel,
+      name: data.name.present ? data.name.value : this.name,
     );
   }
 
@@ -222,13 +253,14 @@ class Run extends DataClass implements Insertable<Run> {
           ..write('id: $id, ')
           ..write('startedAt: $startedAt, ')
           ..write('completedAt: $completedAt, ')
-          ..write('judgeModel: $judgeModel')
+          ..write('judgeModel: $judgeModel, ')
+          ..write('name: $name')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, startedAt, completedAt, judgeModel);
+  int get hashCode => Object.hash(id, startedAt, completedAt, judgeModel, name);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -236,7 +268,8 @@ class Run extends DataClass implements Insertable<Run> {
           other.id == this.id &&
           other.startedAt == this.startedAt &&
           other.completedAt == this.completedAt &&
-          other.judgeModel == this.judgeModel);
+          other.judgeModel == this.judgeModel &&
+          other.name == this.name);
 }
 
 class RunsCompanion extends UpdateCompanion<Run> {
@@ -244,12 +277,14 @@ class RunsCompanion extends UpdateCompanion<Run> {
   final Value<DateTime> startedAt;
   final Value<DateTime?> completedAt;
   final Value<String?> judgeModel;
+  final Value<String?> name;
   final Value<int> rowid;
   const RunsCompanion({
     this.id = const Value.absent(),
     this.startedAt = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.judgeModel = const Value.absent(),
+    this.name = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RunsCompanion.insert({
@@ -257,6 +292,7 @@ class RunsCompanion extends UpdateCompanion<Run> {
     required DateTime startedAt,
     this.completedAt = const Value.absent(),
     this.judgeModel = const Value.absent(),
+    this.name = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        startedAt = Value(startedAt);
@@ -265,6 +301,7 @@ class RunsCompanion extends UpdateCompanion<Run> {
     Expression<DateTime>? startedAt,
     Expression<DateTime>? completedAt,
     Expression<String>? judgeModel,
+    Expression<String>? name,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -272,6 +309,7 @@ class RunsCompanion extends UpdateCompanion<Run> {
       if (startedAt != null) 'started_at': startedAt,
       if (completedAt != null) 'completed_at': completedAt,
       if (judgeModel != null) 'judge_model': judgeModel,
+      if (name != null) 'name': name,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -281,6 +319,7 @@ class RunsCompanion extends UpdateCompanion<Run> {
     Value<DateTime>? startedAt,
     Value<DateTime?>? completedAt,
     Value<String?>? judgeModel,
+    Value<String?>? name,
     Value<int>? rowid,
   }) {
     return RunsCompanion(
@@ -288,6 +327,7 @@ class RunsCompanion extends UpdateCompanion<Run> {
       startedAt: startedAt ?? this.startedAt,
       completedAt: completedAt ?? this.completedAt,
       judgeModel: judgeModel ?? this.judgeModel,
+      name: name ?? this.name,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -307,6 +347,9 @@ class RunsCompanion extends UpdateCompanion<Run> {
     if (judgeModel.present) {
       map['judge_model'] = Variable<String>(judgeModel.value);
     }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -320,6 +363,7 @@ class RunsCompanion extends UpdateCompanion<Run> {
           ..write('startedAt: $startedAt, ')
           ..write('completedAt: $completedAt, ')
           ..write('judgeModel: $judgeModel, ')
+          ..write('name: $name, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1511,6 +1555,7 @@ typedef $$RunsTableCreateCompanionBuilder =
       required DateTime startedAt,
       Value<DateTime?> completedAt,
       Value<String?> judgeModel,
+      Value<String?> name,
       Value<int> rowid,
     });
 typedef $$RunsTableUpdateCompanionBuilder =
@@ -1519,6 +1564,7 @@ typedef $$RunsTableUpdateCompanionBuilder =
       Value<DateTime> startedAt,
       Value<DateTime?> completedAt,
       Value<String?> judgeModel,
+      Value<String?> name,
       Value<int> rowid,
     });
 
@@ -1571,6 +1617,11 @@ class $$RunsTableFilterComposer extends Composer<_$AppDatabase, $RunsTable> {
 
   ColumnFilters<String> get judgeModel => $composableBuilder(
     column: $table.judgeModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1627,6 +1678,11 @@ class $$RunsTableOrderingComposer extends Composer<_$AppDatabase, $RunsTable> {
     column: $table.judgeModel,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RunsTableAnnotationComposer
@@ -1653,6 +1709,9 @@ class $$RunsTableAnnotationComposer
     column: $table.judgeModel,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
   Expression<T> taskRunsRefs<T extends Object>(
     Expression<T> Function($$TaskRunsTableAnnotationComposer a) f,
@@ -1712,12 +1771,14 @@ class $$RunsTableTableManager
                 Value<DateTime> startedAt = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<String?> judgeModel = const Value.absent(),
+                Value<String?> name = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RunsCompanion(
                 id: id,
                 startedAt: startedAt,
                 completedAt: completedAt,
                 judgeModel: judgeModel,
+                name: name,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1726,12 +1787,14 @@ class $$RunsTableTableManager
                 required DateTime startedAt,
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<String?> judgeModel = const Value.absent(),
+                Value<String?> name = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RunsCompanion.insert(
                 id: id,
                 startedAt: startedAt,
                 completedAt: completedAt,
                 judgeModel: judgeModel,
+                name: name,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
