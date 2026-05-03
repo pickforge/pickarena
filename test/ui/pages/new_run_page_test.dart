@@ -73,7 +73,8 @@ class _FakeProvider implements ModelProvider {
 }
 
 Future<Widget> _wrap(Widget child) async {
-  final tmp = await Directory.systemTemp.createTemp('dart_arena_newrun_test_');
+  final tmp = Directory('/tmp/dart_arena_newrun_${DateTime.now().microsecondsSinceEpoch}')
+    ..createSync(recursive: true);
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(() async {
     await db.close();
@@ -170,7 +171,8 @@ void main() {
       ],
     );
 
-    final tmp = await Directory.systemTemp.createTemp('dart_arena_run_btn_');
+    final tmp = Directory('/tmp/dart_arena_runbtn_${DateTime.now().microsecondsSinceEpoch}')
+      ..createSync(recursive: true);
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(() async {
       await db.close();

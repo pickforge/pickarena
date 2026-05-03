@@ -9,9 +9,11 @@ import 'package:flutter_test/flutter_test.dart';
 Widget _wrap(SettingsRepository repo) {
   return MaterialApp(
     home: Scaffold(
-      body: RepositoryProvider<SettingsRepository>.value(
-        value: repo,
-        child: const EvaluatorWeightsSection(),
+      body: SingleChildScrollView(
+        child: RepositoryProvider<SettingsRepository>.value(
+          value: repo,
+          child: const EvaluatorWeightsSection(),
+        ),
       ),
     ),
   );
@@ -83,7 +85,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    final saveBtn = find.widgetWithText(FilledButton, 'Save');
+    await tester.ensureVisible(saveBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(saveBtn);
     await tester.pumpAndSettle();
 
     final stored = await repo.getEvaluatorWeights();
@@ -103,8 +108,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final btn =
-        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save'));
+    final saveBtn = find.widgetWithText(FilledButton, 'Save');
+    await tester.ensureVisible(saveBtn);
+    await tester.pumpAndSettle();
+    final btn = tester.widget<FilledButton>(saveBtn);
     expect(btn.onPressed, isNull);
   });
 }

@@ -7,7 +7,6 @@ import 'package:dart_arena/providers/provider_factory.dart';
 import 'package:dart_arena/runner/start_run_config.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';

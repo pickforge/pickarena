@@ -14,7 +14,8 @@ void main() {
   });
 
   testWidgets('App smoke test', (WidgetTester tester) async {
-    final tmp = await Directory.systemTemp.createTemp('dart_arena_smoke_');
+    final tmp = Directory('/tmp/dart_arena_smoke_${DateTime.now().microsecondsSinceEpoch}')
+      ..createSync(recursive: true);
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(() async {
       await db.close();
