@@ -1,6 +1,7 @@
 import 'package:dart_arena/analytics/dimensions.dart';
 import 'package:dart_arena/analytics/leaderboard_filter.dart';
 import 'package:dart_arena/analytics/leaderboard_repository.dart';
+import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/task_run_result.dart';
@@ -76,5 +77,76 @@ void main() {
     );
     expect(overall.first.modelId, 'gpt-5');
     expect(overall.last.modelId, 'claude-opus-4.7');
+  });
+
+  test('provider filter narrows the list', () async {
+    final s = await _seed();
+    final repo = LeaderboardRepository(s.db);
+    final rows = await repo.rank(
+      filter: const LeaderboardFilter(providerId: 'openai'),
+    );
+    expect(rows.length, 1);
+    expect(rows.single.providerId, 'openai');
+  });
+
+  test('date range filter excludes runs outside the window', () async {
+    final s = await _seed();
+    final repo = LeaderboardRepository(
+      s.db,
+      now: () => DateTime(2026, 4, 1),
+    );
+    final rows = await repo.rank(
+      filter: const LeaderboardFilter(dateRange: DateRange.last7d),
+    );
+    expect(rows, isEmpty);
+  });
+
+  test('category filter intersects with provided taskIdsForCategory', () async {
+    final s = await _seed();
+    final repo = LeaderboardRepository(s.db);
+    final rows = await repo.rank(
+      filter: const LeaderboardFilter(category: Category.bugFix),
+      taskIdsForCategory: {'bug.off_by_one_pagination'},
+    );
+    expect(rows.length, 2);
+
+    final rows2 = await repo.rank(
+      filter: const LeaderboardFilter(category: Category.uiFromSpec),
+      taskIdsForCategory: {'ui.profile_card'},
+    );
+    expect(rows2, isEmpty);
+  });
+
+  test('rank by speed sorts by latency, not aggregateScore', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 1));
+    Future<void> seedTr(String provider, int latencyMs) =>
+        dao.persistTaskRun(TaskRunResult(
+          runId: 'r1',
+          providerId: provider,
+          modelId: 'm',
+          taskId: 'bug.x',
+          response: ModelResponse(
+            rawText: '',
+            extractedCode: null,
+            promptTokens: null,
+            completionTokens: null,
+            latency: Duration(milliseconds: latencyMs),
+          ),
+          evaluations: const [
+            EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+          ],
+          aggregateScore: 1.0,
+          completedAt: DateTime(2026, 5, 1, 0, 5),
+        ));
+    await seedTr('fast', 2000);
+    await seedTr('slow', 50000);
+
+    final repo = LeaderboardRepository(db);
+    final rows = await repo.rank(
+      filter: const LeaderboardFilter(dimension: ScoreDimension.speed),
+    );
+    expect(rows.first.providerId, 'fast');
   });
 }
