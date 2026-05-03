@@ -370,6 +370,435 @@ class RunsCompanion extends UpdateCompanion<Run> {
   }
 }
 
+class $PlansTable extends Plans with TableInfo<$PlansTable, Plan> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlansTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
+  @override
+  late final GeneratedColumn<String> taskId = GeneratedColumn<String>(
+    'task_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _plannerModelIdMeta = const VerificationMeta(
+    'plannerModelId',
+  );
+  @override
+  late final GeneratedColumn<String> plannerModelId = GeneratedColumn<String>(
+    'planner_model_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _referenceVersionMeta = const VerificationMeta(
+    'referenceVersion',
+  );
+  @override
+  late final GeneratedColumn<int> referenceVersion = GeneratedColumn<int>(
+    'reference_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _artifactMeta = const VerificationMeta(
+    'artifact',
+  );
+  @override
+  late final GeneratedColumn<String> artifact = GeneratedColumn<String>(
+    'artifact',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    taskId,
+    plannerModelId,
+    referenceVersion,
+    artifact,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'plans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Plan> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('task_id')) {
+      context.handle(
+        _taskIdMeta,
+        taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_taskIdMeta);
+    }
+    if (data.containsKey('planner_model_id')) {
+      context.handle(
+        _plannerModelIdMeta,
+        plannerModelId.isAcceptableOrUnknown(
+          data['planner_model_id']!,
+          _plannerModelIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reference_version')) {
+      context.handle(
+        _referenceVersionMeta,
+        referenceVersion.isAcceptableOrUnknown(
+          data['reference_version']!,
+          _referenceVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('artifact')) {
+      context.handle(
+        _artifactMeta,
+        artifact.isAcceptableOrUnknown(data['artifact']!, _artifactMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_artifactMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Plan map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Plan(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      taskId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_id'],
+      )!,
+      plannerModelId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}planner_model_id'],
+      ),
+      referenceVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reference_version'],
+      ),
+      artifact: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}artifact'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PlansTable createAlias(String alias) {
+    return $PlansTable(attachedDatabase, alias);
+  }
+}
+
+class Plan extends DataClass implements Insertable<Plan> {
+  final String id;
+  final String taskId;
+  final String? plannerModelId;
+  final int? referenceVersion;
+  final String artifact;
+  final DateTime createdAt;
+  const Plan({
+    required this.id,
+    required this.taskId,
+    this.plannerModelId,
+    this.referenceVersion,
+    required this.artifact,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['task_id'] = Variable<String>(taskId);
+    if (!nullToAbsent || plannerModelId != null) {
+      map['planner_model_id'] = Variable<String>(plannerModelId);
+    }
+    if (!nullToAbsent || referenceVersion != null) {
+      map['reference_version'] = Variable<int>(referenceVersion);
+    }
+    map['artifact'] = Variable<String>(artifact);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PlansCompanion toCompanion(bool nullToAbsent) {
+    return PlansCompanion(
+      id: Value(id),
+      taskId: Value(taskId),
+      plannerModelId: plannerModelId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plannerModelId),
+      referenceVersion: referenceVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(referenceVersion),
+      artifact: Value(artifact),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Plan.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Plan(
+      id: serializer.fromJson<String>(json['id']),
+      taskId: serializer.fromJson<String>(json['taskId']),
+      plannerModelId: serializer.fromJson<String?>(json['plannerModelId']),
+      referenceVersion: serializer.fromJson<int?>(json['referenceVersion']),
+      artifact: serializer.fromJson<String>(json['artifact']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'taskId': serializer.toJson<String>(taskId),
+      'plannerModelId': serializer.toJson<String?>(plannerModelId),
+      'referenceVersion': serializer.toJson<int?>(referenceVersion),
+      'artifact': serializer.toJson<String>(artifact),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Plan copyWith({
+    String? id,
+    String? taskId,
+    Value<String?> plannerModelId = const Value.absent(),
+    Value<int?> referenceVersion = const Value.absent(),
+    String? artifact,
+    DateTime? createdAt,
+  }) => Plan(
+    id: id ?? this.id,
+    taskId: taskId ?? this.taskId,
+    plannerModelId: plannerModelId.present
+        ? plannerModelId.value
+        : this.plannerModelId,
+    referenceVersion: referenceVersion.present
+        ? referenceVersion.value
+        : this.referenceVersion,
+    artifact: artifact ?? this.artifact,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  Plan copyWithCompanion(PlansCompanion data) {
+    return Plan(
+      id: data.id.present ? data.id.value : this.id,
+      taskId: data.taskId.present ? data.taskId.value : this.taskId,
+      plannerModelId: data.plannerModelId.present
+          ? data.plannerModelId.value
+          : this.plannerModelId,
+      referenceVersion: data.referenceVersion.present
+          ? data.referenceVersion.value
+          : this.referenceVersion,
+      artifact: data.artifact.present ? data.artifact.value : this.artifact,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Plan(')
+          ..write('id: $id, ')
+          ..write('taskId: $taskId, ')
+          ..write('plannerModelId: $plannerModelId, ')
+          ..write('referenceVersion: $referenceVersion, ')
+          ..write('artifact: $artifact, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    taskId,
+    plannerModelId,
+    referenceVersion,
+    artifact,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Plan &&
+          other.id == this.id &&
+          other.taskId == this.taskId &&
+          other.plannerModelId == this.plannerModelId &&
+          other.referenceVersion == this.referenceVersion &&
+          other.artifact == this.artifact &&
+          other.createdAt == this.createdAt);
+}
+
+class PlansCompanion extends UpdateCompanion<Plan> {
+  final Value<String> id;
+  final Value<String> taskId;
+  final Value<String?> plannerModelId;
+  final Value<int?> referenceVersion;
+  final Value<String> artifact;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const PlansCompanion({
+    this.id = const Value.absent(),
+    this.taskId = const Value.absent(),
+    this.plannerModelId = const Value.absent(),
+    this.referenceVersion = const Value.absent(),
+    this.artifact = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PlansCompanion.insert({
+    required String id,
+    required String taskId,
+    this.plannerModelId = const Value.absent(),
+    this.referenceVersion = const Value.absent(),
+    required String artifact,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       taskId = Value(taskId),
+       artifact = Value(artifact),
+       createdAt = Value(createdAt);
+  static Insertable<Plan> custom({
+    Expression<String>? id,
+    Expression<String>? taskId,
+    Expression<String>? plannerModelId,
+    Expression<int>? referenceVersion,
+    Expression<String>? artifact,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (taskId != null) 'task_id': taskId,
+      if (plannerModelId != null) 'planner_model_id': plannerModelId,
+      if (referenceVersion != null) 'reference_version': referenceVersion,
+      if (artifact != null) 'artifact': artifact,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PlansCompanion copyWith({
+    Value<String>? id,
+    Value<String>? taskId,
+    Value<String?>? plannerModelId,
+    Value<int?>? referenceVersion,
+    Value<String>? artifact,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return PlansCompanion(
+      id: id ?? this.id,
+      taskId: taskId ?? this.taskId,
+      plannerModelId: plannerModelId ?? this.plannerModelId,
+      referenceVersion: referenceVersion ?? this.referenceVersion,
+      artifact: artifact ?? this.artifact,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (taskId.present) {
+      map['task_id'] = Variable<String>(taskId.value);
+    }
+    if (plannerModelId.present) {
+      map['planner_model_id'] = Variable<String>(plannerModelId.value);
+    }
+    if (referenceVersion.present) {
+      map['reference_version'] = Variable<int>(referenceVersion.value);
+    }
+    if (artifact.present) {
+      map['artifact'] = Variable<String>(artifact.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlansCompanion(')
+          ..write('id: $id, ')
+          ..write('taskId: $taskId, ')
+          ..write('plannerModelId: $plannerModelId, ')
+          ..write('referenceVersion: $referenceVersion, ')
+          ..write('artifact: $artifact, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -493,6 +922,18 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+    'plan_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES plans (id)',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -506,6 +947,7 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
     latencyMs,
     aggregateScore,
     completedAt,
+    planId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -615,6 +1057,12 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
     } else if (isInserting) {
       context.missing(_completedAtMeta);
     }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    }
     return context;
   }
 
@@ -668,6 +1116,10 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}completed_at'],
       )!,
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_id'],
+      ),
     );
   }
 
@@ -689,6 +1141,7 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
   final int latencyMs;
   final double aggregateScore;
   final DateTime completedAt;
+  final String? planId;
   const TaskRun({
     required this.id,
     required this.runId,
@@ -701,6 +1154,7 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     required this.latencyMs,
     required this.aggregateScore,
     required this.completedAt,
+    this.planId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -720,6 +1174,9 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     map['latency_ms'] = Variable<int>(latencyMs);
     map['aggregate_score'] = Variable<double>(aggregateScore);
     map['completed_at'] = Variable<DateTime>(completedAt);
+    if (!nullToAbsent || planId != null) {
+      map['plan_id'] = Variable<String>(planId);
+    }
     return map;
   }
 
@@ -740,6 +1197,9 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
       latencyMs: Value(latencyMs),
       aggregateScore: Value(aggregateScore),
       completedAt: Value(completedAt),
+      planId: planId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planId),
     );
   }
 
@@ -760,6 +1220,7 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
       latencyMs: serializer.fromJson<int>(json['latencyMs']),
       aggregateScore: serializer.fromJson<double>(json['aggregateScore']),
       completedAt: serializer.fromJson<DateTime>(json['completedAt']),
+      planId: serializer.fromJson<String?>(json['planId']),
     );
   }
   @override
@@ -777,6 +1238,7 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
       'latencyMs': serializer.toJson<int>(latencyMs),
       'aggregateScore': serializer.toJson<double>(aggregateScore),
       'completedAt': serializer.toJson<DateTime>(completedAt),
+      'planId': serializer.toJson<String?>(planId),
     };
   }
 
@@ -792,6 +1254,7 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     int? latencyMs,
     double? aggregateScore,
     DateTime? completedAt,
+    Value<String?> planId = const Value.absent(),
   }) => TaskRun(
     id: id ?? this.id,
     runId: runId ?? this.runId,
@@ -806,6 +1269,7 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     latencyMs: latencyMs ?? this.latencyMs,
     aggregateScore: aggregateScore ?? this.aggregateScore,
     completedAt: completedAt ?? this.completedAt,
+    planId: planId.present ? planId.value : this.planId,
   );
   TaskRun copyWithCompanion(TaskRunsCompanion data) {
     return TaskRun(
@@ -832,6 +1296,7 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
       completedAt: data.completedAt.present
           ? data.completedAt.value
           : this.completedAt,
+      planId: data.planId.present ? data.planId.value : this.planId,
     );
   }
 
@@ -848,7 +1313,8 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
           ..write('completionTokens: $completionTokens, ')
           ..write('latencyMs: $latencyMs, ')
           ..write('aggregateScore: $aggregateScore, ')
-          ..write('completedAt: $completedAt')
+          ..write('completedAt: $completedAt, ')
+          ..write('planId: $planId')
           ..write(')'))
         .toString();
   }
@@ -866,6 +1332,7 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     latencyMs,
     aggregateScore,
     completedAt,
+    planId,
   );
   @override
   bool operator ==(Object other) =>
@@ -881,7 +1348,8 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
           other.completionTokens == this.completionTokens &&
           other.latencyMs == this.latencyMs &&
           other.aggregateScore == this.aggregateScore &&
-          other.completedAt == this.completedAt);
+          other.completedAt == this.completedAt &&
+          other.planId == this.planId);
 }
 
 class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
@@ -896,6 +1364,7 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
   final Value<int> latencyMs;
   final Value<double> aggregateScore;
   final Value<DateTime> completedAt;
+  final Value<String?> planId;
   final Value<int> rowid;
   const TaskRunsCompanion({
     this.id = const Value.absent(),
@@ -909,6 +1378,7 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     this.latencyMs = const Value.absent(),
     this.aggregateScore = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.planId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TaskRunsCompanion.insert({
@@ -923,6 +1393,7 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     required int latencyMs,
     required double aggregateScore,
     required DateTime completedAt,
+    this.planId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        runId = Value(runId),
@@ -945,6 +1416,7 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     Expression<int>? latencyMs,
     Expression<double>? aggregateScore,
     Expression<DateTime>? completedAt,
+    Expression<String>? planId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -959,6 +1431,7 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
       if (latencyMs != null) 'latency_ms': latencyMs,
       if (aggregateScore != null) 'aggregate_score': aggregateScore,
       if (completedAt != null) 'completed_at': completedAt,
+      if (planId != null) 'plan_id': planId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -975,6 +1448,7 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     Value<int>? latencyMs,
     Value<double>? aggregateScore,
     Value<DateTime>? completedAt,
+    Value<String?>? planId,
     Value<int>? rowid,
   }) {
     return TaskRunsCompanion(
@@ -989,6 +1463,7 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
       latencyMs: latencyMs ?? this.latencyMs,
       aggregateScore: aggregateScore ?? this.aggregateScore,
       completedAt: completedAt ?? this.completedAt,
+      planId: planId ?? this.planId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1029,6 +1504,9 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
     }
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1049,6 +1527,7 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
           ..write('latencyMs: $latencyMs, ')
           ..write('aggregateScore: $aggregateScore, ')
           ..write('completedAt: $completedAt, ')
+          ..write('planId: $planId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1536,6 +2015,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $RunsTable runs = $RunsTable(this);
+  late final $PlansTable plans = $PlansTable(this);
   late final $TaskRunsTable taskRuns = $TaskRunsTable(this);
   late final $EvaluationsTable evaluations = $EvaluationsTable(this);
   @override
@@ -1544,6 +2024,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     runs,
+    plans,
     taskRuns,
     evaluations,
   ];
@@ -1844,6 +2325,320 @@ typedef $$RunsTableProcessedTableManager =
       Run,
       PrefetchHooks Function({bool taskRunsRefs})
     >;
+typedef $$PlansTableCreateCompanionBuilder =
+    PlansCompanion Function({
+      required String id,
+      required String taskId,
+      Value<String?> plannerModelId,
+      Value<int?> referenceVersion,
+      required String artifact,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$PlansTableUpdateCompanionBuilder =
+    PlansCompanion Function({
+      Value<String> id,
+      Value<String> taskId,
+      Value<String?> plannerModelId,
+      Value<int?> referenceVersion,
+      Value<String> artifact,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$PlansTableReferences
+    extends BaseReferences<_$AppDatabase, $PlansTable, Plan> {
+  $$PlansTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$TaskRunsTable, List<TaskRun>> _taskRunsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.taskRuns,
+    aliasName: $_aliasNameGenerator(db.plans.id, db.taskRuns.planId),
+  );
+
+  $$TaskRunsTableProcessedTableManager get taskRunsRefs {
+    final manager = $$TaskRunsTableTableManager(
+      $_db,
+      $_db.taskRuns,
+    ).filter((f) => f.planId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_taskRunsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$PlansTableFilterComposer extends Composer<_$AppDatabase, $PlansTable> {
+  $$PlansTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get plannerModelId => $composableBuilder(
+    column: $table.plannerModelId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get referenceVersion => $composableBuilder(
+    column: $table.referenceVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get artifact => $composableBuilder(
+    column: $table.artifact,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> taskRunsRefs(
+    Expression<bool> Function($$TaskRunsTableFilterComposer f) f,
+  ) {
+    final $$TaskRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.taskRuns,
+      getReferencedColumn: (t) => t.planId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TaskRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.taskRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PlansTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlansTable> {
+  $$PlansTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get plannerModelId => $composableBuilder(
+    column: $table.plannerModelId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get referenceVersion => $composableBuilder(
+    column: $table.referenceVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get artifact => $composableBuilder(
+    column: $table.artifact,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PlansTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlansTable> {
+  $$PlansTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get taskId =>
+      $composableBuilder(column: $table.taskId, builder: (column) => column);
+
+  GeneratedColumn<String> get plannerModelId => $composableBuilder(
+    column: $table.plannerModelId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get referenceVersion => $composableBuilder(
+    column: $table.referenceVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get artifact =>
+      $composableBuilder(column: $table.artifact, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> taskRunsRefs<T extends Object>(
+    Expression<T> Function($$TaskRunsTableAnnotationComposer a) f,
+  ) {
+    final $$TaskRunsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.taskRuns,
+      getReferencedColumn: (t) => t.planId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TaskRunsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.taskRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PlansTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PlansTable,
+          Plan,
+          $$PlansTableFilterComposer,
+          $$PlansTableOrderingComposer,
+          $$PlansTableAnnotationComposer,
+          $$PlansTableCreateCompanionBuilder,
+          $$PlansTableUpdateCompanionBuilder,
+          (Plan, $$PlansTableReferences),
+          Plan,
+          PrefetchHooks Function({bool taskRunsRefs})
+        > {
+  $$PlansTableTableManager(_$AppDatabase db, $PlansTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlansTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlansTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlansTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> taskId = const Value.absent(),
+                Value<String?> plannerModelId = const Value.absent(),
+                Value<int?> referenceVersion = const Value.absent(),
+                Value<String> artifact = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PlansCompanion(
+                id: id,
+                taskId: taskId,
+                plannerModelId: plannerModelId,
+                referenceVersion: referenceVersion,
+                artifact: artifact,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String taskId,
+                Value<String?> plannerModelId = const Value.absent(),
+                Value<int?> referenceVersion = const Value.absent(),
+                required String artifact,
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => PlansCompanion.insert(
+                id: id,
+                taskId: taskId,
+                plannerModelId: plannerModelId,
+                referenceVersion: referenceVersion,
+                artifact: artifact,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$PlansTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback: ({taskRunsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (taskRunsRefs) db.taskRuns],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (taskRunsRefs)
+                    await $_getPrefetchedData<Plan, $PlansTable, TaskRun>(
+                      currentTable: table,
+                      referencedTable: $$PlansTableReferences
+                          ._taskRunsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$PlansTableReferences(db, table, p0).taskRunsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.planId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PlansTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PlansTable,
+      Plan,
+      $$PlansTableFilterComposer,
+      $$PlansTableOrderingComposer,
+      $$PlansTableAnnotationComposer,
+      $$PlansTableCreateCompanionBuilder,
+      $$PlansTableUpdateCompanionBuilder,
+      (Plan, $$PlansTableReferences),
+      Plan,
+      PrefetchHooks Function({bool taskRunsRefs})
+    >;
 typedef $$TaskRunsTableCreateCompanionBuilder =
     TaskRunsCompanion Function({
       required String id,
@@ -1857,6 +2652,7 @@ typedef $$TaskRunsTableCreateCompanionBuilder =
       required int latencyMs,
       required double aggregateScore,
       required DateTime completedAt,
+      Value<String?> planId,
       Value<int> rowid,
     });
 typedef $$TaskRunsTableUpdateCompanionBuilder =
@@ -1872,6 +2668,7 @@ typedef $$TaskRunsTableUpdateCompanionBuilder =
       Value<int> latencyMs,
       Value<double> aggregateScore,
       Value<DateTime> completedAt,
+      Value<String?> planId,
       Value<int> rowid,
     });
 
@@ -1890,6 +2687,24 @@ final class $$TaskRunsTableReferences
       $_db.runs,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_runIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PlansTable _planIdTable(_$AppDatabase db) => db.plans.createAlias(
+    $_aliasNameGenerator(db.taskRuns.planId, db.plans.id),
+  );
+
+  $$PlansTableProcessedTableManager? get planId {
+    final $_column = $_itemColumn<String>('plan_id');
+    if ($_column == null) return null;
+    final manager = $$PlansTableTableManager(
+      $_db,
+      $_db.plans,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_planIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -1988,6 +2803,29 @@ class $$TaskRunsTableFilterComposer
           }) => $$RunsTableFilterComposer(
             $db: $db,
             $table: $db.runs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PlansTableFilterComposer get planId {
+    final $$PlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.plans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlansTableFilterComposer(
+            $db: $db,
+            $table: $db.plans,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2104,6 +2942,29 @@ class $$TaskRunsTableOrderingComposer
     );
     return composer;
   }
+
+  $$PlansTableOrderingComposer get planId {
+    final $$PlansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.plans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlansTableOrderingComposer(
+            $db: $db,
+            $table: $db.plans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TaskRunsTableAnnotationComposer
@@ -2180,6 +3041,29 @@ class $$TaskRunsTableAnnotationComposer
     return composer;
   }
 
+  $$PlansTableAnnotationComposer get planId {
+    final $$PlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.plans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.plans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<T> evaluationsRefs<T extends Object>(
     Expression<T> Function($$EvaluationsTableAnnotationComposer a) f,
   ) {
@@ -2219,7 +3103,11 @@ class $$TaskRunsTableTableManager
           $$TaskRunsTableUpdateCompanionBuilder,
           (TaskRun, $$TaskRunsTableReferences),
           TaskRun,
-          PrefetchHooks Function({bool runId, bool evaluationsRefs})
+          PrefetchHooks Function({
+            bool runId,
+            bool planId,
+            bool evaluationsRefs,
+          })
         > {
   $$TaskRunsTableTableManager(_$AppDatabase db, $TaskRunsTable table)
     : super(
@@ -2245,6 +3133,7 @@ class $$TaskRunsTableTableManager
                 Value<int> latencyMs = const Value.absent(),
                 Value<double> aggregateScore = const Value.absent(),
                 Value<DateTime> completedAt = const Value.absent(),
+                Value<String?> planId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TaskRunsCompanion(
                 id: id,
@@ -2258,6 +3147,7 @@ class $$TaskRunsTableTableManager
                 latencyMs: latencyMs,
                 aggregateScore: aggregateScore,
                 completedAt: completedAt,
+                planId: planId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2273,6 +3163,7 @@ class $$TaskRunsTableTableManager
                 required int latencyMs,
                 required double aggregateScore,
                 required DateTime completedAt,
+                Value<String?> planId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TaskRunsCompanion.insert(
                 id: id,
@@ -2286,6 +3177,7 @@ class $$TaskRunsTableTableManager
                 latencyMs: latencyMs,
                 aggregateScore: aggregateScore,
                 completedAt: completedAt,
+                planId: planId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -2296,66 +3188,85 @@ class $$TaskRunsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({runId = false, evaluationsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (evaluationsRefs) db.evaluations],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (runId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.runId,
-                                referencedTable: $$TaskRunsTableReferences
-                                    ._runIdTable(db),
-                                referencedColumn: $$TaskRunsTableReferences
-                                    ._runIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({runId = false, planId = false, evaluationsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (evaluationsRefs) db.evaluations,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (runId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.runId,
+                                    referencedTable: $$TaskRunsTableReferences
+                                        ._runIdTable(db),
+                                    referencedColumn: $$TaskRunsTableReferences
+                                        ._runIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (planId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.planId,
+                                    referencedTable: $$TaskRunsTableReferences
+                                        ._planIdTable(db),
+                                    referencedColumn: $$TaskRunsTableReferences
+                                        ._planIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (evaluationsRefs)
+                        await $_getPrefetchedData<
+                          TaskRun,
+                          $TaskRunsTable,
+                          Evaluation
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TaskRunsTableReferences
+                              ._evaluationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TaskRunsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).evaluationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.taskRunId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (evaluationsRefs)
-                    await $_getPrefetchedData<
-                      TaskRun,
-                      $TaskRunsTable,
-                      Evaluation
-                    >(
-                      currentTable: table,
-                      referencedTable: $$TaskRunsTableReferences
-                          ._evaluationsRefsTable(db),
-                      managerFromTypedResult: (p0) => $$TaskRunsTableReferences(
-                        db,
-                        table,
-                        p0,
-                      ).evaluationsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.taskRunId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -2372,7 +3283,7 @@ typedef $$TaskRunsTableProcessedTableManager =
       $$TaskRunsTableUpdateCompanionBuilder,
       (TaskRun, $$TaskRunsTableReferences),
       TaskRun,
-      PrefetchHooks Function({bool runId, bool evaluationsRefs})
+      PrefetchHooks Function({bool runId, bool planId, bool evaluationsRefs})
     >;
 typedef $$EvaluationsTableCreateCompanionBuilder =
     EvaluationsCompanion Function({
@@ -2740,6 +3651,8 @@ class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$RunsTableTableManager get runs => $$RunsTableTableManager(_db, _db.runs);
+  $$PlansTableTableManager get plans =>
+      $$PlansTableTableManager(_db, _db.plans);
   $$TaskRunsTableTableManager get taskRuns =>
       $$TaskRunsTableTableManager(_db, _db.taskRuns);
   $$EvaluationsTableTableManager get evaluations =>

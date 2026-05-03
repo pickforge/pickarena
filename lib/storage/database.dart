@@ -30,6 +30,19 @@ class TaskRuns extends Table {
   IntColumn get latencyMs => integer()();
   RealColumn get aggregateScore => real()();
   DateTimeColumn get completedAt => dateTime()();
+  TextColumn get planId => text().nullable().references(Plans, #id)();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+class Plans extends Table {
+  TextColumn get id => text()();
+  TextColumn get taskId => text()();
+  TextColumn get plannerModelId => text().nullable()();
+  IntColumn get referenceVersion => integer().nullable()();
+  TextColumn get artifact => text()();
+  DateTimeColumn get createdAt => dateTime()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -48,19 +61,23 @@ class Evaluations extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Runs, TaskRuns, Evaluations])
+@DriftDatabase(tables: [Runs, TaskRuns, Evaluations, Plans])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.addColumn(runs, runs.name);
+          }
+          if (from < 3) {
+            await m.createTable(plans);
+            await m.addColumn(taskRuns, taskRuns.planId);
           }
         },
       );
