@@ -2,6 +2,7 @@ import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/ui/pages/home_page.dart';
 import 'package:dart_arena/ui/pages/new_run_page.dart';
 import 'package:dart_arena/ui/pages/run_details_page.dart';
+import 'package:dart_arena/ui/pages/task_run_details_page.dart';
 import 'package:dart_arena/ui/pages/run_history_page.dart';
 import 'package:dart_arena/ui/pages/run_progress_page.dart';
 import 'package:dart_arena/ui/pages/settings_page.dart';
@@ -23,6 +24,13 @@ final _router = GoRouter(
       path: '/runs/:runId',
       builder: (c, state) =>
           RunDetailsPage(runId: state.pathParameters['runId']!),
+    ),
+    GoRoute(
+      path: '/runs/:runId/task-runs/:taskRunId',
+      builder: (c, state) => TaskRunDetailsPage(
+        runId: state.pathParameters['runId']!,
+        taskRunId: state.pathParameters['taskRunId']!,
+      ),
     ),
     GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
   ],
