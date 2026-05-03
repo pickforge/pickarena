@@ -1,6 +1,7 @@
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
+import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
@@ -14,6 +15,7 @@ import 'package:dart_arena/ui/pages/run_progress_page.dart';
 import 'package:dart_arena/ui/pages/settings_page.dart';
 import 'package:dart_arena/ui/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 final TaskRegistry _registry = buildDefaultTaskRegistry();
@@ -69,10 +71,20 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'dart_arena',
-      theme: buildAppTheme(),
-      routerConfig: _router,
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<AppDatabase>.value(value: database),
+        RepositoryProvider<WorkdirManager>.value(value: workdir),
+        RepositoryProvider<SettingsRepository>.value(value: settings),
+        RepositoryProvider<RunDao>(
+          create: (ctx) => RunDao(ctx.read<AppDatabase>()),
+        ),
+      ],
+      child: MaterialApp.router(
+        title: 'dart_arena',
+        theme: buildAppTheme(),
+        routerConfig: _router,
+      ),
     );
   }
 }
