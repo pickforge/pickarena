@@ -8,9 +8,17 @@ class RunDao {
   RunDao(this._db);
   final AppDatabase _db;
 
-  Future<void> startRun({required String runId, required DateTime startedAt}) {
+  Future<void> startRun({
+    required String runId,
+    required DateTime startedAt,
+    String? name,
+  }) {
     return _db.into(_db.runs).insert(
-          RunsCompanion.insert(id: runId, startedAt: startedAt),
+          RunsCompanion.insert(
+            id: runId,
+            startedAt: startedAt,
+            name: Value(name),
+          ),
         );
   }
 
@@ -65,10 +73,23 @@ class RunDao {
         .get();
   }
 
-  Future<List<Run>> recentRuns({int limit = 20}) {
-    return (_db.select(_db.runs)
-          ..orderBy([(r) => OrderingTerm.desc(r.startedAt)])
-          ..limit(limit))
-        .get();
+  Future<List<Run>> recentRuns({int limit = 100, String? labelQuery}) {
+    final q = _db.select(_db.runs)
+      ..orderBy([(r) => OrderingTerm.desc(r.startedAt)])
+      ..limit(limit);
+    if (labelQuery != null && labelQuery.isNotEmpty) {
+      q.where((r) => r.name.like('%$labelQuery%'));
+    }
+    return q.get();
+  }
+
+  Future<Run?> runById(String id) {
+    return (_db.select(_db.runs)..where((r) => r.id.equals(id)))
+        .getSingleOrNull();
+  }
+
+  Future<TaskRun?> taskRunById(String id) {
+    return (_db.select(_db.taskRuns)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
   }
 }

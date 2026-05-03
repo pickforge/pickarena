@@ -51,4 +51,92 @@ void main() {
 
     await db.close();
   });
+
+  test('startRun persists optional name', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(
+      runId: 'r1',
+      startedAt: DateTime(2026, 5, 2),
+      name: 'experiment-1',
+    );
+    final row = await dao.runById('r1');
+    expect(row, isNotNull);
+    expect(row!.name, 'experiment-1');
+    await db.close();
+  });
+
+  test('runById returns null for unknown id', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    expect(await dao.runById('nope'), isNull);
+    await db.close();
+  });
+
+  test('taskRunById returns the matching task run', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 2));
+    await dao.persistTaskRun(
+      TaskRunResult(
+        runId: 'r1',
+        providerId: 'fake',
+        modelId: 'm',
+        taskId: 't',
+        response: const ModelResponse(
+          rawText: 'x',
+          extractedCode: null,
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration.zero,
+        ),
+        evaluations: const [],
+        aggregateScore: 0.5,
+        completedAt: DateTime(2026, 5, 2, 12),
+      ),
+    );
+    final all = await dao.taskRunsForRun('r1');
+    expect(all, hasLength(1));
+    final fetched = await dao.taskRunById(all.first.id);
+    expect(fetched, isNotNull);
+    expect(fetched!.taskId, 't');
+    await db.close();
+  });
+
+  test('recentRuns(labelQuery) filters by LIKE on name', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(
+      runId: 'a',
+      startedAt: DateTime(2026, 5, 1),
+      name: 'deepseek vs claude',
+    );
+    await dao.startRun(
+      runId: 'b',
+      startedAt: DateTime(2026, 5, 2),
+      name: 'gpt sweep',
+    );
+    await dao.startRun(runId: 'c', startedAt: DateTime(2026, 5, 3));
+
+    final all = await dao.recentRuns();
+    expect(all, hasLength(3));
+
+    final filtered = await dao.recentRuns(labelQuery: 'deepseek');
+    expect(filtered, hasLength(1));
+    expect(filtered.first.id, 'a');
+
+    final empty = await dao.recentRuns(labelQuery: 'nomatch');
+    expect(empty, isEmpty);
+
+    await db.close();
+  });
+
+  test('recentRuns ignores empty labelQuery', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(runId: 'a', startedAt: DateTime(2026, 5, 1));
+    final all = await dao.recentRuns(labelQuery: '');
+    expect(all, hasLength(1));
+    await db.close();
+  });
 }
