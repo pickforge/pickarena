@@ -1,0 +1,15 @@
+name: shopping_cart_bloc_fixture
+description: Fixture project for state.shopping_cart_bloc task.
+publish_to: none
+version: 0.0.1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  bloc: ^8.1.4
+  equatable: ^2.0.5
+
+dev_dependencies:
+  test: ^1.25.0
+  bloc_test: ^9.1.7

@@ -70,3 +70,6 @@ flutter:
     - lib/tasks/state_management/fixtures/counter_bloc/pubspec.yaml
     - lib/tasks/state_management/fixtures/counter_bloc/lib/counter_bloc.dart
     - lib/tasks/state_management/fixtures/counter_bloc/test/counter_bloc_test.dart
+    - lib/tasks/state_management/fixtures/shopping_cart_bloc/pubspec.yaml
+    - lib/tasks/state_management/fixtures/shopping_cart_bloc/lib/cart_bloc.dart
+    - lib/tasks/state_management/fixtures/shopping_cart_bloc/test/cart_bloc_test.dart
