@@ -7,7 +7,7 @@ class OpenCodeGoProvider extends OpenAiCompatibleProvider {
         dio,
         id: 'opencode_go',
         displayName: 'OpenCode Go',
-        baseUrl: 'https://opencode.ai/go/v1',
+        baseUrl: 'https://opencode.ai/zen/go/v1',
         apiKey: apiKey,
       );
 

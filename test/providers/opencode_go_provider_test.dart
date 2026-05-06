@@ -6,7 +6,7 @@ void main() {
     final p = OpenCodeGoProvider(apiKey: 'k');
     expect(p.id, 'opencode_go');
     expect(p.displayName, 'OpenCode Go');
-    expect(p.baseUrl, 'https://opencode.ai/go/v1');
+    expect(p.baseUrl, 'https://opencode.ai/zen/go/v1');
   });
 
   test('listModels returns only chat-compatible models', () async {
