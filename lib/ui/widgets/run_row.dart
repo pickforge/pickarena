@@ -7,11 +7,13 @@ class RunRow extends StatelessWidget {
     required this.run,
     required this.taskRuns,
     required this.onTap,
+    this.trailing,
   });
 
   final Run run;
   final List<TaskRun> taskRuns;
   final VoidCallback onTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,7 @@ class RunRow extends StatelessWidget {
     final avg = taskRuns.isEmpty
         ? null
         : taskRuns.map((t) => t.aggregateScore).reduce((a, b) => a + b) /
-            taskRuns.length;
+              taskRuns.length;
     final ts = run.startedAt.toIso8601String();
     return ListTile(
       title: Text(title),
@@ -32,13 +34,19 @@ class RunRow extends StatelessWidget {
         '$ts \u00b7 $taskCount tasks \u00b7 $modelCount models'
         '${avg == null ? '' : ' \u00b7 avg ${avg.toStringAsFixed(2)}'}',
       ),
-      trailing: run.completedAt == null
-          ? const SizedBox(
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (run.completedAt == null)
+            const SizedBox(
               width: 18,
               height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.chevron_right),
+            ),
+          if (trailing != null) trailing!,
+          const Icon(Icons.chevron_right),
+        ],
+      ),
       onTap: onTap,
     );
   }

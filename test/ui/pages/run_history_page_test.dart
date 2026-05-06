@@ -16,48 +16,41 @@ Future<RunDao> _seed({String? labelA, String? labelB}) async {
     startedAt: DateTime(2026, 5, 2, 10),
     name: labelA,
   );
-  await dao.persistTaskRun(TaskRunResult(
-    runId: 'a',
-    providerId: 'openai',
-    modelId: 'gpt-5',
-    taskId: 'bug.a',
-    response: const ModelResponse(
-      rawText: '',
-      extractedCode: null,
-      promptTokens: null,
-      completionTokens: null,
-      latency: Duration.zero,
+  await dao.persistTaskRun(
+    TaskRunResult(
+      runId: 'a',
+      providerId: 'openai',
+      modelId: 'gpt-5',
+      taskId: 'bug.a',
+      response: const ModelResponse(
+        rawText: '',
+        extractedCode: null,
+        promptTokens: null,
+        completionTokens: null,
+        latency: Duration.zero,
+      ),
+      evaluations: const [
+        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+      ],
+      aggregateScore: 1.0,
+      completedAt: DateTime(2026, 5, 2, 10, 5),
     ),
-    evaluations: const [
-      EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
-    ],
-    aggregateScore: 1.0,
-    completedAt: DateTime(2026, 5, 2, 10, 5),
-  ));
-  await dao.startRun(
-    runId: 'b',
-    startedAt: DateTime(2026, 5, 1),
-    name: labelB,
   );
+  await dao.startRun(runId: 'b', startedAt: DateTime(2026, 5, 1), name: labelB);
   return dao;
 }
 
 void main() {
   testWidgets('shows empty state when no runs', (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
-    await tester.pumpWidget(MaterialApp(
-      home: RunHistoryPage(dao: RunDao(db)),
-    ));
+    await tester.pumpWidget(MaterialApp(home: RunHistoryPage(dao: RunDao(db))));
     await tester.pumpAndSettle();
     expect(find.textContaining('No runs yet'), findsOneWidget);
   });
 
-  testWidgets('lists runs with labels and timestamp fallback',
-      (tester) async {
+  testWidgets('lists runs with labels and timestamp fallback', (tester) async {
     final dao = await _seed(labelA: 'experiment-1');
-    await tester.pumpWidget(MaterialApp(
-      home: RunHistoryPage(dao: dao),
-    ));
+    await tester.pumpWidget(MaterialApp(home: RunHistoryPage(dao: dao)));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('experiment-1'), findsOneWidget);
@@ -66,9 +59,7 @@ void main() {
 
   testWidgets('label search filters the list', (tester) async {
     final dao = await _seed(labelA: 'deepseek vs claude', labelB: 'gpt sweep');
-    await tester.pumpWidget(MaterialApp(
-      home: RunHistoryPage(dao: dao),
-    ));
+    await tester.pumpWidget(MaterialApp(home: RunHistoryPage(dao: dao)));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('deepseek vs claude'), findsOneWidget);
@@ -80,5 +71,27 @@ void main() {
 
     expect(find.text('deepseek vs claude'), findsOneWidget);
     expect(find.text('gpt sweep'), findsNothing);
+  });
+
+  testWidgets('delete button confirms and removes a run', (tester) async {
+    final dao = await _seed(labelA: 'delete-me', labelB: 'keep-me');
+    await tester.pumpWidget(MaterialApp(home: RunHistoryPage(dao: dao)));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('delete-me'), findsOneWidget);
+    expect(find.text('keep-me'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Delete run delete-me'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Delete run?'), findsOneWidget);
+
+    await tester.tap(find.text('Delete'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('delete-me'), findsNothing);
+    expect(find.text('keep-me'), findsOneWidget);
+    expect(await dao.runById('a'), isNull);
   });
 }

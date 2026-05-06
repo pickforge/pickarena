@@ -29,14 +29,13 @@ class _ScriptedJudge implements ModelProvider {
     required String prompt,
     required String model,
     Duration? timeout,
-  }) async =>
-      ModelResponse(
-        rawText: _reply,
-        extractedCode: null,
-        promptTokens: null,
-        completionTokens: null,
-        latency: const Duration(milliseconds: 1),
-      );
+  }) async => ModelResponse(
+    rawText: _reply,
+    extractedCode: null,
+    promptTokens: null,
+    completionTokens: null,
+    latency: const Duration(milliseconds: 1),
+  );
 }
 
 class _Task extends BenchmarkTask {
@@ -60,16 +59,16 @@ class _Task extends BenchmarkTask {
 }
 
 EvaluationContext _ctx(BenchmarkTask task) => EvaluationContext(
-      workDir: Directory.systemTemp,
-      response: const ModelResponse(
-        rawText: 'submission text',
-        extractedCode: 'int x = 0;',
-        promptTokens: null,
-        completionTokens: null,
-        latency: Duration.zero,
-      ),
-      task: task,
-    );
+  workDir: Directory.systemTemp,
+  response: const ModelResponse(
+    rawText: 'submission text',
+    extractedCode: 'int x = 0;',
+    promptTokens: null,
+    completionTokens: null,
+    latency: Duration.zero,
+  ),
+  task: task,
+);
 
 void main() {
   test('skips with score 1.0 when task has no rubric', () async {
@@ -84,7 +83,7 @@ void main() {
   });
 
   test('parses fenced JSON happy path', () async {
-    final reply = '''
+    const reply = '''
 ```json
 {"score": 0.85, "rationale": "good fix"}
 ```

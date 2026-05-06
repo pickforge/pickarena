@@ -27,8 +27,8 @@ RunSummary _summary({String? name}) {
   return RunSummary(
     run: run,
     taskRuns: [taskRun],
-    evaluationsByTaskRunId: {
-      'tr1': const [
+    evaluationsByTaskRunId: const {
+      'tr1': [
         Evaluation(
           id: 'e1',
           taskRunId: 'tr1',
@@ -73,8 +73,9 @@ void main() {
   test('omits label line when name is null', () {
     final md = runSummaryToMarkdown(_summary());
     // No line should be exclusively a bold label (starts and ends with **)
-    final hasBoldLabelLine =
-        md.split('\n').any((l) => l.startsWith('**') && l.endsWith('**'));
+    final hasBoldLabelLine = md
+        .split('\n')
+        .any((l) => l.startsWith('**') && l.endsWith('**'));
     expect(hasBoldLabelLine, isFalse);
   });
 

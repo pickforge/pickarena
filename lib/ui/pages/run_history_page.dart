@@ -72,8 +72,9 @@ class _RunHistoryPageState extends State<RunHistoryPage> {
                 final rows = snap.data ?? const [];
                 if (rows.isEmpty) {
                   return const Center(
-                    child:
-                        Text('No runs yet \u2014 start one from the home page.'),
+                    child: Text(
+                      'No runs yet \u2014 start one from the home page.',
+                    ),
                   );
                 }
                 return ListView.separated(
@@ -83,6 +84,12 @@ class _RunHistoryPageState extends State<RunHistoryPage> {
                     run: rows[i].run,
                     taskRuns: rows[i].taskRuns,
                     onTap: () => context.push('/runs/${rows[i].run.id}'),
+                    trailing: IconButton(
+                      tooltip:
+                          'Delete run ${rows[i].run.name ?? rows[i].run.id}',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => _confirmDelete(rows[i].run),
+                    ),
                   ),
                 );
               },
@@ -92,6 +99,37 @@ class _RunHistoryPageState extends State<RunHistoryPage> {
       ),
     );
   }
+
+  Future<void> _confirmDelete(Run run) async {
+    final label = run.name ?? 'Run ${run.id}';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete run?'),
+        content: Text(
+          'Delete "$label"? This removes its results and evaluations.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await _dao.deleteRun(run.id);
+    if (!mounted) return;
+    _refresh();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Deleted $label')));
+  }
 }
 
 class _RunRowData {
@@ -99,5 +137,3 @@ class _RunRowData {
   final Run run;
   final List<TaskRun> taskRuns;
 }
-
-

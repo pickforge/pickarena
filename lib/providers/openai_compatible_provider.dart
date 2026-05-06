@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dio/dio.dart';
 
-class OpenAiCompatibleProvider implements ModelProvider {
+class OpenAiCompatibleProvider implements StreamingModelProvider {
   OpenAiCompatibleProvider(
     Dio? dio, {
     required this.id,
@@ -25,10 +28,10 @@ class OpenAiCompatibleProvider implements ModelProvider {
   ProviderMode get mode => ProviderMode.rawApi;
 
   Map<String, String> _headers() => <String, String>{
-        'Authorization': 'Bearer $apiKey',
-        'Content-Type': 'application/json',
-        ...extraHeaders,
-      };
+    if (apiKey.isNotEmpty) 'Authorization': 'Bearer $apiKey',
+    'Content-Type': 'application/json',
+    ...extraHeaders,
+  };
 
   @override
   Future<List<String>> listModels() async {
@@ -71,10 +74,11 @@ class OpenAiCompatibleProvider implements ModelProvider {
     final message = choices.isEmpty
         ? const <String, dynamic>{}
         : (choices.first as Map<String, dynamic>)['message']
-            as Map<String, dynamic>? ?? const <String, dynamic>{};
+                  as Map<String, dynamic>? ??
+              const <String, dynamic>{};
     final content = message['content'] as String? ?? '';
-    final usage = data['usage'] as Map<String, dynamic>? ??
-        const <String, dynamic>{};
+    final usage =
+        data['usage'] as Map<String, dynamic>? ?? const <String, dynamic>{};
     return ModelResponse(
       rawText: content,
       extractedCode: null,
@@ -82,5 +86,84 @@ class OpenAiCompatibleProvider implements ModelProvider {
       completionTokens: usage['completion_tokens'] as int?,
       latency: stopwatch.elapsed,
     );
+  }
+
+  @override
+  Stream<ModelStreamEvent> generateStream({
+    required String prompt,
+    required String model,
+    Duration? timeout,
+  }) async* {
+    yield const ModelStreamStarted();
+
+    final res = await _dio.post<ResponseBody>(
+      '$baseUrl/chat/completions',
+      data: <String, dynamic>{
+        'model': model,
+        'messages': [
+          {'role': 'user', 'content': prompt},
+        ],
+        'stream': true,
+      },
+      options: Options(
+        responseType: ResponseType.stream,
+        headers: _headers(),
+        sendTimeout: timeout,
+        receiveTimeout: timeout,
+      ),
+    );
+
+    final stream = res.data!.stream
+        .cast<List<int>>()
+        .transform(utf8.decoder)
+        .transform(const LineSplitter());
+
+    await for (final line in stream) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+      if (trimmed.startsWith(':')) continue;
+
+      var data = trimmed;
+      const prefix = 'data: ';
+      if (data.startsWith(prefix)) {
+        data = data.substring(prefix.length);
+      } else if (data.startsWith('data:')) {
+        data = data.substring('data:'.length);
+      }
+
+      if (data == '[DONE]') break;
+
+      Map<String, dynamic> json;
+      try {
+        json = jsonDecode(data) as Map<String, dynamic>;
+      } catch (_) {
+        continue;
+      }
+
+      final choices = json['choices'] as List<dynamic>?;
+      if (choices != null && choices.isNotEmpty) {
+        final delta = choices.first['delta'] as Map<String, dynamic>?;
+        if (delta != null) {
+          final reasoning = delta['reasoning_content'] as String?;
+          if (reasoning != null && reasoning.isNotEmpty) {
+            yield ModelStreamReasoningDelta(reasoning);
+          }
+          final content = delta['content'] as String?;
+          if (content != null && content.isNotEmpty) {
+            yield ModelStreamContentDelta(content);
+          }
+        }
+      }
+
+      final usage = json['usage'] as Map<String, dynamic>?;
+      if (usage != null) {
+        yield ModelStreamUsage(
+          promptTokens: usage['prompt_tokens'] as int?,
+          completionTokens: usage['completion_tokens'] as int?,
+        );
+      }
+    }
+
+    yield const ModelStreamCompleted();
   }
 }

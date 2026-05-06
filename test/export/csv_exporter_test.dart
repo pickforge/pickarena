@@ -27,8 +27,8 @@ RunSummary _summary({String? name}) {
   return RunSummary(
     run: run,
     taskRuns: [taskRun],
-    evaluationsByTaskRunId: {
-      'tr1': const [
+    evaluationsByTaskRunId: const {
+      'tr1': [
         Evaluation(
           id: 'e1',
           taskRunId: 'tr1',

@@ -75,7 +75,7 @@ void main() {
   test('large diff drives score toward 0', () async {
     final ev = DiffSizeEvaluator(originalFixturePath: 'lib/a.dart');
     final modified =
-        List.generate(40, (i) => '// new line $i').join('\n') + '\n';
+        '${List.generate(40, (i) => '// new line $i').join('\n')}\n';
     final r = await ev.evaluate(await _ctxWith(modified));
     expect(r.score, lessThan(math.exp(-1.0)));
     expect(r.passed, isFalse);

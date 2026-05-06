@@ -20,6 +20,7 @@ class StartRun extends RunEvent {
     this.name,
     this.maxConcurrency = 4,
     this.onFailure = RunFailurePolicy.failFast,
+    this.existingRunId,
   });
 
   final List<BenchmarkTask> tasks;
@@ -30,18 +31,20 @@ class StartRun extends RunEvent {
   final String? name;
   final int maxConcurrency;
   final RunFailurePolicy onFailure;
+  final String? existingRunId;
 
   @override
   List<Object?> get props => [
-        tasks,
-        providers,
-        modelsByProvider,
-        evaluatorConfig,
-        useReferencePlan,
-        name,
-        maxConcurrency,
-        onFailure,
-      ];
+    tasks,
+    providers,
+    modelsByProvider,
+    evaluatorConfig,
+    useReferencePlan,
+    name,
+    maxConcurrency,
+    onFailure,
+    existingRunId,
+  ];
 }
 
 class CancelRun extends RunEvent {

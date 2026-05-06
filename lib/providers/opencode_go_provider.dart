@@ -1,18 +1,18 @@
 import 'package:dart_arena/providers/openai_compatible_provider.dart';
 import 'package:dio/dio.dart';
 
-class OpenCodeZenProvider extends OpenAiCompatibleProvider {
-  OpenCodeZenProvider({required String apiKey, Dio? dio})
-      : super(
-          dio,
-          id: 'opencode_zen',
-          displayName: 'OpenCode Zen',
-          baseUrl: 'https://opencode.ai/zen/v1',
-          apiKey: apiKey,
-        );
+class OpenCodeGoProvider extends OpenAiCompatibleProvider {
+  OpenCodeGoProvider({required String apiKey, Dio? dio})
+    : super(
+        dio,
+        id: 'opencode_go',
+        displayName: 'OpenCode Go',
+        baseUrl: 'https://opencode.ai/go/v1',
+        apiKey: apiKey,
+      );
 
   /// Return only models routed through /chat/completions.
-  /// Zen also proxies Claude via /v1/messages and GPT-5 via /v1/responses.
+  /// Go also proxies Claude via /v1/messages and GPT-5 via /v1/responses.
   @override
   Future<List<String>> listModels() async {
     try {
@@ -28,9 +28,9 @@ class OpenCodeZenProvider extends OpenAiCompatibleProvider {
         'hy3',
         'nemotron',
       ];
-      final filtered = all.where(
-        (id) => chatCompatiblePrefixes.any((p) => id.startsWith(p)),
-      ).toList();
+      final filtered = all
+          .where((id) => chatCompatiblePrefixes.any((p) => id.startsWith(p)))
+          .toList();
       return filtered.isNotEmpty ? filtered : _chatModels;
     } catch (_) {
       return _chatModels;

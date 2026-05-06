@@ -29,7 +29,8 @@ class LlmJudgeEvaluator implements Evaluator {
     }
 
     final submission = ctx.response.extractedCode ?? ctx.response.rawText;
-    final prompt = '''
+    final prompt =
+        '''
 You are a strict code reviewer for Dart/Flutter.
 
 TASK PROMPT:
@@ -63,8 +64,7 @@ Reply with ONLY a fenced ```json block of the form:
       score: score,
       rationale: parsed.rationale,
       details: {
-        'raw_judge_response':
-            raw.length > 4000 ? raw.substring(0, 4000) : raw,
+        'raw_judge_response': raw.length > 4000 ? raw.substring(0, 4000) : raw,
         'judge_model': judgeModel,
         'judge_provider_id': judge.id,
         'parse_strategy': parsed.strategy,
@@ -91,7 +91,10 @@ Reply with ONLY a fenced ```json block of the form:
       }
     }
 
-    final scoreRe = RegExp(r'score[\s:]+([0-9]*\.?[0-9]+)', caseSensitive: false);
+    final scoreRe = RegExp(
+      r'score[\s:]+([0-9]*\.?[0-9]+)',
+      caseSensitive: false,
+    );
     final m = scoreRe.firstMatch(raw);
     if (m != null) {
       final v = double.tryParse(m.group(1)!);
@@ -105,8 +108,11 @@ Reply with ONLY a fenced ```json block of the form:
       }
     }
 
-    return _ParsedJudgeReply(
-        score: 0.0, rationale: 'unparseable judge reply', strategy: 'fallback');
+    return const _ParsedJudgeReply(
+      score: 0.0,
+      rationale: 'unparseable judge reply',
+      strategy: 'fallback',
+    );
   }
 }
 

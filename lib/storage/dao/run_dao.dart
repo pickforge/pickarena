@@ -13,7 +13,9 @@ class RunDao {
     required DateTime startedAt,
     String? name,
   }) {
-    return _db.into(_db.runs).insert(
+    return _db
+        .into(_db.runs)
+        .insert(
           RunsCompanion.insert(
             id: runId,
             startedAt: startedAt,
@@ -31,7 +33,9 @@ class RunDao {
   Future<void> persistTaskRun(TaskRunResult r) async {
     final taskRunId =
         '${r.runId}-${r.providerId}-${r.modelId}-${r.taskId}-${r.completedAt.microsecondsSinceEpoch}';
-    await _db.into(_db.taskRuns).insert(
+    await _db
+        .into(_db.taskRuns)
+        .insert(
           TaskRunsCompanion.insert(
             id: taskRunId,
             runId: r.runId,
@@ -49,7 +53,9 @@ class RunDao {
         );
     for (var i = 0; i < r.evaluations.length; i++) {
       final e = r.evaluations[i];
-      await _db.into(_db.evaluations).insert(
+      await _db
+          .into(_db.evaluations)
+          .insert(
             EvaluationsCompanion.insert(
               id: '$taskRunId-${e.evaluatorId}-$i',
               taskRunId: taskRunId,
@@ -64,14 +70,15 @@ class RunDao {
   }
 
   Future<List<TaskRun>> taskRunsForRun(String runId) {
-    return (_db.select(_db.taskRuns)..where((t) => t.runId.equals(runId)))
-        .get();
+    return (_db.select(
+      _db.taskRuns,
+    )..where((t) => t.runId.equals(runId))).get();
   }
 
   Future<List<Evaluation>> evaluationsForTaskRun(String taskRunId) {
-    return (_db.select(_db.evaluations)
-          ..where((e) => e.taskRunId.equals(taskRunId)))
-        .get();
+    return (_db.select(
+      _db.evaluations,
+    )..where((e) => e.taskRunId.equals(taskRunId))).get();
   }
 
   Future<List<Run>> recentRuns({int limit = 100, String? labelQuery}) {
@@ -85,13 +92,30 @@ class RunDao {
   }
 
   Future<Run?> runById(String id) {
-    return (_db.select(_db.runs)..where((r) => r.id.equals(id)))
-        .getSingleOrNull();
+    return (_db.select(
+      _db.runs,
+    )..where((r) => r.id.equals(id))).getSingleOrNull();
   }
 
   Future<TaskRun?> taskRunById(String id) {
-    return (_db.select(_db.taskRuns)..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    return (_db.select(
+      _db.taskRuns,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<void> deleteRun(String runId) async {
+    await _db.transaction(() async {
+      final taskRuns = await taskRunsForRun(runId);
+      for (final taskRun in taskRuns) {
+        await (_db.delete(
+          _db.evaluations,
+        )..where((e) => e.taskRunId.equals(taskRun.id))).go();
+      }
+      await (_db.delete(
+        _db.taskRuns,
+      )..where((t) => t.runId.equals(runId))).go();
+      await (_db.delete(_db.runs)..where((r) => r.id.equals(runId))).go();
+    });
   }
 
   Future<List<Run>> inProgressRuns() {

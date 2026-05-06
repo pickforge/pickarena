@@ -40,17 +40,15 @@ class _SettingsPageState extends State<SettingsPage> {
             label: 'Ollama Cloud',
           ),
           const Divider(),
-          _ApiKeySection(
-            repo: _repo,
-            providerId: 'opencode_zen',
-            label: 'OpenCode Zen',
-          ),
+          _LocalOpenAiSection(repo: _repo),
           const Divider(),
           _ApiKeySection(
             repo: _repo,
-            providerId: 'openai',
-            label: 'OpenAI',
+            providerId: 'opencode_go',
+            label: 'OpenCode Go',
           ),
+          const Divider(),
+          _ApiKeySection(repo: _repo, providerId: 'openai', label: 'OpenAI'),
           const Divider(),
           _ApiKeySection(
             repo: _repo,
@@ -97,7 +95,9 @@ class _ConcurrencySectionState extends State<_ConcurrencySection> {
   @override
   void initState() {
     super.initState();
-    _repo.getRunConcurrency().then((v) => setState(() => _value = v.toDouble()));
+    _repo.getRunConcurrency().then(
+      (v) => setState(() => _value = v.toDouble()),
+    );
   }
 
   @override
@@ -140,7 +140,8 @@ class _JudgeSectionState extends State<_JudgeSection> {
   static const _knownProviders = <String>[
     'ollama_local',
     'ollama_cloud',
-    'opencode_zen',
+    'local_openai',
+    'opencode_go',
     'openai',
     'openrouter',
     'deepseek',
@@ -171,8 +172,10 @@ class _JudgeSectionState extends State<_JudgeSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Judge Model',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Judge Model',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String?>(
               key: ValueKey(_providerId),
@@ -212,9 +215,9 @@ class _JudgeSectionState extends State<_JudgeSection> {
                       : _modelController.text.trim(),
                 );
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Judge saved')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Judge saved')));
                 }
               },
               child: const Text('Save judge'),
@@ -222,6 +225,96 @@ class _JudgeSectionState extends State<_JudgeSection> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LocalOpenAiSection extends StatefulWidget {
+  const _LocalOpenAiSection({required this.repo});
+  final SettingsRepository repo;
+
+  @override
+  State<_LocalOpenAiSection> createState() => _LocalOpenAiSectionState();
+}
+
+class _LocalOpenAiSectionState extends State<_LocalOpenAiSection> {
+  final _baseUrlController = TextEditingController();
+  final _apiKeyController = TextEditingController();
+  bool _obscured = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final baseUrl = await widget.repo.getBaseUrlOverride('local_openai');
+    final apiKey = await widget.repo.getApiKey('local_openai');
+    if (!mounted) return;
+    setState(() {
+      _baseUrlController.text = baseUrl ?? 'http://127.0.0.1:8080/v1';
+      _apiKeyController.text = apiKey ?? '';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Local OpenAI-compatible',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'For llama.cpp, vLLM, LM Studio, and other local /v1 endpoints.',
+          style: TextStyle(fontSize: 12),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _baseUrlController,
+          decoration: const InputDecoration(
+            labelText: 'Base URL',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _apiKeyController,
+          obscureText: _obscured,
+          decoration: InputDecoration(
+            labelText: 'API Key (optional)',
+            border: const OutlineInputBorder(),
+            suffixIcon: IconButton(
+              icon: Icon(_obscured ? Icons.visibility : Icons.visibility_off),
+              onPressed: () => setState(() => _obscured = !_obscured),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        FilledButton(
+          onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            final baseUrl = _baseUrlController.text.trim().isEmpty
+                ? 'http://127.0.0.1:8080/v1'
+                : _baseUrlController.text.trim();
+            await widget.repo.setBaseUrlOverride('local_openai', baseUrl);
+            final apiKey = _apiKeyController.text.trim();
+            if (apiKey.isEmpty) {
+              await widget.repo.clearApiKey('local_openai');
+            } else {
+              await widget.repo.setApiKey('local_openai', apiKey);
+            }
+            if (!mounted) return;
+            messenger.showSnackBar(
+              const SnackBar(content: Text('Local provider saved')),
+            );
+          },
+          child: const Text('Save local provider'),
+        ),
+      ],
     );
   }
 }
@@ -250,8 +343,10 @@ class _OllamaLocalSectionState extends State<_OllamaLocalSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Ollama Local',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        const Text(
+          'Ollama Local',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _controller,
@@ -311,14 +406,16 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
       children: [
         Row(
           children: [
-            Text(widget.label,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Text(
+              widget.label,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(width: 8),
             Badge(
               label: Text(_hasKey ? 'Set' : 'Not configured'),
-              backgroundColor:
-                  _hasKey ? Colors.green.shade700 : Colors.orange.shade800,
+              backgroundColor: _hasKey
+                  ? Colors.green.shade700
+                  : Colors.orange.shade800,
             ),
           ],
         ),
@@ -404,10 +501,7 @@ class _ReadmeSectionState extends State<_ReadmeSection> {
               ),
             ),
             const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: _browse,
-              child: const Text('Browse...'),
-            ),
+            OutlinedButton(onPressed: _browse, child: const Text('Browse...')),
           ],
         ),
         const SizedBox(height: 8),
@@ -422,11 +516,12 @@ class _ReadmeSectionState extends State<_ReadmeSection> {
         const SizedBox(height: 8),
         FilledButton(
           onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
             await widget.repo.setReadmePath(
               _controller.text.trim().isEmpty ? null : _controller.text.trim(),
             );
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
+            messenger.showSnackBar(
               const SnackBar(content: Text('README path saved')),
             );
           },

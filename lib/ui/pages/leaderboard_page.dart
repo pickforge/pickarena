@@ -127,7 +127,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     }
     if (_selectedKey != null) qp['sel'] = _selectedKey!;
     if (_pinnedKey != null) qp['pin'] = _pinnedKey!;
-    router.go(Uri(path: '/leaderboard', queryParameters: qp).toString());
+    router.replace<void>(
+      Uri(path: '/leaderboard', queryParameters: qp).toString(),
+    );
   }
 
   void _onFilterChanged(LeaderboardFilter f) {

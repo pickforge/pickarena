@@ -14,6 +14,7 @@ class StartRunConfig {
     this.name,
     this.maxConcurrency = 4,
     this.onFailure = RunFailurePolicy.failFast,
+    this.existingRunId,
   });
 
   final List<BenchmarkTask> tasks;
@@ -25,4 +26,5 @@ class StartRunConfig {
   final String? name;
   final int maxConcurrency;
   final RunFailurePolicy onFailure;
+  final String? existingRunId;
 }

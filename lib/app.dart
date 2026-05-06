@@ -44,19 +44,21 @@ final _router = GoRouter(
               planDao: ctx.read<PlanDao>(),
               weights: cfg.weights,
               now: () => DateTime.now(),
-              idGenerator: () =>
-                  'run-${DateTime.now().millisecondsSinceEpoch}',
+              idGenerator: () => 'run-${DateTime.now().millisecondsSinceEpoch}',
             );
-            bloc.add(StartRun(
-              tasks: cfg.tasks,
-              providers: cfg.providers,
-              modelsByProvider: cfg.modelsByProvider,
-              evaluatorConfig: cfg.evaluatorConfig,
-              useReferencePlan: cfg.useReferencePlan,
-              name: cfg.name,
-              maxConcurrency: cfg.maxConcurrency,
-              onFailure: cfg.onFailure,
-            ));
+            bloc.add(
+              StartRun(
+                tasks: cfg.tasks,
+                providers: cfg.providers,
+                modelsByProvider: cfg.modelsByProvider,
+                evaluatorConfig: cfg.evaluatorConfig,
+                useReferencePlan: cfg.useReferencePlan,
+                name: cfg.name,
+                maxConcurrency: cfg.maxConcurrency,
+                onFailure: cfg.onFailure,
+                existingRunId: cfg.existingRunId,
+              ),
+            );
             return bloc;
           },
           child: const RunProgressPage(),

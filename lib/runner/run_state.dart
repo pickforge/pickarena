@@ -1,4 +1,6 @@
 import 'package:dart_arena/core/task_run_result.dart';
+import 'package:dart_arena/runner/run_event.dart';
+import 'package:dart_arena/runner/run_progress_snapshot.dart';
 import 'package:equatable/equatable.dart';
 
 sealed class RunState extends Equatable {
@@ -17,23 +19,17 @@ class RunInProgress extends RunState {
     required this.completed,
     required this.total,
     required this.results,
-    this.currentLabels = const {},
+    this.active = const [],
   });
 
   final String runId;
   final int completed;
   final int total;
   final List<TaskRunResult> results;
-  final Set<String> currentLabels;
+  final List<RunProgressSnapshot> active;
 
   @override
-  List<Object?> get props => [
-        runId,
-        completed,
-        total,
-        results,
-        currentLabels,
-      ];
+  List<Object?> get props => [runId, completed, total, results, active];
 }
 
 class RunCompleted extends RunState {
@@ -47,9 +43,10 @@ class RunCompleted extends RunState {
 }
 
 class RunFailed extends RunState {
-  const RunFailed(this.error);
+  const RunFailed(this.error, {this.retry});
   final String error;
+  final StartRun? retry;
 
   @override
-  List<Object?> get props => [error];
+  List<Object?> get props => [error, retry];
 }

@@ -1,15 +1,6 @@
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
 
-const _evaluatorIds = <String>[
-  'compile',
-  'analyze',
-  'test',
-  'widget_tree',
-  'llm_judge',
-  'diff_size',
-];
-
 String runSummaryToMarkdown(RunSummary s) {
   final buf = StringBuffer();
   final ts = s.run.startedAt.toIso8601String();

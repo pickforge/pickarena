@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
+import 'package:dart_arena/runner/run_event.dart';
+import 'package:dart_arena/runner/run_progress_snapshot.dart';
 import 'package:dart_arena/runner/run_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,22 +22,55 @@ class RunProgressPage extends StatelessWidget {
             RunInProgress(
               :final completed,
               :final total,
-              :final currentLabels,
+              :final active,
+              :final results,
             ) =>
               _ProgressView(
                 completed: completed,
                 total: total,
-                labels: currentLabels,
+                active: active,
+                results: results,
               ),
-            RunCompleted(:final results) =>
-              ListView.builder(
-                itemCount: results.length,
-                itemBuilder: (_, i) => _ResultCard(result: results[i]),
-              ),
-            RunFailed(:final error) =>
-              Center(child: Text('Failed: $error')),
+            RunCompleted(:final results) => ListView.builder(
+              itemCount: results.length,
+              itemBuilder: (_, i) => _ResultCard(result: results[i]),
+            ),
+            RunFailed(:final error, :final retry) => _FailedView(
+              error: error,
+              retry: retry,
+            ),
           };
         },
+      ),
+    );
+  }
+}
+
+class _FailedView extends StatelessWidget {
+  const _FailedView({required this.error, required this.retry});
+
+  final String error;
+  final StartRun? retry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Failed: $error', textAlign: TextAlign.center),
+            if (retry != null) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => context.read<RunBloc>().add(retry!),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry failed task'),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -43,47 +80,185 @@ class _ProgressView extends StatelessWidget {
   const _ProgressView({
     required this.completed,
     required this.total,
-    required this.labels,
+    required this.active,
+    required this.results,
   });
 
   final int completed;
   final int total;
-  final Set<String> labels;
+  final List<RunProgressSnapshot> active;
+  final List<TaskRunResult> results;
 
   @override
   Widget build(BuildContext context) {
-    final sorted = labels.toList()..sort();
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        LinearProgressIndicator(value: total == 0 ? null : completed / total),
+        const SizedBox(height: 8),
         Center(
-          child: Column(
-            children: [
-              Text(
-                '$completed / $total',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 16),
-              if (sorted.isEmpty)
-                const CircularProgressIndicator(),
-              if (sorted.isNotEmpty)
-                Column(
-                  children: sorted.map((l) =>
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(
-                        l,
-                        style: const TextStyle(fontSize: 12),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ).toList(),
-                ),
-            ],
+          child: Text(
+            '$completed / $total completed',
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
         ),
+        const SizedBox(height: 16),
+        if (active.isEmpty && completed < total)
+          const Center(child: CircularProgressIndicator()),
+        ...active.map((s) => _ActiveCard(snapshot: s)),
+        if (results.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          const Text(
+            'Completed',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          ...results.map((r) => _ResultCard(result: r)),
+        ],
       ],
     );
+  }
+}
+
+class _ActiveCard extends StatelessWidget {
+  const _ActiveCard({required this.snapshot});
+
+  final RunProgressSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    snapshot.label,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Text(
+                  _phaseLabel(snapshot.phase),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const Spacer(),
+                _ElapsedText(startedAt: snapshot.startedAt),
+              ],
+            ),
+            if (snapshot.promptTokens != null ||
+                snapshot.completionTokens != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Tokens: ${snapshot.promptTokens ?? '?'} in / ${snapshot.completionTokens ?? '?'} out',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            ExpansionTile(
+              key: PageStorageKey('thinking-${snapshot.index}'),
+              title: const Text('Thinking', style: TextStyle(fontSize: 13)),
+              dense: true,
+              childrenPadding: const EdgeInsets.all(12),
+              children: [
+                Text(
+                  snapshot.reasoningPreview.isEmpty
+                      ? 'No thinking stream available yet.'
+                      : snapshot.reasoningPreview,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+                ),
+              ],
+            ),
+            ExpansionTile(
+              key: PageStorageKey('answer-${snapshot.index}'),
+              title: const Text('Answer', style: TextStyle(fontSize: 13)),
+              dense: true,
+              childrenPadding: const EdgeInsets.all(12),
+              children: [
+                Text(
+                  snapshot.answerPreview.isEmpty
+                      ? 'Waiting for answer...'
+                      : snapshot.answerPreview,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _phaseLabel(RunComboPhase phase) => switch (phase) {
+  RunComboPhase.queued => 'Queued',
+  RunComboPhase.requestingModel => 'Requesting model...',
+  RunComboPhase.streamingResponse => 'Streaming response...',
+  RunComboPhase.extractingCode => 'Extracting code...',
+  RunComboPhase.creatingWorkdir => 'Creating workdir...',
+  RunComboPhase.preparing => 'Preparing...',
+  RunComboPhase.evaluating => 'Evaluating...',
+  RunComboPhase.persisting => 'Persisting...',
+};
+
+class _ElapsedText extends StatefulWidget {
+  const _ElapsedText({required this.startedAt});
+
+  final DateTime startedAt;
+
+  @override
+  State<_ElapsedText> createState() => _ElapsedTextState();
+}
+
+class _ElapsedTextState extends State<_ElapsedText> {
+  Timer? _timer;
+  String _label = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _tick();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _tick() {
+    final d = DateTime.now().difference(widget.startedAt);
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    final s = d.inSeconds % 60;
+    final label = h > 0
+        ? '${h}h ${m}m ${s}s'
+        : m > 0
+        ? '${m}m ${s}s'
+        : '${s}s';
+    if (label != _label) {
+      setState(() => _label = label);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(_label, style: Theme.of(context).textTheme.bodySmall);
   }
 }
 
@@ -110,7 +285,9 @@ class _ResultCardState extends State<_ResultCard> {
         children: [
           ListTile(
             title: Text('${r.providerId} / ${r.modelId}'),
-            subtitle: Text('${r.taskId} — Score: ${r.aggregateScore.toStringAsFixed(2)}'),
+            subtitle: Text(
+              '${r.taskId} — Score: ${r.aggregateScore.toStringAsFixed(2)}',
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -119,11 +296,8 @@ class _ResultCardState extends State<_ResultCard> {
                   color: allPassed ? Colors.green : Colors.red,
                 ),
                 IconButton(
-                  icon: Icon(_expanded
-                      ? Icons.expand_less
-                      : Icons.expand_more),
-                  onPressed: () =>
-                      setState(() => _expanded = !_expanded),
+                  icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+                  onPressed: () => setState(() => _expanded = !_expanded),
                 ),
               ],
             ),
@@ -135,8 +309,10 @@ class _ResultCardState extends State<_ResultCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Evaluations:',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Evaluations:',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 8),
                   ...evaluations.map(
                     (e) => Padding(
@@ -145,37 +321,31 @@ class _ResultCardState extends State<_ResultCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(
-                            e.passed
-                                ? Icons.check
-                                : Icons.close,
+                            e.passed ? Icons.check : Icons.close,
                             size: 16,
-                            color: e.passed
-                                ? Colors.green
-                                : Colors.red,
+                            color: e.passed ? Colors.green : Colors.red,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   '${e.evaluatorId} (${e.score.toStringAsFixed(2)})',
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.w500),
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                                 if (e.rationale != null &&
                                     e.rationale!.isNotEmpty)
                                   Container(
-                                    margin:
-                                        const EdgeInsets.only(top: 4),
+                                    margin: const EdgeInsets.only(top: 4),
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceContainerHighest,
-                                      borderRadius:
-                                          BorderRadius.circular(4),
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: SelectableText(
                                       e.rationale!,
@@ -194,23 +364,26 @@ class _ResultCardState extends State<_ResultCard> {
                   ),
                   if (r.response.extractedCode != null) ...[
                     const SizedBox(height: 12),
-                    const Text('Extracted code:',
-                        style:
-                            TextStyle(fontWeight: FontWeight.w600)),
+                    const Text(
+                      'Extracted code:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     const SizedBox(height: 4),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: SelectableText(
                         r.response.extractedCode as String,
                         style: const TextStyle(
-                            fontFamily: 'monospace', fontSize: 11),
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                        ),
                       ),
                     ),
                   ],

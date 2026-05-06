@@ -55,10 +55,7 @@ class ReadmePublisher {
     };
   }
 
-  Future<_SpliceResult> _splice(
-    String path,
-    String generatedMarkdown,
-  ) async {
+  Future<_SpliceResult> _splice(String path, String generatedMarkdown) async {
     final file = File(path);
     if (!await file.exists()) {
       return _SpliceFailed('README not found at $path');
@@ -67,7 +64,7 @@ class ReadmePublisher {
     final startIdx = original.indexOf(startMarker);
     final endIdx = original.indexOf(endMarker);
     if (startIdx < 0 || endIdx < 0 || endIdx < startIdx) {
-      return _SpliceFailed(
+      return const _SpliceFailed(
         'Markers not found. Add\n  $startMarker\n  $endMarker\n'
         'to your README where the results should appear.',
       );

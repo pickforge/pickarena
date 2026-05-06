@@ -29,11 +29,7 @@ void main() {
           latency: Duration(milliseconds: 50),
         ),
         evaluations: const [
-          EvaluationResult(
-            evaluatorId: 'compile',
-            passed: true,
-            score: 1.0,
-          ),
+          EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
         ],
         aggregateScore: 1.0,
         completedAt: DateTime(2026, 5, 2),
@@ -151,27 +147,65 @@ void main() {
       version: 1,
       artifact: 'plan',
     );
-    await dao.persistTaskRun(TaskRunResult(
-      runId: 'r-pid',
-      providerId: 'p',
-      modelId: 'm',
-      taskId: 'task-x',
-      response: const ModelResponse(
-        rawText: '',
-        extractedCode: null,
-        promptTokens: 0,
-        completionTokens: 0,
-        latency: Duration.zero,
+    await dao.persistTaskRun(
+      TaskRunResult(
+        runId: 'r-pid',
+        providerId: 'p',
+        modelId: 'm',
+        taskId: 'task-x',
+        response: const ModelResponse(
+          rawText: '',
+          extractedCode: null,
+          promptTokens: 0,
+          completionTokens: 0,
+          latency: Duration.zero,
+        ),
+        evaluations: const [],
+        aggregateScore: 1.0,
+        completedAt: DateTime(2026, 1, 1, 0, 1),
+        planId: planId,
       ),
-      evaluations: const [],
-      aggregateScore: 1.0,
-      completedAt: DateTime(2026, 1, 1, 0, 1),
-      planId: planId,
-    ));
+    );
 
     final rows = await dao.taskRunsForRun('r-pid');
     expect(rows.single.planId, planId);
 
+    await db.close();
+  });
+
+  test('deleteRun removes run, task runs, and evaluations', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(runId: 'r-del', startedAt: DateTime(2026, 5, 2));
+    await dao.persistTaskRun(
+      TaskRunResult(
+        runId: 'r-del',
+        providerId: 'fake',
+        modelId: 'm',
+        taskId: 't',
+        response: const ModelResponse(
+          rawText: 'x',
+          extractedCode: null,
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration.zero,
+        ),
+        evaluations: const [
+          EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+        ],
+        aggregateScore: 1.0,
+        completedAt: DateTime(2026, 5, 2, 12),
+      ),
+    );
+
+    final taskRunId = (await dao.taskRunsForRun('r-del')).single.id;
+    expect(await dao.evaluationsForTaskRun(taskRunId), hasLength(1));
+
+    await dao.deleteRun('r-del');
+
+    expect(await dao.runById('r-del'), isNull);
+    expect(await dao.taskRunsForRun('r-del'), isEmpty);
+    expect(await dao.evaluationsForTaskRun(taskRunId), isEmpty);
     await db.close();
   });
 }
