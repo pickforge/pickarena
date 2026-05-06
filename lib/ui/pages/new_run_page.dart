@@ -4,6 +4,7 @@ import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/provider_factory.dart';
+import 'package:dart_arena/runner/run_failure_policy.dart';
 import 'package:dart_arena/runner/start_run_config.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
@@ -25,11 +26,13 @@ class _NewRunPageState extends State<NewRunPage> {
   late final TaskRegistry _registry;
   List<ModelProvider> _providers = [];
   final Map<String, bool> _checkedProvider = {};
-  final Map<String, String> _models = {};
+  final Map<String, Set<String>> _models = {};
   final Set<String> _selectedTaskIds = {};
   String _label = '';
   bool _loading = true;
   bool _useReferencePlan = false;
+  RunFailurePolicy _failurePolicy = RunFailurePolicy.failFast;
+  int _maxConcurrency = 4;
 
   @override
   void initState() {
@@ -50,28 +53,58 @@ class _NewRunPageState extends State<NewRunPage> {
 
   Future<void> _loadProviders() async {
     final settings = context.read<SettingsRepository>();
-    final p = await buildEnabledProviders(settings);
+    final results = await Future.wait([
+      buildEnabledProviders(settings),
+      settings.getRunConcurrency(),
+    ]);
     if (!mounted) return;
     setState(() {
-      _providers = p;
+      _providers = results[0] as List<ModelProvider>;
+      _maxConcurrency = results[1] as int;
       _loading = false;
     });
   }
 
+  int get _comboCount {
+    var count = 0;
+    for (final p in _providers) {
+      if (_checkedProvider[p.id] != true) continue;
+      final set = _models[p.id];
+      if (set == null || set.isEmpty) continue;
+      count += set.length;
+    }
+    return count * _selectedTaskIds.length;
+  }
+
+  int get _pairCount {
+    var count = 0;
+    for (final p in _providers) {
+      if (_checkedProvider[p.id] != true) continue;
+      final set = _models[p.id];
+      if (set == null || set.isEmpty) continue;
+      count += set.length;
+    }
+    return count;
+  }
+
   bool get _canRun {
     if (_selectedTaskIds.isEmpty) return false;
-    final selectedProviders =
-        _providers.where((p) => _checkedProvider[p.id] == true).toList();
-    if (selectedProviders.isEmpty) return false;
-    for (final pr in selectedProviders) {
-      final m = _models[pr.id];
-      if (m == null || m.trim().isEmpty) return false;
+    for (final p in _providers) {
+      if (_checkedProvider[p.id] != true) continue;
+      final set = _models[p.id];
+      if (set == null || set.isEmpty) return false;
+    }
+    if (_providers.where((p) => _checkedProvider[p.id] == true).isEmpty) {
+      return false;
     }
     return true;
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      _computeFailureDefault();
+    }
     return Scaffold(
       appBar: AppBar(title: const Text('New Run')),
       body: _loading
@@ -93,6 +126,7 @@ class _NewRunPageState extends State<NewRunPage> {
                           } else {
                             _selectedTaskIds.remove(id);
                           }
+                          _computeFailureDefault();
                         }),
                       ),
                       const SizedBox(height: 8),
@@ -100,7 +134,8 @@ class _NewRunPageState extends State<NewRunPage> {
                         registry: _registry,
                         selectedTaskIds: _selectedTaskIds,
                         value: _useReferencePlan,
-                        onChanged: (v) => setState(() => _useReferencePlan = v),
+                        onChanged: (v) =>
+                            setState(() => _useReferencePlan = v),
                       ),
                       const Divider(height: 32),
                       const Text(
@@ -111,14 +146,48 @@ class _NewRunPageState extends State<NewRunPage> {
                       ..._providers.map(
                         (provider) => _ProviderRow(
                           provider: provider,
-                          checked: _checkedProvider[provider.id] ?? false,
-                          onChecked: (v) => setState(
-                              () => _checkedProvider[provider.id] = v),
-                          onModelChanged: (v) =>
-                              setState(() => _models[provider.id] = v),
+                          checked:
+                              _checkedProvider[provider.id] ?? false,
+                          selectedModels: _models[provider.id] ?? const {},
+                          onChecked: (v) => setState(() {
+                            _checkedProvider[provider.id] = v;
+                            _computeFailureDefault();
+                          }),
+                          onModelSelectionChanged: (set) =>
+                              setState(() {
+                            _models[provider.id] = set;
+                            _computeFailureDefault();
+                          }),
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      if (_comboCount > 0)
+                        Text(
+                          'Will run $_pairCount (provider, model) pairs'
+                          ' × ${_selectedTaskIds.length} tasks'
+                          ' = $_comboCount combos'
+                          ', ≈ $_maxConcurrency× parallel',
+                          style: const TextStyle(fontSize: 13),
+                        ),
                     ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SegmentedButton<RunFailurePolicy>(
+                    segments: const [
+                      ButtonSegment(
+                        value: RunFailurePolicy.failFast,
+                        label: Text('Stop on first failure'),
+                      ),
+                      ButtonSegment(
+                        value: RunFailurePolicy.skipAndContinue,
+                        label: Text('Skip failed and continue'),
+                      ),
+                    ],
+                    selected: {_failurePolicy},
+                    onSelectionChanged: (v) =>
+                        setState(() => _failurePolicy = v.single),
                   ),
                 ),
                 Padding(
@@ -136,12 +205,24 @@ class _NewRunPageState extends State<NewRunPage> {
     );
   }
 
+  void _computeFailureDefault() {
+    if (!_loading) return;
+    if (_comboCount > 5) {
+      _failurePolicy = RunFailurePolicy.skipAndContinue;
+    }
+    _loading = false;
+  }
+
   Future<void> _startRun() async {
     final selectedProviders =
         _providers.where((p) => _checkedProvider[p.id] == true).toList();
-    final modelMap = {
-      for (final p in selectedProviders) p.id: _models[p.id] ?? '',
-    };
+    final modelsByProvider = <String, List<String>>{};
+    for (final p in selectedProviders) {
+      final set = _models[p.id];
+      if (set != null && set.isNotEmpty) {
+        modelsByProvider[p.id] = set.toList();
+      }
+    }
     final selectedTasks = _registry
         .all()
         .where((t) => _selectedTaskIds.contains(t.id))
@@ -174,11 +255,13 @@ class _NewRunPageState extends State<NewRunPage> {
       extra: StartRunConfig(
         tasks: selectedTasks,
         providers: selectedProviders,
-        modelByProvider: modelMap,
+        modelsByProvider: modelsByProvider,
         evaluatorConfig: evaluatorConfig,
         weights: weights,
         useReferencePlan: _useReferencePlan,
         name: _label.trim().isEmpty ? null : _label.trim(),
+        maxConcurrency: _maxConcurrency,
+        onFailure: _failurePolicy,
       ),
     );
   }
@@ -256,13 +339,15 @@ class _ProviderRow extends StatefulWidget {
   const _ProviderRow({
     required this.provider,
     required this.checked,
+    required this.selectedModels,
     required this.onChecked,
-    required this.onModelChanged,
+    required this.onModelSelectionChanged,
   });
   final ModelProvider provider;
   final bool checked;
+  final Set<String> selectedModels;
   final ValueChanged<bool> onChecked;
-  final ValueChanged<String> onModelChanged;
+  final ValueChanged<Set<String>> onModelSelectionChanged;
 
   @override
   State<_ProviderRow> createState() => _ProviderRowState();
@@ -270,60 +355,186 @@ class _ProviderRow extends StatefulWidget {
 
 class _ProviderRowState extends State<_ProviderRow> {
   Future<List<String>>? _modelsFuture;
+  final _freeformController = TextEditingController();
+  final _freeformFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _freeformController.dispose();
+    _freeformFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final checked = widget.checked;
     return Column(
       children: [
         CheckboxListTile(
           title: Text(widget.provider.displayName),
-          value: widget.checked,
+          value: checked,
           onChanged: (v) {
-            setState(() {
-              widget.onChecked(v ?? false);
+            final isChecked = v ?? false;
+            widget.onChecked(isChecked);
+            if (isChecked) {
               _modelsFuture ??= widget.provider.listModels();
-            });
+            }
           },
         ),
-        if (widget.checked)
+        if (checked)
           Padding(
             padding:
                 const EdgeInsets.only(left: 32, right: 16, bottom: 8),
             child: FutureBuilder<List<String>>(
               future: _modelsFuture,
               builder: (context, snap) {
+                if (!checked) return const SizedBox.shrink();
                 if (snap.connectionState != ConnectionState.done) {
                   return const LinearProgressIndicator();
                 }
                 if (snap.hasError ||
                     snap.data == null ||
                     snap.data!.isEmpty) {
-                  return TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'Model id',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: widget.onModelChanged,
+                  return _FreeformChipInput(
+                    controller: _freeformController,
+                    focusNode: _freeformFocus,
+                    selected: widget.selectedModels,
+                    onChanged: widget.onModelSelectionChanged,
                   );
                 }
-                return DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    labelText: 'Model',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: snap.data!
-                      .map((m) =>
-                          DropdownMenuItem(value: m, child: Text(m)))
-                      .toList(),
-                  onChanged: (v) {
-                    if (v != null) widget.onModelChanged(v);
-                  },
+                return _ListedChipSelector(
+                  listedModels: snap.data!,
+                  selected: widget.selectedModels,
+                  onChanged: widget.onModelSelectionChanged,
                 );
               },
             ),
           ),
       ],
     );
+  }
+}
+
+class _ListedChipSelector extends StatelessWidget {
+  const _ListedChipSelector({
+    required this.listedModels,
+    required this.selected,
+    required this.onChanged,
+  });
+  final List<String> listedModels;
+  final Set<String> selected;
+  final ValueChanged<Set<String>> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final deduped = listedModels.toSet().toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            TextButton(
+              onPressed: () => onChanged(deduped.toSet()),
+              child: const Text('Select all'),
+            ),
+            TextButton(
+              onPressed: () => onChanged({}),
+              child: const Text('Clear'),
+            ),
+          ],
+        ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: deduped.map((m) {
+            final isSelected = selected.contains(m);
+            return FilterChip(
+              label: Text(m),
+              selected: isSelected,
+              onSelected: (v) {
+                final updated = selected.toSet();
+                if (v) {
+                  updated.add(m);
+                } else {
+                  updated.remove(m);
+                }
+                onChanged(updated);
+              },
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _FreeformChipInput extends StatefulWidget {
+  const _FreeformChipInput({
+    required this.controller,
+    required this.focusNode,
+    required this.selected,
+    required this.onChanged,
+  });
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final Set<String> selected;
+  final ValueChanged<Set<String>> onChanged;
+
+  @override
+  State<_FreeformChipInput> createState() => _FreeformChipInputState();
+}
+
+class _FreeformChipInputState extends State<_FreeformChipInput> {
+  @override
+  Widget build(BuildContext context) {
+    final chips = widget.selected.toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          decoration: InputDecoration(
+            labelText: 'Model ids (comma-separated)',
+            border: const OutlineInputBorder(),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.check),
+              onPressed: _commit,
+            ),
+          ),
+          onSubmitted: (_) => _commit(),
+        ),
+        if (chips.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: chips.map((m) {
+              return Chip(
+                label: Text(m),
+                onDeleted: () {
+                  final updated = widget.selected.toSet()..remove(m);
+                  widget.onChanged(updated);
+                },
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _commit() {
+    final raw = widget.controller.text;
+    if (raw.trim().isEmpty) return;
+    final parts = raw.split(',');
+    final updated = widget.selected.toSet();
+    for (final p in parts) {
+      final trimmed = p.trim();
+      if (trimmed.isNotEmpty) updated.add(trimmed);
+    }
+    widget.controller.clear();
+    widget.onChanged(updated);
   }
 }
 

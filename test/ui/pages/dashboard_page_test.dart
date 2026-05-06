@@ -41,17 +41,19 @@ Future<({RunDao dao, LeaderboardRepository repo, AppDatabase db})> _seed({
 }
 
 void main() {
-  testWidgets('shows showcase strip + recent run when data exists',
-      (tester) async {
-    final s = await _seed();
+  testWidgets('dashboard page states', (tester) async {
     final registry = buildDefaultTaskRegistry();
     for (final t in registry.all()) {
       await t.ensureLoaded();
     }
+
+    // 1. Shows showcase strip + recent run when data exists
+    final s1 = await _seed();
+    addTearDown(() async => s1.db.close());
     await tester.pumpWidget(MaterialApp(
       home: DashboardPage(
-        dao: s.dao,
-        repository: s.repo,
+        dao: s1.dao,
+        repository: s1.repo,
         registry: registry,
       ),
     ));
@@ -60,32 +62,28 @@ void main() {
     expect(find.text('Bug fix'), findsOneWidget);
     expect(find.text('gpt-5'), findsWidgets);
     expect(find.text('Recent runs'), findsOneWidget);
-  });
 
-  testWidgets('shows in-progress banner when applicable', (tester) async {
-    final s = await _seed(inProgress: true);
-    final registry = buildDefaultTaskRegistry();
-    for (final t in registry.all()) {
-      await t.ensureLoaded();
-    }
+    // 2. Shows in-progress banner when applicable
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    final s2 = await _seed(inProgress: true);
+    addTearDown(() async => s2.db.close());
     await tester.pumpWidget(MaterialApp(
       home: DashboardPage(
-        dao: s.dao,
-        repository: s.repo,
+        dao: s2.dao,
+        repository: s2.repo,
         registry: registry,
       ),
     ));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.textContaining('In progress'), findsOneWidget);
-  });
 
-  testWidgets('shows fresh-install empty state when no runs', (tester) async {
+    // 3. Shows fresh-install empty state when no runs
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
     final db = AppDatabase(NativeDatabase.memory());
-    final registry = buildDefaultTaskRegistry();
-    for (final t in registry.all()) {
-      await t.ensureLoaded();
-    }
+    addTearDown(() async => db.close());
     await tester.pumpWidget(MaterialApp(
       home: DashboardPage(
         dao: RunDao(db),

@@ -7,8 +7,10 @@ import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/runner/run_failure_policy.dart';
 import 'package:dart_arena/runner/start_run_config.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
+import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/settings.dart';
@@ -54,15 +56,34 @@ class _StubTaskB extends BenchmarkTask {
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) => const [];
 }
 
-class _FakeProvider implements ModelProvider {
+class _ListModelsProvider implements ModelProvider {
   @override
-  String get id => 'fake';
+  String get id => 'list';
   @override
-  String get displayName => 'Fake';
+  String get displayName => 'ListProv';
   @override
   ProviderMode get mode => ProviderMode.rawApi;
   @override
-  Future<List<String>> listModels() async => const [];
+  Future<List<String>> listModels() async =>
+      ['model-a', 'model-b', 'model-c'];
+  @override
+  Future<ModelResponse> generate({
+    required String prompt,
+    required String model,
+    Duration? timeout,
+  }) async =>
+      throw UnimplementedError();
+}
+
+class _EmptyListProvider implements ModelProvider {
+  @override
+  String get id => 'empty';
+  @override
+  String get displayName => 'Empty';
+  @override
+  ProviderMode get mode => ProviderMode.rawApi;
+  @override
+  Future<List<String>> listModels() async => [];
   @override
   Future<ModelResponse> generate({
     required String prompt,
@@ -73,7 +94,8 @@ class _FakeProvider implements ModelProvider {
 }
 
 Future<Widget> _wrap(Widget child) async {
-  final tmp = Directory('/tmp/dart_arena_newrun_${DateTime.now().microsecondsSinceEpoch}')
+  final tmp = Directory(
+          '/tmp/dart_arena_newrun_${DateTime.now().microsecondsSinceEpoch}')
     ..createSync(recursive: true);
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(() async {
@@ -89,6 +111,8 @@ Future<Widget> _wrap(Widget child) async {
           value: SettingsRepository()),
       RepositoryProvider<RunDao>(
           create: (ctx) => RunDao(ctx.read<AppDatabase>())),
+      RepositoryProvider<PlanDao>(
+          create: (ctx) => PlanDao(ctx.read<AppDatabase>())),
     ],
     child: MaterialApp(home: child),
   );
@@ -120,7 +144,6 @@ void main() {
       NewRunPage(registry: reg, providers: const []),
     ));
     await tester.pumpAndSettle();
-    // Look for the label field by its label text
     expect(find.byType(TextField), findsWidgets);
   });
 
@@ -131,7 +154,6 @@ void main() {
       NewRunPage(registry: reg, providers: const []),
     ));
     await tester.pumpAndSettle();
-    // Deselect the pre-selected task by tapping its checkbox
     await tester.tap(find.text('bug.a'));
     await tester.pumpAndSettle();
     final btn =
@@ -139,17 +161,128 @@ void main() {
     expect(btn.onPressed, isNull);
   });
 
-  testWidgets(
-      'Run button reads weights from SettingsRepository before navigating',
+  testWidgets('chip multi-select toggles populate the selection set',
       (tester) async {
-    FlutterSecureStorage.setMockInitialValues({
-      'evaluator_weights_json': '{"compile":2.5}',
-    });
-
     final reg = TaskRegistry()..register(_StubTaskA());
-    final fakeProvider = _FakeProvider();
 
-    // Swap goRouter for a test router that captures `extra`.
+    await tester.pumpWidget(await _wrap(NewRunPage(
+      registry: reg,
+      providers: [_ListModelsProvider()],
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('ListProv'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FilterChip), findsNWidgets(3));
+
+    final listFinder = find.byType(Scrollable).last;
+    await tester.drag(listFinder, const Offset(0, -300));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('model-a'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('model-c'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Will run 2 (provider, model) pairs'
+        ' × 1 tasks = 2 combos, ≈ 4× parallel'), findsOneWidget);
+  });
+
+  testWidgets('Select all and Clear buttons work', (tester) async {
+    final reg = TaskRegistry()..register(_StubTaskA());
+
+    await tester.pumpWidget(await _wrap(NewRunPage(
+      registry: reg,
+      providers: [_ListModelsProvider()],
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('ListProv'));
+    await tester.pumpAndSettle();
+
+    final listFinder = find.byType(Scrollable).last;
+    await tester.drag(listFinder, const Offset(0, -300));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Select all'));
+    await tester.pumpAndSettle();
+    expect(find.text('Will run 3 (provider, model) pairs'
+        ' × 1 tasks = 3 combos, ≈ 4× parallel'), findsOneWidget);
+
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+    final btn =
+        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Run'));
+    expect(btn.onPressed, isNull);
+  });
+
+  testWidgets('comma-separated fallback trims and dedupes',
+      (tester) async {
+    final reg = TaskRegistry()..register(_StubTaskA());
+
+    await tester.pumpWidget(await _wrap(NewRunPage(
+      registry: reg,
+      providers: [_EmptyListProvider()],
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Empty'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Model ids (comma-separated)'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Model ids (comma-separated)'),
+      'm1, m1 ,  , m2',
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Chip), findsNWidgets(2));
+    expect(find.text('m1'), findsOneWidget);
+    expect(find.text('m2'), findsOneWidget);
+  });
+
+  testWidgets('summary combo count updates', (tester) async {
+    final reg = TaskRegistry()
+      ..register(_StubTaskA())
+      ..register(_StubTaskB());
+
+    await tester.pumpWidget(await _wrap(NewRunPage(
+      registry: reg,
+      providers: [_ListModelsProvider()],
+    )));
+    await tester.pumpAndSettle();
+
+    final listFinder = find.byType(Scrollable).last;
+    await tester.drag(listFinder, const Offset(0, -300));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('ListProv'));
+    await tester.pumpAndSettle();
+
+    await tester.drag(listFinder, const Offset(0, -300));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('model-a'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Will run 1 (provider, model) pairs'
+        ' × 2 tasks = 2 combos, ≈ 4× parallel'), findsOneWidget);
+
+    await tester.tap(find.text('state.b'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Will run 1 (provider, model) pairs'
+        ' × 1 tasks = 1 combos, ≈ 4× parallel'), findsOneWidget);
+  });
+
+  testWidgets(
+      'StartRunConfig carries modelsByProvider, maxConcurrency, onFailure',
+      (tester) async {
+    final reg = TaskRegistry()..register(_StubTaskA());
+
     Object? capturedExtra;
     final router = GoRouter(
       initialLocation: '/new-run',
@@ -158,7 +291,7 @@ void main() {
           path: '/new-run',
           builder: (_, __) => NewRunPage(
             registry: reg,
-            providers: [fakeProvider],
+            providers: [_ListModelsProvider()],
           ),
         ),
         GoRoute(
@@ -171,7 +304,8 @@ void main() {
       ],
     );
 
-    final tmp = Directory('/tmp/dart_arena_runbtn_${DateTime.now().microsecondsSinceEpoch}')
+    final tmp = Directory(
+            '/tmp/dart_arena_cfg_${DateTime.now().microsecondsSinceEpoch}')
       ..createSync(recursive: true);
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(() async {
@@ -188,15 +322,21 @@ void main() {
             value: SettingsRepository()),
         RepositoryProvider<RunDao>(
             create: (ctx) => RunDao(ctx.read<AppDatabase>())),
+        RepositoryProvider<PlanDao>(
+            create: (ctx) => PlanDao(ctx.read<AppDatabase>())),
       ],
       child: MaterialApp.router(routerConfig: router),
     ));
     await tester.pumpAndSettle();
 
-    // Provide model id and check the provider so _canRun is true.
-    await tester.tap(find.text('Fake'));
+    await tester.tap(find.text('ListProv'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(TextField, 'Model id'), 'fake-1');
+
+    final listFinder = find.byType(Scrollable).last;
+    await tester.drag(listFinder, const Offset(0, -300));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('model-a'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(FilledButton, 'Run'));
@@ -204,7 +344,9 @@ void main() {
 
     expect(capturedExtra, isA<StartRunConfig>());
     final cfg = capturedExtra! as StartRunConfig;
-    expect(cfg.weights['compile'], 2.5);
-    expect(cfg.weights['analyze'], 0.5); // default still merged
+    expect(cfg.modelsByProvider, contains('list'));
+    expect(cfg.modelsByProvider['list'], ['model-a']);
+    expect(cfg.maxConcurrency, 4);
+    expect(cfg.onFailure, RunFailurePolicy.failFast);
   });
 }

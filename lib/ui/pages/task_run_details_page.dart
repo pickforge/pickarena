@@ -9,6 +9,7 @@ import 'package:dart_arena/ui/widgets/evaluator_card.dart';
 import 'package:dart_arena/ui/widgets/score_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class TaskRunDetailsPage extends StatefulWidget {
   const TaskRunDetailsPage({
@@ -31,26 +32,14 @@ class TaskRunDetailsPage extends StatefulWidget {
 class _TaskRunDetailsPageState extends State<TaskRunDetailsPage> {
   late final RunDao _dao;
   late final TaskRegistry _registry;
-  AppDatabase? _ownedDb;
   Future<_TaskRunBundle?>? _future;
 
   @override
   void initState() {
     super.initState();
-    if (widget.dao == null) {
-      _ownedDb = AppDatabase();
-      _dao = RunDao(_ownedDb!);
-    } else {
-      _dao = widget.dao!;
-    }
+    _dao = widget.dao ?? context.read<RunDao>();
     _registry = widget.registry ?? buildDefaultTaskRegistry();
     _future = _load();
-  }
-
-  @override
-  void dispose() {
-    _ownedDb?.close();
-    super.dispose();
   }
 
   Future<_TaskRunBundle?> _load() async {

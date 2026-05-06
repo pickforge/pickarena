@@ -42,4 +42,37 @@ void main() {
     await repo.setBaseUrlOverride('ollama_cloud', 'https://my-ollama.example.com');
     expect(await repo.getBaseUrlOverride('ollama_cloud'), 'https://my-ollama.example.com');
   });
+
+  test('run concurrency defaults to 4', () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final repo = SettingsRepository();
+    expect(await repo.getRunConcurrency(), 4);
+  });
+
+  test('run concurrency roundtrips', () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final repo = SettingsRepository();
+    await repo.setRunConcurrency(7);
+    expect(await repo.getRunConcurrency(), 7);
+  });
+
+  test('run concurrency clamps low values', () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final repo = SettingsRepository();
+    await repo.setRunConcurrency(0);
+    expect(await repo.getRunConcurrency(), 1);
+  });
+
+  test('run concurrency clamps high values', () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final repo = SettingsRepository();
+    await repo.setRunConcurrency(100);
+    expect(await repo.getRunConcurrency(), 8);
+  });
+
+  test('run concurrency falls back for invalid stored value', () async {
+    FlutterSecureStorage.setMockInitialValues({'run_concurrency': 'abc'});
+    final repo = SettingsRepository();
+    expect(await repo.getRunConcurrency(), 4);
+  });
 }

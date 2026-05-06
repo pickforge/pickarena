@@ -192,9 +192,10 @@ void main() {
     await tester.tap(find.text('Fake'));
     await tester.pumpAndSettle();
     await tester.enterText(
-      find.widgetWithText(TextField, 'Model id'),
+      find.widgetWithText(TextField, 'Model ids (comma-separated)'),
       'fake-1',
     );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(FilledButton, 'Run'));

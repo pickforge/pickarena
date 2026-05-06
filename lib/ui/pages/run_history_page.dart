@@ -2,6 +2,7 @@ import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/ui/widgets/run_row.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class RunHistoryPage extends StatefulWidget {
@@ -15,26 +16,14 @@ class RunHistoryPage extends StatefulWidget {
 
 class _RunHistoryPageState extends State<RunHistoryPage> {
   late final RunDao _dao;
-  AppDatabase? _ownedDb;
   String _query = '';
   Future<List<_RunRowData>>? _future;
 
   @override
   void initState() {
     super.initState();
-    if (widget.dao == null) {
-      _ownedDb = AppDatabase();
-      _dao = RunDao(_ownedDb!);
-    } else {
-      _dao = widget.dao!;
-    }
+    _dao = widget.dao ?? context.read<RunDao>();
     _refresh();
-  }
-
-  @override
-  void dispose() {
-    _ownedDb?.close();
-    super.dispose();
   }
 
   void _refresh() {

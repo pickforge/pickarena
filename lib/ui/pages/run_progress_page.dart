@@ -18,14 +18,12 @@ class RunProgressPage extends StatelessWidget {
             RunInProgress(
               :final completed,
               :final total,
-              :final currentLabel,
-              :final currentRawResponse,
+              :final currentLabels,
             ) =>
               _ProgressView(
                 completed: completed,
                 total: total,
-                label: currentLabel,
-                rawResponse: currentRawResponse,
+                labels: currentLabels,
               ),
             RunCompleted(:final results) =>
               ListView.builder(
@@ -45,17 +43,16 @@ class _ProgressView extends StatelessWidget {
   const _ProgressView({
     required this.completed,
     required this.total,
-    required this.label,
-    required this.rawResponse,
+    required this.labels,
   });
 
   final int completed;
   final int total;
-  final String? label;
-  final String? rawResponse;
+  final Set<String> labels;
 
   @override
   Widget build(BuildContext context) {
+    final sorted = labels.toList()..sort();
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -66,37 +63,25 @@ class _ProgressView extends StatelessWidget {
                 '$completed / $total',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
-              const SizedBox(height: 8),
-              Text(label ?? ''),
               const SizedBox(height: 16),
-              if (rawResponse == null) const CircularProgressIndicator(),
+              if (sorted.isEmpty)
+                const CircularProgressIndicator(),
+              if (sorted.isNotEmpty)
+                Column(
+                  children: sorted.map((l) =>
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        l,
+                        style: const TextStyle(fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ).toList(),
+                ),
             ],
           ),
         ),
-        if (rawResponse != null) ...[
-          const SizedBox(height: 16),
-          const Divider(),
-          const Text('Model output:',
-              style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: SelectableText(
-              rawResponse!,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Center(child: Text('Evaluating…')),
-          const SizedBox(height: 8),
-          const LinearProgressIndicator(),
-        ],
       ],
     );
   }

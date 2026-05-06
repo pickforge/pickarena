@@ -76,6 +76,50 @@ class _SettingsPageState extends State<SettingsPage> {
             title: Text('Factory Droid'),
             subtitle: Text('Uses local droid CLI; no key needed in app.'),
           ),
+          const Divider(),
+          const _ConcurrencySection(),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConcurrencySection extends StatefulWidget {
+  const _ConcurrencySection();
+  @override
+  State<_ConcurrencySection> createState() => _ConcurrencySectionState();
+}
+
+class _ConcurrencySectionState extends State<_ConcurrencySection> {
+  final _repo = SettingsRepository();
+  double _value = 4;
+
+  @override
+  void initState() {
+    super.initState();
+    _repo.getRunConcurrency().then((v) => setState(() => _value = v.toDouble()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Max concurrent generations: ${_value.toInt()}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          Slider(
+            value: _value,
+            min: 1,
+            max: 8,
+            divisions: 7,
+            label: _value.toInt().toString(),
+            onChanged: (v) => setState(() => _value = v),
+            onChangeEnd: (v) => _repo.setRunConcurrency(v.toInt()),
+          ),
         ],
       ),
     );

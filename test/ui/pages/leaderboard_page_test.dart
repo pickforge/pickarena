@@ -37,15 +37,18 @@ Future<({AppDatabase db, LeaderboardRepository repo})> _seed() async {
 }
 
 void main() {
-  testWidgets('shows the seeded model in the ranked list', (tester) async {
-    final s = await _seed();
+  testWidgets('leaderboard page states', (tester) async {
     final registry = buildDefaultTaskRegistry();
     for (final t in registry.all()) {
       await t.ensureLoaded();
     }
+
+    // 1. Shows the seeded model in the ranked list
+    final s1 = await _seed();
+    addTearDown(() async => s1.db.close());
     await tester.pumpWidget(MaterialApp(
       home: LeaderboardPage(
-        repository: s.repo,
+        repository: s1.repo,
         registry: registry,
         initialQuery: const {},
       ),
@@ -53,17 +56,15 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('gpt-5'), findsOneWidget);
-  });
 
-  testWidgets('initialQuery applies dimension filter', (tester) async {
-    final s = await _seed();
-    final registry = buildDefaultTaskRegistry();
-    for (final t in registry.all()) {
-      await t.ensureLoaded();
-    }
+    // 2. initialQuery applies dimension filter
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    final s2 = await _seed();
+    addTearDown(() async => s2.db.close());
     await tester.pumpWidget(MaterialApp(
       home: LeaderboardPage(
-        repository: s.repo,
+        repository: s2.repo,
         registry: registry,
         initialQuery: const {'dim': 'speed'},
       ),
@@ -71,16 +72,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Speed'), findsWidgets);
-  });
 
-  testWidgets('shows empty-state on the right pane when nothing matches',
-      (tester) async {
+    // 3. Shows empty-state on the right pane when nothing matches
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
     final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(() async => db.close());
     final repo = LeaderboardRepository(db);
-    final registry = buildDefaultTaskRegistry();
-    for (final t in registry.all()) {
-      await t.ensureLoaded();
-    }
     await tester.pumpWidget(MaterialApp(
       home: LeaderboardPage(
         repository: repo,

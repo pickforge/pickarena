@@ -1,3 +1,4 @@
+import 'package:dart_arena/analytics/leaderboard_repository.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
@@ -49,10 +50,12 @@ final _router = GoRouter(
             bloc.add(StartRun(
               tasks: cfg.tasks,
               providers: cfg.providers,
-              modelByProvider: cfg.modelByProvider,
+              modelsByProvider: cfg.modelsByProvider,
               evaluatorConfig: cfg.evaluatorConfig,
               useReferencePlan: cfg.useReferencePlan,
               name: cfg.name,
+              maxConcurrency: cfg.maxConcurrency,
+              onFailure: cfg.onFailure,
             ));
             return bloc;
           },
@@ -108,6 +111,9 @@ class App extends StatelessWidget {
         ),
         RepositoryProvider<PlanDao>(
           create: (ctx) => PlanDao(ctx.read<AppDatabase>()),
+        ),
+        RepositoryProvider<LeaderboardRepository>(
+          create: (ctx) => LeaderboardRepository(ctx.read<AppDatabase>()),
         ),
       ],
       child: MaterialApp.router(

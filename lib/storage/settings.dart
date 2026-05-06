@@ -15,6 +15,17 @@ class SettingsRepository {
   static const _evaluatorWeightsJson = 'evaluator_weights_json';
   static const _readmePath = 'readme_path';
 
+  static const _runConcurrency = 'run_concurrency';
+
+  Future<int> getRunConcurrency() async {
+    final raw = await _storage.read(key: _runConcurrency);
+    final v = int.tryParse(raw ?? '');
+    return v?.clamp(1, 8) ?? 4;
+  }
+
+  Future<void> setRunConcurrency(int value) =>
+      _storage.write(key: _runConcurrency, value: value.clamp(1, 8).toString());
+
   Future<String> getOllamaBaseUrl() async =>
       (await _storage.read(key: _ollamaBaseUrl)) ?? 'http://localhost:11434';
 

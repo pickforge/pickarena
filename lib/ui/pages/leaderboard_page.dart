@@ -3,12 +3,12 @@ import 'package:dart_arena/analytics/leaderboard_filter.dart';
 import 'package:dart_arena/analytics/leaderboard_repository.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/task_registry.dart';
-import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/ui/widgets/dimension_radar.dart';
 import 'package:dart_arena/ui/widgets/leaderboard_filters.dart';
 import 'package:dart_arena/ui/widgets/per_task_bar_chart.dart';
 import 'package:dart_arena/ui/widgets/ranked_models_list.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class LeaderboardPage extends StatefulWidget {
@@ -29,7 +29,6 @@ class LeaderboardPage extends StatefulWidget {
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
   LeaderboardRepository? _repo;
-  AppDatabase? _ownedDb;
   late LeaderboardFilter _filter;
   String? _selectedKey;
   String? _pinnedKey;
@@ -39,22 +38,11 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.repository == null) {
-      _ownedDb = AppDatabase();
-      _repo = LeaderboardRepository(_ownedDb!);
-    } else {
-      _repo = widget.repository;
-    }
+    _repo = widget.repository ?? context.read<LeaderboardRepository>();
     _filter = _filterFromQuery(widget.initialQuery);
     _selectedKey = widget.initialQuery['sel'];
     _pinnedKey = widget.initialQuery['pin'];
     _refresh();
-  }
-
-  @override
-  void dispose() {
-    _ownedDb?.close();
-    super.dispose();
   }
 
   LeaderboardFilter _filterFromQuery(Map<String, String> q) {

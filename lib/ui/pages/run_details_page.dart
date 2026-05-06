@@ -4,12 +4,12 @@ import 'package:dart_arena/export/csv_exporter.dart';
 import 'package:dart_arena/export/md_exporter.dart';
 import 'package:dart_arena/export/readme_publisher.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
-import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/ui/widgets/run_matrix.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class RunDetailsPage extends StatefulWidget {
@@ -34,31 +34,19 @@ class _RunDetailsPageState extends State<RunDetailsPage> {
   late final RunDao _dao;
   late final SettingsRepository _settings;
   late final ReadmePublisher _publisher;
-  AppDatabase? _ownedDb;
   Future<RunSummary?>? _future;
   String? _readmePath;
 
   @override
   void initState() {
     super.initState();
-    if (widget.dao == null) {
-      _ownedDb = AppDatabase();
-      _dao = RunDao(_ownedDb!);
-    } else {
-      _dao = widget.dao!;
-    }
+    _dao = widget.dao ?? context.read<RunDao>();
     _settings = widget.settings ?? SettingsRepository();
     _publisher = widget.publisher ?? ReadmePublisher();
     _future = _dao.loadSummary(widget.runId);
     _settings.getReadmePath().then((p) {
       if (mounted) setState(() => _readmePath = p);
     });
-  }
-
-  @override
-  void dispose() {
-    _ownedDb?.close();
-    super.dispose();
   }
 
   Future<void> _saveCsv(RunSummary s) async {

@@ -8,6 +8,7 @@ import 'package:dart_arena/ui/widgets/in_progress_banner.dart';
 import 'package:dart_arena/ui/widgets/recent_runs_strip.dart';
 import 'package:dart_arena/ui/widgets/showcase_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -29,27 +30,14 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   late final RunDao _dao;
   late final LeaderboardRepository _repo;
-  AppDatabase? _ownedDb;
   Future<_DashboardData>? _future;
 
   @override
   void initState() {
     super.initState();
-    if (widget.dao == null || widget.repository == null) {
-      _ownedDb = AppDatabase();
-      _dao = widget.dao ?? RunDao(_ownedDb!);
-      _repo = widget.repository ?? LeaderboardRepository(_ownedDb!);
-    } else {
-      _dao = widget.dao!;
-      _repo = widget.repository!;
-    }
+    _dao = widget.dao ?? context.read<RunDao>();
+    _repo = widget.repository ?? context.read<LeaderboardRepository>();
     _future = _load();
-  }
-
-  @override
-  void dispose() {
-    _ownedDb?.close();
-    super.dispose();
   }
 
   Future<_DashboardData> _load() async {
