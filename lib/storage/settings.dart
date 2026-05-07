@@ -3,6 +3,91 @@ import 'dart:convert';
 import 'package:dart_arena/core/scoring.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+const customLocalProviderReservedIds = <String>{
+  'ollama_local',
+  'ollama_cloud',
+  'opencode_go',
+  'opencode_zen',
+  'openai',
+  'openrouter',
+  'deepseek',
+  'anthropic',
+  'droid',
+};
+
+final customLocalProviderIdPattern = RegExp(r'^[a-z0-9_]{2,32}$');
+
+class CustomLocalProviderEntry {
+  const CustomLocalProviderEntry({
+    required this.id,
+    required this.name,
+    this.extraHeaders = const {},
+    this.defaultEfforts = const [],
+  });
+
+  final String id;
+  final String name;
+  final Map<String, String> extraHeaders;
+  final List<String> defaultEfforts;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    if (extraHeaders.isNotEmpty) 'headers': extraHeaders,
+    if (defaultEfforts.isNotEmpty) 'efforts': defaultEfforts,
+  };
+
+  factory CustomLocalProviderEntry.fromJson(Map<String, dynamic> j) {
+    final headers = <String, String>{};
+    final rawHeaders = j['headers'];
+    if (rawHeaders is Map) {
+      for (final entry in rawHeaders.entries) {
+        if (entry.key is String && entry.value is String) {
+          headers[entry.key as String] = entry.value as String;
+        }
+      }
+    }
+    final efforts = <String>[
+      for (final effort in (j['efforts'] as List? ?? const <dynamic>[]))
+        if (effort is String) effort,
+    ];
+    return CustomLocalProviderEntry(
+      id: j['id'] as String,
+      name: j['name'] as String,
+      extraHeaders: headers,
+      defaultEfforts: efforts,
+    );
+  }
+}
+
+String? validateCustomLocalProviderId(
+  String id, {
+  required Iterable<String> existingIds,
+  String? currentId,
+}) {
+  final trimmed = id.trim();
+  if (!customLocalProviderIdPattern.hasMatch(trimmed)) {
+    return 'ID must be 2–32 characters: lowercase letters, digits, underscores';
+  }
+  if (customLocalProviderReservedIds.contains(trimmed)) return 'Reserved ID';
+  for (final eid in existingIds) {
+    if (eid == trimmed && eid != currentId) return 'ID already in use';
+  }
+  return null;
+}
+
+String? validateCustomLocalProviderEntry(
+  CustomLocalProviderEntry entry, {
+  required Iterable<String> existingIds,
+}) {
+  if (entry.name.trim().isEmpty) return 'Name is required';
+  return validateCustomLocalProviderId(
+    entry.id,
+    existingIds: existingIds,
+    currentId: entry.id,
+  );
+}
+
 class SettingsRepository {
   SettingsRepository([FlutterSecureStorage? storage])
     : _storage = storage ?? const FlutterSecureStorage();
@@ -14,6 +99,8 @@ class SettingsRepository {
   static const _judgeModelId = 'judge_model_id';
   static const _evaluatorWeightsJson = 'evaluator_weights_json';
   static const _readmePath = 'readme_path';
+
+  static const _customLocalProvidersKey = 'custom_local_providers';
 
   static const _runConcurrency = 'run_concurrency';
 
@@ -43,6 +130,87 @@ class SettingsRepository {
 
   Future<void> clearApiKey(String providerId) =>
       _storage.delete(key: _apiKeyKey(providerId));
+
+  Future<List<CustomLocalProviderEntry>> getCustomLocalProviders() async {
+    final raw = await _storage.read(key: _customLocalProvidersKey);
+    if (raw == null) {
+      final legacyUrl = await getBaseUrlOverride('local_openai');
+      final legacyKey = await getApiKey('local_openai');
+      final trimmedUrl = (legacyUrl ?? '').trim();
+      final trimmedKey = (legacyKey ?? '').trim();
+      if (trimmedUrl.isNotEmpty || trimmedKey.isNotEmpty) {
+        if (trimmedUrl.isEmpty) {
+          await setBaseUrlOverride('local_openai', 'http://127.0.0.1:8080/v1');
+        } else if (trimmedUrl != legacyUrl) {
+          await setBaseUrlOverride('local_openai', trimmedUrl);
+        }
+        final seed = [
+          const CustomLocalProviderEntry(
+            id: 'local_openai',
+            name: 'Local OpenAI',
+          ),
+        ];
+        await setCustomLocalProviders(seed);
+        return seed;
+      }
+      return const [];
+    }
+    try {
+      return (jsonDecode(raw) as List)
+          .whereType<Map<String, dynamic>>()
+          .map((e) => CustomLocalProviderEntry.fromJson(e))
+          .toList();
+    } on Object {
+      return const [];
+    }
+  }
+
+  Future<void> setCustomLocalProviders(
+    List<CustomLocalProviderEntry> entries,
+  ) async {
+    final trimmed = entries.map((e) {
+      final h = Map<String, String>.fromEntries(
+        e.extraHeaders.entries.map(
+          (kv) => MapEntry(kv.key.trim(), kv.value.trim()),
+        ),
+      );
+      final eff = e.defaultEfforts
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toSet()
+          .toList();
+      return CustomLocalProviderEntry(
+        id: e.id.trim(),
+        name: e.name.trim(),
+        extraHeaders: h,
+        defaultEfforts: eff,
+      );
+    }).toList();
+    final ids = trimmed.map((e) => e.id).toList();
+    if (ids.toSet().length != ids.length) {
+      throw ArgumentError('Duplicate IDs in provider list');
+    }
+    for (final e in trimmed) {
+      if (e.name.isEmpty) throw ArgumentError('Name is required');
+      final err = validateCustomLocalProviderId(
+        e.id,
+        existingIds: ids.where((id) => id != e.id),
+      );
+      if (err != null) throw ArgumentError(err);
+    }
+    final json = jsonEncode(trimmed.map((e) => e.toJson()).toList());
+    await _storage.write(key: _customLocalProvidersKey, value: json);
+  }
+
+  Future<void> deleteCustomLocalProvider(String id) async {
+    final list = await getCustomLocalProviders();
+    final updated = list.where((e) => e.id != id).toList();
+    if (updated.length != list.length) {
+      await setCustomLocalProviders(updated);
+    }
+    await _storage.delete(key: _apiKeyKey(id));
+    await _storage.delete(key: _baseUrlKey(id));
+  }
 
   Future<String?> getBaseUrlOverride(String providerId) =>
       _storage.read(key: _baseUrlKey(providerId));

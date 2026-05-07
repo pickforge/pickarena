@@ -37,17 +37,20 @@ Future<List<ModelProvider>> buildEnabledProviders(
     );
   }
 
-  providers.add(
-    OpenAiCompatibleProvider(
+  final customs = await repo.getCustomLocalProviders();
+  for (final c in customs) {
+    final url = (await repo.getBaseUrlOverride(c.id))?.trim();
+    if (url == null || url.isEmpty) continue;
+    providers.add(OpenAiCompatibleProvider(
       null,
-      id: 'local_openai',
-      displayName: 'Local OpenAI-compatible',
-      baseUrl:
-          await repo.getBaseUrlOverride('local_openai') ??
-          'http://127.0.0.1:8080/v1',
-      apiKey: await repo.getApiKey('local_openai') ?? '',
-    ),
-  );
+      id: c.id,
+      displayName: c.name,
+      baseUrl: url,
+      apiKey: await repo.getApiKey(c.id) ?? '',
+      extraHeaders: c.extraHeaders,
+      defaultEfforts: c.defaultEfforts,
+    ));
+  }
 
   Future<void> addProvider(
     String providerId,

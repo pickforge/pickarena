@@ -1,4 +1,5 @@
 import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/providers/openai_compatible_provider.dart';
 import 'package:dart_arena/ui/widgets/evaluator_weights_section.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -14,12 +15,15 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   late final SettingsRepository _repo;
+  int _providersVersion = 0;
 
   @override
   void initState() {
     super.initState();
     _repo = context.read<SettingsRepository>();
   }
+
+  void _onProvidersChanged() => setState(() => _providersVersion++);
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +32,7 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const _JudgeSection(),
+          _JudgeSection(key: ValueKey('judge_$_providersVersion')),
           const Divider(),
           const EvaluatorWeightsSection(),
           const Divider(),
@@ -40,7 +44,10 @@ class _SettingsPageState extends State<SettingsPage> {
             label: 'Ollama Cloud',
           ),
           const Divider(),
-          _LocalOpenAiSection(repo: _repo),
+          _CustomLocalProvidersSection(
+            repo: _repo,
+            onChanged: _onProvidersChanged,
+          ),
           const Divider(),
           _ApiKeySection(
             repo: _repo,
@@ -127,7 +134,7 @@ class _ConcurrencySectionState extends State<_ConcurrencySection> {
 }
 
 class _JudgeSection extends StatefulWidget {
-  const _JudgeSection();
+  const _JudgeSection({super.key});
   @override
   State<_JudgeSection> createState() => _JudgeSectionState();
 }
@@ -136,11 +143,11 @@ class _JudgeSectionState extends State<_JudgeSection> {
   final _repo = SettingsRepository();
   final _modelController = TextEditingController();
   String? _providerId;
+  List<String> _providerIds = const [];
 
   static const _knownProviders = <String>[
     'ollama_local',
     'ollama_cloud',
-    'local_openai',
     'opencode_go',
     'openai',
     'openrouter',
@@ -158,9 +165,17 @@ class _JudgeSectionState extends State<_JudgeSection> {
   Future<void> _load() async {
     final pid = await _repo.getJudgeProviderId();
     final mid = await _repo.getJudgeModelId();
+    final customs = await _repo.getCustomLocalProviders();
+    final dynamicIds = customs.map((c) => c.id).toList();
+    final merged = <String>[..._knownProviders];
+    for (final id in dynamicIds) {
+      if (!merged.contains(id)) merged.add(id);
+    }
+    if (!mounted) return;
     setState(() {
-      _providerId = pid;
+      _providerId = (pid != null && merged.contains(pid)) ? pid : null;
       _modelController.text = mid ?? '';
+      _providerIds = merged;
     });
   }
 
@@ -179,7 +194,7 @@ class _JudgeSectionState extends State<_JudgeSection> {
             const SizedBox(height: 8),
             DropdownButtonFormField<String?>(
               key: ValueKey(_providerId),
-              initialValue: _knownProviders.contains(_providerId)
+              initialValue: _providerIds.contains(_providerId)
                   ? _providerId
                   : null,
               decoration: const InputDecoration(
@@ -191,7 +206,7 @@ class _JudgeSectionState extends State<_JudgeSection> {
                   value: null,
                   child: Text('(none — disable judge)'),
                 ),
-                ..._knownProviders.map(
+                ..._providerIds.map(
                   (p) => DropdownMenuItem<String?>(value: p, child: Text(p)),
                 ),
               ],
@@ -229,18 +244,19 @@ class _JudgeSectionState extends State<_JudgeSection> {
   }
 }
 
-class _LocalOpenAiSection extends StatefulWidget {
-  const _LocalOpenAiSection({required this.repo});
+class _CustomLocalProvidersSection extends StatefulWidget {
+  const _CustomLocalProvidersSection({required this.repo, this.onChanged});
   final SettingsRepository repo;
+  final VoidCallback? onChanged;
 
   @override
-  State<_LocalOpenAiSection> createState() => _LocalOpenAiSectionState();
+  State<_CustomLocalProvidersSection> createState() =>
+      _CustomLocalProvidersSectionState();
 }
 
-class _LocalOpenAiSectionState extends State<_LocalOpenAiSection> {
-  final _baseUrlController = TextEditingController();
-  final _apiKeyController = TextEditingController();
-  bool _obscured = true;
+class _CustomLocalProvidersSectionState
+    extends State<_CustomLocalProvidersSection> {
+  Future<List<CustomLocalProviderEntry>>? _future;
 
   @override
   void initState() {
@@ -248,13 +264,10 @@ class _LocalOpenAiSectionState extends State<_LocalOpenAiSection> {
     _load();
   }
 
-  Future<void> _load() async {
-    final baseUrl = await widget.repo.getBaseUrlOverride('local_openai');
-    final apiKey = await widget.repo.getApiKey('local_openai');
+  void _load() {
     if (!mounted) return;
     setState(() {
-      _baseUrlController.text = baseUrl ?? 'http://127.0.0.1:8080/v1';
-      _apiKeyController.text = apiKey ?? '';
+      _future = widget.repo.getCustomLocalProviders();
     });
   }
 
@@ -264,60 +277,540 @@ class _LocalOpenAiSectionState extends State<_LocalOpenAiSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Local OpenAI-compatible',
+          'Local OpenAI-compatible providers',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 4),
         const Text(
-          'For llama.cpp, vLLM, LM Studio, and other local /v1 endpoints.',
+          'For llama.cpp, vLLM, LM Studio, Codex, and other local /v1 endpoints.',
           style: TextStyle(fontSize: 12),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: _baseUrlController,
-          decoration: const InputDecoration(
-            labelText: 'Base URL',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _apiKeyController,
-          obscureText: _obscured,
-          decoration: InputDecoration(
-            labelText: 'API Key (optional)',
-            border: const OutlineInputBorder(),
-            suffixIcon: IconButton(
-              icon: Icon(_obscured ? Icons.visibility : Icons.visibility_off),
-              onPressed: () => setState(() => _obscured = !_obscured),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        FilledButton(
-          onPressed: () async {
-            final messenger = ScaffoldMessenger.of(context);
-            final baseUrl = _baseUrlController.text.trim().isEmpty
-                ? 'http://127.0.0.1:8080/v1'
-                : _baseUrlController.text.trim();
-            await widget.repo.setBaseUrlOverride('local_openai', baseUrl);
-            final apiKey = _apiKeyController.text.trim();
-            if (apiKey.isEmpty) {
-              await widget.repo.clearApiKey('local_openai');
-            } else {
-              await widget.repo.setApiKey('local_openai', apiKey);
+        FutureBuilder<List<CustomLocalProviderEntry>>(
+          future: _future,
+          builder: (context, snap) {
+            if (snap.connectionState != ConnectionState.done) {
+              return const LinearProgressIndicator();
             }
-            if (!mounted) return;
-            messenger.showSnackBar(
-              const SnackBar(content: Text('Local provider saved')),
+            final entries = snap.data ?? const [];
+            return Column(
+              children: [
+                for (final entry in entries)
+                  _ProviderCard(
+                    entry: entry,
+                    repo: widget.repo,
+                    onEdited: () => _openDialog(entry: entry),
+                    onDeleted: () => _delete(entry.id),
+                  ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => _openDialog(),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add provider'),
+                ),
+              ],
             );
           },
-          child: const Text('Save local provider'),
         ),
       ],
     );
   }
+
+  Future<void> _openDialog({CustomLocalProviderEntry? entry}) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => _LocalProviderDialog(entry: entry, repo: widget.repo),
+    );
+    if (saved == true) {
+      _load();
+      widget.onChanged?.call();
+    }
+  }
+
+  Future<void> _delete(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete provider?'),
+            content: Text('Delete "$id" and its stored URL and API key?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed == true) {
+      await widget.repo.deleteCustomLocalProvider(id);
+      _load();
+      widget.onChanged?.call();
+    }
+  }
 }
+
+class _ProviderCard extends StatelessWidget {
+  const _ProviderCard({
+    required this.entry,
+    required this.repo,
+    required this.onEdited,
+    required this.onDeleted,
+  });
+
+  final CustomLocalProviderEntry entry;
+  final SettingsRepository repo;
+  final VoidCallback onEdited;
+  final VoidCallback onDeleted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  _UrlPreview(id: entry.id, repo: repo),
+                  _KeyBadge(id: entry.id, repo: repo),
+                ],
+              ),
+            ),
+            IconButton(icon: const Icon(Icons.edit), onPressed: onEdited),
+            IconButton(icon: const Icon(Icons.delete), onPressed: onDeleted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UrlPreview extends StatelessWidget {
+  const _UrlPreview({required this.id, required this.repo});
+  final String id;
+  final SettingsRepository repo;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: repo.getBaseUrlOverride(id),
+      builder: (context, snap) {
+        final url = snap.data?.trim();
+        return Text(
+          (url != null && url.isNotEmpty) ? url : 'No URL configured',
+          style: TextStyle(
+            fontSize: 12,
+            fontStyle: url == null || url.isEmpty ? FontStyle.italic : null,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+      },
+    );
+  }
+}
+
+class _KeyBadge extends StatelessWidget {
+  const _KeyBadge({required this.id, required this.repo});
+  final String id;
+  final SettingsRepository repo;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: repo.getApiKey(id),
+      builder: (context, snap) {
+        final hasKey = snap.data != null && snap.data!.trim().isNotEmpty;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              hasKey ? Icons.vpn_key : Icons.vpn_key_off,
+              size: 14,
+              color: hasKey ? Colors.green : Colors.grey,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              hasKey ? 'Key set' : 'No key',
+              style: TextStyle(fontSize: 11, color: hasKey ? Colors.green : Colors.grey),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _LocalProviderDialog extends StatefulWidget {
+  const _LocalProviderDialog({this.entry, required this.repo});
+  final CustomLocalProviderEntry? entry;
+  final SettingsRepository repo;
+
+  @override
+  State<_LocalProviderDialog> createState() => _LocalProviderDialogState();
+}
+
+class _LocalProviderDialogState extends State<_LocalProviderDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _idController = TextEditingController();
+  final _urlController = TextEditingController();
+  final _keyController = TextEditingController();
+  final _effortsController = TextEditingController();
+  bool _obscured = true;
+  bool _testing = false;
+  final _headerRows = <({TextEditingController key, TextEditingController value})>[];
+
+  bool get _isEdit => widget.entry != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.entry;
+    if (e != null) {
+      _nameController.text = e.name;
+      _idController.text = e.id;
+      _effortsController.text = e.defaultEfforts.join(', ');
+      for (final header in e.extraHeaders.entries) {
+        _headerRows.add((
+          key: TextEditingController(text: header.key),
+          value: TextEditingController(text: header.value),
+        ));
+      }
+    }
+    _loadUrlAndKey();
+  }
+
+  Future<void> _loadUrlAndKey() async {
+    final e = widget.entry;
+    if (e != null) {
+      final url = await widget.repo.getBaseUrlOverride(e.id);
+      final key = await widget.repo.getApiKey(e.id);
+      if (!mounted) return;
+      _urlController.text = url ?? 'http://127.0.0.1:8080/v1';
+      _keyController.text = key ?? '';
+    } else {
+      _urlController.text = 'http://127.0.0.1:8080/v1';
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _idController.dispose();
+    _urlController.dispose();
+    _keyController.dispose();
+    _effortsController.dispose();
+    for (final row in _headerRows) {
+      row.key.dispose();
+      row.value.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _testConnection() async {
+    setState(() => _testing = true);
+    try {
+      final provider = OpenAiCompatibleProvider(
+        null,
+        id: _idController.text.trim(),
+        displayName: _nameController.text.trim(),
+        baseUrl: _urlController.text.trim(),
+        apiKey: _keyController.text.trim(),
+        extraHeaders: _parsedHeaders(),
+      );
+      final models = await provider.listModels();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('OK (${models.length} models)')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Connection failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _testing = false);
+    }
+  }
+
+  Map<String, String> _parsedHeaders() {
+    final headers = <String, String>{};
+    for (final row in _headerRows) {
+      final k = row.key.text.trim();
+      final v = row.value.text.trim();
+      if (k.isNotEmpty && v.isNotEmpty) headers[k] = v;
+    }
+    return headers;
+  }
+
+  List<String> _parsedEfforts() {
+    return _effortsController.text
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .toList();
+  }
+
+  Future<List<CustomLocalProviderEntry>> _latestList() async {
+    try {
+      return await widget.repo.getCustomLocalProviders();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  String? _validateId(String? raw) {
+    if (raw == null) return 'ID is required';
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return 'ID is required';
+    final currentList = _latestListSync();
+    final existingIds = currentList.map((e) => e.id);
+    return validateCustomLocalProviderId(
+      trimmed,
+      existingIds: existingIds,
+      currentId: _isEdit ? widget.entry!.id : null,
+    );
+  }
+
+  List<CustomLocalProviderEntry> _latestListSync() {
+    return _latestListCache ?? const [];
+  }
+
+  List<CustomLocalProviderEntry>? _latestListCache;
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    _latestListCache = await _latestList();
+
+    // Re-validate with fresh list
+    final idError = _validateId(_idController.text);
+    if (idError != null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(idError)),
+      );
+      return;
+    }
+
+    final name = _nameController.text.trim();
+    final id = _idController.text.trim();
+    final url = _urlController.text.trim();
+    final key = _keyController.text.trim();
+
+    final entry = CustomLocalProviderEntry(
+      id: id,
+      name: name,
+      extraHeaders: _parsedHeaders(),
+      defaultEfforts: _parsedEfforts(),
+    );
+
+    // Save URL and API key
+    if (url.isEmpty) {
+      await widget.repo.setBaseUrlOverride(id, 'http://127.0.0.1:8080/v1');
+    } else {
+      await widget.repo.setBaseUrlOverride(id, url);
+    }
+    if (key.isEmpty) {
+      await widget.repo.clearApiKey(id);
+    } else {
+      await widget.repo.setApiKey(id, key);
+    }
+
+    // Update index
+    final list = _latestListCache!.toList();
+    if (_isEdit) {
+      final idx = list.indexWhere((e) => e.id == widget.entry!.id);
+      if (idx >= 0) {
+        list[idx] = entry;
+      } else {
+        list.add(entry);
+      }
+    } else {
+      list.add(entry);
+    }
+    await widget.repo.setCustomLocalProviders(list);
+
+    if (!mounted) return;
+    Navigator.pop(context, true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(_isEdit ? 'Edit provider' : 'Add provider'),
+      content: SizedBox(
+        width: 500,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Display name',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _idController,
+                  enabled: !_isEdit,
+                  decoration: const InputDecoration(
+                    labelText: 'ID',
+                    border: OutlineInputBorder(),
+                    helperText: 'Lowercase letters, digits, underscores. 2–32 chars.',
+                  ),
+                  validator: _validateId,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _urlController,
+                  decoration: const InputDecoration(
+                    labelText: 'Base URL',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'URL is required' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _keyController,
+                  obscureText: _obscured,
+                  decoration: InputDecoration(
+                    labelText: 'API key (optional)',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscured ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () => setState(() => _obscured = !_obscured),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Text(
+                      'Extra headers',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: () => setState(() {
+                        _headerRows.add((
+                          key: TextEditingController(),
+                          value: TextEditingController(),
+                        ));
+                      }),
+                    ),
+                  ],
+                ),
+                for (var i = 0; i < _headerRows.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _headerRows[i].key,
+                            decoration: const InputDecoration(
+                              hintText: 'Key',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            validator: (v) {
+                              if ((v ?? '').trim().isEmpty &&
+                                  (_headerRows[i].value.text.trim().isNotEmpty)) {
+                                return 'Key required';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _headerRows[i].value,
+                            decoration: const InputDecoration(
+                              hintText: 'Value',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            validator: (v) {
+                              if ((v ?? '').trim().isEmpty &&
+                                  (_headerRows[i].key.text.trim().isNotEmpty)) {
+                                return 'Value required';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.remove),
+                          onPressed: () {
+                            _headerRows[i].key.dispose();
+                            _headerRows[i].value.dispose();
+                            setState(() => _headerRows.removeAt(i));
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _effortsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Default efforts (comma-separated)',
+                    border: OutlineInputBorder(),
+                    helperText: 'e.g. low, medium, high',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        OutlinedButton(
+          onPressed: _testing ? null : _testConnection,
+          child: _testing
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Test connection'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _save, child: const Text('Save')),
+      ],
+    );
+  }
+}
+
+
 
 class _OllamaLocalSection extends StatefulWidget {
   const _OllamaLocalSection({required this.repo});
