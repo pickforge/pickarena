@@ -196,10 +196,9 @@ class _FailedCard extends StatelessWidget {
         children: [
           ListTile(
             title: Text(snapshot.label),
-            subtitle: Text(
+            subtitle: SelectableText(
               snapshot.errorMessage,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12),
             ),
             trailing: FilledButton.tonalIcon(
               icon: const Icon(Icons.refresh),

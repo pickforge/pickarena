@@ -23,7 +23,7 @@ void main() {
     final p = OpenCodeGoProvider(apiKey: 'k');
     final models = await p.listModels();
     for (final m in models) {
-      expect(m.efforts, ['low', 'medium', 'high', 'max']);
+      expect(m.efforts, ['low', 'medium', 'high', 'xhigh']);
     }
   });
 }

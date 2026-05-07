@@ -10,7 +10,7 @@ class OpenCodeGoProvider extends OpenAiCompatibleProvider {
         displayName: 'OpenCode Go',
         baseUrl: 'https://opencode.ai/zen/go/v1',
         apiKey: apiKey,
-        defaultEfforts: const ['low', 'medium', 'high', 'max'],
+        defaultEfforts: const ['low', 'medium', 'high', 'xhigh'],
       );
 
   /// Return only models routed through /chat/completions.

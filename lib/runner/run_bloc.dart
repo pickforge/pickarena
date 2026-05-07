@@ -520,7 +520,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       await for (final event in provider.generateStream(
         prompt: prompt,
         model: modelId,
-        timeout: const Duration(minutes: 5),
+        timeout: const Duration(minutes: 10),
       )) {
         switch (event) {
           case ModelStreamReasoningDelta(:final text):
@@ -581,7 +581,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       response = await provider.generate(
         prompt: prompt,
         model: modelId,
-        timeout: const Duration(minutes: 5),
+        timeout: const Duration(minutes: 10),
       );
 
       updateActive(

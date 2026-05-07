@@ -15,7 +15,15 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
     required this.apiKey,
     this.extraHeaders = const <String, String>{},
     this.defaultEfforts = const [],
-  }) : _dio = dio ?? (Dio()..interceptors.add(PrettyDioLogger()));
+  }) : _dio = dio ?? (Dio()
+      ..interceptors.addAll([
+        _ErrorBodyInterceptor(),
+        PrettyDioLogger(
+          requestBody: true,
+          maxWidth: 120,
+          logPrint: _logFilter,
+        ),
+      ]));
 
   @override
   final String id;
@@ -29,6 +37,12 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
 
   @override
   ProviderMode get mode => ProviderMode.rawApi;
+
+  static void _logFilter(Object object) {
+    final text = object.toString();
+    if (text.contains('Instance of \'ResponseBody\'')) return;
+    print(text);
+  }
 
   Map<String, String> _headers() => <String, String>{
     if (apiKey.isNotEmpty) 'Authorization': 'Bearer $apiKey',
@@ -44,6 +58,42 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
       return (baseModel: model.substring(0, idx), effort: suffix);
     }
     return (baseModel: model, effort: null);
+  }
+
+  Future<String> _readErrorBody(DioException e) async {
+    final data = e.response?.data;
+    if (data is ResponseBody) {
+      try {
+        final bytes = await data.stream.fold<List<int>>(
+          <int>[], (prev, chunk) => prev..addAll(chunk),
+        );
+        return utf8.decode(bytes);
+      } catch (_) {
+        return '${e.message} (could not read error body)';
+      }
+    }
+    if (data is Map) {
+      return jsonEncode(data);
+    }
+    return data?.toString() ?? e.message ?? 'unknown error';
+  }
+
+  Future<T> _withRateLimitRetry<T>(Future<T> Function() fn) async {
+    const maxRetries = 3;
+    var delay = Duration.zero;
+    for (var attempt = 0; attempt <= maxRetries; attempt++) {
+      if (delay > Duration.zero) await Future<void>.delayed(delay);
+      try {
+        return await fn();
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 429 && attempt < maxRetries) {
+          delay = Duration(seconds: 1 << attempt); // 1s, 2s, 4s
+          continue;
+        }
+        rethrow;
+      }
+    }
+    throw StateError('unreachable');
   }
 
   @override
@@ -73,19 +123,34 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
         {'role': 'user', 'content': prompt},
       ],
       'stream': false,
+      'max_tokens': 16384,
     };
     if (effort != null) {
       body['reasoning_effort'] = effort;
     }
-    final res = await _dio.post<Map<String, dynamic>>(
-      '$baseUrl/chat/completions',
-      data: body,
-      options: Options(
-        headers: _headers(),
-        sendTimeout: timeout,
-        receiveTimeout: timeout,
-      ),
-    );
+    Response<Map<String, dynamic>> res;
+    try {
+      res = await _withRateLimitRetry(
+        () => _dio.post<Map<String, dynamic>>(
+          '$baseUrl/chat/completions',
+          data: body,
+          options: Options(
+            headers: _headers(),
+            sendTimeout: timeout,
+            receiveTimeout: timeout,
+          ),
+        ),
+      );
+    } on DioException catch (e) {
+      final body = await _readErrorBody(e);
+      throw DioException(
+        requestOptions: e.requestOptions,
+        response: e.response,
+        type: e.type,
+        error: body,
+        message: body,
+      );
+    }
     stopwatch.stop();
 
     final data = res.data ?? const <String, dynamic>{};
@@ -122,20 +187,35 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
         {'role': 'user', 'content': prompt},
       ],
       'stream': true,
+      'max_tokens': 16384,
     };
     if (effort != null) {
       body['reasoning_effort'] = effort;
     }
-    final res = await _dio.post<ResponseBody>(
-      '$baseUrl/chat/completions',
-      data: body,
-      options: Options(
-        responseType: ResponseType.stream,
-        headers: _headers(),
-        sendTimeout: timeout,
-        receiveTimeout: timeout,
-      ),
-    );
+    Response<ResponseBody> res;
+    try {
+      res = await _withRateLimitRetry(
+        () => _dio.post<ResponseBody>(
+          '$baseUrl/chat/completions',
+          data: body,
+          options: Options(
+            responseType: ResponseType.stream,
+            headers: _headers(),
+            sendTimeout: timeout,
+            receiveTimeout: timeout,
+          ),
+        ),
+      );
+    } on DioException catch (e) {
+      final body = await _readErrorBody(e);
+      throw DioException(
+        requestOptions: e.requestOptions,
+        response: e.response,
+        type: e.type,
+        error: body,
+        message: body,
+      );
+    }
 
     final stream = res.data!.stream
         .cast<List<int>>()
@@ -189,5 +269,21 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
     }
 
     yield const ModelStreamCompleted();
+  }
+}
+
+class _ErrorBodyInterceptor extends Interceptor {
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    final data = err.response?.data;
+    if (data is ResponseBody) {
+      data.stream.fold<List<int>>(<int>[], (prev, chunk) => prev..addAll(chunk))
+          .then((bytes) {
+        err.response!.data = utf8.decode(bytes);
+        handler.next(err);
+      });
+    } else {
+      handler.next(err);
+    }
   }
 }
