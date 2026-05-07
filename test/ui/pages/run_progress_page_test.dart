@@ -2,11 +2,6 @@ import 'dart:async';
 
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/task_run_result.dart';
-import 'package:dart_arena/core/evaluator_config.dart';
-import 'package:dart_arena/core/benchmark_task.dart';
-import 'package:dart_arena/core/category.dart';
-import 'package:dart_arena/evaluators/evaluator.dart';
-import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_progress_snapshot.dart';
@@ -19,58 +14,10 @@ import 'package:mocktail/mocktail.dart';
 
 class MockRunBloc extends Mock implements RunBloc {}
 
-class _Provider implements ModelProvider {
-  @override
-  String get id => 'p';
-  @override
-  String get displayName => 'P';
-  @override
-  ProviderMode get mode => ProviderMode.rawApi;
-  @override
-  Future<List<String>> listModels() async => ['m'];
-  @override
-  Future<ModelResponse> generate({
-    required String prompt,
-    required String model,
-    Duration? timeout,
-  }) async => const ModelResponse(
-    rawText: '',
-    extractedCode: null,
-    promptTokens: null,
-    completionTokens: null,
-    latency: Duration.zero,
-  );
-}
-
-class _Task extends BenchmarkTask {
-  @override
-  String get id => 't';
-  @override
-  Category get category => Category.bugFix;
-  @override
-  String get prompt => 'p';
-  @override
-  Map<String, String> get fixtures => const {};
-  @override
-  String get generatedCodePath => 'lib/a.dart';
-  @override
-  String? get judgeRubric => null;
-  @override
-  List<Evaluator> evaluatorsFor(EvaluatorConfig config) => const [];
-}
-
 void main() {
   setUpAll(() {
-    registerFallbackValue(
-      StartRun(
-        tasks: [_Task()],
-        providers: [_Provider()],
-        modelsByProvider: const {
-          'p': ['m'],
-        },
-        evaluatorConfig: const EvaluatorConfig(),
-      ),
-    );
+    registerFallbackValue(const RetryCombo(runId: '', failedIndex: 0));
+    registerFallbackValue(const FinishRun(''));
   });
 
   final now = DateTime(2025, 1, 1, 12, 0, 0);
@@ -198,25 +145,13 @@ void main() {
     expect(find.text('P2 / m2 on t2'), findsOneWidget);
   });
 
-  testWidgets('failed state can retry failed task', (tester) async {
-    final retry = StartRun(
-      tasks: [_Task()],
-      providers: [_Provider()],
-      modelsByProvider: const {
-        'p': ['m'],
-      },
-      evaluatorConfig: const EvaluatorConfig(),
-      existingRunId: 'r',
-    );
-    final bloc = createBloc(RunFailed('timeout', retry: retry));
+  testWidgets('failed state shows error and back button', (tester) async {
+    final bloc = createBloc(const RunFailed('timeout'));
 
     await tester.pumpWidget(build(bloc));
     await tester.pump();
 
-    expect(find.textContaining('Failed: timeout'), findsOneWidget);
-    await tester.tap(find.text('Retry failed task'));
-    await tester.pump();
-
-    verify(() => bloc.add(retry)).called(1);
+    expect(find.textContaining('timeout'), findsOneWidget);
+    expect(find.text('Back'), findsOneWidget);
   });
 }

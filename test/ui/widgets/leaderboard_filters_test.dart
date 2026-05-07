@@ -8,15 +8,17 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   testWidgets('emits new filter when dimension is changed', (tester) async {
     LeaderboardFilter? captured;
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: LeaderboardFilters(
-          filter: const LeaderboardFilter(),
-          providerOptions: const ['openai', 'anthropic'],
-          onChanged: (f) => captured = f,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LeaderboardFilters(
+            filter: const LeaderboardFilter(),
+            providerOptions: const ['openai', 'anthropic'],
+            onChanged: (f) => captured = f,
+          ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.byKey(const Key('dim-dropdown')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Speed').last);
@@ -24,20 +26,25 @@ void main() {
     expect(captured?.dimension, ScoreDimension.speed);
   });
 
-  testWidgets('emits new filter when category is set then cleared',
-      (tester) async {
+  testWidgets('emits new filter when category is set then cleared', (
+    tester,
+  ) async {
     LeaderboardFilter? captured;
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: StatefulBuilder(builder: (context, setState) {
-          return LeaderboardFilters(
-            filter: captured ?? const LeaderboardFilter(),
-            providerOptions: const ['openai'],
-            onChanged: (f) => setState(() => captured = f),
-          );
-        }),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              return LeaderboardFilters(
+                filter: captured ?? const LeaderboardFilter(),
+                providerOptions: const ['openai'],
+                onChanged: (f) => setState(() => captured = f),
+              );
+            },
+          ),
+        ),
       ),
-    ));
+    );
     await tester.tap(find.byKey(const Key('category-dropdown')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Bug fix').last);
@@ -47,15 +54,17 @@ void main() {
 
   testWidgets('emits new filter when last 7d chip is tapped', (tester) async {
     LeaderboardFilter? captured;
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: LeaderboardFilters(
-          filter: const LeaderboardFilter(),
-          providerOptions: const [],
-          onChanged: (f) => captured = f,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LeaderboardFilters(
+            filter: const LeaderboardFilter(),
+            providerOptions: const [],
+            onChanged: (f) => captured = f,
+          ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('7d'));
     await tester.pumpAndSettle();
     expect(captured?.dateRange, DateRange.last7d);

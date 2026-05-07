@@ -63,24 +63,23 @@ class Evaluations extends Table {
 
 @DriftDatabase(tables: [Runs, TaskRuns, Evaluations, Plans])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase([QueryExecutor? executor])
-      : super(executor ?? _openConnection());
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
   int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.addColumn(runs, runs.name);
-          }
-          if (from < 3) {
-            await m.createTable(plans);
-            await m.addColumn(taskRuns, taskRuns.planId);
-          }
-        },
-      );
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.addColumn(runs, runs.name);
+      }
+      if (from < 3) {
+        await m.createTable(plans);
+        await m.addColumn(taskRuns, taskRuns.planId);
+      }
+    },
+  );
 }
 
 LazyDatabase _openConnection() {

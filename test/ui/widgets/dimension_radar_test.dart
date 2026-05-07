@@ -13,17 +13,20 @@ void main() {
     problems: 0,
   );
 
-  testWidgets('renders a RadarChart with the four dimension labels',
-      (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 400,
-          height: 400,
-          child: DimensionRadar(selected: sample, selectedLabel: 'gpt-5'),
+  testWidgets('renders a RadarChart with the four dimension labels', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 400,
+            height: 400,
+            child: DimensionRadar(selected: sample, selectedLabel: 'gpt-5'),
+          ),
         ),
       ),
-    ));
+    );
     expect(find.byType(RadarChart), findsOneWidget);
     final chart = tester.widget<RadarChart>(find.byType(RadarChart));
     expect(chart.data.getTitle!(0, 0).text, 'Intelligence');
@@ -32,8 +35,9 @@ void main() {
     expect(chart.data.getTitle!(3, 0).text, 'Reliability');
   });
 
-  testWidgets('renders an overlay polygon when pinned is provided',
-      (tester) async {
+  testWidgets('renders an overlay polygon when pinned is provided', (
+    tester,
+  ) async {
     const pinned = Dimensions(
       intelligence: 0.5,
       speed: 0.5,
@@ -41,20 +45,22 @@ void main() {
       reliability: 0.5,
       problems: 0,
     );
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 400,
-          height: 400,
-          child: DimensionRadar(
-            selected: sample,
-            pinned: pinned,
-            selectedLabel: 'gpt-5',
-            pinnedLabel: 'opus',
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 400,
+            height: 400,
+            child: DimensionRadar(
+              selected: sample,
+              pinned: pinned,
+              selectedLabel: 'gpt-5',
+              pinnedLabel: 'opus',
+            ),
           ),
         ),
       ),
-    ));
+    );
     final chart = tester.widget<RadarChart>(find.byType(RadarChart));
     expect(chart.data.dataSets.length, 2);
   });

@@ -14,44 +14,48 @@ Future<({AppDatabase db, RunDao dao})> _seed() async {
   final db = AppDatabase(NativeDatabase.memory());
   final dao = RunDao(db);
   await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 1));
-  await dao.persistTaskRun(TaskRunResult(
-    runId: 'r1',
-    providerId: 'openai',
-    modelId: 'gpt-5',
-    taskId: 'bug.off_by_one_pagination',
-    response: const ModelResponse(
-      rawText: '',
-      extractedCode: null,
-      promptTokens: null,
-      completionTokens: null,
-      latency: Duration(milliseconds: 5000),
+  await dao.persistTaskRun(
+    TaskRunResult(
+      runId: 'r1',
+      providerId: 'openai',
+      modelId: 'gpt-5',
+      taskId: 'bug.off_by_one_pagination',
+      response: const ModelResponse(
+        rawText: '',
+        extractedCode: null,
+        promptTokens: null,
+        completionTokens: null,
+        latency: Duration(milliseconds: 5000),
+      ),
+      evaluations: const [
+        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+        EvaluationResult(evaluatorId: 'test', passed: true, score: 1.0),
+      ],
+      aggregateScore: 1.0,
+      completedAt: DateTime(2026, 5, 1, 0, 5),
     ),
-    evaluations: const [
-      EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
-      EvaluationResult(evaluatorId: 'test', passed: true, score: 1.0),
-    ],
-    aggregateScore: 1.0,
-    completedAt: DateTime(2026, 5, 1, 0, 5),
-  ));
-  await dao.persistTaskRun(TaskRunResult(
-    runId: 'r1',
-    providerId: 'anthropic',
-    modelId: 'claude-opus-4.7',
-    taskId: 'bug.off_by_one_pagination',
-    response: const ModelResponse(
-      rawText: '',
-      extractedCode: null,
-      promptTokens: null,
-      completionTokens: null,
-      latency: Duration(milliseconds: 5000),
+  );
+  await dao.persistTaskRun(
+    TaskRunResult(
+      runId: 'r1',
+      providerId: 'anthropic',
+      modelId: 'claude-opus-4.7',
+      taskId: 'bug.off_by_one_pagination',
+      response: const ModelResponse(
+        rawText: '',
+        extractedCode: null,
+        promptTokens: null,
+        completionTokens: null,
+        latency: Duration(milliseconds: 5000),
+      ),
+      evaluations: const [
+        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+        EvaluationResult(evaluatorId: 'test', passed: false, score: 0.0),
+      ],
+      aggregateScore: 0.5,
+      completedAt: DateTime(2026, 5, 1, 0, 6),
     ),
-    evaluations: const [
-      EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
-      EvaluationResult(evaluatorId: 'test', passed: false, score: 0.0),
-    ],
-    aggregateScore: 0.5,
-    completedAt: DateTime(2026, 5, 1, 0, 6),
-  ));
+  );
   await dao.finishRun('r1', DateTime(2026, 5, 1, 0, 10));
   return (db: db, dao: dao);
 }
@@ -72,9 +76,7 @@ void main() {
     final s = await _seed();
     final repo = LeaderboardRepository(s.db);
 
-    final overall = await repo.rank(
-      filter: const LeaderboardFilter(),
-    );
+    final overall = await repo.rank(filter: const LeaderboardFilter());
     expect(overall.first.modelId, 'gpt-5');
     expect(overall.last.modelId, 'claude-opus-4.7');
   });
@@ -91,10 +93,7 @@ void main() {
 
   test('date range filter excludes runs outside the window', () async {
     final s = await _seed();
-    final repo = LeaderboardRepository(
-      s.db,
-      now: () => DateTime(2026, 4, 1),
-    );
+    final repo = LeaderboardRepository(s.db, now: () => DateTime(2026, 4, 1));
     final rows = await repo.rank(
       filter: const LeaderboardFilter(dateRange: DateRange.last7d),
     );
@@ -121,25 +120,26 @@ void main() {
     final db = AppDatabase(NativeDatabase.memory());
     final dao = RunDao(db);
     await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 1));
-    Future<void> seedTr(String provider, int latencyMs) =>
-        dao.persistTaskRun(TaskRunResult(
-          runId: 'r1',
-          providerId: provider,
-          modelId: 'm',
-          taskId: 'bug.x',
-          response: ModelResponse(
-            rawText: '',
-            extractedCode: null,
-            promptTokens: null,
-            completionTokens: null,
-            latency: Duration(milliseconds: latencyMs),
-          ),
-          evaluations: const [
-            EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
-          ],
-          aggregateScore: 1.0,
-          completedAt: DateTime(2026, 5, 1, 0, 5),
-        ));
+    Future<void> seedTr(String provider, int latencyMs) => dao.persistTaskRun(
+      TaskRunResult(
+        runId: 'r1',
+        providerId: provider,
+        modelId: 'm',
+        taskId: 'bug.x',
+        response: ModelResponse(
+          rawText: '',
+          extractedCode: null,
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration(milliseconds: latencyMs),
+        ),
+        evaluations: const [
+          EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+        ],
+        aggregateScore: 1.0,
+        completedAt: DateTime(2026, 5, 1, 0, 5),
+      ),
+    );
     await seedTr('fast', 2000);
     await seedTr('slow', 50000);
 
@@ -171,25 +171,25 @@ void main() {
     final dao = RunDao(db);
     await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 1));
     Future<void> seed(DateTime when, double agg) => dao.persistTaskRun(
-          TaskRunResult(
-            runId: 'r1',
-            providerId: 'p',
-            modelId: 'm',
-            taskId: 'bug.x',
-            response: const ModelResponse(
-              rawText: '',
-              extractedCode: null,
-              promptTokens: null,
-              completionTokens: null,
-              latency: Duration(milliseconds: 5000),
-            ),
-            evaluations: const [
-              EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
-            ],
-            aggregateScore: agg,
-            completedAt: when,
-          ),
-        );
+      TaskRunResult(
+        runId: 'r1',
+        providerId: 'p',
+        modelId: 'm',
+        taskId: 'bug.x',
+        response: const ModelResponse(
+          rawText: '',
+          extractedCode: null,
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration(milliseconds: 5000),
+        ),
+        evaluations: const [
+          EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+        ],
+        aggregateScore: agg,
+        completedAt: when,
+      ),
+    );
     await seed(DateTime(2026, 5, 1, 0, 5), 0.4);
     await seed(DateTime(2026, 5, 1, 0, 10), 0.9);
     final repo = LeaderboardRepository(db);
@@ -203,10 +203,7 @@ void main() {
 
   test('detail returns empty perTask when filter excludes all', () async {
     final s = await _seed();
-    final repo = LeaderboardRepository(
-      s.db,
-      now: () => DateTime(2026, 4, 1),
-    );
+    final repo = LeaderboardRepository(s.db, now: () => DateTime(2026, 4, 1));
     final detail = await repo.detail(
       providerId: 'openai',
       modelId: 'gpt-5',

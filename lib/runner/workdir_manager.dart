@@ -20,6 +20,8 @@ class WorkdirManager {
 
   final Directory root;
 
+  String _sanitizePathSegment(String segment) => Uri.encodeComponent(segment);
+
   Future<Directory> createTaskWorkdir({
     required String runId,
     required String providerId,
@@ -30,7 +32,14 @@ class WorkdirManager {
     required String generatedCodePath,
   }) async {
     final dir = Directory(
-      p.join(root.path, 'runs', runId, providerId, modelId, taskId),
+      p.join(
+        root.path,
+        'runs',
+        runId,
+        providerId,
+        _sanitizePathSegment(modelId),
+        taskId,
+      ),
     );
     await dir.create(recursive: true);
 
@@ -49,20 +58,22 @@ class WorkdirManager {
     return dir;
   }
 
-  Future<PrepareResult> prepare(Directory workDir, {bool isFlutter = false}) async {
+  Future<PrepareResult> prepare(
+    Directory workDir, {
+    bool isFlutter = false,
+  }) async {
     final exe = isFlutter ? 'flutter' : 'dart';
-    final offline = await Process.run(
-      exe,
-      ['pub', 'get', '--offline'],
-      workingDirectory: workDir.path,
-    );
+    final offline = await Process.run(exe, [
+      'pub',
+      'get',
+      '--offline',
+    ], workingDirectory: workDir.path);
     if (offline.exitCode == 0) return const PrepareOk();
 
-    final online = await Process.run(
-      exe,
-      ['pub', 'get'],
-      workingDirectory: workDir.path,
-    );
+    final online = await Process.run(exe, [
+      'pub',
+      'get',
+    ], workingDirectory: workDir.path);
     if (online.exitCode == 0) return const PrepareOk();
 
     return PrepareFailed(

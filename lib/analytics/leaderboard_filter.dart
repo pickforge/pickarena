@@ -4,7 +4,7 @@ import 'package:equatable/equatable.dart';
 
 class DateRange extends Equatable {
   const DateRange._({_Kind kind = _Kind.allTime, this.from, this.to})
-      : _kind = kind;
+    : _kind = kind;
   final _Kind _kind;
   final DateTime? from;
   final DateTime? to;
@@ -19,25 +19,25 @@ class DateRange extends Equatable {
   bool get isCustom => _kind == _Kind.custom;
 
   DateTime? fromForNow(DateTime now) => switch (_kind) {
-        _Kind.allTime => null,
-        _Kind.last7d => now.subtract(const Duration(days: 7)),
-        _Kind.last30d => now.subtract(const Duration(days: 30)),
-        _Kind.custom => from,
-      };
+    _Kind.allTime => null,
+    _Kind.last7d => now.subtract(const Duration(days: 7)),
+    _Kind.last30d => now.subtract(const Duration(days: 30)),
+    _Kind.custom => from,
+  };
 
   DateTime? toForNow(DateTime now) => switch (_kind) {
-        _Kind.allTime => null,
-        _Kind.last7d => now,
-        _Kind.last30d => now,
-        _Kind.custom => to,
-      };
+    _Kind.allTime => null,
+    _Kind.last7d => now,
+    _Kind.last30d => now,
+    _Kind.custom => to,
+  };
 
   String toQueryParam() => switch (_kind) {
-        _Kind.allTime => 'all',
-        _Kind.last7d => '7d',
-        _Kind.last30d => '30d',
-        _Kind.custom => '${from!.toIso8601String()}..${to!.toIso8601String()}',
-      };
+    _Kind.allTime => 'all',
+    _Kind.last7d => '7d',
+    _Kind.last30d => '30d',
+    _Kind.custom => '${from!.toIso8601String()}..${to!.toIso8601String()}',
+  };
 
   static DateRange fromQueryParam(String? raw) {
     if (raw == null || raw == 'all') return DateRange.allTime;
@@ -78,13 +78,12 @@ class LeaderboardFilter extends Equatable {
     bool clearProviderId = false,
     DateRange? dateRange,
     ScoreDimension? dimension,
-  }) =>
-      LeaderboardFilter(
-        category: clearCategory ? null : (category ?? this.category),
-        providerId: clearProviderId ? null : (providerId ?? this.providerId),
-        dateRange: dateRange ?? this.dateRange,
-        dimension: dimension ?? this.dimension,
-      );
+  }) => LeaderboardFilter(
+    category: clearCategory ? null : (category ?? this.category),
+    providerId: clearProviderId ? null : (providerId ?? this.providerId),
+    dateRange: dateRange ?? this.dateRange,
+    dimension: dimension ?? this.dimension,
+  );
 
   @override
   List<Object?> get props => [category, providerId, dateRange, dimension];

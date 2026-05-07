@@ -27,14 +27,14 @@ class TaskRunResult extends Equatable {
 
   @override
   List<Object?> get props => [
-        runId,
-        providerId,
-        modelId,
-        taskId,
-        response,
-        evaluations,
-        aggregateScore,
-        completedAt,
-        planId,
-      ];
+    runId,
+    providerId,
+    modelId,
+    taskId,
+    response,
+    evaluations,
+    aggregateScore,
+    completedAt,
+    planId,
+  ];
 }

@@ -208,4 +208,116 @@ void main() {
     expect(await dao.evaluationsForTaskRun(taskRunId), isEmpty);
     await db.close();
   });
+
+  test(
+    'deleteTaskRunByKey removes matching task run and evaluations only',
+    () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final dao = RunDao(db);
+      await dao.startRun(runId: 'r-dk', startedAt: DateTime(2026, 5, 2));
+
+      await dao.persistTaskRun(
+        TaskRunResult(
+          runId: 'r-dk',
+          providerId: 'p1',
+          modelId: 'm1',
+          taskId: 't1',
+          response: const ModelResponse(
+            rawText: 'a',
+            extractedCode: null,
+            promptTokens: null,
+            completionTokens: null,
+            latency: Duration.zero,
+          ),
+          evaluations: const [
+            EvaluationResult(evaluatorId: 'eval1', passed: true, score: 1.0),
+            EvaluationResult(evaluatorId: 'eval2', passed: false, score: 0.5),
+          ],
+          aggregateScore: 0.75,
+          completedAt: DateTime(2026, 5, 2, 12),
+        ),
+      );
+
+      await dao.persistTaskRun(
+        TaskRunResult(
+          runId: 'r-dk',
+          providerId: 'p2',
+          modelId: 'm2',
+          taskId: 't2',
+          response: const ModelResponse(
+            rawText: 'b',
+            extractedCode: null,
+            promptTokens: null,
+            completionTokens: null,
+            latency: Duration.zero,
+          ),
+          evaluations: const [
+            EvaluationResult(evaluatorId: 'eval3', passed: true, score: 0.8),
+          ],
+          aggregateScore: 0.8,
+          completedAt: DateTime(2026, 5, 2, 13),
+        ),
+      );
+
+      var allTaskRuns = await dao.taskRunsForRun('r-dk');
+      expect(allTaskRuns, hasLength(2));
+
+      await dao.deleteTaskRunByKey(
+        runId: 'r-dk',
+        providerId: 'p1',
+        modelId: 'm1',
+        taskId: 't1',
+      );
+
+      allTaskRuns = await dao.taskRunsForRun('r-dk');
+      expect(allTaskRuns, hasLength(1));
+      expect(allTaskRuns.single.providerId, 'p2');
+      expect(allTaskRuns.single.taskId, 't2');
+
+      final remainingEvals = await dao.evaluationsForTaskRun(
+        allTaskRuns.single.id,
+      );
+      expect(remainingEvals, hasLength(1));
+      expect(remainingEvals.single.evaluatorId, 'eval3');
+
+      await db.close();
+    },
+  );
+
+  test('deleteTaskRunByKey does nothing for non-matching key', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(runId: 'r-nk', startedAt: DateTime(2026, 5, 2));
+
+    await dao.persistTaskRun(
+      TaskRunResult(
+        runId: 'r-nk',
+        providerId: 'p1',
+        modelId: 'm1',
+        taskId: 't1',
+        response: const ModelResponse(
+          rawText: 'a',
+          extractedCode: null,
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration.zero,
+        ),
+        evaluations: const [],
+        aggregateScore: 1.0,
+        completedAt: DateTime(2026, 5, 2, 12),
+      ),
+    );
+
+    await dao.deleteTaskRunByKey(
+      runId: 'r-nk',
+      providerId: 'p-nomatch',
+      modelId: 'm1',
+      taskId: 't1',
+    );
+
+    final rows = await dao.taskRunsForRun('r-nk');
+    expect(rows, hasLength(1));
+
+    await db.close();
+  });
 }

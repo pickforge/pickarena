@@ -18,9 +18,5 @@ Future<void> main() async {
   final workdir = WorkdirManager(root: workdirRoot);
   final settings = SettingsRepository();
 
-  runApp(App(
-    database: database,
-    workdir: workdir,
-    settings: settings,
-  ));
+  runApp(App(database: database, workdir: workdir, settings: settings));
 }

@@ -3,10 +3,7 @@ import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 
 class ReferencePlan {
-  const ReferencePlan({
-    required this.version,
-    required this.markdown,
-  });
+  const ReferencePlan({required this.version, required this.markdown});
 
   final int version;
   final String markdown;

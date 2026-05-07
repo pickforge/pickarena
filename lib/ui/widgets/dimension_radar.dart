@@ -18,8 +18,12 @@ class DimensionRadar extends StatelessWidget {
 
   static const _titles = ['Intelligence', 'Speed', 'Elegance', 'Reliability'];
 
-  List<double> _values(Dimensions d) =>
-      [d.intelligence, d.speed, d.elegance, d.reliability];
+  List<double> _values(Dimensions d) => [
+    d.intelligence,
+    d.speed,
+    d.elegance,
+    d.reliability,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -29,17 +33,18 @@ class DimensionRadar extends StatelessWidget {
         fillColor: scheme.primary.withValues(alpha: 0.4),
         borderColor: scheme.primary,
         entryRadius: 3,
-        dataEntries: _values(selected)
-            .map((v) => RadarEntry(value: v))
-            .toList(),
+        dataEntries: _values(
+          selected,
+        ).map((v) => RadarEntry(value: v)).toList(),
       ),
       if (pinned != null)
         RadarDataSet(
           fillColor: scheme.secondary.withValues(alpha: 0.25),
           borderColor: scheme.secondary,
           entryRadius: 3,
-          dataEntries:
-              _values(pinned!).map((v) => RadarEntry(value: v)).toList(),
+          dataEntries: _values(
+            pinned!,
+          ).map((v) => RadarEntry(value: v)).toList(),
         ),
     ];
 
@@ -52,8 +57,7 @@ class DimensionRadar extends StatelessWidget {
         gridBorderData: BorderSide(color: scheme.outlineVariant, width: 0.5),
         tickBorderData: BorderSide(color: scheme.outlineVariant, width: 0.5),
         titleTextStyle: Theme.of(context).textTheme.bodySmall,
-        getTitle: (i, angle) =>
-            RadarChartTitle(text: _titles[i], angle: 0),
+        getTitle: (i, angle) => RadarChartTitle(text: _titles[i], angle: 0),
         dataSets: dataSets,
       ),
     );

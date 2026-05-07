@@ -73,8 +73,8 @@ Return ONLY the contents of `lib/coverage_evaluator.dart` inside a single ```dar
 
   @override
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) => [
-        CompileEvaluator(),
-        AnalyzeEvaluator(),
-        TestEvaluator(),
-      ];
+    CompileEvaluator(),
+    AnalyzeEvaluator(),
+    TestEvaluator(),
+  ];
 }

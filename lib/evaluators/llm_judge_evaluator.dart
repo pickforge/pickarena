@@ -51,7 +51,7 @@ Reply with ONLY a fenced ```json block of the form:
     final response = await judge.generate(
       prompt: prompt,
       model: judgeModel,
-      timeout: const Duration(seconds: 60),
+      timeout: const Duration(minutes: 5),
     );
     final raw = response.rawText;
 

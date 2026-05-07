@@ -61,13 +61,20 @@ void main() {
     await tester.pumpAndSettle();
 
     final titles = tester
-        .widgetList<Text>(find.descendant(of: find.byType(CheckboxListTile), matching: find.byType(Text)))
+        .widgetList<Text>(
+          find.descendant(
+            of: find.byType(CheckboxListTile),
+            matching: find.byType(Text),
+          ),
+        )
         .map((t) => t.data)
         .whereType<String>()
         .toList();
-    final order = ['apple', 'banana', 'cherry']
-        .map((s) => titles.indexOf(s))
-        .toList();
+    final order = [
+      'apple',
+      'banana',
+      'cherry',
+    ].map((s) => titles.indexOf(s)).toList();
     expect(order, [0, 1, 2]);
   });
 

@@ -41,10 +41,7 @@ void main() {
       dio: dio,
     );
 
-    final response = await provider.generate(
-      prompt: 'hi',
-      model: 'llama3',
-    );
+    final response = await provider.generate(prompt: 'hi', model: 'llama3');
 
     expect(response.rawText, 'hello');
     expect(response.promptTokens, 5);

@@ -60,9 +60,9 @@ class _RunDetailsPageState extends State<RunDetailsPage> {
     if (path == null) return;
     await File(path).writeAsString(csv);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved to $path')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Saved to $path')));
   }
 
   Future<void> _saveMd(RunSummary s) async {
@@ -76,9 +76,9 @@ class _RunDetailsPageState extends State<RunDetailsPage> {
     if (path == null) return;
     await File(path).writeAsString(md);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved to $path')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Saved to $path')));
   }
 
   Future<void> _publishToReadme(RunSummary s) async {
@@ -191,7 +191,9 @@ class _RunDetailsPageState extends State<RunDetailsPage> {
                       spacing: 8,
                       children: [
                         TextButton(
-                          onPressed: inProgress ? null : () => _saveCsv(summary),
+                          onPressed: inProgress
+                              ? null
+                              : () => _saveCsv(summary),
                           child: const Text('Export CSV'),
                         ),
                         TextButton(
@@ -231,9 +233,7 @@ class _RunDetailsPageState extends State<RunDetailsPage> {
               Expanded(
                 child: summary.taskRuns.isEmpty
                     ? const Center(
-                        child: Text(
-                          'Run failed before any task completed.',
-                        ),
+                        child: Text('Run failed before any task completed.'),
                       )
                     : RunMatrix(
                         taskRuns: summary.taskRuns,

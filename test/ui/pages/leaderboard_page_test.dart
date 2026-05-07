@@ -14,24 +14,26 @@ Future<({AppDatabase db, LeaderboardRepository repo})> _seed() async {
   final db = AppDatabase(NativeDatabase.memory());
   final dao = RunDao(db);
   await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 1));
-  await dao.persistTaskRun(TaskRunResult(
-    runId: 'r1',
-    providerId: 'openai',
-    modelId: 'gpt-5',
-    taskId: 'bug.off_by_one_pagination',
-    response: const ModelResponse(
-      rawText: '',
-      extractedCode: null,
-      promptTokens: null,
-      completionTokens: null,
-      latency: Duration(milliseconds: 5000),
+  await dao.persistTaskRun(
+    TaskRunResult(
+      runId: 'r1',
+      providerId: 'openai',
+      modelId: 'gpt-5',
+      taskId: 'bug.off_by_one_pagination',
+      response: const ModelResponse(
+        rawText: '',
+        extractedCode: null,
+        promptTokens: null,
+        completionTokens: null,
+        latency: Duration(milliseconds: 5000),
+      ),
+      evaluations: const [
+        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+      ],
+      aggregateScore: 1.0,
+      completedAt: DateTime(2026, 5, 1, 0, 5),
     ),
-    evaluations: const [
-      EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
-    ],
-    aggregateScore: 1.0,
-    completedAt: DateTime(2026, 5, 1, 0, 5),
-  ));
+  );
   await dao.finishRun('r1', DateTime(2026, 5, 1, 0, 10));
   return (db: db, repo: LeaderboardRepository(db));
 }
@@ -46,13 +48,15 @@ void main() {
     // 1. Shows the seeded model in the ranked list
     final s1 = await _seed();
     addTearDown(() async => s1.db.close());
-    await tester.pumpWidget(MaterialApp(
-      home: LeaderboardPage(
-        repository: s1.repo,
-        registry: registry,
-        initialQuery: const {},
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LeaderboardPage(
+          repository: s1.repo,
+          registry: registry,
+          initialQuery: const {},
+        ),
       ),
-    ));
+    );
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('gpt-5'), findsOneWidget);
@@ -62,13 +66,15 @@ void main() {
     await tester.pump();
     final s2 = await _seed();
     addTearDown(() async => s2.db.close());
-    await tester.pumpWidget(MaterialApp(
-      home: LeaderboardPage(
-        repository: s2.repo,
-        registry: registry,
-        initialQuery: const {'dim': 'speed'},
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LeaderboardPage(
+          repository: s2.repo,
+          registry: registry,
+          initialQuery: const {'dim': 'speed'},
+        ),
       ),
-    ));
+    );
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Speed'), findsWidgets);
@@ -79,13 +85,15 @@ void main() {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(() async => db.close());
     final repo = LeaderboardRepository(db);
-    await tester.pumpWidget(MaterialApp(
-      home: LeaderboardPage(
-        repository: repo,
-        registry: registry,
-        initialQuery: const {},
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LeaderboardPage(
+          repository: repo,
+          registry: registry,
+          initialQuery: const {},
+        ),
       ),
-    ));
+    );
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.textContaining('No models match'), findsWidgets);

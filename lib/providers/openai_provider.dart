@@ -3,11 +3,12 @@ import 'package:dio/dio.dart';
 
 class OpenAIProvider extends OpenAiCompatibleProvider {
   OpenAIProvider({required String apiKey, Dio? dio})
-      : super(
-          dio,
-          id: 'openai',
-          displayName: 'OpenAI',
-          baseUrl: 'https://api.openai.com/v1',
-          apiKey: apiKey,
-        );
+    : super(
+        dio,
+        id: 'openai',
+        displayName: 'OpenAI',
+        baseUrl: 'https://api.openai.com/v1',
+        apiKey: apiKey,
+        defaultEfforts: const ['low', 'medium', 'high', 'xhigh'],
+      );
 }

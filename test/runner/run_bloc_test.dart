@@ -11,7 +11,6 @@ import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
-import 'package:dart_arena/runner/run_failure_policy.dart';
 import 'package:dart_arena/runner/run_progress_snapshot.dart';
 import 'package:dart_arena/runner/run_state.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
@@ -28,7 +27,7 @@ class _FakeProvider implements ModelProvider {
   @override
   ProviderMode get mode => ProviderMode.rawApi;
   @override
-  Future<List<String>> listModels() async => ['fake-1'];
+  Future<List<ModelInfo>> listModels() async => [const ModelInfo(id: 'fake-1')];
   @override
   Future<ModelResponse> generate({
     required String prompt,
@@ -51,7 +50,7 @@ class _FailingProvider implements ModelProvider {
   @override
   ProviderMode get mode => ProviderMode.rawApi;
   @override
-  Future<List<String>> listModels() async => ['fail-1'];
+  Future<List<ModelInfo>> listModels() async => [const ModelInfo(id: 'fail-1')];
   @override
   Future<ModelResponse> generate({
     required String prompt,
@@ -70,7 +69,9 @@ class _FailsOnceProvider implements ModelProvider {
   @override
   ProviderMode get mode => ProviderMode.rawApi;
   @override
-  Future<List<String>> listModels() async => ['flaky-1'];
+  Future<List<ModelInfo>> listModels() async => [
+    const ModelInfo(id: 'flaky-1'),
+  ];
   @override
   Future<ModelResponse> generate({
     required String prompt,
@@ -97,7 +98,10 @@ class _SecondFakeProvider implements ModelProvider {
   @override
   ProviderMode get mode => ProviderMode.rawApi;
   @override
-  Future<List<String>> listModels() async => ['fake2-1', 'fake2-2'];
+  Future<List<ModelInfo>> listModels() async => [
+    const ModelInfo(id: 'fake2-1'),
+    const ModelInfo(id: 'fake2-2'),
+  ];
   @override
   Future<ModelResponse> generate({
     required String prompt,
@@ -126,7 +130,7 @@ class _StreamingProvider implements StreamingModelProvider {
     : _stream = Stream.fromIterable(events);
 
   @override
-  Future<List<String>> listModels() async => ['s1'];
+  Future<List<ModelInfo>> listModels() async => [const ModelInfo(id: 's1')];
   @override
   Future<ModelResponse> generate({
     required String prompt,
@@ -161,7 +165,8 @@ class _ConcurrencyRecordingProvider implements ModelProvider {
   @override
   ProviderMode get mode => ProviderMode.rawApi;
   @override
-  Future<List<String>> listModels() async => List.generate(10, (i) => 'm$i');
+  Future<List<ModelInfo>> listModels() async =>
+      List.generate(10, (i) => ModelInfo(id: 'm$i'));
   @override
   Future<ModelResponse> generate({
     required String prompt,
@@ -499,15 +504,66 @@ void main() {
     tmp.deleteSync(recursive: true);
   });
 
-  test('failFast emits RunFailed for first error, no finishRun', () async {
-    final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_ff_');
+  test(
+    'per-card failure records failed combo and continues scheduling',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_pcf_');
+      final db = AppDatabase(NativeDatabase.memory());
+      final dao = RunDao(db);
+      final bloc = RunBloc(
+        workdirManager: WorkdirManager(root: tmp),
+        runDao: dao,
+        now: DateTime.now,
+        idGenerator: () => 'run-pcf',
+      );
+
+      final states = <RunState>[];
+      final sub = bloc.stream.listen(states.add);
+
+      bloc.add(
+        StartRun(
+          tasks: [_StubTask(), _StubTask()],
+          providers: [_FailingProvider(), _FakeProvider()],
+          modelsByProvider: const {
+            'fail': ['fail-1'],
+            'fake': ['fake-1'],
+          },
+          evaluatorConfig: const EvaluatorConfig(),
+          maxConcurrency: 4,
+        ),
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 3));
+      expect(states.last, isA<RunInProgress>());
+      final inProgress = states.last as RunInProgress;
+      expect(inProgress.failed, hasLength(2));
+
+      var run = await dao.runById('run-pcf');
+      expect(run!.completedAt, isNull);
+
+      bloc.add(const FinishRun('run-pcf'));
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      expect(states.last, isA<RunCompleted>());
+
+      run = await dao.runById('run-pcf');
+      expect(run!.completedAt, isNotNull);
+
+      await sub.cancel();
+      await bloc.close();
+      await db.close();
+      tmp.deleteSync(recursive: true);
+    },
+  );
+
+  test('clean run auto-finishes and emits RunCompleted', () async {
+    final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_cf_');
     final db = AppDatabase(NativeDatabase.memory());
     final dao = RunDao(db);
     final bloc = RunBloc(
       workdirManager: WorkdirManager(root: tmp),
       runDao: dao,
       now: DateTime.now,
-      idGenerator: () => 'run-ff',
+      idGenerator: () => 'run-cf',
     );
 
     final states = <RunState>[];
@@ -516,23 +572,18 @@ void main() {
     bloc.add(
       StartRun(
         tasks: [_StubTask()],
-        providers: [_FailingProvider()],
+        providers: [_FakeProvider()],
         modelsByProvider: const {
-          'fail': ['fail-1'],
+          'fake': ['fake-1'],
         },
         evaluatorConfig: const EvaluatorConfig(),
-        onFailure: RunFailurePolicy.failFast,
       ),
     );
 
     await Future<void>.delayed(const Duration(seconds: 2));
-    expect(states.last, isA<RunFailed>());
-    final failed = states.last as RunFailed;
-    expect(failed.error, contains('provider unavailable'));
-    expect(failed.retry, isNotNull);
-
-    final run = await dao.runById('run-ff');
-    expect(run!.completedAt, isNull);
+    expect(states.last, isA<RunCompleted>());
+    final run = await dao.runById('run-cf');
+    expect(run!.completedAt, isNotNull);
 
     await sub.cancel();
     await bloc.close();
@@ -540,8 +591,60 @@ void main() {
     tmp.deleteSync(recursive: true);
   });
 
-  test('retry from RunFailed appends result to existing run', () async {
-    final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_retry_');
+  test(
+    'run with unresolved failures stays in RunInProgress until FinishRun',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_ur_');
+      final db = AppDatabase(NativeDatabase.memory());
+      final dao = RunDao(db);
+      final bloc = RunBloc(
+        workdirManager: WorkdirManager(root: tmp),
+        runDao: dao,
+        now: DateTime.now,
+        idGenerator: () => 'run-ur',
+      );
+
+      final states = <RunState>[];
+      final sub = bloc.stream.listen(states.add);
+
+      bloc.add(
+        StartRun(
+          tasks: [_StubTask(), _StubTask()],
+          providers: [_FailingProvider(), _FakeProvider()],
+          modelsByProvider: const {
+            'fail': ['fail-1'],
+            'fake': ['fake-1'],
+          },
+          evaluatorConfig: const EvaluatorConfig(),
+          maxConcurrency: 4,
+        ),
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 3));
+      final lastState = states.last;
+      expect(lastState, isA<RunInProgress>());
+      final inProgress = lastState as RunInProgress;
+      expect(inProgress.failed.isNotEmpty, isTrue);
+
+      var run = await dao.runById('run-ur');
+      expect(run!.completedAt, isNull);
+
+      bloc.add(const FinishRun('run-ur'));
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+
+      expect(states.last, isA<RunCompleted>());
+      run = await dao.runById('run-ur');
+      expect(run!.completedAt, isNotNull);
+
+      await sub.cancel();
+      await bloc.close();
+      await db.close();
+      tmp.deleteSync(recursive: true);
+    },
+  );
+
+  test('RetryCombo removes failed entry and re-runs the combo', () async {
+    final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_rc_');
     final db = AppDatabase(NativeDatabase.memory());
     final dao = RunDao(db);
     final provider = _FailsOnceProvider();
@@ -549,7 +652,7 @@ void main() {
       workdirManager: WorkdirManager(root: tmp),
       runDao: dao,
       now: DateTime.now,
-      idGenerator: () => 'run-retry',
+      idGenerator: () => 'run-rc',
     );
 
     final states = <RunState>[];
@@ -563,23 +666,30 @@ void main() {
           'flaky': ['flaky-1'],
         },
         evaluatorConfig: const EvaluatorConfig(),
-        onFailure: RunFailurePolicy.failFast,
+        maxConcurrency: 1,
       ),
     );
 
     await Future<void>.delayed(const Duration(seconds: 2));
-    final failed = states.last as RunFailed;
-    expect(failed.retry, isNotNull);
-    expect((await dao.taskRunsForRun('run-retry')), isEmpty);
 
-    bloc.add(failed.retry!);
+    final lastState = states.last;
+    expect(lastState, isA<RunInProgress>());
+    final inProgress = lastState as RunInProgress;
+    expect(inProgress.failed, hasLength(1));
+    expect(inProgress.failed.first.index, 0);
 
-    await Future<void>.delayed(const Duration(seconds: 2));
+    final rowsBefore = await dao.taskRunsForRun('run-rc');
+    expect(rowsBefore, hasLength(1));
+
+    bloc.add(const RetryCombo(runId: 'run-rc', failedIndex: 0));
+
+    await Future<void>.delayed(const Duration(seconds: 6));
     expect(states.last, isA<RunCompleted>());
-    final rows = await dao.taskRunsForRun('run-retry');
-    expect(rows, hasLength(1));
+
+    final rowsAfter = await dao.taskRunsForRun('run-rc');
+    expect(rowsAfter.length, 1);
+    expect(rowsAfter.first.aggregateScore, 1.0);
     expect(provider.calls, 2);
-    expect((await dao.runById('run-retry'))!.completedAt, isNotNull);
 
     await sub.cancel();
     await bloc.close();
@@ -587,50 +697,51 @@ void main() {
     tmp.deleteSync(recursive: true);
   });
 
-  test(
-    'skipAndContinue records synthetic failed TaskRunResult with combo_failure',
-    () async {
-      final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_sc_');
-      final db = AppDatabase(NativeDatabase.memory());
-      final bloc = RunBloc(
-        workdirManager: WorkdirManager(root: tmp),
-        runDao: RunDao(db),
-        now: DateTime.now,
-        idGenerator: () => 'run-sc',
-      );
+  test('duplicate retry for same failedIndex does not queue twice', () async {
+    final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_dr_');
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    final provider = _FailsOnceProvider();
+    final bloc = RunBloc(
+      workdirManager: WorkdirManager(root: tmp),
+      runDao: dao,
+      now: DateTime.now,
+      idGenerator: () => 'run-dr',
+    );
 
-      final states = <RunState>[];
-      final sub = bloc.stream.listen(states.add);
+    final states = <RunState>[];
+    final sub = bloc.stream.listen(states.add);
 
-      bloc.add(
-        StartRun(
-          tasks: [_StubTask()],
-          providers: [_FailingProvider()],
-          modelsByProvider: const {
-            'fail': ['fail-1'],
-          },
-          evaluatorConfig: const EvaluatorConfig(),
-          onFailure: RunFailurePolicy.skipAndContinue,
-        ),
-      );
+    bloc.add(
+      StartRun(
+        tasks: [_StubTask()],
+        providers: [provider],
+        modelsByProvider: const {
+          'flaky': ['flaky-1'],
+        },
+        evaluatorConfig: const EvaluatorConfig(),
+        maxConcurrency: 1,
+      ),
+    );
 
-      await Future<void>.delayed(const Duration(seconds: 2));
-      expect(states.last, isA<RunCompleted>());
-      final completed = states.last as RunCompleted;
-      expect(completed.results.length, 1);
-      final r = completed.results.single;
-      expect(r.response.rawText, '<error>');
-      expect(r.aggregateScore, 0.0);
-      expect(r.evaluations.length, 1);
-      expect(r.evaluations.single.evaluatorId, 'combo_failure');
-      expect(r.evaluations.single.score, 0.0);
+    await Future<void>.delayed(const Duration(seconds: 2));
+    expect(states.last, isA<RunInProgress>());
 
-      await sub.cancel();
-      await bloc.close();
-      await db.close();
-      tmp.deleteSync(recursive: true);
-    },
-  );
+    bloc.add(const RetryCombo(runId: 'run-dr', failedIndex: 0));
+    bloc.add(const RetryCombo(runId: 'run-dr', failedIndex: 0));
+
+    await Future<void>.delayed(const Duration(seconds: 3));
+    expect(states.last, isA<RunCompleted>());
+
+    final rows = await dao.taskRunsForRun('run-dr');
+    expect(rows.length, 1);
+    expect(provider.calls, 2);
+
+    await sub.cancel();
+    await bloc.close();
+    await db.close();
+    tmp.deleteSync(recursive: true);
+  });
 
   test('concurrency cap respects maxConcurrency', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_conc_');

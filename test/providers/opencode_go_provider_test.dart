@@ -12,9 +12,18 @@ void main() {
   test('listModels returns only chat-compatible models', () async {
     final p = OpenCodeGoProvider(apiKey: 'k');
     final models = await p.listModels();
-    expect(models, contains('qwen3.6-plus'));
-    expect(models, contains('kimi-k2.6'));
+    final ids = models.map((m) => m.id).toSet();
+    expect(ids, contains('qwen3.6-plus'));
+    expect(ids, contains('kimi-k2.6'));
     // Should NOT include Claude models (those are /v1/messages)
-    expect(models, isNot(contains('claude-sonnet-4-5')));
+    expect(ids, isNot(contains('claude-sonnet-4-5')));
+  });
+
+  test('listModels fallback models have efforts attached', () async {
+    final p = OpenCodeGoProvider(apiKey: 'k');
+    final models = await p.listModels();
+    for (final m in models) {
+      expect(m.efforts, ['low', 'medium', 'high', 'max']);
+    }
   });
 }

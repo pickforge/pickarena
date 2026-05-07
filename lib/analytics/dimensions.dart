@@ -10,12 +10,12 @@ enum ScoreDimension {
   reliability;
 
   String get label => switch (this) {
-        ScoreDimension.overall => 'Overall',
-        ScoreDimension.intelligence => 'Intelligence',
-        ScoreDimension.speed => 'Speed',
-        ScoreDimension.elegance => 'Elegance',
-        ScoreDimension.reliability => 'Reliability',
-      };
+    ScoreDimension.overall => 'Overall',
+    ScoreDimension.intelligence => 'Intelligence',
+    ScoreDimension.speed => 'Speed',
+    ScoreDimension.elegance => 'Elegance',
+    ScoreDimension.reliability => 'Reliability',
+  };
 }
 
 class Dimensions extends Equatable {
@@ -37,16 +37,15 @@ class Dimensions extends Equatable {
   static const double latencyHiMs = 60000;
   static const double reliabilityThreshold = 0.5;
 
-  double get overall =>
-      (intelligence + speed + elegance + reliability) / 4.0;
+  double get overall => (intelligence + speed + elegance + reliability) / 4.0;
 
   double byDimension(ScoreDimension d) => switch (d) {
-        ScoreDimension.overall => overall,
-        ScoreDimension.intelligence => intelligence,
-        ScoreDimension.speed => speed,
-        ScoreDimension.elegance => elegance,
-        ScoreDimension.reliability => reliability,
-      };
+    ScoreDimension.overall => overall,
+    ScoreDimension.intelligence => intelligence,
+    ScoreDimension.speed => speed,
+    ScoreDimension.elegance => elegance,
+    ScoreDimension.reliability => reliability,
+  };
 
   static const Dimensions zero = Dimensions(
     intelligence: 0,
@@ -65,11 +64,22 @@ class Dimensions extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [intelligence, speed, elegance, reliability, problems];
+  List<Object?> get props => [
+    intelligence,
+    speed,
+    elegance,
+    reliability,
+    problems,
+  ];
 }
 
-const _correctnessEvaluatorIds = {'compile', 'analyze', 'test', 'test_author', 'widget_tree'};
+const _correctnessEvaluatorIds = {
+  'compile',
+  'analyze',
+  'test',
+  'test_author',
+  'widget_tree',
+};
 
 Dimensions _computeDimensions(
   List<TaskRun> taskRuns,
@@ -106,8 +116,9 @@ Dimensions _computeDimensions(
       intelligenceDen += w;
     }
   }
-  final intelligence =
-      intelligenceDen == 0 ? 0.0 : intelligenceNum / intelligenceDen;
+  final intelligence = intelligenceDen == 0
+      ? 0.0
+      : intelligenceNum / intelligenceDen;
   final elegance = eleganceCount == 0 ? 0.0 : eleganceSum / eleganceCount;
 
   return Dimensions(

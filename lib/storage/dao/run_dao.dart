@@ -124,4 +124,36 @@ class RunDao {
           ..orderBy([(r) => OrderingTerm.desc(r.startedAt)]))
         .get();
   }
+
+  Future<void> deleteTaskRunByKey({
+    required String runId,
+    required String providerId,
+    required String modelId,
+    required String taskId,
+  }) async {
+    await _db.transaction(() async {
+      final matches =
+          await (_db.select(_db.taskRuns)..where(
+                (t) =>
+                    t.runId.equals(runId) &
+                    t.providerId.equals(providerId) &
+                    t.modelId.equals(modelId) &
+                    t.taskId.equals(taskId),
+              ))
+              .get();
+      for (final tr in matches) {
+        await (_db.delete(
+          _db.evaluations,
+        )..where((e) => e.taskRunId.equals(tr.id))).go();
+      }
+      await (_db.delete(_db.taskRuns)..where(
+            (t) =>
+                t.runId.equals(runId) &
+                t.providerId.equals(providerId) &
+                t.modelId.equals(modelId) &
+                t.taskId.equals(taskId),
+          ))
+          .go();
+    });
+  }
 }

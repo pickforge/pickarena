@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ScoreChip extends StatelessWidget {
-  const ScoreChip({
-    super.key,
-    required this.evaluatorId,
-    required this.score,
-  });
+  const ScoreChip({super.key, required this.evaluatorId, required this.score});
 
   final String evaluatorId;
   final double? score;

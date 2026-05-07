@@ -40,8 +40,13 @@ class PerTaskScore extends Equatable {
   final String? lastTaskRunId;
 
   @override
-  List<Object?> get props =>
-      [taskId, category, aggregateScore, lastRunId, lastTaskRunId];
+  List<Object?> get props => [
+    taskId,
+    category,
+    aggregateScore,
+    lastRunId,
+    lastTaskRunId,
+  ];
 }
 
 class ModelDetail extends Equatable {
@@ -55,7 +60,7 @@ class ModelDetail extends Equatable {
 
 class LeaderboardRepository {
   LeaderboardRepository(this._db, {DateTime Function()? now})
-      : _now = now ?? DateTime.now;
+    : _now = now ?? DateTime.now;
   final AppDatabase _db;
   final DateTime Function() _now;
 
@@ -74,16 +79,20 @@ class LeaderboardRepository {
     }
     final out = <ModelRanking>[];
     groups.forEach((key, rs) {
-      out.add(ModelRanking(
-        providerId: rs.first.providerId,
-        modelId: rs.first.modelId,
-        dimensions: Dimensions.fromTaskRuns(rs, evals),
-        taskRunCount: rs.length,
-      ));
+      out.add(
+        ModelRanking(
+          providerId: rs.first.providerId,
+          modelId: rs.first.modelId,
+          dimensions: Dimensions.fromTaskRuns(rs, evals),
+          taskRunCount: rs.length,
+        ),
+      );
     });
-    out.sort((a, b) => b.dimensions
-        .byDimension(filter.dimension)
-        .compareTo(a.dimensions.byDimension(filter.dimension)));
+    out.sort(
+      (a, b) => b.dimensions
+          .byDimension(filter.dimension)
+          .compareTo(a.dimensions.byDimension(filter.dimension)),
+    );
     return out;
   }
 
@@ -95,10 +104,9 @@ class LeaderboardRepository {
     Map<String, Category>? categoryByTaskId,
   }) async {
     final scoped = filter.copyWith(providerId: providerId);
-    final taskRuns =
-        (await _filteredTaskRuns(scoped, taskIdsForCategory)).where(
-      (t) => t.providerId == providerId && t.modelId == modelId,
-    ).toList();
+    final taskRuns = (await _filteredTaskRuns(scoped, taskIdsForCategory))
+        .where((t) => t.providerId == providerId && t.modelId == modelId)
+        .toList();
     final evals = taskRuns.isEmpty
         ? const <String, List<Evaluation>>{}
         : await _evaluationsByTaskRunId(taskRuns.map((t) => t.id));
@@ -117,13 +125,15 @@ class LeaderboardRepository {
     byTask.forEach((taskId, rs) {
       rs.sort((a, b) => b.completedAt.compareTo(a.completedAt));
       final latest = rs.first;
-      perTask.add(PerTaskScore(
-        taskId: taskId,
-        category: categoryByTaskId?[taskId],
-        aggregateScore: latest.aggregateScore,
-        lastRunId: latest.runId,
-        lastTaskRunId: latest.id,
-      ));
+      perTask.add(
+        PerTaskScore(
+          taskId: taskId,
+          category: categoryByTaskId?[taskId],
+          aggregateScore: latest.aggregateScore,
+          lastRunId: latest.runId,
+          lastTaskRunId: latest.id,
+        ),
+      );
     });
     perTask.sort((a, b) => b.aggregateScore.compareTo(a.aggregateScore));
     return ModelDetail(ranking: ranking, perTask: perTask);
@@ -150,9 +160,9 @@ class LeaderboardRepository {
   Future<Map<String, List<Evaluation>>> _evaluationsByTaskRunId(
     Iterable<String> ids,
   ) async {
-    final rows = await (_db.select(_db.evaluations)
-          ..where((e) => e.taskRunId.isIn(ids)))
-        .get();
+    final rows = await (_db.select(
+      _db.evaluations,
+    )..where((e) => e.taskRunId.isIn(ids))).get();
     final out = <String, List<Evaluation>>{};
     for (final r in rows) {
       out.putIfAbsent(r.taskRunId, () => <Evaluation>[]).add(r);

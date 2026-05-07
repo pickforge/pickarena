@@ -66,7 +66,7 @@ class _FakeProvider implements ModelProvider {
   @override
   ProviderMode get mode => ProviderMode.rawApi;
   @override
-  Future<List<String>> listModels() async => const [];
+  Future<List<ModelInfo>> listModels() async => const [];
   @override
   Future<ModelResponse> generate({
     required String prompt,
@@ -76,9 +76,9 @@ class _FakeProvider implements ModelProvider {
 }
 
 Future<Widget> _wrap(Widget child) async {
-  final tmp =
-      Directory('/tmp/dart_arena_planto_${DateTime.now().microsecondsSinceEpoch}')
-        ..createSync(recursive: true);
+  final tmp = Directory(
+    '/tmp/dart_arena_planto_${DateTime.now().microsecondsSinceEpoch}',
+  )..createSync(recursive: true);
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(() async {
     await db.close();
@@ -88,13 +88,15 @@ Future<Widget> _wrap(Widget child) async {
     providers: [
       RepositoryProvider<AppDatabase>.value(value: db),
       RepositoryProvider<WorkdirManager>.value(
-          value: WorkdirManager(root: tmp)),
-      RepositoryProvider<SettingsRepository>.value(
-          value: SettingsRepository()),
+        value: WorkdirManager(root: tmp),
+      ),
+      RepositoryProvider<SettingsRepository>.value(value: SettingsRepository()),
       RepositoryProvider<RunDao>(
-          create: (ctx) => RunDao(ctx.read<AppDatabase>())),
+        create: (ctx) => RunDao(ctx.read<AppDatabase>()),
+      ),
       RepositoryProvider<PlanDao>(
-          create: (ctx) => PlanDao(ctx.read<AppDatabase>())),
+        create: (ctx) => PlanDao(ctx.read<AppDatabase>()),
+      ),
     ],
     child: MaterialApp(home: child),
   );
@@ -105,12 +107,13 @@ void main() {
     FlutterSecureStorage.setMockInitialValues({});
   });
 
-  testWidgets('toggle disabled when no selected task hasReferencePlan',
-      (tester) async {
+  testWidgets('toggle disabled when no selected task hasReferencePlan', (
+    tester,
+  ) async {
     final reg = TaskRegistry()..register(_NoPlanTask());
-    await tester.pumpWidget(await _wrap(
-      NewRunPage(registry: reg, providers: const []),
-    ));
+    await tester.pumpWidget(
+      await _wrap(NewRunPage(registry: reg, providers: const [])),
+    );
     await tester.pumpAndSettle();
 
     final tile = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
@@ -118,26 +121,26 @@ void main() {
     expect(find.text('Select a planning task to enable.'), findsOneWidget);
   });
 
-  testWidgets('toggle enabled when at least one selected task hasReferencePlan',
-      (tester) async {
-    final reg = TaskRegistry()
-      ..register(_PlanTask())
-      ..register(_NoPlanTask());
-    await tester.pumpWidget(await _wrap(
-      NewRunPage(registry: reg, providers: const []),
-    ));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'toggle enabled when at least one selected task hasReferencePlan',
+    (tester) async {
+      final reg = TaskRegistry()
+        ..register(_PlanTask())
+        ..register(_NoPlanTask());
+      await tester.pumpWidget(
+        await _wrap(NewRunPage(registry: reg, providers: const [])),
+      );
+      await tester.pumpAndSettle();
 
-    final tile = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
-    expect(tile.onChanged, isNotNull);
-    expect(
-      find.textContaining('1 of 2 selected tasks'),
-      findsOneWidget,
-    );
-  });
+      final tile = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
+      expect(tile.onChanged, isNotNull);
+      expect(find.textContaining('1 of 2 selected tasks'), findsOneWidget);
+    },
+  );
 
-  testWidgets('toggling propagates useReferencePlan into StartRunConfig',
-      (tester) async {
+  testWidgets('toggling propagates useReferencePlan into StartRunConfig', (
+    tester,
+  ) async {
     final reg = TaskRegistry()..register(_PlanTask());
 
     Object? capturedExtra;
@@ -146,10 +149,8 @@ void main() {
       routes: [
         GoRoute(
           path: '/new-run',
-          builder: (_, __) => NewRunPage(
-            registry: reg,
-            providers: const [_FakeProvider()],
-          ),
+          builder: (_, __) =>
+              NewRunPage(registry: reg, providers: const [_FakeProvider()]),
         ),
         GoRoute(
           path: '/run',
@@ -161,29 +162,35 @@ void main() {
       ],
     );
 
-    final tmp =
-        Directory('/tmp/dart_arena_planc_${DateTime.now().microsecondsSinceEpoch}')
-          ..createSync(recursive: true);
+    final tmp = Directory(
+      '/tmp/dart_arena_planc_${DateTime.now().microsecondsSinceEpoch}',
+    )..createSync(recursive: true);
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(() async {
       await db.close();
       tmp.deleteSync(recursive: true);
     });
 
-    await tester.pumpWidget(MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider<AppDatabase>.value(value: db),
-        RepositoryProvider<WorkdirManager>.value(
-            value: WorkdirManager(root: tmp)),
-        RepositoryProvider<SettingsRepository>.value(
-            value: SettingsRepository()),
-        RepositoryProvider<RunDao>(
-            create: (ctx) => RunDao(ctx.read<AppDatabase>())),
-        RepositoryProvider<PlanDao>(
-            create: (ctx) => PlanDao(ctx.read<AppDatabase>())),
-      ],
-      child: MaterialApp.router(routerConfig: router),
-    ));
+    await tester.pumpWidget(
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<AppDatabase>.value(value: db),
+          RepositoryProvider<WorkdirManager>.value(
+            value: WorkdirManager(root: tmp),
+          ),
+          RepositoryProvider<SettingsRepository>.value(
+            value: SettingsRepository(),
+          ),
+          RepositoryProvider<RunDao>(
+            create: (ctx) => RunDao(ctx.read<AppDatabase>()),
+          ),
+          RepositoryProvider<PlanDao>(
+            create: (ctx) => PlanDao(ctx.read<AppDatabase>()),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(SwitchListTile));

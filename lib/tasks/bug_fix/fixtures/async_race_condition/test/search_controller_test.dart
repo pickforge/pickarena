@@ -27,7 +27,9 @@ void main() {
 
       async.elapse(const Duration(milliseconds: 200));
 
-      expect(emitted, [['fast-result']]);
+      expect(emitted, [
+        ['fast-result'],
+      ]);
       ctrl.dispose();
     });
   });
@@ -48,7 +50,10 @@ void main() {
       ctrl.onQueryChanged('b');
       async.elapse(const Duration(milliseconds: 50));
 
-      expect(emitted, [['a-result'], ['b-result']]);
+      expect(emitted, [
+        ['a-result'],
+        ['b-result'],
+      ]);
       ctrl.dispose();
     });
   });
@@ -71,7 +76,9 @@ void main() {
       ctrl.onQueryChanged('third');
       async.elapse(const Duration(milliseconds: 200));
 
-      expect(emitted, [['third']]);
+      expect(emitted, [
+        ['third'],
+      ]);
       ctrl.dispose();
     });
   });

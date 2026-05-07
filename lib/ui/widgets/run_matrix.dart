@@ -4,11 +4,7 @@ import 'package:flutter/material.dart';
 typedef RunMatrixCellTap = void Function(TaskRun taskRun);
 
 class RunMatrix extends StatelessWidget {
-  const RunMatrix({
-    super.key,
-    required this.taskRuns,
-    required this.onCellTap,
-  });
+  const RunMatrix({super.key, required this.taskRuns, required this.onCellTap});
 
   final List<TaskRun> taskRuns;
   final RunMatrixCellTap onCellTap;
@@ -62,29 +58,31 @@ class RunMatrix extends StatelessWidget {
           ],
           rows: [
             for (final taskId in taskIds)
-              DataRow(cells: [
-                DataCell(Text(taskId)),
-                ...columns.map((c) {
-                  final tr = _cell(taskId, c);
-                  if (tr == null) {
-                    return const DataCell(Text('\u2014'));
-                  }
-                  return DataCell(
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
+              DataRow(
+                cells: [
+                  DataCell(Text(taskId)),
+                  ...columns.map((c) {
+                    final tr = _cell(taskId, c);
+                    if (tr == null) {
+                      return const DataCell(Text('\u2014'));
+                    }
+                    return DataCell(
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _tint(tr.aggregateScore),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(tr.aggregateScore.toStringAsFixed(2)),
                       ),
-                      decoration: BoxDecoration(
-                        color: _tint(tr.aggregateScore),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(tr.aggregateScore.toStringAsFixed(2)),
-                    ),
-                    onTap: () => onCellTap(tr),
-                  );
-                }),
-              ]),
+                      onTap: () => onCellTap(tr),
+                    );
+                  }),
+                ],
+              ),
           ],
         ),
       ),

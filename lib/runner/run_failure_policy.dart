@@ -1,1 +1,0 @@
-enum RunFailurePolicy { failFast, skipAndContinue }

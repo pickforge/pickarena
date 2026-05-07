@@ -69,41 +69,41 @@ Return ONE composite score and a 1-2 sentence rationale.
 
   @override
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) => [
-        CompileEvaluator(),
-        AnalyzeEvaluator(),
-        TestAuthorEvaluator(
-          testPath: 'test/todo_input_test.dart',
-          mutants: const [
-            TestMutant(
-              name: 'submit_always_enabled',
-              sourcePath: 'lib/todo_input.dart',
-              find: 'onPressed: canSubmit ? _submit : null',
-              replace: 'onPressed: _submit',
-            ),
-            TestMutant(
-              name: 'does_not_clear_after_submit',
-              sourcePath: 'lib/todo_input.dart',
-              find: '_controller.clear();',
-              replace: '// _controller.clear();',
-            ),
-            TestMutant(
-              name: 'does_not_trim_submission',
-              sourcePath: 'lib/todo_input.dart',
-              find: 'final text = _controller.text.trim();',
-              replace: 'final text = _controller.text;',
-            ),
-            TestMutant(
-              name: 'enter_key_does_not_submit',
-              sourcePath: 'lib/todo_input.dart',
-              find: 'onSubmitted: (_) => _submit(),',
-              replace: 'onSubmitted: null,',
-            ),
-          ],
+    CompileEvaluator(),
+    AnalyzeEvaluator(),
+    TestAuthorEvaluator(
+      testPath: 'test/todo_input_test.dart',
+      mutants: const [
+        TestMutant(
+          name: 'submit_always_enabled',
+          sourcePath: 'lib/todo_input.dart',
+          find: 'onPressed: canSubmit ? _submit : null',
+          replace: 'onPressed: _submit',
         ),
-        if (config.hasJudge)
-          LlmJudgeEvaluator(
-            judge: config.judgeProvider!,
-            judgeModel: config.judgeModel!,
-          ),
-      ];
+        TestMutant(
+          name: 'does_not_clear_after_submit',
+          sourcePath: 'lib/todo_input.dart',
+          find: '_controller.clear();',
+          replace: '// _controller.clear();',
+        ),
+        TestMutant(
+          name: 'does_not_trim_submission',
+          sourcePath: 'lib/todo_input.dart',
+          find: 'final text = _controller.text.trim();',
+          replace: 'final text = _controller.text;',
+        ),
+        TestMutant(
+          name: 'enter_key_does_not_submit',
+          sourcePath: 'lib/todo_input.dart',
+          find: 'onSubmitted: (_) => _submit(),',
+          replace: 'onSubmitted: null,',
+        ),
+      ],
+    ),
+    if (config.hasJudge)
+      LlmJudgeEvaluator(
+        judge: config.judgeProvider!,
+        judgeModel: config.judgeModel!,
+      ),
+  ];
 }

@@ -11,10 +11,7 @@ Some text.
 ```
 trailing.
 ''';
-      expect(
-        extractJsonBlock(raw),
-        '{"score": 0.9, "rationale": "ok"}\n',
-      );
+      expect(extractJsonBlock(raw), '{"score": 0.9, "rationale": "ok"}\n');
     });
 
     test('falls back to bare ``` block when json not labeled', () {

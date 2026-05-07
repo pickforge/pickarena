@@ -29,16 +29,16 @@ class _DummyTask extends BenchmarkTask {
 }
 
 EvaluationContext _ctx(Directory dir) => EvaluationContext(
-      workDir: dir,
-      response: const ModelResponse(
-        rawText: '',
-        extractedCode: null,
-        promptTokens: null,
-        completionTokens: null,
-        latency: Duration.zero,
-      ),
-      task: _DummyTask(),
-    );
+  workDir: dir,
+  response: const ModelResponse(
+    rawText: '',
+    extractedCode: null,
+    promptTokens: null,
+    completionTokens: null,
+    latency: Duration.zero,
+  ),
+  task: _DummyTask(),
+);
 
 void main() {
   test('passes for clean Dart code', () async {
@@ -50,13 +50,11 @@ environment:
   sdk: ">=3.5.0 <4.0.0"
 ''');
     Directory(p.join(dir.path, 'lib')).createSync();
-    File(p.join(dir.path, 'lib', 'tmp.dart'))
-        .writeAsStringSync('int answer() => 42;\n');
+    File(
+      p.join(dir.path, 'lib', 'tmp.dart'),
+    ).writeAsStringSync('int answer() => 42;\n');
 
-    expect(
-      await WorkdirManager(root: root).prepare(dir),
-      isA<PrepareOk>(),
-    );
+    expect(await WorkdirManager(root: root).prepare(dir), isA<PrepareOk>());
     final result = await CompileEvaluator().evaluate(_ctx(dir));
     expect(result.passed, isTrue);
     expect(result.score, 1.0);
@@ -64,27 +62,30 @@ environment:
     root.deleteSync(recursive: true);
   }, timeout: const Timeout(Duration(minutes: 2)));
 
-  test('fails for code with syntax errors', () async {
-    final root =
-        await Directory.systemTemp.createTemp('dart_arena_compile_bad_');
-    final dir = Directory(p.join(root.path, 'pkg'))..createSync();
-    File(p.join(dir.path, 'pubspec.yaml')).writeAsStringSync('''
+  test(
+    'fails for code with syntax errors',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_compile_bad_',
+      );
+      final dir = Directory(p.join(root.path, 'pkg'))..createSync();
+      File(p.join(dir.path, 'pubspec.yaml')).writeAsStringSync('''
 name: tmp
 environment:
   sdk: ">=3.5.0 <4.0.0"
 ''');
-    Directory(p.join(dir.path, 'lib')).createSync();
-    File(p.join(dir.path, 'lib', 'tmp.dart'))
-        .writeAsStringSync('int answer( => 42;');
+      Directory(p.join(dir.path, 'lib')).createSync();
+      File(
+        p.join(dir.path, 'lib', 'tmp.dart'),
+      ).writeAsStringSync('int answer( => 42;');
 
-    expect(
-      await WorkdirManager(root: root).prepare(dir),
-      isA<PrepareOk>(),
-    );
-    final result = await CompileEvaluator().evaluate(_ctx(dir));
-    expect(result.passed, isFalse);
-    expect(result.score, 0.0);
+      expect(await WorkdirManager(root: root).prepare(dir), isA<PrepareOk>());
+      final result = await CompileEvaluator().evaluate(_ctx(dir));
+      expect(result.passed, isFalse);
+      expect(result.score, 0.0);
 
-    root.deleteSync(recursive: true);
-  }, timeout: const Timeout(Duration(minutes: 2)));
+      root.deleteSync(recursive: true);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 }

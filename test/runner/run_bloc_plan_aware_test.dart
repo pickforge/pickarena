@@ -27,7 +27,7 @@ class _RecordingProvider implements ModelProvider {
   @override
   ProviderMode get mode => ProviderMode.rawApi;
   @override
-  Future<List<String>> listModels() async => ['rec-1'];
+  Future<List<ModelInfo>> listModels() async => [const ModelInfo(id: 'rec-1')];
   @override
   Future<ModelResponse> generate({
     required String prompt,
@@ -54,7 +54,7 @@ class _PerCallRecordingProvider implements ModelProvider {
   @override
   ProviderMode get mode => ProviderMode.rawApi;
   @override
-  Future<List<String>> listModels() async => ['rec2-1'];
+  Future<List<ModelInfo>> listModels() async => [const ModelInfo(id: 'rec2-1')];
   @override
   Future<ModelResponse> generate({
     required String prompt,
@@ -89,9 +89,8 @@ class _PlanCarryingTask extends BenchmarkTask {
   String get prompt => 'do thing';
   @override
   Map<String, String> get fixtures => const {
-        'pubspec.yaml':
-            'name: tmp\nenvironment:\n  sdk: ">=3.5.0 <4.0.0"\n',
-      };
+    'pubspec.yaml': 'name: tmp\nenvironment:\n  sdk: ">=3.5.0 <4.0.0"\n',
+  };
   @override
   String get generatedCodePath => 'lib/answer.dart';
   @override
@@ -112,9 +111,8 @@ class _PlanCarryingTaskB extends BenchmarkTask {
   String get prompt => 'do other thing';
   @override
   Map<String, String> get fixtures => const {
-        'pubspec.yaml':
-            'name: tmp\nenvironment:\n  sdk: ">=3.5.0 <4.0.0"\n',
-      };
+    'pubspec.yaml': 'name: tmp\nenvironment:\n  sdk: ">=3.5.0 <4.0.0"\n',
+  };
   @override
   String get generatedCodePath => 'lib/answer.dart';
   @override
@@ -127,47 +125,53 @@ class _PlanCarryingTaskB extends BenchmarkTask {
 }
 
 void main() {
-  test('useReferencePlan = true injects plan into prompt and persists planId',
-      () async {
-    final tmp = await Directory.systemTemp.createTemp('dart_arena_plan_on_');
-    final db = AppDatabase(NativeDatabase.memory());
-    final provider = _RecordingProvider();
+  test(
+    'useReferencePlan = true injects plan into prompt and persists planId',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp('dart_arena_plan_on_');
+      final db = AppDatabase(NativeDatabase.memory());
+      final provider = _RecordingProvider();
 
-    final bloc = RunBloc(
-      workdirManager: WorkdirManager(root: tmp),
-      runDao: RunDao(db),
-      planDao: PlanDao(db),
-      now: DateTime.now,
-      idGenerator: () => 'run-plan',
-    );
+      final bloc = RunBloc(
+        workdirManager: WorkdirManager(root: tmp),
+        runDao: RunDao(db),
+        planDao: PlanDao(db),
+        now: DateTime.now,
+        idGenerator: () => 'run-plan',
+      );
 
-    final states = <RunState>[];
-    final sub = bloc.stream.listen(states.add);
+      final states = <RunState>[];
+      final sub = bloc.stream.listen(states.add);
 
-    bloc.add(StartRun(
-      tasks: [_PlanCarryingTask()],
-      providers: [provider],
-      modelsByProvider: const {'rec': ['rec-1']},
-      evaluatorConfig: const EvaluatorConfig(),
-      useReferencePlan: true,
-    ));
+      bloc.add(
+        StartRun(
+          tasks: [_PlanCarryingTask()],
+          providers: [provider],
+          modelsByProvider: const {
+            'rec': ['rec-1'],
+          },
+          evaluatorConfig: const EvaluatorConfig(),
+          useReferencePlan: true,
+        ),
+      );
 
-    await Future<void>.delayed(const Duration(seconds: 2));
-    expect(states.last, isA<RunCompleted>());
+      await Future<void>.delayed(const Duration(seconds: 2));
+      expect(states.last, isA<RunCompleted>());
 
-    expect(provider.lastPrompt, contains('do thing'));
-    expect(provider.lastPrompt, contains('REFERENCE PLAN'));
-    expect(provider.lastPrompt, contains('1. think'));
+      expect(provider.lastPrompt, contains('do thing'));
+      expect(provider.lastPrompt, contains('REFERENCE PLAN'));
+      expect(provider.lastPrompt, contains('1. think'));
 
-    final completed = states.last as RunCompleted;
-    expect(completed.results.single.planId, isNotNull);
-    expect(completed.results.single.planId, startsWith('ref-plan-task-v1'));
+      final completed = states.last as RunCompleted;
+      expect(completed.results.single.planId, isNotNull);
+      expect(completed.results.single.planId, startsWith('ref-plan-task-v1'));
 
-    await sub.cancel();
-    await bloc.close();
-    await db.close();
-    tmp.deleteSync(recursive: true);
-  });
+      await sub.cancel();
+      await bloc.close();
+      await db.close();
+      tmp.deleteSync(recursive: true);
+    },
+  );
 
   test('useReferencePlan = false leaves the prompt unchanged', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_plan_off_');
@@ -185,12 +189,16 @@ void main() {
     final states = <RunState>[];
     final sub = bloc.stream.listen(states.add);
 
-    bloc.add(StartRun(
-      tasks: [_PlanCarryingTask()],
-      providers: [provider],
-      modelsByProvider: const {'rec': ['rec-1']},
-      evaluatorConfig: const EvaluatorConfig(),
-    ));
+    bloc.add(
+      StartRun(
+        tasks: [_PlanCarryingTask()],
+        providers: [provider],
+        modelsByProvider: const {
+          'rec': ['rec-1'],
+        },
+        evaluatorConfig: const EvaluatorConfig(),
+      ),
+    );
 
     await Future<void>.delayed(const Duration(seconds: 2));
     expect(states.last, isA<RunCompleted>());
@@ -206,8 +214,7 @@ void main() {
   });
 
   test('multiple models for one task share planId', () async {
-    final tmp =
-        await Directory.systemTemp.createTemp('dart_arena_plan_multi_');
+    final tmp = await Directory.systemTemp.createTemp('dart_arena_plan_multi_');
     final db = AppDatabase(NativeDatabase.memory());
     final provider = _RecordingProvider();
 
@@ -222,21 +229,24 @@ void main() {
     final states = <RunState>[];
     final sub = bloc.stream.listen(states.add);
 
-    bloc.add(StartRun(
-      tasks: [_PlanCarryingTask()],
-      providers: [provider],
-      modelsByProvider: const {'rec': ['rec-1', 'rec-2']},
-      evaluatorConfig: const EvaluatorConfig(),
-      useReferencePlan: true,
-    ));
+    bloc.add(
+      StartRun(
+        tasks: [_PlanCarryingTask()],
+        providers: [provider],
+        modelsByProvider: const {
+          'rec': ['rec-1', 'rec-2'],
+        },
+        evaluatorConfig: const EvaluatorConfig(),
+        useReferencePlan: true,
+      ),
+    );
 
     await Future<void>.delayed(const Duration(seconds: 2));
     expect(states.last, isA<RunCompleted>());
 
     final completed = states.last as RunCompleted;
     expect(completed.results.length, 2);
-    final planIds =
-        completed.results.map((r) => r.planId).toSet();
+    final planIds = completed.results.map((r) => r.planId).toSet();
     expect(planIds.length, 1);
     expect(planIds.single, startsWith('ref-plan-task-v1'));
 
@@ -247,8 +257,7 @@ void main() {
   });
 
   test('two tasks each get their own reference plan', () async {
-    final tmp =
-        await Directory.systemTemp.createTemp('dart_arena_plan_two_');
+    final tmp = await Directory.systemTemp.createTemp('dart_arena_plan_two_');
     final db = AppDatabase(NativeDatabase.memory());
     final provider = _PerCallRecordingProvider();
 
@@ -263,13 +272,17 @@ void main() {
     final states = <RunState>[];
     final sub = bloc.stream.listen(states.add);
 
-    bloc.add(StartRun(
-      tasks: [_PlanCarryingTask(), _PlanCarryingTaskB()],
-      providers: [provider],
-      modelsByProvider: const {'rec2': ['rec2-1']},
-      evaluatorConfig: const EvaluatorConfig(),
-      useReferencePlan: true,
-    ));
+    bloc.add(
+      StartRun(
+        tasks: [_PlanCarryingTask(), _PlanCarryingTaskB()],
+        providers: [provider],
+        modelsByProvider: const {
+          'rec2': ['rec2-1'],
+        },
+        evaluatorConfig: const EvaluatorConfig(),
+        useReferencePlan: true,
+      ),
+    );
 
     await Future<void>.delayed(const Duration(seconds: 2));
     expect(states.last, isA<RunCompleted>());
@@ -277,17 +290,21 @@ void main() {
     final completed = states.last as RunCompleted;
     expect(completed.results.length, 2);
 
-    final resultA =
-        completed.results.firstWhere((r) => r.taskId == 'plan-task');
-    final resultB =
-        completed.results.firstWhere((r) => r.taskId == 'plan-task-b');
+    final resultA = completed.results.firstWhere(
+      (r) => r.taskId == 'plan-task',
+    );
+    final resultB = completed.results.firstWhere(
+      (r) => r.taskId == 'plan-task-b',
+    );
     expect(resultA.planId, startsWith('ref-plan-task-v1'));
     expect(resultB.planId, startsWith('ref-plan-task-b-v2'));
 
     final callA = provider.calls.firstWhere(
-        (c) => c.prompt.contains('do thing'));
+      (c) => c.prompt.contains('do thing'),
+    );
     final callB = provider.calls.firstWhere(
-        (c) => c.prompt.contains('do other thing'));
+      (c) => c.prompt.contains('do other thing'),
+    );
     expect(callA.prompt, contains('1. think'));
     expect(callA.prompt, contains('REFERENCE PLAN'));
     expect(callB.prompt, contains('1. do'));

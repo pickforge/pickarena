@@ -33,8 +33,9 @@ class _DummyTask extends BenchmarkTask {
 
 void main() {
   test('passing widget test scores 1.0', () async {
-    final root =
-        await Directory.systemTemp.createTemp('dart_arena_widget_eval_');
+    final root = await Directory.systemTemp.createTemp(
+      'dart_arena_widget_eval_',
+    );
     final dir = Directory(p.join(root.path, 'pkg'))..createSync();
     File(p.join(dir.path, 'pubspec.yaml')).writeAsStringSync('''
 name: tmp
@@ -61,8 +62,9 @@ class Greeting extends StatelessWidget {
 }
 ''');
     Directory(p.join(dir.path, 'test', 'widget')).createSync(recursive: true);
-    File(p.join(dir.path, 'test', 'widget', 'greeting_test.dart'))
-        .writeAsStringSync('''
+    File(
+      p.join(dir.path, 'test', 'widget', 'greeting_test.dart'),
+    ).writeAsStringSync('''
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tmp/tmp.dart';
@@ -75,21 +77,20 @@ void main() {
 }
 ''');
 
-    expect(
-      await WorkdirManager(root: root).prepare(dir),
-      isA<PrepareOk>(),
-    );
-    final r = await WidgetTreeEvaluator().evaluate(EvaluationContext(
-      workDir: dir,
-      response: const ModelResponse(
-        rawText: '',
-        extractedCode: null,
-        promptTokens: null,
-        completionTokens: null,
-        latency: Duration.zero,
+    expect(await WorkdirManager(root: root).prepare(dir), isA<PrepareOk>());
+    final r = await WidgetTreeEvaluator().evaluate(
+      EvaluationContext(
+        workDir: dir,
+        response: const ModelResponse(
+          rawText: '',
+          extractedCode: null,
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration.zero,
+        ),
+        task: _DummyTask(),
       ),
-      task: _DummyTask(),
-    ));
+    );
 
     expect(r.passed, isTrue);
     expect(r.score, 1.0);

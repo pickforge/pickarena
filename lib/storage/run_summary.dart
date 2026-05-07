@@ -26,10 +26,6 @@ extension RunSummaryLoader on RunDao {
     for (final tr in trs) {
       evals[tr.id] = await evaluationsForTaskRun(tr.id);
     }
-    return RunSummary(
-      run: run,
-      taskRuns: trs,
-      evaluationsByTaskRunId: evals,
-    );
+    return RunSummary(run: run, taskRuns: trs, evaluationsByTaskRunId: evals);
   }
 }

@@ -14,14 +14,15 @@ class DroidProcessResult {
   final int exitCode;
 }
 
-typedef DroidProcessRunner = Future<DroidProcessResult> Function(
-  String executable,
-  List<String> arguments,
-);
+typedef DroidProcessRunner =
+    Future<DroidProcessResult> Function(
+      String executable,
+      List<String> arguments,
+    );
 
 class DroidExecProvider implements ModelProvider {
   DroidExecProvider({DroidProcessRunner? runner})
-      : _runner = runner ?? _defaultRunner;
+    : _runner = runner ?? _defaultRunner;
 
   static Future<DroidProcessResult> _defaultRunner(
     String exe,
@@ -45,14 +46,14 @@ class DroidExecProvider implements ModelProvider {
   ProviderMode get mode => ProviderMode.agent;
 
   @override
-  Future<List<String>> listModels() async => const [
-        'gpt-5.5',
-        'gpt-5.4',
-        'gpt-5.3-codex',
-        'claude-sonnet-4-6',
-        'claude-opus-4-7',
-        'gemini-3-flash',
-      ];
+  Future<List<ModelInfo>> listModels() async => const [
+    ModelInfo(id: 'gpt-5.5'),
+    ModelInfo(id: 'gpt-5.4'),
+    ModelInfo(id: 'gpt-5.3-codex'),
+    ModelInfo(id: 'claude-sonnet-4-6'),
+    ModelInfo(id: 'claude-opus-4-7'),
+    ModelInfo(id: 'gemini-3-flash'),
+  ];
 
   @override
   Future<ModelResponse> generate({
@@ -61,19 +62,16 @@ class DroidExecProvider implements ModelProvider {
     Duration? timeout,
   }) async {
     final sw = Stopwatch()..start();
-    final res = await _runner(
-      'droid',
-      [
-        'exec',
-        '--auto',
-        'low',
-        '--output-format',
-        'text',
-        '--model',
-        model,
-        prompt,
-      ],
-    );
+    final res = await _runner('droid', [
+      'exec',
+      '--auto',
+      'low',
+      '--output-format',
+      'text',
+      '--model',
+      model,
+      prompt,
+    ]);
     sw.stop();
     if (res.exitCode != 0) {
       throw Exception('droid exec failed: ${res.stderr}');

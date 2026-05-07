@@ -17,10 +17,10 @@ class ModelResponse extends Equatable {
 
   @override
   List<Object?> get props => [
-        rawText,
-        extractedCode,
-        promptTokens,
-        completionTokens,
-        latency,
-      ];
+    rawText,
+    extractedCode,
+    promptTokens,
+    completionTokens,
+    latency,
+  ];
 }

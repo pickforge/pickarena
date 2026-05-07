@@ -116,9 +116,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 _ShowcaseStrip(
                   topPerCategory: data.topPerCategory,
-                  onCategoryTap: (cat) => context.push(
-                    '/leaderboard?category=${cat.name}',
-                  ),
+                  onCategoryTap: (cat) =>
+                      context.push('/leaderboard?category=${cat.name}'),
                 ),
                 RecentRunsStrip(
                   runs: data.recentRuns,
@@ -171,7 +170,7 @@ class _ShowcaseStrip extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           SizedBox(
-            height: 220,
+            height: 300,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -180,7 +179,7 @@ class _ShowcaseStrip extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: SizedBox(
-                      width: 200,
+                      width: 260,
                       child: ShowcaseCard(
                         category: cat,
                         top: topPerCategory[cat],

@@ -1,4 +1,5 @@
-import 'dart:math';
+import 'dart:async';
+import 'dart:collection';
 
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/code_extractor.dart';
@@ -10,14 +11,15 @@ import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/model_stream_event.dart';
+import 'package:dart_arena/runner/failed_combo_snapshot.dart';
 import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
 import 'package:dart_arena/runner/run_event.dart';
-import 'package:dart_arena/runner/run_failure_policy.dart';
 import 'package:dart_arena/runner/run_progress_snapshot.dart';
 import 'package:dart_arena/runner/run_state.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class _Combo {
@@ -50,6 +52,8 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     this.planDao,
   }) : super(const RunIdle()) {
     on<StartRun>(_onStart);
+    on<RetryCombo>(_onRetry);
+    on<FinishRun>(_onFinishRun);
   }
 
   final WorkdirManager workdirManager;
@@ -61,13 +65,220 @@ class RunBloc extends Bloc<RunEvent, RunState> {
 
   static const _maxPreviewChars = 16 * 1024;
 
+  String _currentRunId = '';
+  int _existingCount = 0;
+  List<_Combo> _combos = [];
+  List<TaskRunResult?> _resultSlots = [];
+  final Map<int, FailedComboSnapshot> _failed = {};
+  final Set<int> _retrying = {};
+  final Queue<int> _pendingQueue = Queue<int>();
+  final Map<int, RunProgressSnapshot> _active = {};
+  int _runningWorkers = 0;
+  int _maxConcurrency = 4;
+  EvaluatorConfig _evaluatorConfig = const EvaluatorConfig();
+  Completer<void>? _drainDone;
+
   String _trimPreview(String value) {
     if (value.length <= _maxPreviewChars) return value;
     return value.substring(value.length - _maxPreviewChars);
   }
 
+  void _resetScheduler() {
+    _currentRunId = '';
+    _existingCount = 0;
+    _combos = [];
+    _resultSlots = [];
+    _failed.clear();
+    _retrying.clear();
+    _pendingQueue.clear();
+    _active.clear();
+    _runningWorkers = 0;
+    _maxConcurrency = 4;
+    _evaluatorConfig = const EvaluatorConfig();
+    _drainDone = null;
+  }
+
+  void _emitProgress(Emitter<RunState> emit) {
+    if (emit.isDone) return;
+    final sortedActive = _active.values.toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
+    final failedList = _failed.values.toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
+    emit(
+      RunInProgress(
+        runId: _currentRunId,
+        completed:
+            _existingCount + _resultSlots.whereType<TaskRunResult>().length,
+        total: _existingCount + _combos.length,
+        results: _buildVisibleResults(),
+        active: List.unmodifiable(sortedActive),
+        pending: _pendingQueue.length,
+        failed: List.unmodifiable(failedList),
+      ),
+    );
+  }
+
+  List<TaskRunResult> _buildVisibleResults() {
+    final out = <TaskRunResult>[];
+    for (var i = 0; i < _resultSlots.length; i++) {
+      final r = _resultSlots[i];
+      if (r != null && !_failed.containsKey(i)) {
+        out.add(r);
+      }
+    }
+    return out;
+  }
+
+  void _ensureWorkers(Emitter<RunState> emit) {
+    while (_runningWorkers < _maxConcurrency && _pendingQueue.isNotEmpty) {
+      _runningWorkers++;
+      unawaited(_worker(emit));
+    }
+  }
+
+  Future<void> _worker(Emitter<RunState> emit) async {
+    try {
+      while (true) {
+        if (emit.isDone) return;
+
+        final int comboIndex;
+        if (_pendingQueue.isNotEmpty) {
+          comboIndex = _pendingQueue.removeFirst();
+        } else {
+          return;
+        }
+        final combo = _combos[comboIndex];
+
+        _active[comboIndex] = RunProgressSnapshot(
+          index: comboIndex,
+          label: combo.label,
+          phase: RunComboPhase.requestingModel,
+          startedAt: now(),
+        );
+        _emitProgress(emit);
+
+        try {
+          final result = await _runCombo(
+            combo,
+            _currentRunId,
+            _evaluatorConfig,
+            _active,
+            emit,
+          );
+          await runDao.persistTaskRun(result);
+          _resultSlots[comboIndex] = result;
+        } catch (e, st) {
+          await _handleComboFailure(combo, e, st, emit);
+        }
+
+        _active.remove(comboIndex);
+        _emitProgress(emit);
+      }
+    } finally {
+      _runningWorkers--;
+      _ensureWorkers(emit);
+
+      if (_runningWorkers == 0 && _pendingQueue.isEmpty && _active.isEmpty) {
+        if (_failed.isEmpty &&
+            _resultSlots.whereType<TaskRunResult>().length == _combos.length) {
+          await _tryAutoFinish(emit);
+        } else if (!(_drainDone?.isCompleted ?? true)) {
+          _drainDone!.complete();
+        }
+      }
+    }
+  }
+
+  Future<void> _handleComboFailure(
+    _Combo combo,
+    Object error,
+    StackTrace stackTrace,
+    Emitter<RunState> emit,
+  ) async {
+    final snapshot = FailedComboSnapshot(
+      index: combo.index,
+      label: combo.label,
+      providerId: combo.provider.id,
+      modelId: combo.modelId,
+      taskId: combo.task.id,
+      errorMessage: error.toString(),
+      stackTrace: stackTrace.toString(),
+      failedAt: now(),
+    );
+
+    final synthetic = TaskRunResult(
+      runId: _currentRunId,
+      providerId: combo.provider.id,
+      modelId: combo.modelId,
+      taskId: combo.task.id,
+      response: const ModelResponse(
+        rawText: '<error>',
+        extractedCode: null,
+        promptTokens: null,
+        completionTokens: null,
+        latency: Duration.zero,
+      ),
+      evaluations: [
+        EvaluationResult(
+          evaluatorId: 'combo_failure',
+          passed: false,
+          score: 0.0,
+          rationale: 'combo failed during run: $error',
+          details: {'phase': 'run', 'error': '$error'},
+        ),
+      ],
+      aggregateScore: 0.0,
+      completedAt: now(),
+      planId: combo.planId,
+    );
+
+    try {
+      await runDao.persistTaskRun(synthetic);
+      _resultSlots[combo.index] = synthetic;
+      _failed[combo.index] = snapshot;
+    } catch (persistError) {
+      debugPrint('persist failed: $persistError');
+      final persistSnapshot = FailedComboSnapshot(
+        index: combo.index,
+        label: combo.label,
+        providerId: combo.provider.id,
+        modelId: combo.modelId,
+        taskId: combo.task.id,
+        errorMessage: 'persist failed: $persistError',
+        stackTrace: null,
+        failedAt: now(),
+      );
+      _failed[combo.index] = persistSnapshot;
+    }
+  }
+
+  Future<void> _tryAutoFinish(Emitter<RunState> emit) async {
+    if (_currentRunId.isEmpty || emit.isDone) return;
+    try {
+      await runDao.finishRun(_currentRunId, now());
+      final finalResults = List<TaskRunResult>.unmodifiable(
+        _resultSlots.whereType<TaskRunResult>(),
+      );
+      if (!emit.isDone) {
+        emit(RunCompleted(runId: _currentRunId, results: finalResults));
+      }
+      if (!(_drainDone?.isCompleted ?? true)) {
+        _drainDone?.complete();
+      }
+    } catch (e) {
+      if (!emit.isDone) {
+        emit(RunFailed('$e'));
+      }
+      if (!(_drainDone?.isCompleted ?? true)) {
+        _drainDone?.completeError(e);
+      }
+    }
+  }
+
   Future<void> _onStart(StartRun event, Emitter<RunState> emit) async {
+    _resetScheduler();
     final runId = event.existingRunId ?? idGenerator();
+    _currentRunId = runId;
 
     final normalizedModels = <String, List<String>>{};
     for (final provider in event.providers) {
@@ -118,14 +329,20 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     if (event.existingRunId == null) {
       await runDao.startRun(runId: runId, startedAt: now(), name: event.name);
     }
-    emit(
-      RunInProgress(
-        runId: runId,
-        completed: 0,
-        total: combos.length,
-        results: const [],
-      ),
-    );
+
+    var existingCount = 0;
+    if (event.existingRunId != null) {
+      final existing = await runDao.taskRunsForRun(event.existingRunId!);
+      existingCount = existing.length;
+    }
+
+    _maxConcurrency = event.maxConcurrency.clamp(1, 8);
+    _combos = combos;
+    _resultSlots = List<TaskRunResult?>.filled(combos.length, null);
+    _existingCount = existingCount;
+    _evaluatorConfig = event.evaluatorConfig;
+
+    _emitProgress(emit);
 
     try {
       for (final task in event.tasks) {
@@ -162,151 +379,96 @@ class RunBloc extends Bloc<RunEvent, RunState> {
           label: cb.label,
         );
       }
+      _combos = combos;
 
-      final resultSlots = List<TaskRunResult?>.filled(combos.length, null);
-      final cap = event.maxConcurrency.clamp(1, 8);
-      final active = <int, RunProgressSnapshot>{};
-      Object? firstError;
-      StartRun? retry;
-      bool stopScheduling = false;
-
-      void emitProgress() {
-        if (emit.isDone) return;
-        final sorted = active.values.toList()
-          ..sort((a, b) => a.index.compareTo(b.index));
-        emit(
-          RunInProgress(
-            runId: runId,
-            completed: resultSlots.whereType<TaskRunResult>().length,
-            total: combos.length,
-            results: List.unmodifiable(resultSlots.whereType<TaskRunResult>()),
-            active: List.unmodifiable(sorted),
-          ),
-        );
+      for (var i = 0; i < _combos.length; i++) {
+        _pendingQueue.add(i);
       }
 
-      void updateActive(int index, RunProgressSnapshot snapshot) {
-        active[index] = snapshot;
+      _drainDone = Completer<void>();
+      _ensureWorkers(emit);
+      _emitProgress(emit);
+      try {
+        await _drainDone!.future;
+      } catch (_) {
+        // error already surfaced by _tryAutoFinish / _onFinishRun
       }
-
-      final sharedIterator = combos.iterator;
-
-      Future<void> worker() async {
-        while (true) {
-          if (stopScheduling) return;
-
-          final _Combo combo;
-          if (sharedIterator.moveNext()) {
-            combo = sharedIterator.current;
-          } else {
-            return;
-          }
-
-          updateActive(
-            combo.index,
-            RunProgressSnapshot(
-              index: combo.index,
-              label: combo.label,
-              phase: RunComboPhase.requestingModel,
-              startedAt: now(),
-            ),
-          );
-          emitProgress();
-
-          try {
-            final result = await _runCombo(
-              combo,
-              runId,
-              event.evaluatorConfig,
-              active,
-              updateActive,
-              emitProgress,
-            );
-            await runDao.persistTaskRun(result);
-            resultSlots[combo.index] = result;
-          } catch (e, _) {
-            if (event.onFailure == RunFailurePolicy.failFast) {
-              firstError ??= e;
-              retry ??= StartRun(
-                tasks: [combo.task],
-                providers: [combo.provider],
-                modelsByProvider: {
-                  combo.provider.id: [combo.modelId],
-                },
-                evaluatorConfig: event.evaluatorConfig,
-                useReferencePlan: event.useReferencePlan,
-                name: event.name,
-                maxConcurrency: 1,
-                onFailure: event.onFailure,
-                existingRunId: runId,
-              );
-              stopScheduling = true;
-              return;
-            }
-            final synthetic = TaskRunResult(
-              runId: runId,
-              providerId: combo.provider.id,
-              modelId: combo.modelId,
-              taskId: combo.task.id,
-              response: const ModelResponse(
-                rawText: '<error>',
-                extractedCode: null,
-                promptTokens: null,
-                completionTokens: null,
-                latency: Duration.zero,
-              ),
-              evaluations: [
-                EvaluationResult(
-                  evaluatorId: 'combo_failure',
-                  passed: false,
-                  score: 0.0,
-                  rationale: 'combo failed during run: $e',
-                  details: {'phase': 'run', 'error': '$e'},
-                ),
-              ],
-              aggregateScore: 0.0,
-              completedAt: now(),
-              planId: combo.planId,
-            );
-            try {
-              await runDao.persistTaskRun(synthetic);
-            } catch (_) {
-              stopScheduling = true;
-              return;
-            }
-            resultSlots[combo.index] = synthetic;
-          }
-
-          active.remove(combo.index);
-          emitProgress();
-
-          if (resultSlots.whereType<TaskRunResult>().length == combos.length) {
-            return;
-          }
-        }
-      }
-
-      final workerCount = min(cap, combos.length);
-      final workers = List<Future<void>>.generate(workerCount, (_) => worker());
-      await Future.wait(workers);
-
-      if (firstError != null) {
-        if (!emit.isDone) {
-          emit(RunFailed('$firstError', retry: retry));
-        }
-        return;
-      }
-
-      await runDao.finishRun(runId, now());
-      final finalResults = List<TaskRunResult>.unmodifiable(
-        resultSlots.whereType<TaskRunResult>(),
-      );
-      if (!emit.isDone) {
-        emit(RunCompleted(runId: runId, results: finalResults));
-      }
-    } catch (e, _) {
+    } catch (e) {
       if (!emit.isDone) {
         emit(RunFailed('$e'));
+      }
+    }
+  }
+
+  Future<void> _onRetry(RetryCombo event, Emitter<RunState> emit) async {
+    if (state is! RunInProgress) return;
+    if (event.runId != _currentRunId) return;
+    if (event.failedIndex < 0 || event.failedIndex >= _combos.length) return;
+    if (!_failed.containsKey(event.failedIndex)) return;
+    if (_retrying.contains(event.failedIndex)) return;
+    if (_pendingQueue.contains(event.failedIndex)) return;
+    if (_active.containsKey(event.failedIndex)) return;
+
+    _retrying.add(event.failedIndex);
+    final combo = _combos[event.failedIndex];
+
+    try {
+      await runDao.deleteTaskRunByKey(
+        runId: _currentRunId,
+        providerId: combo.provider.id,
+        modelId: combo.modelId,
+        taskId: combo.task.id,
+      );
+    } catch (_) {
+      _retrying.remove(event.failedIndex);
+      if (!emit.isDone) {
+        emit(
+          RunFailed('Failed to delete prior row for retry of ${combo.label}'),
+        );
+      }
+      return;
+    }
+
+    _failed.remove(event.failedIndex);
+    _resultSlots[event.failedIndex] = null;
+    _retrying.remove(event.failedIndex);
+    _pendingQueue.add(event.failedIndex);
+    _emitProgress(emit);
+
+    _drainDone = Completer<void>();
+    _ensureWorkers(emit);
+    try {
+      await _drainDone!.future;
+    } catch (_) {
+      // error already surfaced
+    }
+  }
+
+  Future<void> _onFinishRun(FinishRun event, Emitter<RunState> emit) async {
+    if (state is! RunInProgress) return;
+    if (event.runId != _currentRunId) return;
+    if (_pendingQueue.isNotEmpty) return;
+    if (_active.isNotEmpty) return;
+    if (_runningWorkers != 0) return;
+    if (_failed.isEmpty) return;
+
+    try {
+      await runDao.finishRun(_currentRunId, now());
+      final finalResults = List<TaskRunResult>.unmodifiable(
+        _resultSlots.whereType<TaskRunResult>(),
+      );
+      if (!emit.isDone) {
+        emit(RunCompleted(runId: _currentRunId, results: finalResults));
+      }
+      if (!(_drainDone?.isCompleted ?? true)) {
+        _drainDone?.complete();
+      }
+    } catch (e) {
+      if (!emit.isDone) {
+        emit(RunFailed('$e'));
+      }
+      if (!(_drainDone?.isCompleted ?? true)) {
+        _drainDone?.completeError(e);
       }
     }
   }
@@ -316,8 +478,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     String runId,
     EvaluatorConfig evaluatorConfig,
     Map<int, RunProgressSnapshot> active,
-    void Function(int, RunProgressSnapshot) updateActive,
-    void Function() emitProgress,
+    Emitter<RunState> emit,
   ) async {
     final task = combo.task;
     final provider = combo.provider;
@@ -329,6 +490,10 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     );
 
     ModelResponse response;
+
+    void updateActive(int index, RunProgressSnapshot snapshot) {
+      active[index] = snapshot;
+    }
 
     if (provider is StreamingModelProvider) {
       final snapshot = active[combo.index];
@@ -350,12 +515,12 @@ class RunBloc extends Bloc<RunEvent, RunState> {
                 ))
             .copyWith(phase: RunComboPhase.streamingResponse),
       );
-      emitProgress();
+      _emitProgress(emit);
 
       await for (final event in provider.generateStream(
         prompt: prompt,
         model: modelId,
-        timeout: null,
+        timeout: const Duration(minutes: 5),
       )) {
         switch (event) {
           case ModelStreamReasoningDelta(:final text):
@@ -364,7 +529,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
               combo.index,
               active[combo.index]!.copyWith(reasoningPreview: reasoningPreview),
             );
-            emitProgress();
+            _emitProgress(emit);
           case ModelStreamContentDelta(:final text):
             answerPreview = _trimPreview(answerPreview + text);
             rawBuf.write(text);
@@ -372,7 +537,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
               combo.index,
               active[combo.index]!.copyWith(answerPreview: answerPreview),
             );
-            emitProgress();
+            _emitProgress(emit);
           case ModelStreamUsage(:final promptTokens, :final completionTokens):
             pt = promptTokens;
             ct = completionTokens;
@@ -383,7 +548,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
                 completionTokens: ct,
               ),
             );
-            emitProgress();
+            _emitProgress(emit);
           case ModelStreamStarted():
           case ModelStreamCompleted():
             break;
@@ -411,9 +576,13 @@ class RunBloc extends Bloc<RunEvent, RunState> {
                 ))
             .copyWith(phase: RunComboPhase.requestingModel),
       );
-      emitProgress();
+      _emitProgress(emit);
 
-      response = await provider.generate(prompt: prompt, model: modelId);
+      response = await provider.generate(
+        prompt: prompt,
+        model: modelId,
+        timeout: const Duration(minutes: 5),
+      );
 
       updateActive(
         combo.index,
@@ -424,14 +593,14 @@ class RunBloc extends Bloc<RunEvent, RunState> {
           phase: RunComboPhase.extractingCode,
         ),
       );
-      emitProgress();
+      _emitProgress(emit);
     }
 
     updateActive(
       combo.index,
       active[combo.index]!.copyWith(phase: RunComboPhase.extractingCode),
     );
-    emitProgress();
+    _emitProgress(emit);
 
     final extracted = extractDartCode(response.rawText) ?? response.rawText;
     final responseWithCode = _copyWithCode(response, extracted);
@@ -440,7 +609,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       combo.index,
       active[combo.index]!.copyWith(phase: RunComboPhase.creatingWorkdir),
     );
-    emitProgress();
+    _emitProgress(emit);
 
     final dir = await workdirManager.createTaskWorkdir(
       runId: runId,
@@ -456,7 +625,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       combo.index,
       active[combo.index]!.copyWith(phase: RunComboPhase.preparing),
     );
-    emitProgress();
+    _emitProgress(emit);
 
     final evaluators = task.evaluatorsFor(evaluatorConfig);
     final prepResult = await workdirManager.prepare(
@@ -482,7 +651,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
         combo.index,
         active[combo.index]!.copyWith(phase: RunComboPhase.evaluating),
       );
-      emitProgress();
+      _emitProgress(emit);
 
       for (final evaluator in evaluators) {
         final result = await evaluator.evaluate(
@@ -500,7 +669,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       combo.index,
       active[combo.index]!.copyWith(phase: RunComboPhase.persisting),
     );
-    emitProgress();
+    _emitProgress(emit);
 
     final aggregateScore = aggregate(evaluations, weights);
 

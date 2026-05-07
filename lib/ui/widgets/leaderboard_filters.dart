@@ -20,7 +20,8 @@ class LeaderboardFilters extends StatelessWidget {
       context: context,
       firstDate: DateTime(2024),
       lastDate: DateTime.now().add(const Duration(days: 1)),
-      initialDateRange: filter.dateRange.from != null && filter.dateRange.to != null
+      initialDateRange:
+          filter.dateRange.from != null && filter.dateRange.to != null
           ? DateTimeRange(
               start: filter.dateRange.from!,
               end: filter.dateRange.to!,
@@ -28,9 +29,11 @@ class LeaderboardFilters extends StatelessWidget {
           : null,
     );
     if (picked != null) {
-      onChanged(filter.copyWith(
-        dateRange: DateRange.custom(from: picked.start, to: picked.end),
-      ));
+      onChanged(
+        filter.copyWith(
+          dateRange: DateRange.custom(from: picked.start, to: picked.end),
+        ),
+      );
     }
   }
 
@@ -48,14 +51,16 @@ class LeaderboardFilters extends StatelessWidget {
             value: filter.category,
             hint: const Text('All categories'),
             items: [
-              const DropdownMenuItem(value: null, child: Text('All categories')),
+              const DropdownMenuItem(
+                value: null,
+                child: Text('All categories'),
+              ),
               for (final c in Category.values)
                 DropdownMenuItem(value: c, child: Text(c.label)),
             ],
-            onChanged: (c) => onChanged(filter.copyWith(
-              category: c,
-              clearCategory: c == null,
-            )),
+            onChanged: (c) => onChanged(
+              filter.copyWith(category: c, clearCategory: c == null),
+            ),
           ),
           DropdownButton<String?>(
             key: const Key('provider-dropdown'),
@@ -66,10 +71,9 @@ class LeaderboardFilters extends StatelessWidget {
               for (final p in providerOptions)
                 DropdownMenuItem(value: p, child: Text(p)),
             ],
-            onChanged: (p) => onChanged(filter.copyWith(
-              providerId: p,
-              clearProviderId: p == null,
-            )),
+            onChanged: (p) => onChanged(
+              filter.copyWith(providerId: p, clearProviderId: p == null),
+            ),
           ),
           _RangeChips(
             range: filter.dateRange,
@@ -83,9 +87,8 @@ class LeaderboardFilters extends StatelessWidget {
               for (final d in ScoreDimension.values)
                 DropdownMenuItem(value: d, child: Text(d.label)),
             ],
-            onChanged: (d) => d == null
-                ? null
-                : onChanged(filter.copyWith(dimension: d)),
+            onChanged: (d) =>
+                d == null ? null : onChanged(filter.copyWith(dimension: d)),
           ),
         ],
       ),
@@ -109,7 +112,8 @@ class _RangeChips extends StatelessWidget {
       return ChoiceChip(
         label: Text(label),
         selected: range == value,
-        onSelected: (_) => onTapOverride != null ? onTapOverride() : onPick(value),
+        onSelected: (_) =>
+            onTapOverride != null ? onTapOverride() : onPick(value),
       );
     }
 

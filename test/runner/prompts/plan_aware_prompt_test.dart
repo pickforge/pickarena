@@ -3,10 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('null plan returns the prompt unchanged', () {
-    final out = buildPromptWithPlan(
-      taskPrompt: 'do thing',
-      planMarkdown: null,
-    );
+    final out = buildPromptWithPlan(taskPrompt: 'do thing', planMarkdown: null);
     expect(out, 'do thing');
   });
 

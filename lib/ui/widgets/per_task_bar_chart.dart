@@ -3,11 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class PerTaskBarChart extends StatelessWidget {
-  const PerTaskBarChart({
-    super.key,
-    required this.scores,
-    required this.onTap,
-  });
+  const PerTaskBarChart({super.key, required this.scores, required this.onTap});
 
   final List<PerTaskScore> scores;
   final void Function(PerTaskScore) onTap;
@@ -63,10 +59,12 @@ class PerTaskBarChart extends StatelessWidget {
                 },
               ),
             ),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           barGroups: [
             for (var i = 0; i < scores.length; i++)

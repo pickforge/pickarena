@@ -55,10 +55,12 @@ void main() {
     blocTest<CartBloc, CartState>(
       'RemoveItem drops the line',
       build: CartBloc.new,
-      seed: () => const CartState(lines: [
-        CartLine(id: 'a', unitPriceCents: 100, quantity: 2),
-        CartLine(id: 'b', unitPriceCents: 250, quantity: 1),
-      ]),
+      seed: () => const CartState(
+        lines: [
+          CartLine(id: 'a', unitPriceCents: 100, quantity: 2),
+          CartLine(id: 'b', unitPriceCents: 250, quantity: 1),
+        ],
+      ),
       act: (bloc) => bloc.add(const RemoveItem('a')),
       verify: (bloc) {
         expect(bloc.state.lines.map((l) => l.id), ['b']);
@@ -68,9 +70,9 @@ void main() {
     blocTest<CartBloc, CartState>(
       'RemoveItem is a no-op when id missing',
       build: CartBloc.new,
-      seed: () => const CartState(lines: [
-        CartLine(id: 'a', unitPriceCents: 100, quantity: 1),
-      ]),
+      seed: () => const CartState(
+        lines: [CartLine(id: 'a', unitPriceCents: 100, quantity: 1)],
+      ),
       act: (bloc) => bloc.add(const RemoveItem('nope')),
       expect: () => <CartState>[],
     );
@@ -78,9 +80,9 @@ void main() {
     blocTest<CartBloc, CartState>(
       'UpdateQuantity sets new quantity',
       build: CartBloc.new,
-      seed: () => const CartState(lines: [
-        CartLine(id: 'a', unitPriceCents: 100, quantity: 1),
-      ]),
+      seed: () => const CartState(
+        lines: [CartLine(id: 'a', unitPriceCents: 100, quantity: 1)],
+      ),
       act: (bloc) => bloc.add(const UpdateQuantity(id: 'a', quantity: 5)),
       verify: (bloc) {
         expect(bloc.state.lines.single.quantity, 5);
@@ -91,10 +93,12 @@ void main() {
     blocTest<CartBloc, CartState>(
       'UpdateQuantity to 0 removes the line',
       build: CartBloc.new,
-      seed: () => const CartState(lines: [
-        CartLine(id: 'a', unitPriceCents: 100, quantity: 3),
-        CartLine(id: 'b', unitPriceCents: 250, quantity: 1),
-      ]),
+      seed: () => const CartState(
+        lines: [
+          CartLine(id: 'a', unitPriceCents: 100, quantity: 3),
+          CartLine(id: 'b', unitPriceCents: 250, quantity: 1),
+        ],
+      ),
       act: (bloc) => bloc.add(const UpdateQuantity(id: 'a', quantity: 0)),
       verify: (bloc) {
         expect(bloc.state.lines.map((l) => l.id), ['b']);

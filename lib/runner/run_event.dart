@@ -1,7 +1,6 @@
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/providers/model_provider.dart';
-import 'package:dart_arena/runner/run_failure_policy.dart';
 import 'package:equatable/equatable.dart';
 
 sealed class RunEvent extends Equatable {
@@ -19,7 +18,6 @@ class StartRun extends RunEvent {
     this.useReferencePlan = false,
     this.name,
     this.maxConcurrency = 4,
-    this.onFailure = RunFailurePolicy.failFast,
     this.existingRunId,
   });
 
@@ -30,7 +28,6 @@ class StartRun extends RunEvent {
   final bool useReferencePlan;
   final String? name;
   final int maxConcurrency;
-  final RunFailurePolicy onFailure;
   final String? existingRunId;
 
   @override
@@ -42,11 +39,29 @@ class StartRun extends RunEvent {
     useReferencePlan,
     name,
     maxConcurrency,
-    onFailure,
     existingRunId,
   ];
 }
 
 class CancelRun extends RunEvent {
   const CancelRun();
+}
+
+class RetryCombo extends RunEvent {
+  const RetryCombo({required this.runId, required this.failedIndex});
+
+  final String runId;
+  final int failedIndex;
+
+  @override
+  List<Object?> get props => [runId, failedIndex];
+}
+
+class FinishRun extends RunEvent {
+  const FinishRun(this.runId);
+
+  final String runId;
+
+  @override
+  List<Object?> get props => [runId];
 }

@@ -44,23 +44,24 @@ dev_dependencies:
   Directory(p.join(dir.path, 'lib')).createSync();
   File(p.join(dir.path, 'lib', 'tmp.dart')).writeAsStringSync(libContents);
   Directory(p.join(dir.path, 'test')).createSync();
-  File(p.join(dir.path, 'test', 'tmp_test.dart'))
-      .writeAsStringSync(testContents);
+  File(
+    p.join(dir.path, 'test', 'tmp_test.dart'),
+  ).writeAsStringSync(testContents);
   await WorkdirManager(root: root).prepare(dir);
   return dir;
 }
 
 EvaluationContext _ctx(Directory dir) => EvaluationContext(
-      workDir: dir,
-      response: const ModelResponse(
-        rawText: '',
-        extractedCode: null,
-        promptTokens: null,
-        completionTokens: null,
-        latency: Duration.zero,
-      ),
-      task: _DummyTask(),
-    );
+  workDir: dir,
+  response: const ModelResponse(
+    rawText: '',
+    extractedCode: null,
+    promptTokens: null,
+    completionTokens: null,
+    latency: Duration.zero,
+  ),
+  task: _DummyTask(),
+);
 
 void main() {
   test('all-pass scores 1.0', () async {
@@ -82,10 +83,12 @@ void main() {
     expect(r.details['total'], 2);
   }, timeout: const Timeout(Duration(minutes: 2)));
 
-  test('two of three passing scores ~0.667', () async {
-    final dir = await _scaffold(
-      libContents: 'int answer() => 41;\n',
-      testContents: '''
+  test(
+    'two of three passing scores ~0.667',
+    () async {
+      final dir = await _scaffold(
+        libContents: 'int answer() => 41;\n',
+        testContents: '''
 import 'package:test/test.dart';
 import 'package:tmp/tmp.dart';
 
@@ -95,11 +98,13 @@ void main() {
   test('c', () { expect(answer(), 41); });
 }
 ''',
-    );
-    final r = await TestEvaluator().evaluate(_ctx(dir));
-    expect(r.passed, isFalse);
-    expect(r.score, closeTo(2.0 / 3.0, 1e-6));
-    expect(r.details['total'], 3);
-    expect(r.details['failed'], 1);
-  }, timeout: const Timeout(Duration(minutes: 2)));
+      );
+      final r = await TestEvaluator().evaluate(_ctx(dir));
+      expect(r.passed, isFalse);
+      expect(r.score, closeTo(2.0 / 3.0, 1e-6));
+      expect(r.details['total'], 3);
+      expect(r.details['failed'], 1);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 }

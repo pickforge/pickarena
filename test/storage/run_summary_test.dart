@@ -37,16 +37,8 @@ void main() {
           latency: Duration.zero,
         ),
         evaluations: const [
-          EvaluationResult(
-            evaluatorId: 'compile',
-            passed: true,
-            score: 1.0,
-          ),
-          EvaluationResult(
-            evaluatorId: 'test',
-            passed: true,
-            score: 0.8,
-          ),
+          EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+          EvaluationResult(evaluatorId: 'test', passed: true, score: 0.8),
         ],
         aggregateScore: 0.9,
         completedAt: DateTime(2026, 5, 2, 12),
@@ -60,8 +52,7 @@ void main() {
     expect(summary.taskRuns, hasLength(1));
     final taskRunId = summary.taskRuns.first.id;
     expect(summary.evaluationsByTaskRunId[taskRunId], hasLength(2));
-    final evalIds = summary
-        .evaluationsByTaskRunId[taskRunId]!
+    final evalIds = summary.evaluationsByTaskRunId[taskRunId]!
         .map((e) => e.evaluatorId)
         .toSet();
     expect(evalIds, equals({'compile', 'test'}));

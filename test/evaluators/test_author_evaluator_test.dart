@@ -97,13 +97,14 @@ dev_dependencies:
   await File(p.join(dir.path, 'lib', 'calc.dart')).writeAsString('''
 bool isEnabled(String text) => text.trim().isNotEmpty;
 ''');
-  await File(p.join(dir.path, 'test', 'calc_test.dart')).writeAsString(testBody);
+  await File(
+    p.join(dir.path, 'test', 'calc_test.dart'),
+  ).writeAsString(testBody);
 
-  final pubGet = await Process.run(
-    'dart',
-    ['pub', 'get'],
-    workingDirectory: dir.path,
-  );
+  final pubGet = await Process.run('dart', [
+    'pub',
+    'get',
+  ], workingDirectory: dir.path);
   expect(pubGet.exitCode, 0, reason: pubGet.stderr.toString());
 }
 
@@ -118,15 +119,17 @@ Future<EvaluationResult> _evaluate(Directory dir) {
         replace: 'true',
       ),
     ],
-  ).evaluate(EvaluationContext(
-    workDir: dir,
-    task: _Task(),
-    response: const ModelResponse(
-      rawText: '',
-      extractedCode: '',
-      promptTokens: null,
-      completionTokens: null,
-      latency: Duration.zero,
+  ).evaluate(
+    EvaluationContext(
+      workDir: dir,
+      task: _Task(),
+      response: const ModelResponse(
+        rawText: '',
+        extractedCode: '',
+        promptTokens: null,
+        completionTokens: null,
+        latency: Duration.zero,
+      ),
     ),
-  ));
+  );
 }

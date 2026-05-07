@@ -55,7 +55,6 @@ final _router = GoRouter(
                 useReferencePlan: cfg.useReferencePlan,
                 name: cfg.name,
                 maxConcurrency: cfg.maxConcurrency,
-                onFailure: cfg.onFailure,
                 existingRunId: cfg.existingRunId,
               ),
             );

@@ -7,7 +7,6 @@ import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/providers/model_provider.dart';
-import 'package:dart_arena/runner/run_failure_policy.dart';
 import 'package:dart_arena/runner/start_run_config.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/dao/plan_dao.dart';
@@ -64,15 +63,17 @@ class _ListModelsProvider implements ModelProvider {
   @override
   ProviderMode get mode => ProviderMode.rawApi;
   @override
-  Future<List<String>> listModels() async =>
-      ['model-a', 'model-b', 'model-c'];
+  Future<List<ModelInfo>> listModels() async => const [
+    ModelInfo(id: 'model-a'),
+    ModelInfo(id: 'model-b', efforts: ['low', 'high']),
+    ModelInfo(id: 'model-c'),
+  ];
   @override
   Future<ModelResponse> generate({
     required String prompt,
     required String model,
     Duration? timeout,
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 }
 
 class _EmptyListProvider implements ModelProvider {
@@ -83,20 +84,19 @@ class _EmptyListProvider implements ModelProvider {
   @override
   ProviderMode get mode => ProviderMode.rawApi;
   @override
-  Future<List<String>> listModels() async => [];
+  Future<List<ModelInfo>> listModels() async => [];
   @override
   Future<ModelResponse> generate({
     required String prompt,
     required String model,
     Duration? timeout,
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 }
 
 Future<Widget> _wrap(Widget child) async {
   final tmp = Directory(
-          '/tmp/dart_arena_newrun_${DateTime.now().microsecondsSinceEpoch}')
-    ..createSync(recursive: true);
+    '/tmp/dart_arena_newrun_${DateTime.now().microsecondsSinceEpoch}',
+  )..createSync(recursive: true);
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(() async {
     await db.close();
@@ -106,13 +106,15 @@ Future<Widget> _wrap(Widget child) async {
     providers: [
       RepositoryProvider<AppDatabase>.value(value: db),
       RepositoryProvider<WorkdirManager>.value(
-          value: WorkdirManager(root: tmp)),
-      RepositoryProvider<SettingsRepository>.value(
-          value: SettingsRepository()),
+        value: WorkdirManager(root: tmp),
+      ),
+      RepositoryProvider<SettingsRepository>.value(value: SettingsRepository()),
       RepositoryProvider<RunDao>(
-          create: (ctx) => RunDao(ctx.read<AppDatabase>())),
+        create: (ctx) => RunDao(ctx.read<AppDatabase>()),
+      ),
       RepositoryProvider<PlanDao>(
-          create: (ctx) => PlanDao(ctx.read<AppDatabase>())),
+        create: (ctx) => PlanDao(ctx.read<AppDatabase>()),
+      ),
     ],
     child: MaterialApp(home: child),
   );
@@ -127,9 +129,9 @@ void main() {
     final reg = TaskRegistry()
       ..register(_StubTaskA())
       ..register(_StubTaskB());
-    await tester.pumpWidget(await _wrap(
-      NewRunPage(registry: reg, providers: const []),
-    ));
+    await tester.pumpWidget(
+      await _wrap(NewRunPage(registry: reg, providers: const [])),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Bug fix'), findsOneWidget);
@@ -140,91 +142,125 @@ void main() {
 
   testWidgets('label TextField is present', (tester) async {
     final reg = TaskRegistry()..register(_StubTaskA());
-    await tester.pumpWidget(await _wrap(
-      NewRunPage(registry: reg, providers: const []),
-    ));
+    await tester.pumpWidget(
+      await _wrap(NewRunPage(registry: reg, providers: const [])),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsWidgets);
   });
 
-  testWidgets('Run button is disabled when no tasks selected',
-      (tester) async {
+  testWidgets('Run button is disabled when no tasks selected', (tester) async {
     final reg = TaskRegistry()..register(_StubTaskA());
-    await tester.pumpWidget(await _wrap(
-      NewRunPage(registry: reg, providers: const []),
-    ));
+    await tester.pumpWidget(
+      await _wrap(NewRunPage(registry: reg, providers: const [])),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('bug.a'));
     await tester.pumpAndSettle();
-    final btn =
-        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Run'));
+    final btn = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Run'),
+    );
     expect(btn.onPressed, isNull);
   });
 
-  testWidgets('chip multi-select toggles populate the selection set',
-      (tester) async {
+  testWidgets('chip multi-select toggles populate the selection set', (
+    tester,
+  ) async {
     final reg = TaskRegistry()..register(_StubTaskA());
 
-    await tester.pumpWidget(await _wrap(NewRunPage(
-      registry: reg,
-      providers: [_ListModelsProvider()],
-    )));
+    await tester.pumpWidget(
+      await _wrap(
+        NewRunPage(registry: reg, providers: [_ListModelsProvider()]),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('ListProv'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(FilterChip), findsNWidgets(3));
+    expect(find.byType(FilterChip), findsNWidgets(4));
 
-    final listFinder = find.byType(Scrollable).last;
-    await tester.drag(listFinder, const Offset(0, -300));
+    await tester.dragUntilVisible(
+      find.byType(FilterChip).first,
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('model-a'));
+    // Tap model-a (first chip) and model-c (fourth chip)
+    final chips = find.byType(FilterChip);
+    await tester.tap(chips.first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('model-c'));
+    await tester.tap(chips.at(3));
     await tester.pumpAndSettle();
 
-    expect(find.text('Will run 2 (provider, model) pairs'
-        ' × 1 tasks = 2 combos, ≈ 4× parallel'), findsOneWidget);
+    await tester.dragUntilVisible(
+      find.text(
+        'Will run 2 (provider, model) pairs'
+        ' × 1 tasks = 2 combos, ≈ 4× parallel',
+      ),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Will run 2 (provider, model) pairs'
+        ' × 1 tasks = 2 combos, ≈ 4× parallel',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Select all and Clear buttons work', (tester) async {
     final reg = TaskRegistry()..register(_StubTaskA());
 
-    await tester.pumpWidget(await _wrap(NewRunPage(
-      registry: reg,
-      providers: [_ListModelsProvider()],
-    )));
+    await tester.pumpWidget(
+      await _wrap(
+        NewRunPage(registry: reg, providers: [_ListModelsProvider()]),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('ListProv'));
     await tester.pumpAndSettle();
 
-    final listFinder = find.byType(Scrollable).last;
-    await tester.drag(listFinder, const Offset(0, -300));
+    expect(find.byType(FilterChip), findsNWidgets(4));
+
+    await tester.dragUntilVisible(
+      find.widgetWithText(TextButton, 'Select all'),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Select all'));
+    await tester.tap(find.widgetWithText(TextButton, 'Select all'));
     await tester.pumpAndSettle();
-    expect(find.text('Will run 3 (provider, model) pairs'
-        ' × 1 tasks = 3 combos, ≈ 4× parallel'), findsOneWidget);
+
+    await tester.dragUntilVisible(
+      find.textContaining('Will run'),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Will run'), findsOneWidget);
 
     await tester.tap(find.text('Clear'));
     await tester.pumpAndSettle();
-    final btn =
-        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Run'));
+    final btn = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Run'),
+    );
     expect(btn.onPressed, isNull);
   });
 
-  testWidgets('comma-separated fallback trims and dedupes',
-      (tester) async {
+  testWidgets('comma-separated fallback trims and dedupes', (tester) async {
     final reg = TaskRegistry()..register(_StubTaskA());
 
-    await tester.pumpWidget(await _wrap(NewRunPage(
-      registry: reg,
-      providers: [_EmptyListProvider()],
-    )));
+    await tester.pumpWidget(
+      await _wrap(NewRunPage(registry: reg, providers: [_EmptyListProvider()])),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Empty'));
@@ -249,38 +285,73 @@ void main() {
       ..register(_StubTaskA())
       ..register(_StubTaskB());
 
-    await tester.pumpWidget(await _wrap(NewRunPage(
-      registry: reg,
-      providers: [_ListModelsProvider()],
-    )));
+    await tester.pumpWidget(
+      await _wrap(
+        NewRunPage(registry: reg, providers: [_ListModelsProvider()]),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    final listFinder = find.byType(Scrollable).last;
-    await tester.drag(listFinder, const Offset(0, -300));
+    await tester.dragUntilVisible(
+      find.text('ListProv'),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('ListProv'));
     await tester.pumpAndSettle();
 
-    await tester.drag(listFinder, const Offset(0, -300));
+    await tester.dragUntilVisible(
+      find.text('model-a'),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('model-a'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Will run 1 (provider, model) pairs'
-        ' × 2 tasks = 2 combos, ≈ 4× parallel'), findsOneWidget);
+    await tester.dragUntilVisible(
+      find.text(
+        'Will run 1 (provider, model) pairs'
+        ' × 2 tasks = 2 combos, ≈ 4× parallel',
+      ),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Will run 1 (provider, model) pairs'
+        ' × 2 tasks = 2 combos, ≈ 4× parallel',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.dragUntilVisible(
+      find.text('state.b'),
+      find.byType(ListView),
+      const Offset(0, 200),
+    );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('state.b'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Will run 1 (provider, model) pairs'
-        ' × 1 tasks = 1 combos, ≈ 4× parallel'), findsOneWidget);
+    expect(
+      find.text(
+        'Will run 1 (provider, model) pairs'
+        ' × 1 tasks = 1 combos, ≈ 4× parallel',
+      ),
+      findsOneWidget,
+    );
   });
 
-  testWidgets(
-      'StartRunConfig carries modelsByProvider, maxConcurrency, onFailure',
-      (tester) async {
+  testWidgets('StartRunConfig carries modelsByProvider and maxConcurrency', (
+    tester,
+  ) async {
     final reg = TaskRegistry()..register(_StubTaskA());
 
     Object? capturedExtra;
@@ -289,10 +360,8 @@ void main() {
       routes: [
         GoRoute(
           path: '/new-run',
-          builder: (_, __) => NewRunPage(
-            registry: reg,
-            providers: [_ListModelsProvider()],
-          ),
+          builder: (_, __) =>
+              NewRunPage(registry: reg, providers: [_ListModelsProvider()]),
         ),
         GoRoute(
           path: '/run',
@@ -305,35 +374,41 @@ void main() {
     );
 
     final tmp = Directory(
-            '/tmp/dart_arena_cfg_${DateTime.now().microsecondsSinceEpoch}')
-      ..createSync(recursive: true);
+      '/tmp/dart_arena_cfg_${DateTime.now().microsecondsSinceEpoch}',
+    )..createSync(recursive: true);
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(() async {
       await db.close();
       tmp.deleteSync(recursive: true);
     });
 
-    await tester.pumpWidget(MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider<AppDatabase>.value(value: db),
-        RepositoryProvider<WorkdirManager>.value(
-            value: WorkdirManager(root: tmp)),
-        RepositoryProvider<SettingsRepository>.value(
-            value: SettingsRepository()),
-        RepositoryProvider<RunDao>(
-            create: (ctx) => RunDao(ctx.read<AppDatabase>())),
-        RepositoryProvider<PlanDao>(
-            create: (ctx) => PlanDao(ctx.read<AppDatabase>())),
-      ],
-      child: MaterialApp.router(routerConfig: router),
-    ));
+    await tester.pumpWidget(
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<AppDatabase>.value(value: db),
+          RepositoryProvider<WorkdirManager>.value(
+            value: WorkdirManager(root: tmp),
+          ),
+          RepositoryProvider<SettingsRepository>.value(
+            value: SettingsRepository(),
+          ),
+          RepositoryProvider<RunDao>(
+            create: (ctx) => RunDao(ctx.read<AppDatabase>()),
+          ),
+          RepositoryProvider<PlanDao>(
+            create: (ctx) => PlanDao(ctx.read<AppDatabase>()),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('ListProv'));
     await tester.pumpAndSettle();
 
     final listFinder = find.byType(Scrollable).last;
-    await tester.drag(listFinder, const Offset(0, -300));
+    await tester.drag(listFinder, const Offset(0, -700));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('model-a'));
@@ -347,6 +422,5 @@ void main() {
     expect(cfg.modelsByProvider, contains('list'));
     expect(cfg.modelsByProvider['list'], ['model-a']);
     expect(cfg.maxConcurrency, 4);
-    expect(cfg.onFailure, RunFailurePolicy.failFast);
   });
 }

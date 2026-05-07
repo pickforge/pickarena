@@ -6,7 +6,8 @@ class SearchController {
   SearchController({required this.search});
 
   final Searcher search;
-  final StreamController<List<String>> _results = StreamController<List<String>>.broadcast();
+  final StreamController<List<String>> _results =
+      StreamController<List<String>>.broadcast();
 
   Stream<List<String>> get results => _results.stream;
 

@@ -8,9 +8,6 @@ void main() {
   });
 
   test('hasJudge false when only one set', () {
-    expect(
-      const EvaluatorConfig(judgeModel: 'gpt-4o-mini').hasJudge,
-      isFalse,
-    );
+    expect(const EvaluatorConfig(judgeModel: 'gpt-4o-mini').hasJudge, isFalse);
   });
 }

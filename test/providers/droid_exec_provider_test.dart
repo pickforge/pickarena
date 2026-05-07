@@ -28,10 +28,17 @@ void main() {
     );
   });
 
-  test('listModels returns curated list with real CLI models', () async {
-    final p = DroidExecProvider();
-    final m = await p.listModels();
-    expect(m, contains('gpt-5.5'));
-    expect(m, contains('claude-sonnet-4-6'));
-  });
+  test(
+    'listModels returns ModelInfo with curated list with real CLI models',
+    () async {
+      final p = DroidExecProvider();
+      final m = await p.listModels();
+      final ids = m.map((mi) => mi.id).toSet();
+      expect(ids, contains('gpt-5.5'));
+      expect(ids, contains('claude-sonnet-4-6'));
+      for (final mi in m) {
+        expect(mi.efforts, isEmpty);
+      }
+    },
+  );
 }

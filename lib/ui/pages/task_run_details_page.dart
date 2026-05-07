@@ -129,8 +129,7 @@ class _Header extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(
-                  text:
-                      '${tr.completedAt.toIso8601String()} \u00b7 agg ',
+                  text: '${tr.completedAt.toIso8601String()} \u00b7 agg ',
                 ),
                 WidgetSpan(
                   child: Text(
@@ -165,9 +164,7 @@ class _ScoreStrip extends StatelessWidget {
         spacing: 6,
         runSpacing: 6,
         children: evaluations
-            .map(
-              (e) => ScoreChip(evaluatorId: e.evaluatorId, score: e.score),
-            )
+            .map((e) => ScoreChip(evaluatorId: e.evaluatorId, score: e.score))
             .toList(),
       ),
     );
@@ -204,8 +201,7 @@ class _OutputTabState extends State<_OutputTab> {
                   ButtonSegment(value: true, label: Text('Raw output')),
                 ],
                 selected: {_showRaw},
-                onSelectionChanged: (s) =>
-                    setState(() => _showRaw = s.first),
+                onSelectionChanged: (s) => setState(() => _showRaw = s.first),
               ),
               const Spacer(),
               IconButton(
@@ -255,12 +251,11 @@ class _DiffTab extends StatelessWidget {
     final original = task.fixtures[task.generatedCodePath];
     if (original == null) {
       return const Center(
-        child: Text(
-          'Task has no original at this path to diff against.',
-        ),
+        child: Text('Task has no original at this path to diff against.'),
       );
     }
-    final extracted = _extractDart(bundle.taskRun.responseText) ??
+    final extracted =
+        _extractDart(bundle.taskRun.responseText) ??
         bundle.taskRun.responseText;
     final lines = computeUnifiedDiff(original, extracted);
     return Column(
@@ -310,9 +305,7 @@ class _EvaluationsTab extends StatelessWidget {
     }
     return ListView(
       padding: const EdgeInsets.all(8),
-      children: evaluations
-          .map((e) => EvaluatorCard(evaluation: e))
-          .toList(),
+      children: evaluations.map((e) => EvaluatorCard(evaluation: e)).toList(),
     );
   }
 }
@@ -333,10 +326,7 @@ class _PromptTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Prompt',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+          const Text('Prompt', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           SelectableText(task!.prompt),
           if (task!.judgeRubric != null) ...[

@@ -13,10 +13,7 @@ void main() {
 ```
 Trailing.
 ''';
-      expect(
-        extractDartCode(raw),
-        'void main() {\n  print(\'hi\');\n}\n',
-      );
+      expect(extractDartCode(raw), 'void main() {\n  print(\'hi\');\n}\n');
     });
 
     test('falls back to bare ``` block if dart not specified', () {

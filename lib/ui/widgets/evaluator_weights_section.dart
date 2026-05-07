@@ -159,10 +159,7 @@ class _EvaluatorWeightsSectionState extends State<EvaluatorWeightsSection> {
         children: [
           SizedBox(
             width: 140,
-            child: Text(
-              id,
-              style: const TextStyle(fontFamily: 'monospace'),
-            ),
+            child: Text(id, style: const TextStyle(fontFamily: 'monospace')),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -183,8 +180,9 @@ class _EvaluatorWeightsSectionState extends State<EvaluatorWeightsSection> {
           const SizedBox(width: 8),
           Badge(
             label: Text(isDefault ? 'Default' : 'Override'),
-            backgroundColor:
-                isDefault ? Colors.green.shade700 : Colors.orange.shade800,
+            backgroundColor: isDefault
+                ? Colors.green.shade700
+                : Colors.orange.shade800,
           ),
           IconButton(
             key: ValueKey('weight-reset-$id'),

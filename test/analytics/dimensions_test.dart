@@ -6,36 +6,34 @@ TaskRun _tr({
   required String id,
   required double aggregate,
   int latencyMs = 5000,
-}) =>
-    TaskRun(
-      id: id,
-      runId: 'r1',
-      providerId: 'p',
-      modelId: 'm',
-      taskId: 't',
-      responseText: '',
-      promptTokens: null,
-      completionTokens: null,
-      latencyMs: latencyMs,
-      aggregateScore: aggregate,
-      completedAt: DateTime(2026, 5, 3),
-    );
+}) => TaskRun(
+  id: id,
+  runId: 'r1',
+  providerId: 'p',
+  modelId: 'm',
+  taskId: 't',
+  responseText: '',
+  promptTokens: null,
+  completionTokens: null,
+  latencyMs: latencyMs,
+  aggregateScore: aggregate,
+  completedAt: DateTime(2026, 5, 3),
+);
 
 Evaluation _ev({
   required String taskRunId,
   required String evaluatorId,
   required double score,
   bool? passed,
-}) =>
-    Evaluation(
-      id: '$taskRunId-$evaluatorId',
-      taskRunId: taskRunId,
-      evaluatorId: evaluatorId,
-      passed: passed ?? (score >= 0.5),
-      score: score,
-      rationale: null,
-      detailsJson: '{}',
-    );
+}) => Evaluation(
+  id: '$taskRunId-$evaluatorId',
+  taskRunId: taskRunId,
+  evaluatorId: evaluatorId,
+  passed: passed ?? (score >= 0.5),
+  score: score,
+  rationale: null,
+  detailsJson: '{}',
+);
 
 void main() {
   test('Dimensions.empty returns all-zero', () {
@@ -119,38 +117,45 @@ void main() {
     test('mean of correctness evaluators across all task runs', () {
       final tr1 = _tr(id: '1', aggregate: 1.0);
       final tr2 = _tr(id: '2', aggregate: 0.5);
-      final d = Dimensions.fromTaskRuns([tr1, tr2], {
-        '1': [
-          _ev(taskRunId: '1', evaluatorId: 'compile', score: 1.0),
-          _ev(taskRunId: '1', evaluatorId: 'test', score: 0.5),
-        ],
-        '2': [
-          _ev(taskRunId: '2', evaluatorId: 'compile', score: 1.0),
-          _ev(taskRunId: '2', evaluatorId: 'test', score: 0.5),
-        ],
-      });
+      final d = Dimensions.fromTaskRuns(
+        [tr1, tr2],
+        {
+          '1': [
+            _ev(taskRunId: '1', evaluatorId: 'compile', score: 1.0),
+            _ev(taskRunId: '1', evaluatorId: 'test', score: 0.5),
+          ],
+          '2': [
+            _ev(taskRunId: '2', evaluatorId: 'compile', score: 1.0),
+            _ev(taskRunId: '2', evaluatorId: 'test', score: 0.5),
+          ],
+        },
+      );
       expect(d.intelligence, closeTo(2.0 / 3.0, 0.01));
     });
 
     test('ignores non-correctness evaluators (judge, diff_size)', () {
       final tr = _tr(id: '1', aggregate: 1.0);
-      final d = Dimensions.fromTaskRuns([tr], {
-        '1': [
-          _ev(taskRunId: '1', evaluatorId: 'compile', score: 1.0),
-          _ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 0.0),
-          _ev(taskRunId: '1', evaluatorId: 'diff_size', score: 0.0),
-        ],
-      });
+      final d = Dimensions.fromTaskRuns(
+        [tr],
+        {
+          '1': [
+            _ev(taskRunId: '1', evaluatorId: 'compile', score: 1.0),
+            _ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 0.0),
+            _ev(taskRunId: '1', evaluatorId: 'diff_size', score: 0.0),
+          ],
+        },
+      );
       expect(d.intelligence, 1.0);
     });
 
     test('no correctness evaluators present yields 0.0', () {
       final tr = _tr(id: '1', aggregate: 0.0);
-      final d = Dimensions.fromTaskRuns([tr], {
-        '1': [
-          _ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 1.0),
-        ],
-      });
+      final d = Dimensions.fromTaskRuns(
+        [tr],
+        {
+          '1': [_ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 1.0)],
+        },
+      );
       expect(d.intelligence, 0.0);
     });
   });
@@ -158,46 +163,71 @@ void main() {
   group('elegance + problems', () {
     test('mean of llm_judge and diff_size when both present', () {
       final tr = _tr(id: '1', aggregate: 1.0);
-      final d = Dimensions.fromTaskRuns([tr], {
-        '1': [
-          _ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 0.8),
-          _ev(taskRunId: '1', evaluatorId: 'diff_size', score: 0.2),
-        ],
-      });
+      final d = Dimensions.fromTaskRuns(
+        [tr],
+        {
+          '1': [
+            _ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 0.8),
+            _ev(taskRunId: '1', evaluatorId: 'diff_size', score: 0.2),
+          ],
+        },
+      );
       expect(d.elegance, closeTo(0.5, 0.0001));
     });
 
     test('uses only judge when diff_size missing', () {
       final tr = _tr(id: '1', aggregate: 1.0);
-      final d = Dimensions.fromTaskRuns([tr], {
-        '1': [
-          _ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 0.8),
-        ],
-      });
+      final d = Dimensions.fromTaskRuns(
+        [tr],
+        {
+          '1': [_ev(taskRunId: '1', evaluatorId: 'llm_judge', score: 0.8)],
+        },
+      );
       expect(d.elegance, 0.8);
     });
 
     test('zero when neither judge nor diff_size present', () {
       final tr = _tr(id: '1', aggregate: 1.0);
-      final d = Dimensions.fromTaskRuns([tr], {
-        '1': [_ev(taskRunId: '1', evaluatorId: 'compile', score: 1.0)],
-      });
+      final d = Dimensions.fromTaskRuns(
+        [tr],
+        {
+          '1': [_ev(taskRunId: '1', evaluatorId: 'compile', score: 1.0)],
+        },
+      );
       expect(d.elegance, 0.0);
     });
 
     test('problems counts failed evaluations across all task runs', () {
       final tr1 = _tr(id: '1', aggregate: 1.0);
       final tr2 = _tr(id: '2', aggregate: 0.0);
-      final d = Dimensions.fromTaskRuns([tr1, tr2], {
-        '1': [
-          _ev(taskRunId: '1', evaluatorId: 'compile', score: 1.0, passed: true),
-          _ev(taskRunId: '1', evaluatorId: 'analyze', score: 0.0, passed: false),
-        ],
-        '2': [
-          _ev(taskRunId: '2', evaluatorId: 'compile', score: 0.0, passed: false),
-          _ev(taskRunId: '2', evaluatorId: 'test', score: 0.0, passed: false),
-        ],
-      });
+      final d = Dimensions.fromTaskRuns(
+        [tr1, tr2],
+        {
+          '1': [
+            _ev(
+              taskRunId: '1',
+              evaluatorId: 'compile',
+              score: 1.0,
+              passed: true,
+            ),
+            _ev(
+              taskRunId: '1',
+              evaluatorId: 'analyze',
+              score: 0.0,
+              passed: false,
+            ),
+          ],
+          '2': [
+            _ev(
+              taskRunId: '2',
+              evaluatorId: 'compile',
+              score: 0.0,
+              passed: false,
+            ),
+            _ev(taskRunId: '2', evaluatorId: 'test', score: 0.0, passed: false),
+          ],
+        },
+      );
       expect(d.problems, 3);
     });
   });

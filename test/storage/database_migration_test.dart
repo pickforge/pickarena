@@ -7,7 +7,9 @@ void main() {
   test('runs.name is writable and readable', () async {
     final db = AppDatabase(NativeDatabase.memory());
 
-    await db.into(db.runs).insert(
+    await db
+        .into(db.runs)
+        .insert(
           RunsCompanion.insert(
             id: 'r1',
             startedAt: DateTime(2026, 5, 2),
@@ -26,16 +28,15 @@ void main() {
   test('runs.name is nullable (existing rows have no name)', () async {
     final db = AppDatabase(NativeDatabase.memory());
 
-    await db.into(db.runs).insert(
-          RunsCompanion.insert(
-            id: 'r2',
-            startedAt: DateTime(2026, 5, 2),
-          ),
+    await db
+        .into(db.runs)
+        .insert(
+          RunsCompanion.insert(id: 'r2', startedAt: DateTime(2026, 5, 2)),
         );
 
-    final row = await (db.select(db.runs)
-          ..where((r) => r.id.equals('r2')))
-        .getSingle();
+    final row = await (db.select(
+      db.runs,
+    )..where((r) => r.id.equals('r2'))).getSingle();
     expect(row.name, isNull);
 
     await db.close();

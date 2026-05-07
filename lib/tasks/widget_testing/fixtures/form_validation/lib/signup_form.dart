@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 class SignupForm extends StatefulWidget {
   const SignupForm({super.key, required this.onSubmit});
 
-  final void Function({required String email, required String password}) onSubmit;
+  final void Function({required String email, required String password})
+  onSubmit;
 
   static String? validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) return 'Email is required';
@@ -36,7 +37,8 @@ class _SignupFormState extends State<SignupForm> {
   }
 
   void _revalidate() {
-    final ok = SignupForm.validateEmail(_emailCtrl.text) == null &&
+    final ok =
+        SignupForm.validateEmail(_emailCtrl.text) == null &&
         SignupForm.validatePassword(_passwordCtrl.text) == null;
     if (ok != _valid) setState(() => _valid = ok);
   }
@@ -50,7 +52,10 @@ class _SignupFormState extends State<SignupForm> {
 
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    widget.onSubmit(email: _emailCtrl.text.trim(), password: _passwordCtrl.text);
+    widget.onSubmit(
+      email: _emailCtrl.text.trim(),
+      password: _passwordCtrl.text,
+    );
   }
 
   @override

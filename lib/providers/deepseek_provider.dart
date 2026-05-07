@@ -3,11 +3,12 @@ import 'package:dio/dio.dart';
 
 class DeepSeekProvider extends OpenAiCompatibleProvider {
   DeepSeekProvider({required String apiKey, Dio? dio})
-      : super(
-          dio,
-          id: 'deepseek',
-          displayName: 'DeepSeek',
-          baseUrl: 'https://api.deepseek.com/v1',
-          apiKey: apiKey,
-        );
+    : super(
+        dio,
+        id: 'deepseek',
+        displayName: 'DeepSeek',
+        baseUrl: 'https://api.deepseek.com/v1',
+        apiKey: apiKey,
+        defaultEfforts: const ['high', 'max'],
+      );
 }

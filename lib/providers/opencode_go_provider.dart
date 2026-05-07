@@ -1,3 +1,4 @@
+import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/openai_compatible_provider.dart';
 import 'package:dio/dio.dart';
 
@@ -9,15 +10,16 @@ class OpenCodeGoProvider extends OpenAiCompatibleProvider {
         displayName: 'OpenCode Go',
         baseUrl: 'https://opencode.ai/zen/go/v1',
         apiKey: apiKey,
+        defaultEfforts: const ['low', 'medium', 'high', 'max'],
       );
 
   /// Return only models routed through /chat/completions.
   /// Go also proxies Claude via /v1/messages and GPT-5 via /v1/responses.
   @override
-  Future<List<String>> listModels() async {
+  Future<List<ModelInfo>> listModels() async {
     try {
       final all = await super.listModels();
-      if (all.isEmpty) return _chatModels;
+      if (all.isEmpty) return _chatModelInfos;
       final chatCompatiblePrefixes = [
         'qwen',
         'minimax',
@@ -29,13 +31,19 @@ class OpenCodeGoProvider extends OpenAiCompatibleProvider {
         'nemotron',
       ];
       final filtered = all
-          .where((id) => chatCompatiblePrefixes.any((p) => id.startsWith(p)))
+          .where(
+            (info) => chatCompatiblePrefixes.any((p) => info.id.startsWith(p)),
+          )
           .toList();
-      return filtered.isNotEmpty ? filtered : _chatModels;
+      return filtered.isNotEmpty ? filtered : _chatModelInfos;
     } catch (_) {
-      return _chatModels;
+      return _chatModelInfos;
     }
   }
+
+  List<ModelInfo> get _chatModelInfos => _chatModels
+      .map((id) => ModelInfo(id: id, efforts: defaultEfforts))
+      .toList();
 
   static const _chatModels = <String>[
     'qwen3.6-plus',

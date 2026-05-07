@@ -13,20 +13,24 @@ void main() {
 
   test('generate parses Messages API response shape', () async {
     final dio = _MockDio();
-    when(() => dio.post<Map<String, dynamic>>(
-          any(),
-          data: any(named: 'data'),
-          options: any(named: 'options'),
-        )).thenAnswer((_) async => Response(
-          data: <String, dynamic>{
-            'content': [
-              {'type': 'text', 'text': 'world'},
-            ],
-            'usage': {'input_tokens': 5, 'output_tokens': 1},
-          },
-          statusCode: 200,
-          requestOptions: RequestOptions(path: ''),
-        ));
+    when(
+      () => dio.post<Map<String, dynamic>>(
+        any(),
+        data: any(named: 'data'),
+        options: any(named: 'options'),
+      ),
+    ).thenAnswer(
+      (_) async => Response(
+        data: <String, dynamic>{
+          'content': [
+            {'type': 'text', 'text': 'world'},
+          ],
+          'usage': {'input_tokens': 5, 'output_tokens': 1},
+        },
+        statusCode: 200,
+        requestOptions: RequestOptions(path: ''),
+      ),
+    );
 
     final p = AnthropicProvider(apiKey: 'sk', dio: dio);
     final r = await p.generate(prompt: 'hi', model: 'claude-sonnet-4-5');
@@ -35,9 +39,14 @@ void main() {
     expect(r.completionTokens, 1);
   });
 
-  test('listModels returns the curated default list', () async {
+  test('listModels returns ModelInfo with curated default list', () async {
     final p = AnthropicProvider(apiKey: 'sk');
-    expect(await p.listModels(), contains('claude-sonnet-4-5'));
-    expect(await p.listModels(), contains('claude-opus-4-5'));
+    final models = await p.listModels();
+    final ids = models.map((m) => m.id).toSet();
+    expect(ids, contains('claude-sonnet-4-5'));
+    expect(ids, contains('claude-opus-4-5'));
+    for (final m in models) {
+      expect(m.efforts, isEmpty);
+    }
   });
 }

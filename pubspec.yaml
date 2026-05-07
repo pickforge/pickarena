@@ -43,6 +43,7 @@ dependencies:
   go_router: ^14.6.2
   fl_chart: ^0.69.0
   flutter_highlight: ^0.7.0
+  pretty_dio_logger: ^1.4.0
 
 dev_dependencies:
   flutter_test:

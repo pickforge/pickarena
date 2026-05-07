@@ -28,10 +28,7 @@ class ShowcaseCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                category.label,
-                style: theme.textTheme.labelLarge,
-              ),
+              Text(category.label, style: theme.textTheme.labelLarge),
               const SizedBox(height: 8),
               if (top == null)
                 const Expanded(
@@ -45,10 +42,7 @@ class ShowcaseCard extends StatelessWidget {
                   style: theme.textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  top!.providerId,
-                  style: theme.textTheme.bodySmall,
-                ),
+                Text(top!.providerId, style: theme.textTheme.bodySmall),
                 const SizedBox(height: 4),
                 Text(
                   top!.dimensions.overall.toStringAsFixed(2),

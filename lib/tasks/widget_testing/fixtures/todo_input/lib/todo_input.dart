@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 class TodoInput extends StatefulWidget {
-  const TodoInput({
-    super.key,
-    required this.onSubmit,
-    this.maxLength = 80,
-  });
+  const TodoInput({super.key, required this.onSubmit, this.maxLength = 80});
 
   final ValueChanged<String> onSubmit;
   final int maxLength;

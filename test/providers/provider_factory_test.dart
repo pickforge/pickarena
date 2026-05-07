@@ -63,4 +63,38 @@ void main() {
       expect(provider.apiKey, 'local-key');
     },
   );
+
+  test('local_openai has empty default efforts', () async {
+    final providers = await buildEnabledProviders(SettingsRepository());
+    final local = providers.whereType<OpenAiCompatibleProvider>().singleWhere(
+      (p) => p.id == 'local_openai',
+    );
+    expect(local.defaultEfforts, isEmpty);
+  });
+
+  test(
+    'enabled cloud OpenAI-compatible providers have expected effort lists',
+    () async {
+      final repo = SettingsRepository();
+      await repo.setApiKey('deepseek', 'sk');
+      await repo.setApiKey('openai', 'sk');
+      await repo.setApiKey('openrouter', 'sk');
+      final providers = await buildEnabledProviders(repo);
+
+      final deepseek = providers
+          .whereType<OpenAiCompatibleProvider>()
+          .singleWhere((p) => p.id == 'deepseek');
+      expect(deepseek.defaultEfforts, ['high', 'max']);
+
+      final openai = providers
+          .whereType<OpenAiCompatibleProvider>()
+          .singleWhere((p) => p.id == 'openai');
+      expect(openai.defaultEfforts, ['low', 'medium', 'high', 'xhigh']);
+
+      final openrouter = providers
+          .whereType<OpenAiCompatibleProvider>()
+          .singleWhere((p) => p.id == 'openrouter');
+      expect(openrouter.defaultEfforts, ['low', 'medium', 'high', 'max']);
+    },
+  );
 }

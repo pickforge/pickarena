@@ -6,11 +6,10 @@ void main() {
   test('insert and read a Run', () async {
     final db = AppDatabase(NativeDatabase.memory());
 
-    await db.into(db.runs).insert(
-          RunsCompanion.insert(
-            id: 'r1',
-            startedAt: DateTime(2026, 5, 2),
-          ),
+    await db
+        .into(db.runs)
+        .insert(
+          RunsCompanion.insert(id: 'r1', startedAt: DateTime(2026, 5, 2)),
         );
     final all = await db.select(db.runs).get();
     expect(all, hasLength(1));

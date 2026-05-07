@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SettingsRepository {
   SettingsRepository([FlutterSecureStorage? storage])
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
 
@@ -50,8 +50,7 @@ class SettingsRepository {
   Future<void> setBaseUrlOverride(String providerId, String value) =>
       _storage.write(key: _baseUrlKey(providerId), value: value);
 
-  Future<String?> getJudgeProviderId() =>
-      _storage.read(key: _judgeProviderId);
+  Future<String?> getJudgeProviderId() => _storage.read(key: _judgeProviderId);
 
   Future<void> setJudgeProviderId(String? id) async {
     if (id == null) {
@@ -85,10 +84,7 @@ class SettingsRepository {
   }
 
   Future<void> setEvaluatorWeights(Map<String, double> overrides) =>
-      _storage.write(
-        key: _evaluatorWeightsJson,
-        value: jsonEncode(overrides),
-      );
+      _storage.write(key: _evaluatorWeightsJson, value: jsonEncode(overrides));
 
   Future<String?> getReadmePath() => _storage.read(key: _readmePath);
 

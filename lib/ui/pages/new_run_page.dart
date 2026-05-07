@@ -4,7 +4,6 @@ import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/provider_factory.dart';
-import 'package:dart_arena/runner/run_failure_policy.dart';
 import 'package:dart_arena/runner/start_run_config.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
@@ -31,7 +30,6 @@ class _NewRunPageState extends State<NewRunPage> {
   String _label = '';
   bool _loading = true;
   bool _useReferencePlan = false;
-  RunFailurePolicy _failurePolicy = RunFailurePolicy.failFast;
   int _maxConcurrency = 4;
 
   @override
@@ -102,9 +100,6 @@ class _NewRunPageState extends State<NewRunPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      _computeFailureDefault();
-    }
     return Scaffold(
       appBar: AppBar(title: const Text('New Run')),
       body: _loading
@@ -126,7 +121,6 @@ class _NewRunPageState extends State<NewRunPage> {
                           } else {
                             _selectedTaskIds.remove(id);
                           }
-                          _computeFailureDefault();
                         }),
                       ),
                       const SizedBox(height: 8),
@@ -134,29 +128,26 @@ class _NewRunPageState extends State<NewRunPage> {
                         registry: _registry,
                         selectedTaskIds: _selectedTaskIds,
                         value: _useReferencePlan,
-                        onChanged: (v) =>
-                            setState(() => _useReferencePlan = v),
+                        onChanged: (v) => setState(() => _useReferencePlan = v),
                       ),
                       const Divider(height: 32),
                       const Text(
                         'Providers',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       ..._providers.map(
                         (provider) => _ProviderRow(
                           provider: provider,
-                          checked:
-                              _checkedProvider[provider.id] ?? false,
+                          checked: _checkedProvider[provider.id] ?? false,
                           selectedModels: _models[provider.id] ?? const {},
                           onChecked: (v) => setState(() {
                             _checkedProvider[provider.id] = v;
-                            _computeFailureDefault();
                           }),
-                          onModelSelectionChanged: (set) =>
-                              setState(() {
+                          onModelSelectionChanged: (set) => setState(() {
                             _models[provider.id] = set;
-                            _computeFailureDefault();
                           }),
                         ),
                       ),
@@ -170,24 +161,6 @@ class _NewRunPageState extends State<NewRunPage> {
                           style: const TextStyle(fontSize: 13),
                         ),
                     ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SegmentedButton<RunFailurePolicy>(
-                    segments: const [
-                      ButtonSegment(
-                        value: RunFailurePolicy.failFast,
-                        label: Text('Stop on first failure'),
-                      ),
-                      ButtonSegment(
-                        value: RunFailurePolicy.skipAndContinue,
-                        label: Text('Skip failed and continue'),
-                      ),
-                    ],
-                    selected: {_failurePolicy},
-                    onSelectionChanged: (v) =>
-                        setState(() => _failurePolicy = v.single),
                   ),
                 ),
                 Padding(
@@ -205,17 +178,10 @@ class _NewRunPageState extends State<NewRunPage> {
     );
   }
 
-  void _computeFailureDefault() {
-    if (!_loading) return;
-    if (_comboCount > 5) {
-      _failurePolicy = RunFailurePolicy.skipAndContinue;
-    }
-    _loading = false;
-  }
-
   Future<void> _startRun() async {
-    final selectedProviders =
-        _providers.where((p) => _checkedProvider[p.id] == true).toList();
+    final selectedProviders = _providers
+        .where((p) => _checkedProvider[p.id] == true)
+        .toList();
     final modelsByProvider = <String, List<String>>{};
     for (final p in selectedProviders) {
       final set = _models[p.id];
@@ -261,7 +227,6 @@ class _NewRunPageState extends State<NewRunPage> {
         useReferencePlan: _useReferencePlan,
         name: _label.trim().isEmpty ? null : _label.trim(),
         maxConcurrency: _maxConcurrency,
-        onFailure: _failurePolicy,
       ),
     );
   }
@@ -354,7 +319,7 @@ class _ProviderRow extends StatefulWidget {
 }
 
 class _ProviderRowState extends State<_ProviderRow> {
-  Future<List<String>>? _modelsFuture;
+  Future<List<ModelInfo>>? _modelsFuture;
   final _freeformController = TextEditingController();
   final _freeformFocus = FocusNode();
 
@@ -383,18 +348,15 @@ class _ProviderRowState extends State<_ProviderRow> {
         ),
         if (checked)
           Padding(
-            padding:
-                const EdgeInsets.only(left: 32, right: 16, bottom: 8),
-            child: FutureBuilder<List<String>>(
+            padding: const EdgeInsets.only(left: 32, right: 16, bottom: 8),
+            child: FutureBuilder<List<ModelInfo>>(
               future: _modelsFuture,
               builder: (context, snap) {
                 if (!checked) return const SizedBox.shrink();
                 if (snap.connectionState != ConnectionState.done) {
                   return const LinearProgressIndicator();
                 }
-                if (snap.hasError ||
-                    snap.data == null ||
-                    snap.data!.isEmpty) {
+                if (snap.hasError || snap.data == null || snap.data!.isEmpty) {
                   return _FreeformChipInput(
                     controller: _freeformController,
                     focusNode: _freeformFocus,
@@ -421,13 +383,23 @@ class _ListedChipSelector extends StatelessWidget {
     required this.selected,
     required this.onChanged,
   });
-  final List<String> listedModels;
+  final List<ModelInfo> listedModels;
   final Set<String> selected;
   final ValueChanged<Set<String>> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final deduped = listedModels.toSet().toList();
+    final flatIds = <String>[];
+    for (final info in listedModels) {
+      if (info.efforts.isEmpty) {
+        flatIds.add(info.id);
+      } else {
+        for (final effort in info.efforts) {
+          flatIds.add('${info.id}::$effort');
+        }
+      }
+    }
+    final deduped = flatIds.toSet().toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -553,8 +525,10 @@ class _PlanToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selected =
-        registry.all().where((t) => selectedTaskIds.contains(t.id)).toList();
+    final selected = registry
+        .all()
+        .where((t) => selectedTaskIds.contains(t.id))
+        .toList();
     final withPlan = selected.where((t) => t.hasReferencePlan).length;
     final canEnable = withPlan > 0;
     final label = canEnable

@@ -21,10 +21,7 @@ class TestMutant {
 }
 
 class TestAuthorEvaluator implements Evaluator {
-  TestAuthorEvaluator({
-    required this.testPath,
-    required this.mutants,
-  });
+  TestAuthorEvaluator({required this.testPath, required this.mutants});
 
   final String testPath;
   final List<TestMutant> mutants;
@@ -36,7 +33,9 @@ class TestAuthorEvaluator implements Evaluator {
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
     final exe = ctx.task.isFlutter ? 'flutter' : 'dart';
     final originalRun = await _runTests(exe, ctx.workDir.path);
-    final originalSummary = parseTestReporterJson(originalRun.stdout.toString());
+    final originalSummary = parseTestReporterJson(
+      originalRun.stdout.toString(),
+    );
     if (originalRun.exitCode != 0 || !originalSummary.allPassed) {
       return EvaluationResult(
         evaluatorId: id,
@@ -108,10 +107,10 @@ class TestAuthorEvaluator implements Evaluator {
   }
 
   Future<ProcessResult> _runTests(String exe, String workDir) {
-    return Process.run(
-      exe,
-      ['test', testPath, '--reporter=json'],
-      workingDirectory: workDir,
-    );
+    return Process.run(exe, [
+      'test',
+      testPath,
+      '--reporter=json',
+    ], workingDirectory: workDir);
   }
 }

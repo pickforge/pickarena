@@ -19,52 +19,58 @@ void main() {
       ),
       taskRunCount: 3,
     );
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 220,
-          height: 220,
-          child: ShowcaseCard(
-            category: Category.bugFix,
-            top: ranking,
-            onTap: () {},
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 220,
+            height: 220,
+            child: ShowcaseCard(
+              category: Category.bugFix,
+              top: ranking,
+              onTap: () {},
+            ),
           ),
         ),
       ),
-    ));
+    );
     expect(find.text('Bug fix'), findsOneWidget);
     expect(find.text('gpt-5'), findsOneWidget);
     expect(find.textContaining('0.80'), findsOneWidget);
   });
 
   testWidgets('renders empty placeholder when top is null', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 220,
-          height: 220,
-          child: ShowcaseCard(
-            category: Category.bugFix,
-            top: null,
-            onTap: () {},
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 220,
+            height: 220,
+            child: ShowcaseCard(
+              category: Category.bugFix,
+              top: null,
+              onTap: () {},
+            ),
           ),
         ),
       ),
-    ));
+    );
     expect(find.textContaining('No data'), findsOneWidget);
   });
 
   testWidgets('tapping invokes onTap', (tester) async {
     var taps = 0;
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: ShowcaseCard(
-          category: Category.bugFix,
-          top: null,
-          onTap: () => taps++,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShowcaseCard(
+            category: Category.bugFix,
+            top: null,
+            onTap: () => taps++,
+          ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.byType(InkWell));
     await tester.pumpAndSettle();
     expect(taps, 1);

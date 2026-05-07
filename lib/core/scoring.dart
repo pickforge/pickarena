@@ -12,10 +12,7 @@ const Map<String, double> defaultEvaluatorWeights = {
   'diff_size': 0.3,
 };
 
-double aggregate(
-  List<EvaluationResult> results,
-  Map<String, double> weights,
-) {
+double aggregate(List<EvaluationResult> results, Map<String, double> weights) {
   if (results.isEmpty) return 0.0;
   var num = 0.0;
   var den = 0.0;

@@ -22,7 +22,7 @@ class _ScriptedJudge implements ModelProvider {
   ProviderMode get mode => ProviderMode.rawApi;
 
   @override
-  Future<List<String>> listModels() async => ['j1'];
+  Future<List<ModelInfo>> listModels() async => [const ModelInfo(id: 'j1')];
 
   @override
   Future<ModelResponse> generate({

@@ -31,7 +31,9 @@ class _GodWidgetState extends State<GodWidget> {
       return true;
     }).toList();
     if (_sort == 'title') {
-      filtered.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+      filtered.sort(
+        (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+      );
     }
     return filtered;
   }

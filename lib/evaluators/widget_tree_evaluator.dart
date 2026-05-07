@@ -15,11 +15,11 @@ class WidgetTreeEvaluator implements Evaluator {
 
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
-    final res = await Process.run(
-      'flutter',
-      ['test', testDir, '--reporter=json'],
-      workingDirectory: ctx.workDir.path,
-    );
+    final res = await Process.run('flutter', [
+      'test',
+      testDir,
+      '--reporter=json',
+    ], workingDirectory: ctx.workDir.path);
     final summary = parseTestReporterJson(res.stdout.toString());
 
     return EvaluationResult(

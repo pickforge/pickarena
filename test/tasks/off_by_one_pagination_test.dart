@@ -20,9 +20,11 @@ void main() {
     final task = OffByOnePaginationTask();
     final evs = task.evaluatorsFor(const EvaluatorConfig());
     expect(evs, hasLength(4));
-    expect(
-      evs.map((e) => e.id).toList(),
-      ['compile', 'analyze', 'test', 'diff_size'],
-    );
+    expect(evs.map((e) => e.id).toList(), [
+      'compile',
+      'analyze',
+      'test',
+      'diff_size',
+    ]);
   });
 }

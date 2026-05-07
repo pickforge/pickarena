@@ -19,6 +19,16 @@ class _ConcreteProvider extends OpenAiCompatibleProvider {
       );
 }
 
+class _ConcreteProviderWithEfforts extends OpenAiCompatibleProvider {
+  _ConcreteProviderWithEfforts(super.dio, {super.apiKey = 'sk-x'})
+    : super(
+        id: 'test-eff',
+        displayName: 'TestEff',
+        baseUrl: 'https://test.example/v1',
+        defaultEfforts: const ['low', 'high'],
+      );
+}
+
 Stream<Uint8List> _sseLinesStream(List<String> lines) async* {
   for (final line in lines) {
     yield Uint8List.fromList(utf8.encode('$line\n'));
@@ -65,27 +75,36 @@ void main() {
     },
   );
 
-  test('listModels parses /models response', () async {
-    final dio = _MockDio();
-    when(
-      () =>
-          dio.get<Map<String, dynamic>>(any(), options: any(named: 'options')),
-    ).thenAnswer(
-      (_) async => Response(
-        data: <String, dynamic>{
-          'data': [
-            {'id': 'model-a'},
-            {'id': 'model-b'},
-          ],
-        },
-        statusCode: 200,
-        requestOptions: RequestOptions(path: ''),
-      ),
-    );
+  test(
+    'listModels parses /models response and attaches defaultEfforts',
+    () async {
+      final dio = _MockDio();
+      when(
+        () => dio.get<Map<String, dynamic>>(
+          any(),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: <String, dynamic>{
+            'data': [
+              {'id': 'model-a'},
+              {'id': 'model-b'},
+            ],
+          },
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
 
-    final p = _ConcreteProvider(dio);
-    expect(await p.listModels(), ['model-a', 'model-b']);
-  });
+      final p = _ConcreteProvider(dio);
+      final models = await p.listModels();
+      expect(models.map((m) => m.id), ['model-a', 'model-b']);
+      for (final m in models) {
+        expect(m.efforts, isEmpty);
+      }
+    },
+  );
 
   test('empty api key omits Authorization header', () async {
     final dio = _MockDio();
@@ -287,5 +306,197 @@ void main() {
       expect(events.whereType<ModelStreamContentDelta>(), isEmpty);
       expect(events.whereType<ModelStreamUsage>(), isEmpty);
     });
+  });
+
+  group('effort parsing', () {
+    test('listModels attaches defaultEfforts to each model', () async {
+      final dio = _MockDio();
+      when(
+        () => dio.get<Map<String, dynamic>>(
+          any(),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: <String, dynamic>{
+            'data': [
+              {'id': 'm1'},
+            ],
+          },
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
+
+      final p = _ConcreteProviderWithEfforts(dio);
+      final models = await p.listModels();
+      expect(models.single.id, 'm1');
+      expect(models.single.efforts, ['low', 'high']);
+    });
+
+    test('generate strips ::effort and includes reasoning_effort', () async {
+      final dio = _MockDio();
+      when(
+        () => dio.post<Map<String, dynamic>>(
+          any(),
+          data: any(named: 'data'),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: <String, dynamic>{
+            'choices': [
+              {
+                'message': {'role': 'assistant', 'content': 'ok'},
+              },
+            ],
+            'usage': {'prompt_tokens': 1, 'completion_tokens': 1},
+          },
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
+
+      final p = _ConcreteProviderWithEfforts(dio);
+      await p.generate(prompt: 'hi', model: 'm1::high');
+
+      final captured = verify(
+        () => dio.post<Map<String, dynamic>>(
+          any(),
+          data: captureAny(named: 'data'),
+          options: any(named: 'options'),
+        ),
+      ).captured;
+
+      final data = captured[0] as Map<String, dynamic>;
+      expect(data['model'], 'm1');
+      expect(data['reasoning_effort'], 'high');
+      expect(data['stream'], false);
+    });
+
+    test(
+      'generate does not include reasoning_effort for plain model',
+      () async {
+        final dio = _MockDio();
+        when(
+          () => dio.post<Map<String, dynamic>>(
+            any(),
+            data: any(named: 'data'),
+            options: any(named: 'options'),
+          ),
+        ).thenAnswer(
+          (_) async => Response(
+            data: <String, dynamic>{
+              'choices': [
+                {
+                  'message': {'role': 'assistant', 'content': 'ok'},
+                },
+              ],
+              'usage': {'prompt_tokens': 1, 'completion_tokens': 1},
+            },
+            statusCode: 200,
+            requestOptions: RequestOptions(path: ''),
+          ),
+        );
+
+        final p = _ConcreteProviderWithEfforts(dio);
+        await p.generate(prompt: 'hi', model: 'm1');
+
+        final captured = verify(
+          () => dio.post<Map<String, dynamic>>(
+            any(),
+            data: captureAny(named: 'data'),
+            options: any(named: 'options'),
+          ),
+        ).captured;
+
+        final data = captured[0] as Map<String, dynamic>;
+        expect(data['model'], 'm1');
+        expect(data.containsKey('reasoning_effort'), isFalse);
+      },
+    );
+
+    test('unknown suffix is not stripped', () async {
+      final dio = _MockDio();
+      when(
+        () => dio.post<Map<String, dynamic>>(
+          any(),
+          data: any(named: 'data'),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          data: <String, dynamic>{
+            'choices': [
+              {
+                'message': {'role': 'assistant', 'content': 'ok'},
+              },
+            ],
+            'usage': {'prompt_tokens': 1, 'completion_tokens': 1},
+          },
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        ),
+      );
+
+      final p = _ConcreteProviderWithEfforts(dio);
+      await p.generate(prompt: 'hi', model: 'm1::invalid');
+
+      final captured = verify(
+        () => dio.post<Map<String, dynamic>>(
+          any(),
+          data: captureAny(named: 'data'),
+          options: any(named: 'options'),
+        ),
+      ).captured;
+
+      final data = captured[0] as Map<String, dynamic>;
+      expect(data['model'], 'm1::invalid');
+      expect(data.containsKey('reasoning_effort'), isFalse);
+    });
+
+    test(
+      'generateStream strips ::effort and includes reasoning_effort',
+      () async {
+        final dio = _MockDio();
+        final responseBody = ResponseBody(
+          _sseLinesStream(['data: [DONE]']),
+          200,
+          headers: {
+            Headers.contentTypeHeader: [Headers.textPlainContentType],
+          },
+        );
+
+        when(
+          () => dio.post<ResponseBody>(
+            any(),
+            data: any(named: 'data'),
+            options: any(named: 'options'),
+          ),
+        ).thenAnswer(
+          (_) async => Response(
+            data: responseBody,
+            statusCode: 200,
+            requestOptions: RequestOptions(path: ''),
+          ),
+        );
+
+        final p = _ConcreteProviderWithEfforts(dio);
+        await p.generateStream(prompt: 'hi', model: 'm1::high').toList();
+
+        final captured = verify(
+          () => dio.post<ResponseBody>(
+            any(),
+            data: captureAny(named: 'data'),
+            options: any(named: 'options'),
+          ),
+        ).captured;
+
+        final data = captured[0] as Map<String, dynamic>;
+        expect(data['model'], 'm1');
+        expect(data['reasoning_effort'], 'high');
+        expect(data['stream'], true);
+      },
+    );
   });
 }

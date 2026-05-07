@@ -22,8 +22,8 @@ class _StubTask extends BenchmarkTask {
   String get prompt => 'fix it';
   @override
   Map<String, String> get fixtures => const {
-        'lib/orig.dart': 'int answer() => 41;\n',
-      };
+    'lib/orig.dart': 'int answer() => 41;\n',
+  };
   @override
   String get generatedCodePath => 'lib/orig.dart';
   @override
@@ -36,46 +36,51 @@ Future<({RunDao dao, String taskRunId})> _seed() async {
   final db = AppDatabase(NativeDatabase.memory());
   final dao = RunDao(db);
   await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 2));
-  await dao.persistTaskRun(TaskRunResult(
-    runId: 'r1',
-    providerId: 'openai',
-    modelId: 'gpt-5',
-    taskId: 'stub.task',
-    response: const ModelResponse(
-      rawText: '```dart\nint answer() => 42;\n```',
-      extractedCode: 'int answer() => 42;\n',
-      promptTokens: 10,
-      completionTokens: 5,
-      latency: Duration(milliseconds: 1500),
-    ),
-    evaluations: const [
-      EvaluationResult(
-        evaluatorId: 'compile',
-        passed: true,
-        score: 1.0,
-        rationale: 'compiles',
+  await dao.persistTaskRun(
+    TaskRunResult(
+      runId: 'r1',
+      providerId: 'openai',
+      modelId: 'gpt-5',
+      taskId: 'stub.task',
+      response: const ModelResponse(
+        rawText: '```dart\nint answer() => 42;\n```',
+        extractedCode: 'int answer() => 42;\n',
+        promptTokens: 10,
+        completionTokens: 5,
+        latency: Duration(milliseconds: 1500),
       ),
-    ],
-    aggregateScore: 0.95,
-    completedAt: DateTime(2026, 5, 2, 12),
-  ));
+      evaluations: const [
+        EvaluationResult(
+          evaluatorId: 'compile',
+          passed: true,
+          score: 1.0,
+          rationale: 'compiles',
+        ),
+      ],
+      aggregateScore: 0.95,
+      completedAt: DateTime(2026, 5, 2, 12),
+    ),
+  );
   final all = await dao.taskRunsForRun('r1');
   return (dao: dao, taskRunId: all.first.id);
 }
 
 void main() {
-  testWidgets('header shows provider/model/task and aggregate score',
-      (tester) async {
+  testWidgets('header shows provider/model/task and aggregate score', (
+    tester,
+  ) async {
     final seeded = await _seed();
     final reg = TaskRegistry()..register(_StubTask());
-    await tester.pumpWidget(MaterialApp(
-      home: TaskRunDetailsPage(
-        runId: 'r1',
-        taskRunId: seeded.taskRunId,
-        dao: seeded.dao,
-        registry: reg,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TaskRunDetailsPage(
+          runId: 'r1',
+          taskRunId: seeded.taskRunId,
+          dao: seeded.dao,
+          registry: reg,
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     expect(find.textContaining('openai'), findsWidgets);
     expect(find.textContaining('gpt-5'), findsWidgets);
@@ -86,14 +91,16 @@ void main() {
   testWidgets('switching to Diff tab renders diff lines', (tester) async {
     final seeded = await _seed();
     final reg = TaskRegistry()..register(_StubTask());
-    await tester.pumpWidget(MaterialApp(
-      home: TaskRunDetailsPage(
-        runId: 'r1',
-        taskRunId: seeded.taskRunId,
-        dao: seeded.dao,
-        registry: reg,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TaskRunDetailsPage(
+          runId: 'r1',
+          taskRunId: seeded.taskRunId,
+          dao: seeded.dao,
+          registry: reg,
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Diff'));
     await tester.pumpAndSettle();
@@ -101,36 +108,40 @@ void main() {
     expect(find.textContaining('- '), findsWidgets);
   });
 
-  testWidgets('Diff tab shows empty state when task has no fixture at path',
-      (tester) async {
+  testWidgets('Diff tab shows empty state when task has no fixture at path', (
+    tester,
+  ) async {
     final seeded = await _seed();
     final emptyReg = TaskRegistry();
-    await tester.pumpWidget(MaterialApp(
-      home: TaskRunDetailsPage(
-        runId: 'r1',
-        taskRunId: seeded.taskRunId,
-        dao: seeded.dao,
-        registry: emptyReg,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TaskRunDetailsPage(
+          runId: 'r1',
+          taskRunId: seeded.taskRunId,
+          dao: seeded.dao,
+          registry: emptyReg,
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Diff'));
     await tester.pumpAndSettle();
     expect(find.textContaining('no original'), findsOneWidget);
   });
 
-  testWidgets('Evaluations tab renders one card per evaluator',
-      (tester) async {
+  testWidgets('Evaluations tab renders one card per evaluator', (tester) async {
     final seeded = await _seed();
     final reg = TaskRegistry()..register(_StubTask());
-    await tester.pumpWidget(MaterialApp(
-      home: TaskRunDetailsPage(
-        runId: 'r1',
-        taskRunId: seeded.taskRunId,
-        dao: seeded.dao,
-        registry: reg,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TaskRunDetailsPage(
+          runId: 'r1',
+          taskRunId: seeded.taskRunId,
+          dao: seeded.dao,
+          registry: reg,
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Evaluations'));
     await tester.pumpAndSettle();
@@ -141,14 +152,16 @@ void main() {
   testWidgets('Prompt tab shows task prompt and rubric', (tester) async {
     final seeded = await _seed();
     final reg = TaskRegistry()..register(_StubTask());
-    await tester.pumpWidget(MaterialApp(
-      home: TaskRunDetailsPage(
-        runId: 'r1',
-        taskRunId: seeded.taskRunId,
-        dao: seeded.dao,
-        registry: reg,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TaskRunDetailsPage(
+          runId: 'r1',
+          taskRunId: seeded.taskRunId,
+          dao: seeded.dao,
+          registry: reg,
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Prompt'));
     await tester.pumpAndSettle();

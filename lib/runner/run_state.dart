@@ -1,5 +1,5 @@
 import 'package:dart_arena/core/task_run_result.dart';
-import 'package:dart_arena/runner/run_event.dart';
+import 'package:dart_arena/runner/failed_combo_snapshot.dart';
 import 'package:dart_arena/runner/run_progress_snapshot.dart';
 import 'package:equatable/equatable.dart';
 
@@ -20,6 +20,8 @@ class RunInProgress extends RunState {
     required this.total,
     required this.results,
     this.active = const [],
+    this.pending = 0,
+    this.failed = const [],
   });
 
   final String runId;
@@ -27,9 +29,19 @@ class RunInProgress extends RunState {
   final int total;
   final List<TaskRunResult> results;
   final List<RunProgressSnapshot> active;
+  final int pending;
+  final List<FailedComboSnapshot> failed;
 
   @override
-  List<Object?> get props => [runId, completed, total, results, active];
+  List<Object?> get props => [
+    runId,
+    completed,
+    total,
+    results,
+    active,
+    pending,
+    failed,
+  ];
 }
 
 class RunCompleted extends RunState {
@@ -43,10 +55,9 @@ class RunCompleted extends RunState {
 }
 
 class RunFailed extends RunState {
-  const RunFailed(this.error, {this.retry});
+  const RunFailed(this.error);
   final String error;
-  final StartRun? retry;
 
   @override
-  List<Object?> get props => [error, retry];
+  List<Object?> get props => [error];
 }

@@ -43,42 +43,54 @@ environment:
 }
 
 EvaluationContext _ctx(Directory dir) => EvaluationContext(
-      workDir: dir,
-      response: const ModelResponse(
-        rawText: '',
-        extractedCode: null,
-        promptTokens: null,
-        completionTokens: null,
-        latency: Duration.zero,
-      ),
-      task: _DummyTask(),
-    );
+  workDir: dir,
+  response: const ModelResponse(
+    rawText: '',
+    extractedCode: null,
+    promptTokens: null,
+    completionTokens: null,
+    latency: Duration.zero,
+  ),
+  task: _DummyTask(),
+);
 
 void main() {
-  test('clean code scores 1.0 and passes', () async {
-    final dir = await _scaffold('int answer() => 42;\n');
-    final r = await AnalyzeEvaluator().evaluate(_ctx(dir));
-    expect(r.passed, isTrue);
-    expect(r.score, 1.0);
-  }, timeout: const Timeout(Duration(minutes: 2)));
+  test(
+    'clean code scores 1.0 and passes',
+    () async {
+      final dir = await _scaffold('int answer() => 42;\n');
+      final r = await AnalyzeEvaluator().evaluate(_ctx(dir));
+      expect(r.passed, isTrue);
+      expect(r.score, 1.0);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 
-  test('code with errors scores 0.0 and fails', () async {
-    final dir = await _scaffold('int answer( => 42;');
-    final r = await AnalyzeEvaluator().evaluate(_ctx(dir));
-    expect(r.passed, isFalse);
-    expect(r.score, 0.0);
-  }, timeout: const Timeout(Duration(minutes: 2)));
+  test(
+    'code with errors scores 0.0 and fails',
+    () async {
+      final dir = await _scaffold('int answer( => 42;');
+      final r = await AnalyzeEvaluator().evaluate(_ctx(dir));
+      expect(r.passed, isFalse);
+      expect(r.score, 0.0);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 
-  test('warning-only code scores between 0 and 1', () async {
-    final dir = await _scaffold('''
+  test(
+    'warning-only code scores between 0 and 1',
+    () async {
+      final dir = await _scaffold('''
 int answer() {
   final x = 1;
   return 42;
 }
 ''');
-    final r = await AnalyzeEvaluator().evaluate(_ctx(dir));
-    expect(r.passed, isTrue);
-    expect(r.score, lessThan(1.0));
-    expect(r.score, greaterThan(0.0));
-  }, timeout: const Timeout(Duration(minutes: 2)));
+      final r = await AnalyzeEvaluator().evaluate(_ctx(dir));
+      expect(r.passed, isTrue);
+      expect(r.score, lessThan(1.0));
+      expect(r.score, greaterThan(0.0));
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 }

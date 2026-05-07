@@ -17,40 +17,44 @@ void main() {
     await db.close();
   });
 
-  test('upsertReferencePlan is idempotent on (taskId, referenceVersion)',
-      () async {
-    final id1 = await dao.upsertReferencePlan(
-      taskId: 't1',
-      version: 1,
-      artifact: 'first',
-    );
-    final id2 = await dao.upsertReferencePlan(
-      taskId: 't1',
-      version: 1,
-      artifact: 'first',
-    );
-    expect(id1, id2);
+  test(
+    'upsertReferencePlan is idempotent on (taskId, referenceVersion)',
+    () async {
+      final id1 = await dao.upsertReferencePlan(
+        taskId: 't1',
+        version: 1,
+        artifact: 'first',
+      );
+      final id2 = await dao.upsertReferencePlan(
+        taskId: 't1',
+        version: 1,
+        artifact: 'first',
+      );
+      expect(id1, id2);
 
-    final all = await db.select(db.plans).get();
-    expect(all, hasLength(1));
-    expect(all.single.artifact, 'first');
-  });
+      final all = await db.select(db.plans).get();
+      expect(all, hasLength(1));
+      expect(all.single.artifact, 'first');
+    },
+  );
 
-  test('upsertReferencePlan with a different version creates a second row',
-      () async {
-    await dao.upsertReferencePlan(
-      taskId: 't1',
-      version: 1,
-      artifact: 'first',
-    );
-    await dao.upsertReferencePlan(
-      taskId: 't1',
-      version: 2,
-      artifact: 'second',
-    );
-    final all = await db.select(db.plans).get();
-    expect(all, hasLength(2));
-  });
+  test(
+    'upsertReferencePlan with a different version creates a second row',
+    () async {
+      await dao.upsertReferencePlan(
+        taskId: 't1',
+        version: 1,
+        artifact: 'first',
+      );
+      await dao.upsertReferencePlan(
+        taskId: 't1',
+        version: 2,
+        artifact: 'second',
+      );
+      final all = await db.select(db.plans).get();
+      expect(all, hasLength(2));
+    },
+  );
 
   test('insertModelPlan creates a fresh row each call', () async {
     final id1 = await dao.insertModelPlan(
@@ -80,13 +84,14 @@ void main() {
       artifact: 'plan',
     );
 
-    await db.into(db.runs).insert(
-          RunsCompanion.insert(
-            id: 'r1',
-            startedAt: DateTime(2026, 1, 1),
-          ),
+    await db
+        .into(db.runs)
+        .insert(
+          RunsCompanion.insert(id: 'r1', startedAt: DateTime(2026, 1, 1)),
         );
-    await db.into(db.taskRuns).insert(
+    await db
+        .into(db.taskRuns)
+        .insert(
           TaskRunsCompanion.insert(
             id: 'tr1',
             runId: 'r1',
@@ -100,9 +105,9 @@ void main() {
             planId: Value(planId),
           ),
         );
-    final row = await (db.select(db.taskRuns)
-          ..where((t) => t.id.equals('tr1')))
-        .getSingle();
+    final row = await (db.select(
+      db.taskRuns,
+    )..where((t) => t.id.equals('tr1'))).getSingle();
     expect(row.planId, planId);
   });
 }

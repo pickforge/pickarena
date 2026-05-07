@@ -35,16 +35,8 @@ void main() {
     });
 
     test('missing weight defaults to 1.0', () {
-      const a = EvaluationResult(
-        evaluatorId: 'foo',
-        passed: true,
-        score: 1.0,
-      );
-      const b = EvaluationResult(
-        evaluatorId: 'bar',
-        passed: true,
-        score: 0.0,
-      );
+      const a = EvaluationResult(evaluatorId: 'foo', passed: true, score: 1.0);
+      const b = EvaluationResult(evaluatorId: 'bar', passed: true, score: 0.0);
       expect(aggregate([a, b], const {}), closeTo(0.5, 1e-9));
     });
 
@@ -59,13 +51,16 @@ void main() {
   });
 
   test('defaultEvaluatorWeights covers all built-in evaluators', () {
-    expect(defaultEvaluatorWeights.keys, containsAll(<String>[
-      'compile',
-      'analyze',
-      'test',
-      'widget_tree',
-      'llm_judge',
-      'diff_size',
-    ]));
+    expect(
+      defaultEvaluatorWeights.keys,
+      containsAll(<String>[
+        'compile',
+        'analyze',
+        'test',
+        'widget_tree',
+        'llm_judge',
+        'diff_size',
+      ]),
+    );
   });
 }

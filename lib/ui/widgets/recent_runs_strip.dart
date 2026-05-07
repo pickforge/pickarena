@@ -25,8 +25,10 @@ class RecentRunsStrip extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 8, 4),
           child: Row(
             children: [
-              Text('Recent runs',
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Recent runs',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const Spacer(),
               TextButton(onPressed: onViewAll, child: const Text('View all')),
             ],

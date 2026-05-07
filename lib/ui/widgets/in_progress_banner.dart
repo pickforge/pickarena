@@ -17,7 +17,9 @@ class InProgressBanner extends StatelessWidget {
     final latest = inFlight.reduce(
       (a, b) => a.startedAt.isAfter(b.startedAt) ? a : b,
     );
-    final extra = inFlight.length > 1 ? ' · ${inFlight.length} runs in flight' : '';
+    final extra = inFlight.length > 1
+        ? ' · ${inFlight.length} runs in flight'
+        : '';
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       child: Card(

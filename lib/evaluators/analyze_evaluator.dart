@@ -12,11 +12,9 @@ class AnalyzeEvaluator implements Evaluator {
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
     final exe = ctx.task.isFlutter ? 'flutter' : 'dart';
-    final res = await Process.run(
-      exe,
-      ['analyze'],
-      workingDirectory: ctx.workDir.path,
-    );
+    final res = await Process.run(exe, [
+      'analyze',
+    ], workingDirectory: ctx.workDir.path);
     final stdout = res.stdout.toString();
     final counts = _countSeverities(stdout);
 
@@ -37,15 +35,16 @@ class AnalyzeEvaluator implements Evaluator {
       );
     }
 
-    final score =
-        math.max(0.0, 1.0 - 0.10 * counts.warnings - 0.02 * counts.infos);
+    final score = math.max(
+      0.0,
+      1.0 - 0.10 * counts.warnings - 0.02 * counts.infos,
+    );
     final clamped = score.clamp(0.0, 1.0);
     return EvaluationResult(
       evaluatorId: id,
       passed: true,
       score: clamped,
-      rationale:
-          'errors=0 warnings=${counts.warnings} infos=${counts.infos}',
+      rationale: 'errors=0 warnings=${counts.warnings} infos=${counts.infos}',
       details: {
         'errors': 0,
         'warnings': counts.warnings,

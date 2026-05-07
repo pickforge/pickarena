@@ -70,41 +70,44 @@ Return ONE composite score and a 1-2 sentence rationale.
 
   @override
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) => [
-        CompileEvaluator(),
-        AnalyzeEvaluator(),
-        TestAuthorEvaluator(
-          testPath: 'test/signup_form_test.dart',
-          mutants: const [
-            TestMutant(
-              name: 'invalid_email_allowed',
-              sourcePath: 'lib/signup_form.dart',
-              find: "if (!pattern.hasMatch(value.trim())) return 'Enter a valid email';",
-              replace: "if (false) return 'Enter a valid email';",
-            ),
-            TestMutant(
-              name: 'short_password_allowed',
-              sourcePath: 'lib/signup_form.dart',
-              find: "if (value.length < 8) return 'Password must be at least 8 characters';",
-              replace: "if (false) return 'Password must be at least 8 characters';",
-            ),
-            TestMutant(
-              name: 'submit_always_enabled',
-              sourcePath: 'lib/signup_form.dart',
-              find: 'onPressed: _valid ? _submit : null,',
-              replace: 'onPressed: _submit,',
-            ),
-            TestMutant(
-              name: 'email_not_trimmed_on_submit',
-              sourcePath: 'lib/signup_form.dart',
-              find: 'email: _emailCtrl.text.trim(),',
-              replace: 'email: _emailCtrl.text,',
-            ),
-          ],
+    CompileEvaluator(),
+    AnalyzeEvaluator(),
+    TestAuthorEvaluator(
+      testPath: 'test/signup_form_test.dart',
+      mutants: const [
+        TestMutant(
+          name: 'invalid_email_allowed',
+          sourcePath: 'lib/signup_form.dart',
+          find:
+              "if (!pattern.hasMatch(value.trim())) return 'Enter a valid email';",
+          replace: "if (false) return 'Enter a valid email';",
         ),
-        if (config.hasJudge)
-          LlmJudgeEvaluator(
-            judge: config.judgeProvider!,
-            judgeModel: config.judgeModel!,
-          ),
-      ];
+        TestMutant(
+          name: 'short_password_allowed',
+          sourcePath: 'lib/signup_form.dart',
+          find:
+              "if (value.length < 8) return 'Password must be at least 8 characters';",
+          replace:
+              "if (false) return 'Password must be at least 8 characters';",
+        ),
+        TestMutant(
+          name: 'submit_always_enabled',
+          sourcePath: 'lib/signup_form.dart',
+          find: 'onPressed: _valid ? _submit : null,',
+          replace: 'onPressed: _submit,',
+        ),
+        TestMutant(
+          name: 'email_not_trimmed_on_submit',
+          sourcePath: 'lib/signup_form.dart',
+          find: 'email: _emailCtrl.text.trim(),',
+          replace: 'email: _emailCtrl.text,',
+        ),
+      ],
+    ),
+    if (config.hasJudge)
+      LlmJudgeEvaluator(
+        judge: config.judgeProvider!,
+        judgeModel: config.judgeModel!,
+      ),
+  ];
 }

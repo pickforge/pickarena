@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dart_arena/core/task_run_result.dart';
+import 'package:dart_arena/runner/failed_combo_snapshot.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_progress_snapshot.dart';
@@ -13,44 +14,65 @@ class RunProgressPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Run')),
-      body: BlocBuilder<RunBloc, RunState>(
-        builder: (context, state) {
-          return switch (state) {
+    return BlocBuilder<RunBloc, RunState>(
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Run'),
+            actions: switch (state) {
+              RunInProgress(
+                :final runId,
+                :final failed,
+                :final pending,
+                :final active,
+              )
+                  when failed.isNotEmpty && pending == 0 && active.isEmpty =>
+                [
+                  TextButton(
+                    onPressed: () =>
+                        context.read<RunBloc>().add(FinishRun(runId)),
+                    child: const Text('Finish run'),
+                  ),
+                ],
+              _ => null,
+            },
+          ),
+          body: switch (state) {
             RunIdle() => const Center(child: Text('idle')),
             RunInProgress(
+              :final runId,
               :final completed,
               :final total,
               :final active,
               :final results,
+              :final pending,
+              :final failed,
             ) =>
               _ProgressView(
+                runId: runId,
                 completed: completed,
                 total: total,
                 active: active,
                 results: results,
+                pending: pending,
+                failed: failed,
               ),
             RunCompleted(:final results) => ListView.builder(
               itemCount: results.length,
               itemBuilder: (_, i) => _ResultCard(result: results[i]),
             ),
-            RunFailed(:final error, :final retry) => _FailedView(
-              error: error,
-              retry: retry,
-            ),
-          };
-        },
-      ),
+            RunFailed(:final error) => _FatalFailedView(error: error),
+          },
+        );
+      },
     );
   }
 }
 
-class _FailedView extends StatelessWidget {
-  const _FailedView({required this.error, required this.retry});
+class _FatalFailedView extends StatelessWidget {
+  const _FatalFailedView({required this.error});
 
   final String error;
-  final StartRun? retry;
 
   @override
   Widget build(BuildContext context) {
@@ -60,15 +82,22 @@ class _FailedView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Failed: $error', textAlign: TextAlign.center),
-            if (retry != null) ...[
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () => context.read<RunBloc>().add(retry!),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry failed task'),
-              ),
-            ],
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 24),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Back'),
+            ),
           ],
         ),
       ),
@@ -78,16 +107,22 @@ class _FailedView extends StatelessWidget {
 
 class _ProgressView extends StatelessWidget {
   const _ProgressView({
+    required this.runId,
     required this.completed,
     required this.total,
     required this.active,
     required this.results,
+    required this.pending,
+    required this.failed,
   });
 
+  final String runId;
   final int completed;
   final int total;
   final List<RunProgressSnapshot> active;
   final List<TaskRunResult> results;
+  final int pending;
+  final List<FailedComboSnapshot> failed;
 
   @override
   Widget build(BuildContext context) {
@@ -102,10 +137,36 @@ class _ProgressView extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineMedium,
           ),
         ),
+        if (pending > 0)
+          Center(
+            child: Text(
+              '$pending queued',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
         const SizedBox(height: 16),
         if (active.isEmpty && completed < total)
           const Center(child: CircularProgressIndicator()),
         ...active.map((s) => _ActiveCard(snapshot: s)),
+        if (failed.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Failed (${failed.length})',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.red,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...failed.map(
+            (f) => _FailedCard(
+              snapshot: f,
+              onRetry: () => context.read<RunBloc>().add(
+                RetryCombo(runId: runId, failedIndex: f.index),
+              ),
+            ),
+          ),
+        ],
         if (results.isNotEmpty) ...[
           const SizedBox(height: 16),
           const Text(
@@ -116,6 +177,50 @@ class _ProgressView extends StatelessWidget {
           ...results.map((r) => _ResultCard(result: r)),
         ],
       ],
+    );
+  }
+}
+
+class _FailedCard extends StatelessWidget {
+  const _FailedCard({required this.snapshot, required this.onRetry});
+
+  final FailedComboSnapshot snapshot;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Theme.of(context).colorScheme.errorContainer,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        children: [
+          ListTile(
+            title: Text(snapshot.label),
+            subtitle: Text(
+              snapshot.errorMessage,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: FilledButton.tonalIcon(
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              onPressed: onRetry,
+            ),
+          ),
+          if (snapshot.stackTrace != null)
+            ExpansionTile(
+              title: const Text('Stack trace', style: TextStyle(fontSize: 13)),
+              dense: true,
+              childrenPadding: const EdgeInsets.all(12),
+              children: [
+                SelectableText(
+                  snapshot.stackTrace!,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }

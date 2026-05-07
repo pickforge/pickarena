@@ -4,6 +4,7 @@ import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dio/dio.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 class OpenAiCompatibleProvider implements StreamingModelProvider {
   OpenAiCompatibleProvider(
@@ -13,7 +14,8 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
     required this.baseUrl,
     required this.apiKey,
     this.extraHeaders = const <String, String>{},
-  }) : _dio = dio ?? Dio();
+    this.defaultEfforts = const [],
+  }) : _dio = dio ?? (Dio()..interceptors.add(PrettyDioLogger()));
 
   @override
   final String id;
@@ -22,6 +24,7 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
   final String baseUrl;
   final String apiKey;
   final Map<String, String> extraHeaders;
+  final List<String> defaultEfforts;
   final Dio _dio;
 
   @override
@@ -33,14 +36,25 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
     ...extraHeaders,
   };
 
+  ({String baseModel, String? effort}) _parseEffort(String model) {
+    final idx = model.lastIndexOf('::');
+    if (idx == -1) return (baseModel: model, effort: null);
+    final suffix = model.substring(idx + 2);
+    if (defaultEfforts.contains(suffix)) {
+      return (baseModel: model.substring(0, idx), effort: suffix);
+    }
+    return (baseModel: model, effort: null);
+  }
+
   @override
-  Future<List<String>> listModels() async {
+  Future<List<ModelInfo>> listModels() async {
     final res = await _dio.get<Map<String, dynamic>>(
       '$baseUrl/models',
       options: Options(headers: _headers()),
     );
     final list = (res.data?['data'] as List<dynamic>? ?? <dynamic>[])
         .map((m) => (m as Map<String, dynamic>)['id'] as String)
+        .map((id) => ModelInfo(id: id, efforts: defaultEfforts))
         .toList();
     return list;
   }
@@ -51,16 +65,21 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
     required String model,
     Duration? timeout,
   }) async {
+    final (:baseModel, :effort) = _parseEffort(model);
     final stopwatch = Stopwatch()..start();
+    final body = <String, dynamic>{
+      'model': baseModel,
+      'messages': [
+        {'role': 'user', 'content': prompt},
+      ],
+      'stream': false,
+    };
+    if (effort != null) {
+      body['reasoning_effort'] = effort;
+    }
     final res = await _dio.post<Map<String, dynamic>>(
       '$baseUrl/chat/completions',
-      data: <String, dynamic>{
-        'model': model,
-        'messages': [
-          {'role': 'user', 'content': prompt},
-        ],
-        'stream': false,
-      },
+      data: body,
       options: Options(
         headers: _headers(),
         sendTimeout: timeout,
@@ -94,17 +113,22 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
     required String model,
     Duration? timeout,
   }) async* {
+    final (:baseModel, :effort) = _parseEffort(model);
     yield const ModelStreamStarted();
 
+    final body = <String, dynamic>{
+      'model': baseModel,
+      'messages': [
+        {'role': 'user', 'content': prompt},
+      ],
+      'stream': true,
+    };
+    if (effort != null) {
+      body['reasoning_effort'] = effort;
+    }
     final res = await _dio.post<ResponseBody>(
       '$baseUrl/chat/completions',
-      data: <String, dynamic>{
-        'model': model,
-        'messages': [
-          {'role': 'user', 'content': prompt},
-        ],
-        'stream': true,
-      },
+      data: body,
       options: Options(
         responseType: ResponseType.stream,
         headers: _headers(),

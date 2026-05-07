@@ -17,24 +17,26 @@ Future<RunDao> _seedRun() async {
     startedAt: DateTime(2026, 5, 2, 14, 23),
     name: 'demo',
   );
-  await dao.persistTaskRun(TaskRunResult(
-    runId: 'r1',
-    providerId: 'openai',
-    modelId: 'gpt-5',
-    taskId: 'bug.a',
-    response: const ModelResponse(
-      rawText: 'x',
-      extractedCode: null,
-      promptTokens: null,
-      completionTokens: null,
-      latency: Duration.zero,
+  await dao.persistTaskRun(
+    TaskRunResult(
+      runId: 'r1',
+      providerId: 'openai',
+      modelId: 'gpt-5',
+      taskId: 'bug.a',
+      response: const ModelResponse(
+        rawText: 'x',
+        extractedCode: null,
+        promptTokens: null,
+        completionTokens: null,
+        latency: Duration.zero,
+      ),
+      evaluations: const [
+        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+      ],
+      aggregateScore: 0.92,
+      completedAt: DateTime(2026, 5, 2, 14, 24),
     ),
-    evaluations: const [
-      EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
-    ],
-    aggregateScore: 0.92,
-    completedAt: DateTime(2026, 5, 2, 14, 24),
-  ));
+  );
   await dao.finishRun('r1', DateTime(2026, 5, 2, 14, 31));
   return dao;
 }
@@ -46,9 +48,11 @@ void main() {
 
   testWidgets('renders title, header, and matrix score', (tester) async {
     final dao = await _seedRun();
-    await tester.pumpWidget(MaterialApp(
-      home: RunDetailsPage(runId: 'r1', dao: dao),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RunDetailsPage(runId: 'r1', dao: dao),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('demo'), findsOneWidget);
     expect(find.text('bug.a'), findsOneWidget);
@@ -58,9 +62,11 @@ void main() {
 
   testWidgets('publish to README disabled when path unset', (tester) async {
     final dao = await _seedRun();
-    await tester.pumpWidget(MaterialApp(
-      home: RunDetailsPage(runId: 'r1', dao: dao),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RunDetailsPage(runId: 'r1', dao: dao),
+      ),
+    );
     await tester.pumpAndSettle();
     final btn = tester.widget<TextButton>(
       find.widgetWithText(TextButton, 'Publish to README'),
@@ -70,9 +76,11 @@ void main() {
 
   testWidgets('shows missing-run banner for unknown id', (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
-    await tester.pumpWidget(MaterialApp(
-      home: RunDetailsPage(runId: 'nope', dao: RunDao(db)),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RunDetailsPage(runId: 'nope', dao: RunDao(db)),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.textContaining('Run not found'), findsOneWidget);
   });

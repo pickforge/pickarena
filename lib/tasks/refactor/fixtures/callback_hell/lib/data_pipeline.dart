@@ -3,7 +3,12 @@ import 'dart:async';
 typedef Fetcher<T> = Future<T> Function();
 
 class PipelineRecord {
-  PipelineRecord({required this.userId, required this.userName, required this.orderCount, required this.firstOrderId});
+  PipelineRecord({
+    required this.userId,
+    required this.userName,
+    required this.orderCount,
+    required this.firstOrderId,
+  });
   final String userId;
   final String userName;
   final int orderCount;

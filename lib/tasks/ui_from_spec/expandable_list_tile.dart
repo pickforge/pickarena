@@ -71,14 +71,14 @@ Return ONE composite score and a 1-2 sentence rationale.
 
   @override
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) => [
-        CompileEvaluator(),
-        AnalyzeEvaluator(),
-        TestEvaluator(),
-        if (config.hasJudge)
-          LlmJudgeEvaluator(
-            judge: config.judgeProvider!,
-            judgeModel: config.judgeModel!,
-          ),
-        DiffSizeEvaluator(originalFixturePath: 'lib/expandable_list_tile.dart'),
-      ];
+    CompileEvaluator(),
+    AnalyzeEvaluator(),
+    TestEvaluator(),
+    if (config.hasJudge)
+      LlmJudgeEvaluator(
+        judge: config.judgeProvider!,
+        judgeModel: config.judgeModel!,
+      ),
+    DiffSizeEvaluator(originalFixturePath: 'lib/expandable_list_tile.dart'),
+  ];
 }

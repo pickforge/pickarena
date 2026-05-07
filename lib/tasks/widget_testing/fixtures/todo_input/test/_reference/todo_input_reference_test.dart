@@ -23,8 +23,9 @@ void main() {
     expect(button.onPressed, isNotNull);
   });
 
-  testWidgets('Tapping Submit fires onSubmit and clears the field',
-      (tester) async {
+  testWidgets('Tapping Submit fires onSubmit and clears the field', (
+    tester,
+  ) async {
     final received = <String>[];
     await tester.pumpWidget(_wrap(TodoInput(onSubmit: received.add)));
     await tester.enterText(find.byType(TextField), 'Buy milk');

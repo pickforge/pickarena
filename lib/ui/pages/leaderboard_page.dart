@@ -71,24 +71,25 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   }
 
   Map<String, Category> _categoryByTaskId() => {
-        for (final t in widget.registry.all()) t.id: t.category,
-      };
+    for (final t in widget.registry.all()) t.id: t.category,
+  };
 
   void _refresh() {
     final taskIds = _taskIdsForCurrentCategory();
     setState(() {
-      _rankFuture =
-          _repo!.rank(filter: _filter, taskIdsForCategory: taskIds);
+      _rankFuture = _repo!.rank(filter: _filter, taskIdsForCategory: taskIds);
     });
     _rankFuture!.then((rs) {
       if (!mounted) return;
       final newSelection = rs.any((r) => r.key == _selectedKey)
           ? _selectedKey
           : rs.isEmpty
-              ? null
-              : rs.first.key;
+          ? null
+          : rs.first.key;
       if (newSelection != _selectedKey) {
-        setState(() { _selectedKey = newSelection; });
+        setState(() {
+          _selectedKey = newSelection;
+        });
         _updateUrl();
       }
       _refreshDetail();
@@ -97,7 +98,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
   void _refreshDetail() {
     if (_selectedKey == null) {
-      setState(() { _detailFuture = Future.value(null); });
+      setState(() {
+        _detailFuture = Future.value(null);
+      });
       return;
     }
     final parts = _selectedKey!.split(':');
@@ -110,7 +113,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       taskIdsForCategory: taskIds,
       categoryByTaskId: categoryByTaskId,
     );
-    setState(() { _detailFuture = future; });
+    setState(() {
+      _detailFuture = future;
+    });
   }
 
   void _updateUrl() {
@@ -142,13 +147,17 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   }
 
   void _onSelect(String key) {
-    setState(() { _selectedKey = key; });
+    setState(() {
+      _selectedKey = key;
+    });
     _refreshDetail();
     _updateUrl();
   }
 
   void _onTogglePin(String key) {
-    setState(() { _pinnedKey = _pinnedKey == key ? null : key; });
+    setState(() {
+      _pinnedKey = _pinnedKey == key ? null : key;
+    });
     _updateUrl();
   }
 
@@ -163,8 +172,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           final providerOptions = {
             if (_filter.providerId != null) _filter.providerId!,
             ...rows.map((r) => r.providerId),
-          }.toList()
-            ..sort();
+          }.toList()..sort();
           return Column(
             children: [
               LeaderboardFilters(
@@ -249,9 +257,9 @@ class _DetailPane extends StatelessWidget {
         final pinned = pinnedKey == null
             ? null
             : rankings
-                .where((r) => r.key == pinnedKey)
-                .map((r) => r.dimensions)
-                .firstOrNull;
+                  .where((r) => r.key == pinnedKey)
+                  .map((r) => r.dimensions)
+                  .firstOrNull;
         return Column(
           children: [
             Padding(
@@ -268,10 +276,7 @@ class _DetailPane extends StatelessWidget {
             ),
             const Divider(height: 1),
             Expanded(
-              child: PerTaskBarChart(
-                scores: detail.perTask,
-                onTap: onTaskTap,
-              ),
+              child: PerTaskBarChart(scores: detail.perTask, onTap: onTaskTap),
             ),
             Padding(
               padding: const EdgeInsets.all(8),

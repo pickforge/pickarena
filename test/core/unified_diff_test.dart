@@ -23,8 +23,9 @@ void main() {
       const a = 'foo\nbar\nbaz\n';
       const b = 'foo\nbaz\n';
       final result = computeUnifiedDiff(a, b);
-      final removed =
-          result.where((l) => l.kind == DiffLineKind.removed).toList();
+      final removed = result
+          .where((l) => l.kind == DiffLineKind.removed)
+          .toList();
       expect(removed, hasLength(1));
       expect(removed.first.text, 'bar\n');
     });

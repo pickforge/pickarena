@@ -28,17 +28,20 @@ void main() {
     await tester.pumpWidget(_wrap(SettingsRepository()));
     await tester.pumpAndSettle();
     for (final id in defaultEvaluatorWeights.keys) {
-      expect(find.text(id), findsOneWidget,
-          reason: 'expected row for evaluator id "$id"');
+      expect(
+        find.text(id),
+        findsOneWidget,
+        reason: 'expected row for evaluator id "$id"',
+      );
     }
   });
 
-  testWidgets('row badge says Default when value matches default',
-      (tester) async {
+  testWidgets('row badge says Default when value matches default', (
+    tester,
+  ) async {
     await tester.pumpWidget(_wrap(SettingsRepository()));
     await tester.pumpAndSettle();
-    expect(
-        find.text('Default'), findsNWidgets(defaultEvaluatorWeights.length));
+    expect(find.text('Default'), findsNWidgets(defaultEvaluatorWeights.length));
     expect(find.text('Override'), findsNothing);
   });
 
@@ -51,8 +54,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Override'), findsOneWidget);
-    expect(find.text('Default'),
-        findsNWidgets(defaultEvaluatorWeights.length - 1));
+    expect(
+      find.text('Default'),
+      findsNWidgets(defaultEvaluatorWeights.length - 1),
+    );
   });
 
   testWidgets('per-row Reset clears the override field', (tester) async {
@@ -67,14 +72,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Override'), findsNothing);
-    expect(
-      tester.widget<TextField>(compileField).controller!.text,
-      '',
-    );
+    expect(tester.widget<TextField>(compileField).controller!.text, '');
   });
 
-  testWidgets('Save persists only rows that differ from defaults',
-      (tester) async {
+  testWidgets('Save persists only rows that differ from defaults', (
+    tester,
+  ) async {
     final repo = SettingsRepository();
     await tester.pumpWidget(_wrap(repo));
     await tester.pumpAndSettle();
