@@ -9,12 +9,14 @@ class SearchController {
   final StreamController<List<String>> _results =
       StreamController<List<String>>.broadcast();
 
+  int _queryId = 0;
+
   Stream<List<String>> get results => _results.stream;
 
   void onQueryChanged(String query) {
-    // BUG: each call kicks off a fetch that writes to _results when it completes,
-    // regardless of whether a newer query has been issued in the meantime.
+    final currentId = ++_queryId;
     search(query).then((value) {
+      if (currentId != _queryId) return;
       if (_results.isClosed) return;
       _results.add(value);
     });

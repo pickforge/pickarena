@@ -56,12 +56,21 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     on<FinishRun>(_onFinishRun);
   }
 
+  @override
+  Future<void> close() {
+    for (final provider in _providers) {
+      provider.dispose();
+    }
+    return super.close();
+  }
+
   final WorkdirManager workdirManager;
   final RunDao runDao;
   final DateTime Function() now;
   final String Function() idGenerator;
   final Map<String, double> weights;
   final PlanDao? planDao;
+  List<ModelProvider> _providers = const [];
 
   static const _maxPreviewChars = 16 * 1024;
 
@@ -95,6 +104,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     _runningWorkers = 0;
     _maxConcurrency = 4;
     _evaluatorConfig = const EvaluatorConfig();
+    _providers = const [];
     _drainDone = null;
   }
 
@@ -337,6 +347,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     }
 
     _maxConcurrency = event.maxConcurrency.clamp(1, 8);
+    _providers = event.providers;
     _combos = combos;
     _resultSlots = List<TaskRunResult?>.filled(combos.length, null);
     _existingCount = existingCount;

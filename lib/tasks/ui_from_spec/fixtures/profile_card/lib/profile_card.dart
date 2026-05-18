@@ -20,7 +20,45 @@ class ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: build a card matching the spec.
-    return const SizedBox.shrink();
+    return Semantics(
+      label: '$name $handle',
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundImage:
+                    avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+                onBackgroundImageError: avatarUrl != null ? (_, __) {} : null,
+                child: avatarUrl == null
+                    ? Text(name.isNotEmpty ? name[0].toUpperCase() : '')
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(handle),
+                    if (bio != null) Text(bio!),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: onFollowPressed,
+                child: Text(isFollowing ? 'Following' : 'Follow'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

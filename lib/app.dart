@@ -3,6 +3,7 @@ import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/start_run_config.dart';
+import 'package:dart_arena/runner/tmpdir_manager.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
@@ -24,8 +25,11 @@ import 'package:go_router/go_router.dart';
 
 final TaskRegistry _registry = buildDefaultTaskRegistry();
 
+final routeObserver = RouteObserver<PageRoute<void>>();
+
 final _router = GoRouter(
   initialLocation: '/',
+  observers: [routeObserver],
   routes: [
     GoRoute(
       path: '/',
@@ -93,12 +97,14 @@ class App extends StatelessWidget {
     required this.database,
     required this.workdir,
     required this.settings,
+    required this.tmpDirManager,
     super.key,
   });
 
   final AppDatabase database;
   final WorkdirManager workdir;
   final SettingsRepository settings;
+  final TmpDirManager tmpDirManager;
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +112,7 @@ class App extends StatelessWidget {
       providers: [
         RepositoryProvider<AppDatabase>.value(value: database),
         RepositoryProvider<WorkdirManager>.value(value: workdir),
+        RepositoryProvider<TmpDirManager>.value(value: tmpDirManager),
         RepositoryProvider<SettingsRepository>.value(value: settings),
         RepositoryProvider<RunDao>(
           create: (ctx) => RunDao(ctx.read<AppDatabase>()),

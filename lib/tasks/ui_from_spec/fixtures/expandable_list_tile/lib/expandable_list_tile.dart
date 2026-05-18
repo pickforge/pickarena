@@ -18,15 +18,58 @@ class ExpandableListTile extends StatefulWidget {
   State<ExpandableListTile> createState() => _ExpandableListTileState();
 }
 
-class _ExpandableListTileState extends State<ExpandableListTile> {
+class _ExpandableListTileState extends State<ExpandableListTile>
+    with SingleTickerProviderStateMixin {
+  late bool _isExpanded;
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = widget.initiallyExpanded;
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    if (_isExpanded) {
+      _controller.value = 0.5;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _toggle() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _controller.animateTo(0.5);
+      } else {
+        _controller.animateTo(0.0);
+      }
+      widget.onExpansionChanged?.call(_isExpanded);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // TODO: build a tile that:
-    // - Always shows `title` and a trailing chevron icon.
-    // - Tapping the row toggles expansion.
-    // - Rotates the chevron 180 degrees on expand using a RotationTransition (or similar).
-    // - When expanded, shows `details` below the title row.
-    // - Calls `onExpansionChanged` whenever the expanded state flips.
-    return const SizedBox.shrink();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          title: widget.title,
+          trailing: RotationTransition(
+            turns: _controller,
+            child: const Icon(Icons.keyboard_arrow_down),
+          ),
+          onTap: _toggle,
+        ),
+        if (_isExpanded) widget.details,
+      ],
+    );
   }
 }

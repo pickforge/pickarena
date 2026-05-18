@@ -5,7 +5,7 @@ import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/tasks/planning_and_execution/add_evaluator_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _FakeJudge implements ModelProvider {
+class _FakeJudge with Disposable implements ModelProvider {
   @override
   String get id => 'fake_judge';
   @override

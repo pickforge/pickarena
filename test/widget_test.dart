@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_arena/app.dart';
+import 'package:dart_arena/runner/tmpdir_manager.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/settings.dart';
@@ -17,10 +18,14 @@ void main() {
     final tmp = Directory(
       '/tmp/dart_arena_smoke_${DateTime.now().microsecondsSinceEpoch}',
     )..createSync(recursive: true);
+    final tmpCache = Directory(
+      '/tmp/dart_arena_smoke_cache_${DateTime.now().microsecondsSinceEpoch}',
+    )..createSync(recursive: true);
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(() async {
       await db.close();
       tmp.deleteSync(recursive: true);
+      tmpCache.deleteSync(recursive: true);
     });
 
     await tester.pumpWidget(
@@ -28,6 +33,7 @@ void main() {
         database: db,
         workdir: WorkdirManager(root: tmp),
         settings: SettingsRepository(),
+        tmpDirManager: TmpDirManager(root: tmpCache),
       ),
     );
     await tester.pumpAndSettle();

@@ -57,7 +57,7 @@ class _PlanTask extends BenchmarkTask {
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) => [];
 }
 
-class _FakeProvider implements ModelProvider {
+class _FakeProvider with Disposable implements ModelProvider {
   const _FakeProvider();
   @override
   String get id => 'fake';
@@ -199,7 +199,7 @@ void main() {
     await tester.tap(find.text('Fake'));
     await tester.pumpAndSettle();
     await tester.enterText(
-      find.widgetWithText(TextField, 'Model ids (comma-separated)'),
+      find.widgetWithText(TextField, 'Custom model ids (comma-separated)'),
       'fake-1',
     );
     await tester.testTextInput.receiveAction(TextInputAction.done);

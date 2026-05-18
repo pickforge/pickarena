@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:dart_arena/runner/tmpdir_manager.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/ui/pages/settings_page.dart';
 import 'package:flutter/material.dart';
@@ -5,11 +8,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget _wrap(SettingsRepository repo) {
+Widget _wrap(SettingsRepository repo, {TmpDirManager? tmpDirManager}) {
+  final manager =
+      tmpDirManager ??
+      TmpDirManager(
+        root: Directory.systemTemp.createTempSync('settings_page_tmp_'),
+      );
   return MaterialApp(
     home: Scaffold(
-      body: RepositoryProvider<SettingsRepository>.value(
-        value: repo,
+      body: MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<SettingsRepository>.value(value: repo),
+          RepositoryProvider<TmpDirManager>.value(value: manager),
+        ],
         child: const SettingsPage(),
       ),
     ),

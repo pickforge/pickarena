@@ -10,7 +10,7 @@ import 'package:dart_arena/evaluators/llm_judge_evaluator.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _ScriptedJudge implements ModelProvider {
+class _ScriptedJudge with Disposable implements ModelProvider {
   _ScriptedJudge(this._reply);
   final String _reply;
 

@@ -19,7 +19,7 @@ import 'package:dart_arena/storage/database.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _FakeProvider implements ModelProvider {
+class _FakeProvider with Disposable implements ModelProvider {
   @override
   String get id => 'fake';
   @override
@@ -42,7 +42,7 @@ class _FakeProvider implements ModelProvider {
   );
 }
 
-class _FailingProvider implements ModelProvider {
+class _FailingProvider with Disposable implements ModelProvider {
   @override
   String get id => 'fail';
   @override
@@ -59,7 +59,7 @@ class _FailingProvider implements ModelProvider {
   }) async => throw Exception('provider unavailable');
 }
 
-class _FailsOnceProvider implements ModelProvider {
+class _FailsOnceProvider with Disposable implements ModelProvider {
   var calls = 0;
 
   @override
@@ -90,7 +90,7 @@ class _FailsOnceProvider implements ModelProvider {
   }
 }
 
-class _SecondFakeProvider implements ModelProvider {
+class _SecondFakeProvider with Disposable implements ModelProvider {
   @override
   String get id => 'fake2';
   @override
@@ -116,7 +116,7 @@ class _SecondFakeProvider implements ModelProvider {
   );
 }
 
-class _StreamingProvider implements StreamingModelProvider {
+class _StreamingProvider with Disposable implements StreamingModelProvider {
   @override
   String get id => 'stream';
   @override
@@ -152,7 +152,7 @@ class _StreamingProvider implements StreamingModelProvider {
   }) => _stream;
 }
 
-class _ConcurrencyRecordingProvider implements ModelProvider {
+class _ConcurrencyRecordingProvider with Disposable implements ModelProvider {
   int _inFlight = 0;
   int _peak = 0;
 

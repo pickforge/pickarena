@@ -18,6 +18,9 @@ class AnthropicProvider implements ModelProvider {
   final String apiKey;
   final Dio _dio;
 
+  @override
+  void dispose() => _dio.close(force: true);
+
   Map<String, String> _headers() => <String, String>{
     'x-api-key': apiKey,
     'anthropic-version': '2023-06-01',

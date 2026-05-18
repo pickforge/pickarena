@@ -18,7 +18,7 @@ import 'package:dart_arena/storage/database.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _RecordingProvider implements ModelProvider {
+class _RecordingProvider with Disposable implements ModelProvider {
   String? lastPrompt;
   @override
   String get id => 'rec';
@@ -45,7 +45,7 @@ class _RecordingProvider implements ModelProvider {
   }
 }
 
-class _PerCallRecordingProvider implements ModelProvider {
+class _PerCallRecordingProvider with Disposable implements ModelProvider {
   final calls = <({String prompt, String model})>[];
   @override
   String get id => 'rec2';

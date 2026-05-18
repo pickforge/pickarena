@@ -28,28 +28,24 @@ class DataPipeline {
   final Future<List<String>> Function(String userId) fetchOrderIds;
   final Future<int> Function(String orderId) fetchOrderTotal;
 
-  Future<PipelineRecord> run() {
-    return fetchUserId().then((userId) {
-      return fetchUserName(userId).then((userName) {
-        return fetchOrderIds(userId).then((orderIds) {
-          if (orderIds.isEmpty) {
-            return PipelineRecord(
-              userId: userId,
-              userName: userName,
-              orderCount: 0,
-              firstOrderId: '',
-            );
-          }
-          return fetchOrderTotal(orderIds.first).then((_) {
-            return PipelineRecord(
-              userId: userId,
-              userName: userName,
-              orderCount: orderIds.length,
-              firstOrderId: orderIds.first,
-            );
-          });
-        });
-      });
-    });
+  Future<PipelineRecord> run() async {
+    final userId = await fetchUserId();
+    final userName = await fetchUserName(userId);
+    final orderIds = await fetchOrderIds(userId);
+    if (orderIds.isEmpty) {
+      return PipelineRecord(
+        userId: userId,
+        userName: userName,
+        orderCount: 0,
+        firstOrderId: '',
+      );
+    }
+    await fetchOrderTotal(orderIds.first);
+    return PipelineRecord(
+      userId: userId,
+      userName: userName,
+      orderCount: orderIds.length,
+      firstOrderId: orderIds.first,
+    );
   }
 }

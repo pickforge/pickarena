@@ -13,7 +13,7 @@ class ModelInfo extends Equatable {
   List<Object?> get props => [id, efforts];
 }
 
-abstract class ModelProvider {
+abstract class ModelProvider implements Disposable {
   String get id;
   String get displayName;
   ProviderMode get mode;
@@ -23,6 +23,10 @@ abstract class ModelProvider {
     required String model,
     Duration? timeout,
   });
+}
+
+mixin Disposable {
+  void dispose() {}
 }
 
 abstract class StreamingModelProvider implements ModelProvider {

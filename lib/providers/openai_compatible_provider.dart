@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/providers/model_provider.dart';
@@ -15,15 +16,18 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
     required this.apiKey,
     this.extraHeaders = const <String, String>{},
     this.defaultEfforts = const [],
-  }) : _dio = dio ?? (Dio()
-      ..interceptors.addAll([
-        _ErrorBodyInterceptor(),
-        PrettyDioLogger(
-          requestBody: true,
-          maxWidth: 120,
-          logPrint: _logFilter,
-        ),
-      ]));
+  }) : _dio =
+           dio ??
+           (Dio()
+             ..interceptors.addAll([
+               _ErrorBodyInterceptor(),
+               PrettyDioLogger(
+                 requestHeader: false,
+                 requestBody: false,
+                 maxWidth: 120,
+                 logPrint: _logFilter,
+               ),
+             ]));
 
   @override
   final String id;
@@ -38,10 +42,13 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
   @override
   ProviderMode get mode => ProviderMode.rawApi;
 
+  @override
+  void dispose() => _dio.close(force: true);
+
   static void _logFilter(Object object) {
     final text = object.toString();
     if (text.contains('Instance of \'ResponseBody\'')) return;
-    print(text);
+    developer.log(text, name: 'OpenAiCompatibleProvider');
   }
 
   Map<String, String> _headers() => <String, String>{
@@ -65,7 +72,8 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
     if (data is ResponseBody) {
       try {
         final bytes = await data.stream.fold<List<int>>(
-          <int>[], (prev, chunk) => prev..addAll(chunk),
+          <int>[],
+          (prev, chunk) => prev..addAll(chunk),
         );
         return utf8.decode(bytes);
       } catch (_) {
@@ -277,11 +285,12 @@ class _ErrorBodyInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) {
     final data = err.response?.data;
     if (data is ResponseBody) {
-      data.stream.fold<List<int>>(<int>[], (prev, chunk) => prev..addAll(chunk))
+      data.stream
+          .fold<List<int>>(<int>[], (prev, chunk) => prev..addAll(chunk))
           .then((bytes) {
-        err.response!.data = utf8.decode(bytes);
-        handler.next(err);
-      });
+            err.response!.data = utf8.decode(bytes);
+            handler.next(err);
+          });
     } else {
       handler.next(err);
     }

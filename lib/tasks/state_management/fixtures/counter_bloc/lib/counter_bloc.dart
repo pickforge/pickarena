@@ -18,9 +18,12 @@ class Reset extends CounterEvent {
 
 class CounterBloc extends Bloc<CounterEvent, int> {
   CounterBloc() : super(0) {
-    // TODO: register event handlers so that:
-    // - Increment increases value by 1
-    // - Decrement decreases value by 1, but never below 0
-    // - Reset sets value back to 0
+    on<Increment>((event, emit) => emit(state + 1));
+    on<Decrement>((event, emit) {
+      if (state > 0) {
+        emit(state - 1);
+      }
+    });
+    on<Reset>((event, emit) => emit(0));
   }
 }

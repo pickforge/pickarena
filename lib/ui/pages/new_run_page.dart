@@ -27,7 +27,7 @@ class _NewRunPageState extends State<NewRunPage> {
   final Map<String, bool> _checkedProvider = {};
   final Map<String, Set<String>> _models = {};
   final Set<String> _selectedTaskIds = {};
-  String _label = '';
+  final _labelController = TextEditingController();
   bool _loading = true;
   bool _useReferencePlan = false;
   int _maxConcurrency = 4;
@@ -99,6 +99,12 @@ class _NewRunPageState extends State<NewRunPage> {
   }
 
   @override
+  void dispose() {
+    _labelController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('New Run')),
@@ -110,7 +116,7 @@ class _NewRunPageState extends State<NewRunPage> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      _LabelField(onChanged: (v) => _label = v),
+                      _LabelField(controller: _labelController),
                       const SizedBox(height: 16),
                       _TaskPicker(
                         registry: _registry,
@@ -225,7 +231,7 @@ class _NewRunPageState extends State<NewRunPage> {
         evaluatorConfig: evaluatorConfig,
         weights: weights,
         useReferencePlan: _useReferencePlan,
-        name: _label.trim().isEmpty ? null : _label.trim(),
+        name: _labelController.text.trim().isEmpty ? null : _labelController.text.trim(),
         maxConcurrency: _maxConcurrency,
       ),
     );
@@ -242,17 +248,17 @@ class _NewRunPageState extends State<NewRunPage> {
 }
 
 class _LabelField extends StatelessWidget {
-  const _LabelField({required this.onChanged});
-  final ValueChanged<String> onChanged;
+  const _LabelField({required this.controller});
+  final TextEditingController controller;
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
       decoration: const InputDecoration(
         labelText: 'Label this run (optional)',
         border: OutlineInputBorder(),
       ),
-      onChanged: onChanged,
     );
   }
 }
@@ -318,10 +324,14 @@ class _ProviderRow extends StatefulWidget {
   State<_ProviderRow> createState() => _ProviderRowState();
 }
 
-class _ProviderRowState extends State<_ProviderRow> {
+class _ProviderRowState extends State<_ProviderRow>
+    with AutomaticKeepAliveClientMixin {
   Future<List<ModelInfo>>? _modelsFuture;
   final _freeformController = TextEditingController();
   final _freeformFocus = FocusNode();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void dispose() {
@@ -332,6 +342,7 @@ class _ProviderRowState extends State<_ProviderRow> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final checked = widget.checked;
     return Column(
       children: [
@@ -362,6 +373,24 @@ class _ProviderRowState extends State<_ProviderRow> {
                     focusNode: _freeformFocus,
                     selected: widget.selectedModels,
                     onChanged: widget.onModelSelectionChanged,
+                  );
+                }
+                if (widget.provider.mode == ProviderMode.agent) {
+                  return Column(
+                    children: [
+                      _ListedChipSelector(
+                        listedModels: snap.data!,
+                        selected: widget.selectedModels,
+                        onChanged: widget.onModelSelectionChanged,
+                      ),
+                      const SizedBox(height: 8),
+                      _FreeformChipInput(
+                        controller: _freeformController,
+                        focusNode: _freeformFocus,
+                        selected: widget.selectedModels,
+                        onChanged: widget.onModelSelectionChanged,
+                      ),
+                    ],
                   );
                 }
                 return _ListedChipSelector(
@@ -456,9 +485,14 @@ class _FreeformChipInput extends StatefulWidget {
   State<_FreeformChipInput> createState() => _FreeformChipInputState();
 }
 
-class _FreeformChipInputState extends State<_FreeformChipInput> {
+class _FreeformChipInputState extends State<_FreeformChipInput>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final chips = widget.selected.toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,7 +501,7 @@ class _FreeformChipInputState extends State<_FreeformChipInput> {
           controller: widget.controller,
           focusNode: widget.focusNode,
           decoration: InputDecoration(
-            labelText: 'Model ids (comma-separated)',
+            labelText: 'Custom model ids (comma-separated)',
             border: const OutlineInputBorder(),
             suffixIcon: IconButton(
               icon: const Icon(Icons.check),

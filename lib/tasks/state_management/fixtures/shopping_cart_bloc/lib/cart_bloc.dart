@@ -67,10 +67,60 @@ class UpdateQuantity extends CartEvent {
 
 class CartBloc extends Bloc<CartEvent, CartState> {
   CartBloc() : super(const CartState()) {
-    // TODO: register handlers for AddItem, RemoveItem, UpdateQuantity such that:
-    // - Adding an existing id increments its quantity (does not duplicate the line).
-    // - Adding a new id appends a CartLine.
-    // - RemoveItem drops the matching line; no-op if not present.
-    // - UpdateQuantity sets a line's quantity; quantity 0 removes the line.
+    on<AddItem>(_onAddItem);
+    on<RemoveItem>(_onRemoveItem);
+    on<UpdateQuantity>(_onUpdateQuantity);
+  }
+
+  void _onAddItem(AddItem event, Emitter<CartState> emit) {
+    final index = state.lines.indexWhere((l) => l.id == event.id);
+    if (index >= 0) {
+      final updated = state.lines[index].copyWith(
+        quantity: state.lines[index].quantity + event.quantity,
+      );
+      final newLines = List<CartLine>.from(state.lines);
+      newLines[index] = updated;
+      emit(state.copyWith(lines: newLines));
+    } else {
+      emit(
+        state.copyWith(
+          lines: [
+            ...state.lines,
+            CartLine(
+              id: event.id,
+              unitPriceCents: event.unitPriceCents,
+              quantity: event.quantity,
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _onRemoveItem(RemoveItem event, Emitter<CartState> emit) {
+    final index = state.lines.indexWhere((l) => l.id == event.id);
+    if (index >= 0) {
+      emit(
+        state.copyWith(
+          lines: state.lines.where((l) => l.id != event.id).toList(),
+        ),
+      );
+    }
+  }
+
+  void _onUpdateQuantity(UpdateQuantity event, Emitter<CartState> emit) {
+    final index = state.lines.indexWhere((l) => l.id == event.id);
+    if (index < 0) return;
+    if (event.quantity <= 0) {
+      emit(
+        state.copyWith(
+          lines: state.lines.where((l) => l.id != event.id).toList(),
+        ),
+      );
+    } else {
+      final newLines = List<CartLine>.from(state.lines);
+      newLines[index] = state.lines[index].copyWith(quantity: event.quantity);
+      emit(state.copyWith(lines: newLines));
+    }
   }
 }

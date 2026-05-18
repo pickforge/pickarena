@@ -1,3 +1,4 @@
+import 'package:dart_arena/app.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/ui/widgets/run_row.dart';
@@ -14,7 +15,7 @@ class RunHistoryPage extends StatefulWidget {
   State<RunHistoryPage> createState() => _RunHistoryPageState();
 }
 
-class _RunHistoryPageState extends State<RunHistoryPage> {
+class _RunHistoryPageState extends State<RunHistoryPage> with RouteAware {
   late final RunDao _dao;
   String _query = '';
   Future<List<_RunRowData>>? _future;
@@ -25,6 +26,21 @@ class _RunHistoryPageState extends State<RunHistoryPage> {
     _dao = widget.dao ?? context.read<RunDao>();
     _refresh();
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute<void>);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() => _refresh();
 
   void _refresh() {
     setState(() {
@@ -80,17 +96,30 @@ class _RunHistoryPageState extends State<RunHistoryPage> {
                 return ListView.separated(
                   itemCount: rows.length,
                   separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, i) => RunRow(
-                    run: rows[i].run,
-                    taskRuns: rows[i].taskRuns,
-                    onTap: () => context.push('/runs/${rows[i].run.id}'),
-                    trailing: IconButton(
-                      tooltip:
-                          'Delete run ${rows[i].run.name ?? rows[i].run.id}',
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () => _confirmDelete(rows[i].run),
-                    ),
-                  ),
+                  itemBuilder: (context, i) {
+                    final run = rows[i].run;
+                    return RunRow(
+                      run: run,
+                      taskRuns: rows[i].taskRuns,
+                      onTap: () => context.push('/runs/${run.id}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (run.completedAt == null)
+                            IconButton(
+                              tooltip: 'Mark as completed',
+                              icon: const Icon(Icons.check_circle_outline),
+                              onPressed: () => _markCompleted(run),
+                            ),
+                          IconButton(
+                            tooltip: 'Delete run ${run.name ?? run.id}',
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _confirmDelete(run),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -129,6 +158,16 @@ class _RunHistoryPageState extends State<RunHistoryPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Deleted $label')));
+  }
+
+  Future<void> _markCompleted(Run run) async {
+    await _dao.markRunCompleted(run.id);
+    if (!mounted) return;
+    _refresh();
+    final label = run.name ?? 'Run ${run.id}';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Marked $label as completed')));
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:dart_arena/analytics/leaderboard_filter.dart';
 import 'package:dart_arena/analytics/leaderboard_repository.dart';
+import 'package:dart_arena/app.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
@@ -27,7 +28,7 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage> with RouteAware {
   late final RunDao _dao;
   late final LeaderboardRepository _repo;
   Future<_DashboardData>? _future;
@@ -39,6 +40,24 @@ class _DashboardPageState extends State<DashboardPage> {
     _repo = widget.repository ?? context.read<LeaderboardRepository>();
     _future = _load();
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    ModalRoute.of(context)?.isCurrent;
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute<void>);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() => _refresh();
+
+  void _refresh() => setState(() => _future = _load());
 
   Future<_DashboardData> _load() async {
     final recentRuns = await _dao.recentRuns(limit: 10);

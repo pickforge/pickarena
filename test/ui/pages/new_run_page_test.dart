@@ -55,7 +55,7 @@ class _StubTaskB extends BenchmarkTask {
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) => const [];
 }
 
-class _ListModelsProvider implements ModelProvider {
+class _ListModelsProvider with Disposable implements ModelProvider {
   @override
   String get id => 'list';
   @override
@@ -76,7 +76,7 @@ class _ListModelsProvider implements ModelProvider {
   }) async => throw UnimplementedError();
 }
 
-class _EmptyListProvider implements ModelProvider {
+class _EmptyListProvider with Disposable implements ModelProvider {
   @override
   String get id => 'empty';
   @override
@@ -266,10 +266,10 @@ void main() {
     await tester.tap(find.text('Empty'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Model ids (comma-separated)'), findsOneWidget);
+    expect(find.text('Custom model ids (comma-separated)'), findsOneWidget);
 
     await tester.enterText(
-      find.widgetWithText(TextField, 'Model ids (comma-separated)'),
+      find.widgetWithText(TextField, 'Custom model ids (comma-separated)'),
       'm1, m1 ,  , m2',
     );
     await tester.testTextInput.receiveAction(TextInputAction.done);

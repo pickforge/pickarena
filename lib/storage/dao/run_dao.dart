@@ -30,6 +30,10 @@ class RunDao {
     );
   }
 
+  Future<void> markRunCompleted(String runId) {
+    return finishRun(runId, DateTime.now());
+  }
+
   Future<void> persistTaskRun(TaskRunResult r) async {
     final taskRunId =
         '${r.runId}-${r.providerId}-${r.modelId}-${r.taskId}-${r.completedAt.microsecondsSinceEpoch}';

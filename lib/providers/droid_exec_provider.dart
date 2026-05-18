@@ -21,8 +21,27 @@ typedef DroidProcessRunner =
     );
 
 class DroidExecProvider implements ModelProvider {
-  DroidExecProvider({DroidProcessRunner? runner})
-    : _runner = runner ?? _defaultRunner;
+  DroidExecProvider({DroidProcessRunner? runner, String? droidPath})
+    : _runner = runner ?? _defaultRunner,
+      _exe = droidPath ?? _findDroid();
+
+  static String _findDroid() {
+    // Desktop apps don't inherit shell PATH; try common locations.
+    final home =
+        Platform.environment['HOME'] ??
+        Platform.environment['USERPROFILE'] ??
+        '';
+    final candidates = [
+      '$home/.local/bin/droid',
+      '$home/.npm-global/bin/droid',
+      '/usr/local/bin/droid',
+      'droid', // fallback: hope it's in PATH
+    ];
+    for (final c in candidates) {
+      if (File(c).existsSync()) return c;
+    }
+    return 'droid';
+  }
 
   static Future<DroidProcessResult> _defaultRunner(
     String exe,
@@ -37,6 +56,7 @@ class DroidExecProvider implements ModelProvider {
   }
 
   final DroidProcessRunner _runner;
+  final String _exe;
 
   @override
   String get id => 'droid';
@@ -44,6 +64,9 @@ class DroidExecProvider implements ModelProvider {
   String get displayName => 'Factory Droid';
   @override
   ProviderMode get mode => ProviderMode.agent;
+
+  @override
+  void dispose() {}
 
   @override
   Future<List<ModelInfo>> listModels() async => const [
@@ -62,10 +85,10 @@ class DroidExecProvider implements ModelProvider {
     Duration? timeout,
   }) async {
     final sw = Stopwatch()..start();
-    final res = await _runner('droid', [
+    final res = await _runner(_exe, [
       'exec',
       '--auto',
-      'low',
+      'high',
       '--output-format',
       'text',
       '--model',

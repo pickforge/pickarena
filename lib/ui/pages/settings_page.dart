@@ -1,3 +1,4 @@
+import 'package:dart_arena/runner/tmpdir_manager.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/providers/openai_compatible_provider.dart';
 import 'package:dart_arena/ui/widgets/evaluator_weights_section.dart';
@@ -82,7 +83,120 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: Text('Uses local droid CLI; no key needed in app.'),
           ),
           const Divider(),
+          const _CacheSection(),
+          const Divider(),
           const _ConcurrencySection(),
+        ],
+      ),
+    );
+  }
+}
+
+class _CacheSection extends StatefulWidget {
+  const _CacheSection();
+  @override
+  State<_CacheSection> createState() => _CacheSectionState();
+}
+
+class _CacheSectionState extends State<_CacheSection> {
+  late final TmpDirManager _manager;
+  int? _size;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _manager = context.read<TmpDirManager>();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final size = await _manager.currentSize();
+    if (!mounted) return;
+    setState(() => _size = size);
+  }
+
+  String _format(int? bytes) {
+    if (bytes == null) return '…';
+    if (bytes < 1024) return '$bytes B';
+    const kb = 1024;
+    const mb = 1024 * 1024;
+    const gb = 1024 * 1024 * 1024;
+    if (bytes < mb) return '${(bytes / kb).toStringAsFixed(1)} KB';
+    if (bytes < gb) return '${(bytes / mb).toStringAsFixed(1)} MB';
+    return '${(bytes / gb).toStringAsFixed(1)} GB';
+  }
+
+  Future<void> _confirmClear() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear subprocess cache?'),
+        content: const Text(
+          'Delete all cached subprocess files? This may slow down the next '
+          'benchmark run while caches are rebuilt. Do not clear the cache '
+          'while a benchmark is running.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() => _busy = true);
+    final before = _size ?? await _manager.currentSize();
+    await _manager.clear();
+    final after = await _manager.currentSize();
+    if (!mounted) return;
+    setState(() {
+      _size = after;
+      _busy = false;
+    });
+    final freed = (before - after).clamp(0, before);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Freed ${_format(freed)}')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Subprocess cache (TMPDIR)',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          SelectableText(
+            _manager.root.path,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 4),
+          Text('Current size: ${_format(_size)}'),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              OutlinedButton(
+                onPressed: _busy ? null : _refresh,
+                child: const Text('Refresh'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.tonal(
+                onPressed: _busy ? null : _confirmClear,
+                child: const Text('Clear cache'),
+              ),
+            ],
+          ),
         ],
       ),
     );

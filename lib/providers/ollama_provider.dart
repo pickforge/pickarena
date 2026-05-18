@@ -21,6 +21,9 @@ class OllamaProvider implements ModelProvider {
   final Dio _dio;
 
   @override
+  void dispose() => _dio.close(force: true);
+
+  @override
   ProviderMode get mode => ProviderMode.rawApi;
 
   Map<String, String> _headers() => <String, String>{
