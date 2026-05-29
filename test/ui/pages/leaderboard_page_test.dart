@@ -10,15 +10,18 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Future<({AppDatabase db, LeaderboardRepository repo})> _seed() async {
+Future<({AppDatabase db, LeaderboardRepository repo})> _seed({
+  String providerId = 'openai',
+  String modelId = 'gpt-5',
+}) async {
   final db = AppDatabase(NativeDatabase.memory());
   final dao = RunDao(db);
   await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 1));
   await dao.persistTaskRun(
     TaskRunResult(
       runId: 'r1',
-      providerId: 'openai',
-      modelId: 'gpt-5',
+      providerId: providerId,
+      modelId: modelId,
       taskId: 'bug.off_by_one_pagination',
       response: const ModelResponse(
         rawText: '',
@@ -97,5 +100,12 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.textContaining('No models match'), findsWidgets);
+  });
+
+  test('selection key parsing preserves model IDs containing ":"', () {
+    final parsed = splitLeaderboardSelectionKey('ollama_local:qwen2.5-coder:32b');
+
+    expect(parsed.providerId, 'ollama_local');
+    expect(parsed.modelId, 'qwen2.5-coder:32b');
   });
 }

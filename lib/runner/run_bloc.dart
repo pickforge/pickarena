@@ -140,6 +140,13 @@ class RunBloc extends Bloc<RunEvent, RunState> {
   }
 
   void _ensureWorkers(Emitter<RunState> emit) {
+    if (emit.isDone) {
+      _pendingQueue.clear();
+      if (!(_drainDone?.isCompleted ?? true)) {
+        _drainDone!.complete();
+      }
+      return;
+    }
     while (_runningWorkers < _maxConcurrency && _pendingQueue.isNotEmpty) {
       _runningWorkers++;
       unawaited(_worker(emit));

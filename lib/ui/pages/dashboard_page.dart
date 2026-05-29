@@ -57,7 +57,13 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   @override
   void didPopNext() => _refresh();
 
-  void _refresh() => setState(() => _future = _load());
+  void _refresh() {
+    if (!mounted) return;
+    final next = _load();
+    setState(() {
+      _future = next;
+    });
+  }
 
   Future<_DashboardData> _load() async {
     final recentRuns = await _dao.recentRuns(limit: 10);

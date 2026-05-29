@@ -27,6 +27,14 @@ class LeaderboardPage extends StatefulWidget {
   State<LeaderboardPage> createState() => _LeaderboardPageState();
 }
 
+({String providerId, String modelId}) splitLeaderboardSelectionKey(String key) {
+  final sep = key.indexOf(':');
+  return (
+    providerId: sep < 0 ? key : key.substring(0, sep),
+    modelId: sep < 0 ? '' : key.substring(sep + 1),
+  );
+}
+
 class _LeaderboardPageState extends State<LeaderboardPage> {
   LeaderboardRepository? _repo;
   late LeaderboardFilter _filter;
@@ -103,12 +111,14 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       });
       return;
     }
-    final parts = _selectedKey!.split(':');
+    final (:providerId, :modelId) = splitLeaderboardSelectionKey(
+      _selectedKey!,
+    );
     final taskIds = _taskIdsForCurrentCategory();
     final categoryByTaskId = _categoryByTaskId();
     final future = _repo!.detail(
-      providerId: parts[0],
-      modelId: parts[1],
+      providerId: providerId,
+      modelId: modelId,
       filter: _filter,
       taskIdsForCategory: taskIds,
       categoryByTaskId: categoryByTaskId,
