@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/export/csv_exporter.dart';
 import 'package:dart_arena/export/md_exporter.dart';
 import 'package:dart_arena/export/readme_publisher.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/run_summary.dart';
 import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:dart_arena/ui/widgets/run_matrix.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -19,12 +21,14 @@ class RunDetailsPage extends StatefulWidget {
     this.dao,
     this.settings,
     this.publisher,
+    this.registry,
   });
 
   final String runId;
   final RunDao? dao;
   final SettingsRepository? settings;
   final ReadmePublisher? publisher;
+  final TaskRegistry? registry;
 
   @override
   State<RunDetailsPage> createState() => _RunDetailsPageState();
@@ -34,6 +38,7 @@ class _RunDetailsPageState extends State<RunDetailsPage> {
   late final RunDao _dao;
   late final SettingsRepository _settings;
   late final ReadmePublisher _publisher;
+  late final TaskRegistry _registry;
   Future<RunSummary?>? _future;
   String? _readmePath;
 
@@ -43,6 +48,7 @@ class _RunDetailsPageState extends State<RunDetailsPage> {
     _dao = widget.dao ?? context.read<RunDao>();
     _settings = widget.settings ?? SettingsRepository();
     _publisher = widget.publisher ?? ReadmePublisher();
+    _registry = widget.registry ?? buildDefaultTaskRegistry();
     _future = _dao.loadSummary(widget.runId);
     _settings.getReadmePath().then((p) {
       if (mounted) setState(() => _readmePath = p);
@@ -237,6 +243,9 @@ class _RunDetailsPageState extends State<RunDetailsPage> {
                       )
                     : RunMatrix(
                         taskRuns: summary.taskRuns,
+                        taskById: {
+                          for (final task in _registry.all()) task.id: task,
+                        },
                         onCellTap: (tr) => context.push(
                           '/runs/${summary.run.id}/task-runs/${tr.id}',
                         ),

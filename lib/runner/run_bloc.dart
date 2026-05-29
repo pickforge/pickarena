@@ -594,6 +594,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       taskPrompt: task.prompt,
       planMarkdown: combo.planMarkdown,
     );
+    final taskTimeout = task.timeout ?? const Duration(minutes: 10);
 
     ModelResponse response;
 
@@ -626,7 +627,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       await for (final event in provider.generateStream(
         prompt: prompt,
         model: modelId,
-        timeout: const Duration(minutes: 10),
+        timeout: taskTimeout,
       )) {
         switch (event) {
           case ModelStreamReasoningDelta(:final text):
@@ -687,7 +688,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       response = await provider.generate(
         prompt: prompt,
         model: modelId,
-        timeout: const Duration(minutes: 10),
+        timeout: taskTimeout,
       );
 
       updateActive(

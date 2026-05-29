@@ -90,4 +90,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(captured?.track, BenchmarkTrack.agentic);
   });
+
+  testWidgets('emits new filter when difficulty is changed', (tester) async {
+    LeaderboardFilter? captured;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LeaderboardFilters(
+            filter: const LeaderboardFilter(),
+            providerOptions: const [],
+            onChanged: (f) => captured = f,
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('difficulty-dropdown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hard').last);
+    await tester.pumpAndSettle();
+    expect(captured?.difficulty, TaskDifficulty.hard);
+  });
+
+  testWidgets('emits new filter when tag is changed', (tester) async {
+    LeaderboardFilter? captured;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LeaderboardFilters(
+            filter: const LeaderboardFilter(),
+            providerOptions: const [],
+            onChanged: (f) => captured = f,
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('tag-dropdown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Navigation').last);
+    await tester.pumpAndSettle();
+    expect(captured?.tags, {TaskTag.navigation});
+  });
 }

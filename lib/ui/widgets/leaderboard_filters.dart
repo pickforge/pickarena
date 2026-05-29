@@ -89,6 +89,45 @@ class LeaderboardFilters extends StatelessWidget {
               filter.copyWith(track: track, clearTrack: track == null),
             ),
           ),
+          DropdownButton<TaskDifficulty?>(
+            key: const Key('difficulty-dropdown'),
+            value: filter.difficulty,
+            hint: const Text('All difficulties'),
+            items: [
+              const DropdownMenuItem(
+                value: null,
+                child: Text('All difficulties'),
+              ),
+              for (final difficulty in TaskDifficulty.values)
+                if (difficulty != TaskDifficulty.unspecified)
+                  DropdownMenuItem(
+                    value: difficulty,
+                    child: Text(difficulty.label),
+                  ),
+            ],
+            onChanged: (difficulty) => onChanged(
+              filter.copyWith(
+                difficulty: difficulty,
+                clearDifficulty: difficulty == null,
+              ),
+            ),
+          ),
+          DropdownButton<TaskTag?>(
+            key: const Key('tag-dropdown'),
+            value: filter.tags.length == 1 ? filter.tags.single : null,
+            hint: const Text('All tags'),
+            items: [
+              const DropdownMenuItem(value: null, child: Text('All tags')),
+              for (final tag in TaskTag.values)
+                DropdownMenuItem(value: tag, child: Text(tag.label)),
+            ],
+            onChanged: (tag) => onChanged(
+              filter.copyWith(
+                tags: tag == null ? const {} : {tag},
+                clearTags: tag == null,
+              ),
+            ),
+          ),
           _RangeChips(
             range: filter.dateRange,
             onPick: (r) => onChanged(filter.copyWith(dateRange: r)),

@@ -156,6 +156,26 @@ void main() {
     expect(rows2, isEmpty);
   });
 
+  test('metadata filters intersect with provided taskIdsForFilter', () async {
+    final s = await _seed();
+    final repo = LeaderboardRepository(s.db);
+
+    final rows = await repo.rank(
+      filter: const LeaderboardFilter(
+        difficulty: TaskDifficulty.hard,
+        tags: {TaskTag.bugfix},
+      ),
+      taskIdsForFilter: {'bug.off_by_one_pagination'},
+    );
+    expect(rows.length, 2);
+
+    final empty = await repo.rank(
+      filter: const LeaderboardFilter(difficulty: TaskDifficulty.hard),
+      taskIdsForFilter: const {},
+    );
+    expect(empty, isEmpty);
+  });
+
   test('rank by speed sorts by latency, not aggregateScore', () async {
     final db = AppDatabase(NativeDatabase.memory());
     final dao = RunDao(db);

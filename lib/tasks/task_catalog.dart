@@ -1,6 +1,7 @@
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/tasks/bug_fix/async_race_condition.dart';
 import 'package:dart_arena/tasks/bug_fix/off_by_one_pagination.dart';
+import 'package:dart_arena/tasks/flutter_corpus/phase3_seed_tasks.dart';
 import 'package:dart_arena/tasks/planning_and_execution/add_evaluator_type.dart';
 import 'package:dart_arena/tasks/planning_and_execution/add_filter_dimension.dart';
 import 'package:dart_arena/tasks/refactor/callback_hell.dart';
@@ -25,6 +26,9 @@ TaskRegistry buildDefaultTaskRegistry() {
   registry.register(FormValidationTestTask());
   registry.register(AsyncRaceConditionTask());
   registry.register(AgenticAsyncRaceConditionTask());
+  for (final task in buildPhase3SeedTasks()) {
+    registry.register(task);
+  }
   registry.register(AddEvaluatorTypeTask());
   registry.register(AddFilterDimensionTask());
   return registry;

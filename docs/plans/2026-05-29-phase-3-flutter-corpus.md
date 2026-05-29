@@ -10,19 +10,21 @@ Build a high-quality original task corpus that reflects real Flutter development
 
 ## Success criteria
 
-- At least 25 v2 tasks exist, with a path to 50–100.
+- Phase 3 MVP delivers 10 named, reviewed seed tasks plus the metadata, UI, and QA support needed to run them safely.
+- Scaling to 25+ tasks is a post-MVP follow-up under Task 6, with a path to 50–100.
 - Tasks cover multiple Flutter domains: UI, state, navigation, testing, platform/build, performance, and maintainability.
 - Each task has hidden behavioral verification and a reference solution.
 - Each task passes the Phase 1 QA gate.
 - Tasks are grouped by difficulty and category for leaderboard filtering.
-- The initial seed corpus has at least 10 reviewed tasks before scaling to 25+.
+- The initial seed corpus has all 10 reviewed tasks passing corpus QA before scaling to 25+.
 
 ## Current code anchors
 
 - Current task definitions live under `lib/tasks/**` and are registered in `lib/tasks/task_catalog.dart`.
 - Existing categories are limited to `uiFromSpec`, `stateManagement`, `bugFix`, `refactor`, `widgetTesting`, and `planningAndExecution`.
 - Fixtures are currently loaded through `FixtureLoader` from asset paths listed in `pubspec.yaml`.
-- Codegen tasks currently assume one `generatedCodePath`; tasks that need multi-file edits should be marked agentic and wait for Phase 2.
+- Codegen tasks currently assume one `generatedCodePath`; tasks that need multi-file edits should be marked agentic.
+- `ReferencePatchSolution` still throws in the current codebase, so Phase 3 MVP seed tasks must use executable `ReferenceFileSolution` mappings unless patch-reference application is implemented and covered by QA first.
 
 ## Task design principles
 
@@ -104,7 +106,7 @@ tasks_v2/<category>/<task_id>/
   public_tests/
   hidden_tests/
   reference/
-    solution.patch
+    files/ or solution.patch
     notes.md
   author_review.md
 ```
@@ -113,7 +115,11 @@ If the repo keeps Dart-defined tasks during transition, mirror this structure in
 
 During the transition, prefer Dart-defined tasks for the first seed corpus so the runner can execute them without a manifest loader. File-based artifacts can be introduced after the metadata and QA model stabilizes.
 
+For the Phase 3 MVP, every admitted task must expose an executable Dart `referenceSolution`. Use `ReferenceFileSolution` with one or more full-file mappings for seed tasks. Do not admit tasks that only have `solution.patch`/`ReferencePatchSolution` until patch application is implemented and `TaskQaRunner` proves baseline-fail/reference-pass for those tasks.
+
 ## Task 1: Create authoring guidelines
+
+This task is documentation-only; it should not require Dart code changes or Dart tests.
 
 - [ ] Define required task metadata.
 - [ ] Define prompt style rules.
@@ -143,6 +149,19 @@ Minimum checklist:
 - [ ] Keep existing `Category` values stable for old task IDs; add tags/difficulty as additive metadata.
 - [ ] Add tests for tag filtering with legacy tasks that have empty/default tags.
 
+MVP metadata model:
+
+- Add `enum TaskTag` using the suggested tag list below.
+- Add `enum TaskDifficulty { unspecified, easy, medium, hard }`; legacy tasks default to `unspecified`, and new seed tasks must choose `easy`, `medium`, or `hard`.
+- Add `enum TaskPlatform { linux, macos, windows, web, android, ios }`; an empty requirement set means host-agnostic.
+- Extend `BenchmarkTask` with safe default getters:
+  - `Set<TaskTag> get tags => const {};`
+  - `TaskDifficulty get difficulty => TaskDifficulty.unspecified;`
+  - `Duration? get timeout => null;`
+  - `Set<TaskPlatform> get platformRequirements => const {};`
+- Treat tags, difficulty, timeout, and platform requirements as runtime task metadata in the MVP, not new Drift columns. Existing `taskVersion` and `benchmarkTrack` persistence remains authoritative for recorded results; if metadata changes after results are recorded, bump the task `version`.
+- Extend `TaskRegistry` with query helpers for tags, difficulty, track, and supported platform. Extend `LeaderboardFilter` with tag and difficulty filters by converting registry matches to task IDs, preserving legacy category filtering as a fallback.
+
 Suggested tags:
 
 ```text
@@ -165,18 +184,20 @@ code_review
 
 ## Task 3: Build seed corpus
 
-Create 10 initial tasks before scaling:
+Create the 10 named initial tasks before scaling. Land Phase 3a first, then Phase 3b after metadata and corpus QA are working.
 
-- [ ] auth redirect with `go_router`;
-- [ ] BLoC debounce/cancellation bug;
-- [ ] Riverpod stale cache bug;
-- [ ] responsive profile screen with golden tests;
-- [ ] localization + RTL widget behavior;
-- [ ] build_runner generated model migration;
-- [ ] platform-channel mock bug;
-- [ ] flaky widget test repair;
-- [ ] large screen refactor preserving behavior;
-- [ ] performance/rebuild reduction task.
+| Phase | Suggested ID | Task | Track | Fixture budget | Admission notes |
+|---|---|---|---|---|---|
+| 3a | `state.bloc_debounce_cancellation` | BLoC debounce/cancellation bug | `codegen` | ≤15 source/test files, ≤300 KB | Single generated BLoC/controller file. |
+| 3a | `state.riverpod_stale_cache` | Riverpod stale cache bug | `codegen` | ≤15 files, ≤300 KB | Single provider/repository file when practical. |
+| 3a | `ui.responsive_profile_golden` | Responsive profile screen with golden or behavioral layout tests | `codegen` | ≤15 files, ≤300 KB | Mark platform requirements if true golden files are platform-sensitive. |
+| 3a | `ui.localization_rtl_behavior` | Localization + RTL widget behavior | `codegen` | ≤15 files, ≤300 KB | Keep ARB/generated localization scaffolding minimal. |
+| 3a | `testing.flaky_widget_test_repair` | Flaky widget test repair | `codegen` | ≤15 files, ≤300 KB | Generated path can be the repaired test file. |
+| 3a | `performance.rebuild_reduction` | Performance/rebuild reduction task | `codegen` | ≤15 files, ≤300 KB | Verify observable rebuild count/performance smoke behavior. |
+| 3b | `navigation.go_router_auth_redirect` | Auth redirect with `go_router` | `agentic` | ≤25 files, ≤500 KB | Multi-file edits allowed; reference must still use `ReferenceFileSolution` until patch refs are supported. |
+| 3b | `build.codegen_model_migration` | `build_runner` generated model migration | `agentic` | ≤25 files, ≤500 KB | Required commands include code generation; generated outputs must be covered by the reference solution. |
+| 3b | `platform.platform_channel_mock` | Platform-channel mock bug | `agentic` | ≤25 files, ≤500 KB | Prefer mocked host-platform behavior; mark platform requirements if host-sensitive. |
+| 3b | `refactor.large_screen_preserve_behavior` | Large screen refactor preserving behavior | `agentic` | ≤25 files, ≤500 KB | Hidden tests should assert behavior, not decomposition style. |
 
 Each task must include:
 
@@ -190,17 +211,21 @@ Each task must include:
 Track assignment:
 
 - Codegen-suitable seed tasks should have a single `generatedCodePath` and can be added immediately after Phase 1.
-- Agentic seed tasks may include multiple changed files, generated code workflows, or package migrations and should wait for Phase 2.
+- Agentic seed tasks may include multiple changed files, generated code workflows, or package migrations and should use the Phase 2 agentic track.
+- Every MVP seed task, including agentic tasks, must be admissible by corpus QA with current executable reference support. If a task requires a patch-only reference, defer it to Task 6 or first add patch-reference support with tests.
 - Do not force naturally multi-file work into the codegen track only to fit the old runner.
 
 ## Task 4: Add corpus QA automation
 
 - [ ] Run Phase 1 task QA over every corpus task.
+- [ ] Add `test/runner/corpus_task_qa_test.dart` that iterates the registered v2 corpus tasks and runs `TaskQaRunner` for each task.
 - [ ] Produce a local report sorted by task/category/difficulty.
 - [ ] Fail CI or local validation when any task is broken/flaky.
 - [ ] Track baseline fail/reference pass status.
-- [ ] Store QA report artifacts outside agent workspaces and exclude them from task fixtures.
+- [ ] Store QA report artifacts under `build/corpus_qa/`, outside agent workspaces, and exclude them from task fixtures.
 - [ ] Mark golden and platform-sensitive tasks with platform requirements so they can be skipped or filtered when unsupported.
+- [ ] Apply task `timeout` metadata in QA/evaluator execution where supported; otherwise surface timeout requirements in the QA report.
+- [ ] Unsupported-platform skips must be explicit in the QA report and must not hide broken tasks on supported hosts.
 
 ## Task 5: Add corpus documentation in-app
 
@@ -209,7 +234,17 @@ Track assignment:
 - [ ] Show task metadata in run details and leaderboard drill-down.
 - [ ] Show clear labels for `Codegen` vs `Agentic` tasks so users do not compare tracks accidentally.
 
+MVP UI scope is limited to existing screens:
+
+- `NewRunPage`: add track, difficulty, and tag filtering for task selection; show disabled/skip labels for unsupported-platform tasks.
+- Task selection cards/rows: show category, tags, difficulty, track, version, and slow/platform-sensitive markers.
+- Run details and task-run details: show the task metadata snapshot available from the registry for the recorded task ID/version.
+- Leaderboard filters: add difficulty and tag controls using registered task IDs; keep existing category and track filters working for legacy results.
+- No new in-app documentation pages are required for the MVP.
+
 ## Task 6: Scale to 25+ tasks
+
+Post-MVP follow-up after the 10 seed tasks pass corpus QA:
 
 - [ ] Add at least 3–5 tasks per major category.
 - [ ] Keep median task runtime reasonable.
@@ -230,6 +265,7 @@ flutter test
 Corpus QA:
 
 ```sh
+flutter test test/runner/corpus_task_qa_test.dart
 flutter test test/tasks/
 ```
 

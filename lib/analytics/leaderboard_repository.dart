@@ -81,8 +81,12 @@ class LeaderboardRepository {
   Future<List<ModelRanking>> rank({
     required LeaderboardFilter filter,
     Set<String>? taskIdsForCategory,
+    Set<String>? taskIdsForFilter,
   }) async {
-    final taskRuns = await _filteredTaskRuns(filter, taskIdsForCategory);
+    final taskRuns = await _filteredTaskRuns(
+      filter,
+      taskIdsForFilter ?? taskIdsForCategory,
+    );
     if (taskRuns.isEmpty) return const [];
     final evals = await _evaluationsByTaskRunId(taskRuns.map((t) => t.id));
     final groups = <String, List<TaskRun>>{};
@@ -117,12 +121,17 @@ class LeaderboardRepository {
     required String modelId,
     required LeaderboardFilter filter,
     Set<String>? taskIdsForCategory,
+    Set<String>? taskIdsForFilter,
     Map<String, Category>? categoryByTaskId,
   }) async {
     final scoped = filter.copyWith(providerId: providerId);
-    final taskRuns = (await _filteredTaskRuns(scoped, taskIdsForCategory))
-        .where((t) => t.providerId == providerId && t.modelId == modelId)
-        .toList();
+    final taskRuns =
+        (await _filteredTaskRuns(
+              scoped,
+              taskIdsForFilter ?? taskIdsForCategory,
+            ))
+            .where((t) => t.providerId == providerId && t.modelId == modelId)
+            .toList();
     final evals = taskRuns.isEmpty
         ? const <String, List<Evaluation>>{}
         : await _evaluationsByTaskRunId(taskRuns.map((t) => t.id));
@@ -174,7 +183,8 @@ class LeaderboardRepository {
     if (filter.track != null) {
       q.where((t) => t.benchmarkTrack.equals(filter.track!.name));
     }
-    if (filter.category != null && taskIdsForCategory != null) {
+    if (filter.hasTaskMetadataFilter && taskIdsForCategory != null) {
+      if (taskIdsForCategory.isEmpty) return const [];
       q.where((t) => t.taskId.isIn(taskIdsForCategory));
     }
     return q.get();

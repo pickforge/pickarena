@@ -69,6 +69,10 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               (t) => t.name == q['track'],
               orElse: () => BenchmarkTrack.codegen,
             ),
+      difficulty: _difficultyFromQuery(q['difficulty']),
+      tags: _tagFromQuery(q['tag']) == null
+          ? const {}
+          : {_tagFromQuery(q['tag'])!},
       dateRange: DateRange.fromQueryParam(q['since']),
       dimension: ScoreDimension.values.firstWhere(
         (d) => d.name == q['dim'],
@@ -77,10 +81,32 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     );
   }
 
+  TaskDifficulty? _difficultyFromQuery(String? raw) {
+    if (raw == null) return null;
+    for (final difficulty in TaskDifficulty.values) {
+      if (difficulty.name == raw && difficulty != TaskDifficulty.unspecified) {
+        return difficulty;
+      }
+    }
+    return null;
+  }
+
+  TaskTag? _tagFromQuery(String? raw) {
+    if (raw == null) return null;
+    for (final tag in TaskTag.values) {
+      if (tag.slug == raw || tag.name == raw) return tag;
+    }
+    return null;
+  }
+
   Set<String>? _taskIdsForCurrentCategory() {
-    if (_filter.category == null) return null;
+    if (!_filter.hasTaskMetadataFilter) return null;
     return widget.registry
-        .byCategory(_filter.category!)
+        .query(
+          category: _filter.category,
+          difficulty: _filter.difficulty,
+          tags: _filter.tags,
+        )
         .map((t) => t.id)
         .toSet();
   }
@@ -140,6 +166,10 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     if (_filter.category != null) qp['category'] = _filter.category!.name;
     if (_filter.providerId != null) qp['provider'] = _filter.providerId!;
     if (_filter.track != null) qp['track'] = _filter.track!.name;
+    if (_filter.difficulty != null) {
+      qp['difficulty'] = _filter.difficulty!.name;
+    }
+    if (_filter.tags.length == 1) qp['tag'] = _filter.tags.single.slug;
     if (_filter.dateRange != DateRange.allTime) {
       qp['since'] = _filter.dateRange.toQueryParam();
     }

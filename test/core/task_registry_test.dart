@@ -38,6 +38,8 @@ void main() {
     registry.register(_StubTask());
     expect(registry.byId('stub.one'), isA<_StubTask>());
     expect(registry.byCategory(Category.bugFix), hasLength(1));
+    expect(registry.byTrack(BenchmarkTrack.codegen), hasLength(1));
+    expect(registry.byDifficulty(TaskDifficulty.unspecified), hasLength(1));
   });
 
   test('duplicate id throws', () {
@@ -66,6 +68,32 @@ void main() {
       );
     },
   );
+
+  test('default metadata keeps legacy tasks filterable', () {
+    final task = _StubTask();
+
+    expect(task.tags, isEmpty);
+    expect(task.difficulty, TaskDifficulty.unspecified);
+    expect(task.timeout, isNull);
+    expect(task.platformRequirements, isEmpty);
+    expect(task.supportsPlatform(TaskPlatform.linux), isTrue);
+  });
+
+  test('registry queries tags, difficulty, track, and platform', () {
+    final registry = buildDefaultTaskRegistry();
+    final tasks = registry
+        .query(
+          track: BenchmarkTrack.agentic,
+          difficulty: TaskDifficulty.hard,
+          tags: const {TaskTag.navigation},
+          supportedPlatform: TaskPlatform.linux,
+        )
+        .map((task) => task.id)
+        .toList();
+
+    expect(tasks, contains('navigation.go_router_auth_redirect'));
+    expect(tasks, isNot(contains('state.bloc_debounce_cancellation')));
+  });
 }
 
 bool _isExcludedWorkspacePath(String relativePath) {

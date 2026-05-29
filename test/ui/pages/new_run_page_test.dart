@@ -120,6 +120,23 @@ Future<Widget> _wrap(Widget child) async {
   );
 }
 
+Future<void> _tapCheckboxTileByText(WidgetTester tester, String text) async {
+  final textFinder = find.text(text);
+  await tester.dragUntilVisible(
+    textFinder,
+    find.byType(ListView),
+    const Offset(0, -200),
+  );
+  await tester.pumpAndSettle();
+  final tile = find
+      .ancestor(of: textFinder, matching: find.byType(CheckboxListTile))
+      .last;
+  await tester.ensureVisible(tile);
+  await tester.pumpAndSettle();
+  await tester.tap(tile);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
@@ -175,8 +192,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('ListProv'));
-    await tester.pumpAndSettle();
+    await _tapCheckboxTileByText(tester, 'ListProv');
 
     expect(find.byType(FilterChip), findsNWidgets(4));
 
@@ -223,8 +239,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('ListProv'));
-    await tester.pumpAndSettle();
+    await _tapCheckboxTileByText(tester, 'ListProv');
 
     expect(find.byType(FilterChip), findsNWidgets(4));
 
@@ -263,8 +278,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Empty'));
-    await tester.pumpAndSettle();
+    await _tapCheckboxTileByText(tester, 'Empty');
 
     expect(find.text('Custom model ids (comma-separated)'), findsOneWidget);
 
@@ -299,8 +313,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('ListProv'));
-    await tester.pumpAndSettle();
+    await _tapCheckboxTileByText(tester, 'ListProv');
 
     await tester.dragUntilVisible(
       find.text('model-a'),
@@ -309,6 +322,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.text('model-a'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('model-a'));
     await tester.pumpAndSettle();
 
@@ -404,13 +419,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('ListProv'));
-    await tester.pumpAndSettle();
+    await _tapCheckboxTileByText(tester, 'ListProv');
 
-    final listFinder = find.byType(Scrollable).last;
-    await tester.drag(listFinder, const Offset(0, -700));
+    await tester.ensureVisible(find.text('model-a'));
     await tester.pumpAndSettle();
-
     await tester.tap(find.text('model-a'));
     await tester.pumpAndSettle();
 

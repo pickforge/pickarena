@@ -100,7 +100,7 @@ class AgenticRunOrchestrator {
         workspace: workspace,
         instruction: task.workspace.instruction ?? task.prompt,
         modelId: modelId,
-        timeout: const Duration(minutes: 30),
+        timeout: task.timeout ?? const Duration(minutes: 30),
       );
     } on Object catch (e) {
       harnessStopwatch.stop();

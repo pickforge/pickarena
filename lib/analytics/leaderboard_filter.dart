@@ -64,6 +64,8 @@ class LeaderboardFilter extends Equatable {
     this.category,
     this.providerId,
     this.track,
+    this.difficulty,
+    this.tags = const {},
     this.dateRange = DateRange.allTime,
     this.dimension = ScoreDimension.overall,
   });
@@ -71,8 +73,13 @@ class LeaderboardFilter extends Equatable {
   final Category? category;
   final String? providerId;
   final BenchmarkTrack? track;
+  final TaskDifficulty? difficulty;
+  final Set<TaskTag> tags;
   final DateRange dateRange;
   final ScoreDimension dimension;
+
+  bool get hasTaskMetadataFilter =>
+      category != null || difficulty != null || tags.isNotEmpty;
 
   LeaderboardFilter copyWith({
     Category? category,
@@ -81,12 +88,18 @@ class LeaderboardFilter extends Equatable {
     bool clearProviderId = false,
     BenchmarkTrack? track,
     bool clearTrack = false,
+    TaskDifficulty? difficulty,
+    bool clearDifficulty = false,
+    Set<TaskTag>? tags,
+    bool clearTags = false,
     DateRange? dateRange,
     ScoreDimension? dimension,
   }) => LeaderboardFilter(
     category: clearCategory ? null : (category ?? this.category),
     providerId: clearProviderId ? null : (providerId ?? this.providerId),
     track: clearTrack ? null : (track ?? this.track),
+    difficulty: clearDifficulty ? null : (difficulty ?? this.difficulty),
+    tags: clearTags ? const {} : (tags ?? this.tags),
     dateRange: dateRange ?? this.dateRange,
     dimension: dimension ?? this.dimension,
   );
@@ -96,6 +109,8 @@ class LeaderboardFilter extends Equatable {
     category,
     providerId,
     track,
+    difficulty,
+    tags,
     dateRange,
     dimension,
   ];

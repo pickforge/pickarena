@@ -1,13 +1,21 @@
+import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/storage/database.dart';
+import 'package:dart_arena/ui/widgets/task_metadata_chips.dart';
 import 'package:flutter/material.dart';
 
 typedef RunMatrixCellTap = void Function(TaskRun taskRun);
 
 class RunMatrix extends StatelessWidget {
-  const RunMatrix({super.key, required this.taskRuns, required this.onCellTap});
+  const RunMatrix({
+    super.key,
+    required this.taskRuns,
+    required this.onCellTap,
+    this.taskById = const {},
+  });
 
   final List<TaskRun> taskRuns;
   final RunMatrixCellTap onCellTap;
+  final Map<String, BenchmarkTask> taskById;
 
   List<String> get _taskIds {
     final seen = <String>{};
@@ -60,7 +68,7 @@ class RunMatrix extends StatelessWidget {
             for (final taskId in taskIds)
               DataRow(
                 cells: [
-                  DataCell(Text(taskId)),
+                  DataCell(_TaskCell(taskId: taskId, task: taskById[taskId])),
                   ...columns.map((c) {
                     final tr = _cell(taskId, c);
                     if (tr == null) {
@@ -85,6 +93,30 @@ class RunMatrix extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TaskCell extends StatelessWidget {
+  const _TaskCell({required this.taskId, required this.task});
+
+  final String taskId;
+  final BenchmarkTask? task;
+
+  @override
+  Widget build(BuildContext context) {
+    final task = this.task;
+    if (task == null) return Text(taskId);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(taskId),
+          TaskMetadataChips(task: task, compact: true),
+        ],
       ),
     );
   }

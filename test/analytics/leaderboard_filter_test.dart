@@ -10,6 +10,8 @@ void main() {
     expect(f.category, isNull);
     expect(f.providerId, isNull);
     expect(f.track, isNull);
+    expect(f.difficulty, isNull);
+    expect(f.tags, isEmpty);
     expect(f.dateRange, DateRange.allTime);
     expect(f.dimension, ScoreDimension.overall);
   });
@@ -40,6 +42,8 @@ void main() {
     expect(f2.category, Category.bugFix);
     expect(f2.providerId, isNull);
     expect(f2.track, isNull);
+    expect(f2.difficulty, isNull);
+    expect(f2.tags, isEmpty);
     expect(f2.dateRange, DateRange.allTime);
     expect(f2.dimension, ScoreDimension.overall);
   });
@@ -50,5 +54,19 @@ void main() {
     );
     expect(withTrack.track, BenchmarkTrack.agentic);
     expect(withTrack.copyWith(clearTrack: true).track, isNull);
+  });
+
+  test('LeaderboardFilter.copyWith can set and clear difficulty and tags', () {
+    final filtered = const LeaderboardFilter().copyWith(
+      difficulty: TaskDifficulty.hard,
+      tags: const {TaskTag.navigation},
+    );
+    expect(filtered.difficulty, TaskDifficulty.hard);
+    expect(filtered.tags, {TaskTag.navigation});
+    expect(filtered.hasTaskMetadataFilter, isTrue);
+
+    final cleared = filtered.copyWith(clearDifficulty: true, clearTags: true);
+    expect(cleared.difficulty, isNull);
+    expect(cleared.tags, isEmpty);
   });
 }

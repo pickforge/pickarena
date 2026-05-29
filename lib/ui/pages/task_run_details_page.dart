@@ -7,6 +7,7 @@ import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:dart_arena/ui/widgets/diff_view.dart';
 import 'package:dart_arena/ui/widgets/evaluator_card.dart';
 import 'package:dart_arena/ui/widgets/score_chip.dart';
+import 'package:dart_arena/ui/widgets/task_metadata_chips.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -153,6 +154,10 @@ class _Header extends StatelessWidget {
             '${tr.trajectoryLogPath == null ? '' : ' · Trajectory: ${tr.trajectoryLogPath}'}',
             style: Theme.of(context).textTheme.bodySmall,
           ),
+          if (bundle.task != null) ...[
+            const SizedBox(height: 6),
+            TaskMetadataChips(task: bundle.task!, compact: true),
+          ],
         ],
       ),
     );

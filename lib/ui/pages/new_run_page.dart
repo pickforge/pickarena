@@ -1,5 +1,6 @@
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
+import 'package:dart_arena/core/current_platform.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/providers/model_provider.dart';
@@ -7,6 +8,7 @@ import 'package:dart_arena/providers/provider_factory.dart';
 import 'package:dart_arena/runner/start_run_config.dart';
 import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
+import 'package:dart_arena/ui/widgets/task_metadata_chips.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -28,6 +30,11 @@ class _NewRunPageState extends State<NewRunPage> {
   final Map<String, Set<String>> _models = {};
   final Set<String> _selectedTaskIds = {};
   final _labelController = TextEditingController();
+  late final TaskPlatform _hostPlatform;
+  Category? _categoryFilter;
+  BenchmarkTrack? _trackFilter;
+  TaskDifficulty? _difficultyFilter;
+  TaskTag? _tagFilter;
   bool _loading = true;
   bool _useReferencePlan = false;
   int _maxConcurrency = 4;
@@ -36,8 +43,11 @@ class _NewRunPageState extends State<NewRunPage> {
   void initState() {
     super.initState();
     _registry = widget.registry ?? buildDefaultTaskRegistry();
+    _hostPlatform = currentTaskPlatform();
     for (final t in _registry.all()) {
-      _selectedTaskIds.add(t.id);
+      if (t.supportsPlatform(_hostPlatform)) {
+        _selectedTaskIds.add(t.id);
+      }
     }
     if (widget.providers != null) {
       _providers = widget.providers!;
@@ -91,6 +101,9 @@ class _NewRunPageState extends State<NewRunPage> {
         .all()
         .where((t) => _selectedTaskIds.contains(t.id))
         .toList();
+    if (selectedTasks.any((t) => !t.supportsPlatform(_hostPlatform))) {
+      return false;
+    }
     final selectedProviders = _providers
         .where((p) => _checkedProvider[p.id] == true)
         .toList();
@@ -147,6 +160,19 @@ class _NewRunPageState extends State<NewRunPage> {
                       _TaskPicker(
                         registry: _registry,
                         selected: _selectedTaskIds,
+                        hostPlatform: _hostPlatform,
+                        categoryFilter: _categoryFilter,
+                        trackFilter: _trackFilter,
+                        difficultyFilter: _difficultyFilter,
+                        tagFilter: _tagFilter,
+                        onCategoryFilterChanged: (v) =>
+                            setState(() => _categoryFilter = v),
+                        onTrackFilterChanged: (v) =>
+                            setState(() => _trackFilter = v),
+                        onDifficultyFilterChanged: (v) =>
+                            setState(() => _difficultyFilter = v),
+                        onTagFilterChanged: (v) =>
+                            setState(() => _tagFilter = v),
                         onChanged: (id, v) => setState(() {
                           if (v) {
                             _selectedTaskIds.add(id);
@@ -303,17 +329,41 @@ class _TaskPicker extends StatelessWidget {
   const _TaskPicker({
     required this.registry,
     required this.selected,
+    required this.hostPlatform,
+    required this.categoryFilter,
+    required this.trackFilter,
+    required this.difficultyFilter,
+    required this.tagFilter,
+    required this.onCategoryFilterChanged,
+    required this.onTrackFilterChanged,
+    required this.onDifficultyFilterChanged,
+    required this.onTagFilterChanged,
     required this.onChanged,
   });
 
   final TaskRegistry registry;
   final Set<String> selected;
+  final TaskPlatform hostPlatform;
+  final Category? categoryFilter;
+  final BenchmarkTrack? trackFilter;
+  final TaskDifficulty? difficultyFilter;
+  final TaskTag? tagFilter;
+  final ValueChanged<Category?> onCategoryFilterChanged;
+  final ValueChanged<BenchmarkTrack?> onTrackFilterChanged;
+  final ValueChanged<TaskDifficulty?> onDifficultyFilterChanged;
+  final ValueChanged<TaskTag?> onTagFilterChanged;
   final void Function(String taskId, bool selected) onChanged;
 
   @override
   Widget build(BuildContext context) {
     final byCategory = <Category, List<BenchmarkTask>>{};
-    for (final t in registry.all()) {
+    final filtered = registry.query(
+      category: categoryFilter,
+      track: trackFilter,
+      difficulty: difficultyFilter,
+      tags: tagFilter == null ? const {} : {tagFilter!},
+    );
+    for (final t in filtered) {
       byCategory.putIfAbsent(t.category, () => []).add(t);
     }
     return Column(
@@ -324,20 +374,131 @@ class _TaskPicker extends StatelessWidget {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            DropdownButton<Category?>(
+              key: const Key('task-category-filter'),
+              value: categoryFilter,
+              hint: const Text('All categories'),
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('All categories'),
+                ),
+                for (final category in Category.values)
+                  DropdownMenuItem(
+                    value: category,
+                    child: Text(category.label),
+                  ),
+              ],
+              onChanged: onCategoryFilterChanged,
+            ),
+            DropdownButton<BenchmarkTrack?>(
+              key: const Key('task-track-filter'),
+              value: trackFilter,
+              hint: const Text('All tracks'),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('All tracks')),
+                for (final track in BenchmarkTrack.values)
+                  DropdownMenuItem(value: track, child: Text(track.label)),
+              ],
+              onChanged: onTrackFilterChanged,
+            ),
+            DropdownButton<TaskDifficulty?>(
+              key: const Key('task-difficulty-filter'),
+              value: difficultyFilter,
+              hint: const Text('All difficulties'),
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('All difficulties'),
+                ),
+                for (final difficulty in TaskDifficulty.values)
+                  if (difficulty != TaskDifficulty.unspecified)
+                    DropdownMenuItem(
+                      value: difficulty,
+                      child: Text(difficulty.label),
+                    ),
+              ],
+              onChanged: onDifficultyFilterChanged,
+            ),
+            DropdownButton<TaskTag?>(
+              key: const Key('task-tag-filter'),
+              value: tagFilter,
+              hint: const Text('All tags'),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('All tags')),
+                for (final tag in TaskTag.values)
+                  DropdownMenuItem(value: tag, child: Text(tag.label)),
+              ],
+              onChanged: onTagFilterChanged,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (byCategory.isEmpty)
+          const Text('No tasks match the current filters.'),
         for (final category in byCategory.keys) ...[
           Text(
             category.label,
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           for (final t in byCategory[category]!)
-            CheckboxListTile(
-              value: selected.contains(t.id),
-              title: Text(t.id),
-              onChanged: (v) => onChanged(t.id, v ?? false),
+            _TaskRow(
+              task: t,
+              selected: selected.contains(t.id),
+              supported: t.supportsPlatform(hostPlatform),
+              onChanged: (v) => onChanged(t.id, v),
             ),
           const SizedBox(height: 8),
         ],
       ],
+    );
+  }
+}
+
+class _TaskRow extends StatelessWidget {
+  const _TaskRow({
+    required this.task,
+    required this.selected,
+    required this.supported,
+    required this.onChanged,
+  });
+
+  final BenchmarkTask task;
+  final bool selected;
+  final bool supported;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final showMetadata =
+        task.tags.isNotEmpty ||
+        task.difficulty != TaskDifficulty.unspecified ||
+        task.platformRequirements.isNotEmpty ||
+        task.timeout != null ||
+        task.track != BenchmarkTrack.codegen ||
+        task.version != 1;
+    return CheckboxListTile(
+      dense: true,
+      value: selected && supported,
+      title: Text(task.id),
+      subtitle: showMetadata || !supported
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (showMetadata) TaskMetadataChips(task: task, compact: true),
+                if (!supported)
+                  const Text(
+                    'Unsupported on this host platform; skipped for new runs.',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+              ],
+            )
+          : null,
+      onChanged: supported ? (v) => onChanged(v ?? false) : null,
     );
   }
 }

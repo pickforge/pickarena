@@ -102,6 +102,23 @@ Future<Widget> _wrap(Widget child) async {
   );
 }
 
+Future<void> _tapCheckboxTileByText(WidgetTester tester, String text) async {
+  final textFinder = find.text(text);
+  await tester.dragUntilVisible(
+    textFinder,
+    find.byType(ListView),
+    const Offset(0, -200),
+  );
+  await tester.pumpAndSettle();
+  final tile = find
+      .ancestor(of: textFinder, matching: find.byType(CheckboxListTile))
+      .last;
+  await tester.ensureVisible(tile);
+  await tester.pumpAndSettle();
+  await tester.tap(tile);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
@@ -196,7 +213,10 @@ void main() {
     await tester.tap(find.byType(SwitchListTile));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Fake'));
+    await _tapCheckboxTileByText(tester, 'Fake');
+    await tester.ensureVisible(
+      find.widgetWithText(TextField, 'Custom model ids (comma-separated)'),
+    );
     await tester.pumpAndSettle();
     await tester.enterText(
       find.widgetWithText(TextField, 'Custom model ids (comma-separated)'),
