@@ -1,0 +1,88 @@
+import 'package:dart_arena/analytics/result_primitives.dart';
+import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/model_response.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+EvaluationResult _ev(String id, bool passed) => EvaluationResult(
+  evaluatorId: id,
+  passed: passed,
+  score: passed ? 1.0 : 0.0,
+);
+
+void main() {
+  test('hidden verifier determines primary pass when present', () {
+    final primitives = determineResultPrimitives(
+      evaluations: [_ev('compile', true), _ev('hidden_test', false)],
+      aggregateScore: 1.0,
+      response: const ModelResponse(
+        rawText: 'code',
+        extractedCode: 'code',
+        promptTokens: null,
+        completionTokens: null,
+        latency: Duration.zero,
+      ),
+    );
+
+    expect(primitives.primaryPass, isFalse);
+    expect(primitives.failureTag, 'hidden_verifier_failed');
+  });
+
+  test('correctness evaluators determine pass before aggregate fallback', () {
+    final primitives = determineResultPrimitives(
+      evaluations: [_ev('compile', true), _ev('test', false)],
+      aggregateScore: 0.9,
+    );
+
+    expect(primitives.primaryPass, isFalse);
+    expect(primitives.failureTag, 'public_tests_failed');
+  });
+
+  test('aggregate score is fallback when correctness is absent', () {
+    final primitives = determineResultPrimitives(
+      evaluations: [_ev('llm_judge', false)],
+      aggregateScore: 0.6,
+    );
+
+    expect(primitives.primaryPass, isTrue);
+    expect(primitives.failureTag, 'pass');
+  });
+
+  test('failure tag precedence is stable', () {
+    final primitives = determineResultPrimitives(
+      evaluations: [
+        _ev('hidden_test', false),
+        _ev('compile', false),
+        const EvaluationResult(
+          evaluatorId: 'combo_failure',
+          passed: false,
+          score: 0,
+          rationale: 'request timeout',
+          details: {'error': 'TimeoutException'},
+        ),
+      ],
+      aggregateScore: 0,
+    );
+
+    expect(primitives.failureTag, 'harness_timeout');
+  });
+
+  test(
+    'empty output is classified as invalid output when failing fallback',
+    () {
+      final primitives = determineResultPrimitives(
+        evaluations: const [],
+        aggregateScore: 0,
+        response: const ModelResponse(
+          rawText: '',
+          extractedCode: null,
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration.zero,
+        ),
+      );
+
+      expect(primitives.primaryPass, isFalse);
+      expect(primitives.failureTag, 'invalid_output');
+    },
+  );
+}

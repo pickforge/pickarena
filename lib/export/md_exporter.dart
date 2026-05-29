@@ -12,12 +12,12 @@ String runSummaryToMarkdown(RunSummary s) {
   buf.writeln();
 
   buf.writeln(
-    '| Task | Provider | Model | Aggregate '
+    '| Task | Provider | Model | Trial | Task Version | Track | Harness | Primary Pass | Failure | Aggregate '
     '| compile | analyze | test | hidden_test | widget_tree | llm_judge | diff_size '
     '| Latency |',
   );
   buf.writeln(
-    '|------|----------|-------|-----------'
+    '|------|----------|-------|-------|--------------|-------|---------|--------------|---------|-----------'
     '|---------|---------|------|-------------|-------------|-----------|-----------'
     '|---------|',
   );
@@ -29,6 +29,9 @@ String runSummaryToMarkdown(RunSummary s) {
     String fmt(String id) => (evals[id] ?? 0).toStringAsFixed(2);
     buf.writeln(
       '| ${tr.taskId} | ${tr.providerId} | ${tr.modelId} '
+      '| ${tr.trialIndex} | ${tr.taskVersion} | ${tr.benchmarkTrack} '
+      '| ${tr.harnessId ?? ''} | ${tr.primaryPass?.toString() ?? ''} '
+      '| ${tr.failureTag ?? ''} '
       '| **${tr.aggregateScore.toStringAsFixed(2)}** '
       '| ${fmt('compile')} | ${fmt('analyze')} | ${fmt('test')} '
       '| ${fmt('hidden_test')} | ${fmt('widget_tree')} '

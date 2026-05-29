@@ -6,6 +6,7 @@ TaskRun _tr({
   required String id,
   required double aggregate,
   int latencyMs = 5000,
+  bool? primaryPass,
 }) => TaskRun(
   id: id,
   runId: 'r1',
@@ -18,6 +19,12 @@ TaskRun _tr({
   latencyMs: latencyMs,
   aggregateScore: aggregate,
   completedAt: DateTime(2026, 5, 3),
+  trialIndex: 0,
+  taskVersion: 1,
+  benchmarkTrack: 'codegen',
+  harnessId: null,
+  primaryPass: primaryPass,
+  failureTag: null,
 );
 
 Evaluation _ev({
@@ -69,6 +76,15 @@ void main() {
       final d = Dimensions.fromTaskRuns([
         _tr(id: '1', aggregate: 0.8),
         _tr(id: '2', aggregate: 0.49),
+      ], const {});
+      expect(d.reliability, 0.5);
+    });
+
+    test('uses primaryPass when present instead of aggregate score', () {
+      final d = Dimensions.fromTaskRuns([
+        _tr(id: '1', aggregate: 0.1, primaryPass: true),
+        _tr(id: '2', aggregate: 1.0, primaryPass: false),
+        _tr(id: '3', aggregate: 1.0),
       ], const {});
       expect(d.reliability, 0.5);
     });

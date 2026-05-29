@@ -16,6 +16,12 @@ TaskRun _tr(String taskId, String providerId, String modelId, double score) =>
       latencyMs: 1,
       aggregateScore: score,
       completedAt: DateTime(2026, 5, 2),
+      trialIndex: 0,
+      taskVersion: 1,
+      benchmarkTrack: 'codegen',
+      harnessId: null,
+      primaryPass: null,
+      failureTag: null,
     );
 
 void main() {

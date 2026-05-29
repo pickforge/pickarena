@@ -934,6 +934,78 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
       'REFERENCES plans (id)',
     ),
   );
+  static const VerificationMeta _trialIndexMeta = const VerificationMeta(
+    'trialIndex',
+  );
+  @override
+  late final GeneratedColumn<int> trialIndex = GeneratedColumn<int>(
+    'trial_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _taskVersionMeta = const VerificationMeta(
+    'taskVersion',
+  );
+  @override
+  late final GeneratedColumn<int> taskVersion = GeneratedColumn<int>(
+    'task_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _benchmarkTrackMeta = const VerificationMeta(
+    'benchmarkTrack',
+  );
+  @override
+  late final GeneratedColumn<String> benchmarkTrack = GeneratedColumn<String>(
+    'benchmark_track',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('codegen'),
+  );
+  static const VerificationMeta _harnessIdMeta = const VerificationMeta(
+    'harnessId',
+  );
+  @override
+  late final GeneratedColumn<String> harnessId = GeneratedColumn<String>(
+    'harness_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _primaryPassMeta = const VerificationMeta(
+    'primaryPass',
+  );
+  @override
+  late final GeneratedColumn<bool> primaryPass = GeneratedColumn<bool>(
+    'primary_pass',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("primary_pass" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _failureTagMeta = const VerificationMeta(
+    'failureTag',
+  );
+  @override
+  late final GeneratedColumn<String> failureTag = GeneratedColumn<String>(
+    'failure_tag',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -948,6 +1020,12 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
     aggregateScore,
     completedAt,
     planId,
+    trialIndex,
+    taskVersion,
+    benchmarkTrack,
+    harnessId,
+    primaryPass,
+    failureTag,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1063,6 +1141,51 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
         planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
       );
     }
+    if (data.containsKey('trial_index')) {
+      context.handle(
+        _trialIndexMeta,
+        trialIndex.isAcceptableOrUnknown(data['trial_index']!, _trialIndexMeta),
+      );
+    }
+    if (data.containsKey('task_version')) {
+      context.handle(
+        _taskVersionMeta,
+        taskVersion.isAcceptableOrUnknown(
+          data['task_version']!,
+          _taskVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('benchmark_track')) {
+      context.handle(
+        _benchmarkTrackMeta,
+        benchmarkTrack.isAcceptableOrUnknown(
+          data['benchmark_track']!,
+          _benchmarkTrackMeta,
+        ),
+      );
+    }
+    if (data.containsKey('harness_id')) {
+      context.handle(
+        _harnessIdMeta,
+        harnessId.isAcceptableOrUnknown(data['harness_id']!, _harnessIdMeta),
+      );
+    }
+    if (data.containsKey('primary_pass')) {
+      context.handle(
+        _primaryPassMeta,
+        primaryPass.isAcceptableOrUnknown(
+          data['primary_pass']!,
+          _primaryPassMeta,
+        ),
+      );
+    }
+    if (data.containsKey('failure_tag')) {
+      context.handle(
+        _failureTagMeta,
+        failureTag.isAcceptableOrUnknown(data['failure_tag']!, _failureTagMeta),
+      );
+    }
     return context;
   }
 
@@ -1120,6 +1243,30 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
         DriftSqlType.string,
         data['${effectivePrefix}plan_id'],
       ),
+      trialIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}trial_index'],
+      )!,
+      taskVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}task_version'],
+      )!,
+      benchmarkTrack: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}benchmark_track'],
+      )!,
+      harnessId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}harness_id'],
+      ),
+      primaryPass: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}primary_pass'],
+      ),
+      failureTag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}failure_tag'],
+      ),
     );
   }
 
@@ -1142,6 +1289,12 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
   final double aggregateScore;
   final DateTime completedAt;
   final String? planId;
+  final int trialIndex;
+  final int taskVersion;
+  final String benchmarkTrack;
+  final String? harnessId;
+  final bool? primaryPass;
+  final String? failureTag;
   const TaskRun({
     required this.id,
     required this.runId,
@@ -1155,6 +1308,12 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     required this.aggregateScore,
     required this.completedAt,
     this.planId,
+    required this.trialIndex,
+    required this.taskVersion,
+    required this.benchmarkTrack,
+    this.harnessId,
+    this.primaryPass,
+    this.failureTag,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1176,6 +1335,18 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     map['completed_at'] = Variable<DateTime>(completedAt);
     if (!nullToAbsent || planId != null) {
       map['plan_id'] = Variable<String>(planId);
+    }
+    map['trial_index'] = Variable<int>(trialIndex);
+    map['task_version'] = Variable<int>(taskVersion);
+    map['benchmark_track'] = Variable<String>(benchmarkTrack);
+    if (!nullToAbsent || harnessId != null) {
+      map['harness_id'] = Variable<String>(harnessId);
+    }
+    if (!nullToAbsent || primaryPass != null) {
+      map['primary_pass'] = Variable<bool>(primaryPass);
+    }
+    if (!nullToAbsent || failureTag != null) {
+      map['failure_tag'] = Variable<String>(failureTag);
     }
     return map;
   }
@@ -1200,6 +1371,18 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
       planId: planId == null && nullToAbsent
           ? const Value.absent()
           : Value(planId),
+      trialIndex: Value(trialIndex),
+      taskVersion: Value(taskVersion),
+      benchmarkTrack: Value(benchmarkTrack),
+      harnessId: harnessId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(harnessId),
+      primaryPass: primaryPass == null && nullToAbsent
+          ? const Value.absent()
+          : Value(primaryPass),
+      failureTag: failureTag == null && nullToAbsent
+          ? const Value.absent()
+          : Value(failureTag),
     );
   }
 
@@ -1221,6 +1404,12 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
       aggregateScore: serializer.fromJson<double>(json['aggregateScore']),
       completedAt: serializer.fromJson<DateTime>(json['completedAt']),
       planId: serializer.fromJson<String?>(json['planId']),
+      trialIndex: serializer.fromJson<int>(json['trialIndex']),
+      taskVersion: serializer.fromJson<int>(json['taskVersion']),
+      benchmarkTrack: serializer.fromJson<String>(json['benchmarkTrack']),
+      harnessId: serializer.fromJson<String?>(json['harnessId']),
+      primaryPass: serializer.fromJson<bool?>(json['primaryPass']),
+      failureTag: serializer.fromJson<String?>(json['failureTag']),
     );
   }
   @override
@@ -1239,6 +1428,12 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
       'aggregateScore': serializer.toJson<double>(aggregateScore),
       'completedAt': serializer.toJson<DateTime>(completedAt),
       'planId': serializer.toJson<String?>(planId),
+      'trialIndex': serializer.toJson<int>(trialIndex),
+      'taskVersion': serializer.toJson<int>(taskVersion),
+      'benchmarkTrack': serializer.toJson<String>(benchmarkTrack),
+      'harnessId': serializer.toJson<String?>(harnessId),
+      'primaryPass': serializer.toJson<bool?>(primaryPass),
+      'failureTag': serializer.toJson<String?>(failureTag),
     };
   }
 
@@ -1255,6 +1450,12 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     double? aggregateScore,
     DateTime? completedAt,
     Value<String?> planId = const Value.absent(),
+    int? trialIndex,
+    int? taskVersion,
+    String? benchmarkTrack,
+    Value<String?> harnessId = const Value.absent(),
+    Value<bool?> primaryPass = const Value.absent(),
+    Value<String?> failureTag = const Value.absent(),
   }) => TaskRun(
     id: id ?? this.id,
     runId: runId ?? this.runId,
@@ -1270,6 +1471,12 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     aggregateScore: aggregateScore ?? this.aggregateScore,
     completedAt: completedAt ?? this.completedAt,
     planId: planId.present ? planId.value : this.planId,
+    trialIndex: trialIndex ?? this.trialIndex,
+    taskVersion: taskVersion ?? this.taskVersion,
+    benchmarkTrack: benchmarkTrack ?? this.benchmarkTrack,
+    harnessId: harnessId.present ? harnessId.value : this.harnessId,
+    primaryPass: primaryPass.present ? primaryPass.value : this.primaryPass,
+    failureTag: failureTag.present ? failureTag.value : this.failureTag,
   );
   TaskRun copyWithCompanion(TaskRunsCompanion data) {
     return TaskRun(
@@ -1297,6 +1504,22 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
           ? data.completedAt.value
           : this.completedAt,
       planId: data.planId.present ? data.planId.value : this.planId,
+      trialIndex: data.trialIndex.present
+          ? data.trialIndex.value
+          : this.trialIndex,
+      taskVersion: data.taskVersion.present
+          ? data.taskVersion.value
+          : this.taskVersion,
+      benchmarkTrack: data.benchmarkTrack.present
+          ? data.benchmarkTrack.value
+          : this.benchmarkTrack,
+      harnessId: data.harnessId.present ? data.harnessId.value : this.harnessId,
+      primaryPass: data.primaryPass.present
+          ? data.primaryPass.value
+          : this.primaryPass,
+      failureTag: data.failureTag.present
+          ? data.failureTag.value
+          : this.failureTag,
     );
   }
 
@@ -1314,7 +1537,13 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
           ..write('latencyMs: $latencyMs, ')
           ..write('aggregateScore: $aggregateScore, ')
           ..write('completedAt: $completedAt, ')
-          ..write('planId: $planId')
+          ..write('planId: $planId, ')
+          ..write('trialIndex: $trialIndex, ')
+          ..write('taskVersion: $taskVersion, ')
+          ..write('benchmarkTrack: $benchmarkTrack, ')
+          ..write('harnessId: $harnessId, ')
+          ..write('primaryPass: $primaryPass, ')
+          ..write('failureTag: $failureTag')
           ..write(')'))
         .toString();
   }
@@ -1333,6 +1562,12 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     aggregateScore,
     completedAt,
     planId,
+    trialIndex,
+    taskVersion,
+    benchmarkTrack,
+    harnessId,
+    primaryPass,
+    failureTag,
   );
   @override
   bool operator ==(Object other) =>
@@ -1349,7 +1584,13 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
           other.latencyMs == this.latencyMs &&
           other.aggregateScore == this.aggregateScore &&
           other.completedAt == this.completedAt &&
-          other.planId == this.planId);
+          other.planId == this.planId &&
+          other.trialIndex == this.trialIndex &&
+          other.taskVersion == this.taskVersion &&
+          other.benchmarkTrack == this.benchmarkTrack &&
+          other.harnessId == this.harnessId &&
+          other.primaryPass == this.primaryPass &&
+          other.failureTag == this.failureTag);
 }
 
 class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
@@ -1365,6 +1606,12 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
   final Value<double> aggregateScore;
   final Value<DateTime> completedAt;
   final Value<String?> planId;
+  final Value<int> trialIndex;
+  final Value<int> taskVersion;
+  final Value<String> benchmarkTrack;
+  final Value<String?> harnessId;
+  final Value<bool?> primaryPass;
+  final Value<String?> failureTag;
   final Value<int> rowid;
   const TaskRunsCompanion({
     this.id = const Value.absent(),
@@ -1379,6 +1626,12 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     this.aggregateScore = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.planId = const Value.absent(),
+    this.trialIndex = const Value.absent(),
+    this.taskVersion = const Value.absent(),
+    this.benchmarkTrack = const Value.absent(),
+    this.harnessId = const Value.absent(),
+    this.primaryPass = const Value.absent(),
+    this.failureTag = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TaskRunsCompanion.insert({
@@ -1394,6 +1647,12 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     required double aggregateScore,
     required DateTime completedAt,
     this.planId = const Value.absent(),
+    this.trialIndex = const Value.absent(),
+    this.taskVersion = const Value.absent(),
+    this.benchmarkTrack = const Value.absent(),
+    this.harnessId = const Value.absent(),
+    this.primaryPass = const Value.absent(),
+    this.failureTag = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        runId = Value(runId),
@@ -1417,6 +1676,12 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     Expression<double>? aggregateScore,
     Expression<DateTime>? completedAt,
     Expression<String>? planId,
+    Expression<int>? trialIndex,
+    Expression<int>? taskVersion,
+    Expression<String>? benchmarkTrack,
+    Expression<String>? harnessId,
+    Expression<bool>? primaryPass,
+    Expression<String>? failureTag,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1432,6 +1697,12 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
       if (aggregateScore != null) 'aggregate_score': aggregateScore,
       if (completedAt != null) 'completed_at': completedAt,
       if (planId != null) 'plan_id': planId,
+      if (trialIndex != null) 'trial_index': trialIndex,
+      if (taskVersion != null) 'task_version': taskVersion,
+      if (benchmarkTrack != null) 'benchmark_track': benchmarkTrack,
+      if (harnessId != null) 'harness_id': harnessId,
+      if (primaryPass != null) 'primary_pass': primaryPass,
+      if (failureTag != null) 'failure_tag': failureTag,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1449,6 +1720,12 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     Value<double>? aggregateScore,
     Value<DateTime>? completedAt,
     Value<String?>? planId,
+    Value<int>? trialIndex,
+    Value<int>? taskVersion,
+    Value<String>? benchmarkTrack,
+    Value<String?>? harnessId,
+    Value<bool?>? primaryPass,
+    Value<String?>? failureTag,
     Value<int>? rowid,
   }) {
     return TaskRunsCompanion(
@@ -1464,6 +1741,12 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
       aggregateScore: aggregateScore ?? this.aggregateScore,
       completedAt: completedAt ?? this.completedAt,
       planId: planId ?? this.planId,
+      trialIndex: trialIndex ?? this.trialIndex,
+      taskVersion: taskVersion ?? this.taskVersion,
+      benchmarkTrack: benchmarkTrack ?? this.benchmarkTrack,
+      harnessId: harnessId ?? this.harnessId,
+      primaryPass: primaryPass ?? this.primaryPass,
+      failureTag: failureTag ?? this.failureTag,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1507,6 +1790,24 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     if (planId.present) {
       map['plan_id'] = Variable<String>(planId.value);
     }
+    if (trialIndex.present) {
+      map['trial_index'] = Variable<int>(trialIndex.value);
+    }
+    if (taskVersion.present) {
+      map['task_version'] = Variable<int>(taskVersion.value);
+    }
+    if (benchmarkTrack.present) {
+      map['benchmark_track'] = Variable<String>(benchmarkTrack.value);
+    }
+    if (harnessId.present) {
+      map['harness_id'] = Variable<String>(harnessId.value);
+    }
+    if (primaryPass.present) {
+      map['primary_pass'] = Variable<bool>(primaryPass.value);
+    }
+    if (failureTag.present) {
+      map['failure_tag'] = Variable<String>(failureTag.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1528,6 +1829,12 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
           ..write('aggregateScore: $aggregateScore, ')
           ..write('completedAt: $completedAt, ')
           ..write('planId: $planId, ')
+          ..write('trialIndex: $trialIndex, ')
+          ..write('taskVersion: $taskVersion, ')
+          ..write('benchmarkTrack: $benchmarkTrack, ')
+          ..write('harnessId: $harnessId, ')
+          ..write('primaryPass: $primaryPass, ')
+          ..write('failureTag: $failureTag, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2653,6 +2960,12 @@ typedef $$TaskRunsTableCreateCompanionBuilder =
       required double aggregateScore,
       required DateTime completedAt,
       Value<String?> planId,
+      Value<int> trialIndex,
+      Value<int> taskVersion,
+      Value<String> benchmarkTrack,
+      Value<String?> harnessId,
+      Value<bool?> primaryPass,
+      Value<String?> failureTag,
       Value<int> rowid,
     });
 typedef $$TaskRunsTableUpdateCompanionBuilder =
@@ -2669,6 +2982,12 @@ typedef $$TaskRunsTableUpdateCompanionBuilder =
       Value<double> aggregateScore,
       Value<DateTime> completedAt,
       Value<String?> planId,
+      Value<int> trialIndex,
+      Value<int> taskVersion,
+      Value<String> benchmarkTrack,
+      Value<String?> harnessId,
+      Value<bool?> primaryPass,
+      Value<String?> failureTag,
       Value<int> rowid,
     });
 
@@ -2786,6 +3105,36 @@ class $$TaskRunsTableFilterComposer
 
   ColumnFilters<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get trialIndex => $composableBuilder(
+    column: $table.trialIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taskVersion => $composableBuilder(
+    column: $table.taskVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get benchmarkTrack => $composableBuilder(
+    column: $table.benchmarkTrack,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get harnessId => $composableBuilder(
+    column: $table.harnessId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get primaryPass => $composableBuilder(
+    column: $table.primaryPass,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get failureTag => $composableBuilder(
+    column: $table.failureTag,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2920,6 +3269,36 @@ class $$TaskRunsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get trialIndex => $composableBuilder(
+    column: $table.trialIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taskVersion => $composableBuilder(
+    column: $table.taskVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get benchmarkTrack => $composableBuilder(
+    column: $table.benchmarkTrack,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get harnessId => $composableBuilder(
+    column: $table.harnessId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get primaryPass => $composableBuilder(
+    column: $table.primaryPass,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get failureTag => $composableBuilder(
+    column: $table.failureTag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RunsTableOrderingComposer get runId {
     final $$RunsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3015,6 +3394,34 @@ class $$TaskRunsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get trialIndex => $composableBuilder(
+    column: $table.trialIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get taskVersion => $composableBuilder(
+    column: $table.taskVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get benchmarkTrack => $composableBuilder(
+    column: $table.benchmarkTrack,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get harnessId =>
+      $composableBuilder(column: $table.harnessId, builder: (column) => column);
+
+  GeneratedColumn<bool> get primaryPass => $composableBuilder(
+    column: $table.primaryPass,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get failureTag => $composableBuilder(
+    column: $table.failureTag,
     builder: (column) => column,
   );
 
@@ -3134,6 +3541,12 @@ class $$TaskRunsTableTableManager
                 Value<double> aggregateScore = const Value.absent(),
                 Value<DateTime> completedAt = const Value.absent(),
                 Value<String?> planId = const Value.absent(),
+                Value<int> trialIndex = const Value.absent(),
+                Value<int> taskVersion = const Value.absent(),
+                Value<String> benchmarkTrack = const Value.absent(),
+                Value<String?> harnessId = const Value.absent(),
+                Value<bool?> primaryPass = const Value.absent(),
+                Value<String?> failureTag = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TaskRunsCompanion(
                 id: id,
@@ -3148,6 +3561,12 @@ class $$TaskRunsTableTableManager
                 aggregateScore: aggregateScore,
                 completedAt: completedAt,
                 planId: planId,
+                trialIndex: trialIndex,
+                taskVersion: taskVersion,
+                benchmarkTrack: benchmarkTrack,
+                harnessId: harnessId,
+                primaryPass: primaryPass,
+                failureTag: failureTag,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3164,6 +3583,12 @@ class $$TaskRunsTableTableManager
                 required double aggregateScore,
                 required DateTime completedAt,
                 Value<String?> planId = const Value.absent(),
+                Value<int> trialIndex = const Value.absent(),
+                Value<int> taskVersion = const Value.absent(),
+                Value<String> benchmarkTrack = const Value.absent(),
+                Value<String?> harnessId = const Value.absent(),
+                Value<bool?> primaryPass = const Value.absent(),
+                Value<String?> failureTag = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TaskRunsCompanion.insert(
                 id: id,
@@ -3178,6 +3603,12 @@ class $$TaskRunsTableTableManager
                 aggregateScore: aggregateScore,
                 completedAt: completedAt,
                 planId: planId,
+                trialIndex: trialIndex,
+                taskVersion: taskVersion,
+                benchmarkTrack: benchmarkTrack,
+                harnessId: harnessId,
+                primaryPass: primaryPass,
+                failureTag: failureTag,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

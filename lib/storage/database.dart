@@ -31,6 +31,13 @@ class TaskRuns extends Table {
   RealColumn get aggregateScore => real()();
   DateTimeColumn get completedAt => dateTime()();
   TextColumn get planId => text().nullable().references(Plans, #id)();
+  IntColumn get trialIndex => integer().withDefault(const Constant(0))();
+  IntColumn get taskVersion => integer().withDefault(const Constant(1))();
+  TextColumn get benchmarkTrack =>
+      text().withDefault(const Constant('codegen'))();
+  TextColumn get harnessId => text().nullable()();
+  BoolColumn get primaryPass => boolean().nullable()();
+  TextColumn get failureTag => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -66,7 +73,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -77,6 +84,14 @@ class AppDatabase extends _$AppDatabase {
       if (from < 3) {
         await m.createTable(plans);
         await m.addColumn(taskRuns, taskRuns.planId);
+      }
+      if (from < 4) {
+        await m.addColumn(taskRuns, taskRuns.trialIndex);
+        await m.addColumn(taskRuns, taskRuns.taskVersion);
+        await m.addColumn(taskRuns, taskRuns.benchmarkTrack);
+        await m.addColumn(taskRuns, taskRuns.harnessId);
+        await m.addColumn(taskRuns, taskRuns.primaryPass);
+        await m.addColumn(taskRuns, taskRuns.failureTag);
       }
     },
   );

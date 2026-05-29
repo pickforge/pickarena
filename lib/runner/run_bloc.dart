@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:dart_arena/analytics/result_primitives.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/code_extractor.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
@@ -28,6 +29,7 @@ class _Combo {
     required this.task,
     required this.provider,
     required this.modelId,
+    required this.trialIndex,
     required this.planId,
     required this.planMarkdown,
     required this.label,
@@ -37,6 +39,7 @@ class _Combo {
   final BenchmarkTask task;
   final ModelProvider provider;
   final String modelId;
+  final int trialIndex;
   final String? planId;
   final String? planMarkdown;
   final String label;
@@ -223,6 +226,13 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       failedAt: now(),
     );
 
+    final failureEvaluation = EvaluationResult(
+      evaluatorId: 'combo_failure',
+      passed: false,
+      score: 0.0,
+      rationale: 'combo failed during run: $error',
+      details: {'phase': 'run', 'error': '$error'},
+    );
     final synthetic = TaskRunResult(
       runId: _currentRunId,
       providerId: combo.provider.id,
@@ -235,17 +245,15 @@ class RunBloc extends Bloc<RunEvent, RunState> {
         completionTokens: null,
         latency: Duration.zero,
       ),
-      evaluations: [
-        EvaluationResult(
-          evaluatorId: 'combo_failure',
-          passed: false,
-          score: 0.0,
-          rationale: 'combo failed during run: $error',
-          details: {'phase': 'run', 'error': '$error'},
-        ),
-      ],
+      evaluations: [failureEvaluation],
       aggregateScore: 0.0,
       completedAt: now(),
+      trialIndex: combo.trialIndex,
+      primaryPass: false,
+      failureTag: determineFailureTag(
+        primaryPass: false,
+        evaluations: [failureEvaluation],
+      ),
       planId: combo.planId,
     );
 
@@ -315,6 +323,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       normalizedModels[provider.id] = deduped;
     }
 
+    final trialsPerTask = event.trialsPerTask < 1 ? 1 : event.trialsPerTask;
     final combos = <_Combo>[];
     var idx = 0;
     for (final task in event.tasks) {
@@ -322,18 +331,26 @@ class RunBloc extends Bloc<RunEvent, RunState> {
         final models = normalizedModels[provider.id];
         if (models == null) continue;
         for (final modelId in models) {
-          combos.add(
-            _Combo(
-              index: idx,
-              task: task,
-              provider: provider,
-              modelId: modelId,
-              planId: null,
-              planMarkdown: null,
-              label: '${provider.displayName} / $modelId on ${task.id}',
-            ),
-          );
-          idx++;
+          for (var trialIndex = 0; trialIndex < trialsPerTask; trialIndex++) {
+            final baseLabel =
+                '${provider.displayName} / $modelId on ${task.id}';
+            final label = trialsPerTask == 1
+                ? baseLabel
+                : '$baseLabel (trial ${trialIndex + 1}/$trialsPerTask)';
+            combos.add(
+              _Combo(
+                index: idx,
+                task: task,
+                provider: provider,
+                modelId: modelId,
+                trialIndex: trialIndex,
+                planId: null,
+                planMarkdown: null,
+                label: label,
+              ),
+            );
+            idx++;
+          }
         }
       }
     }
@@ -392,6 +409,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
           task: cb.task,
           provider: cb.provider,
           modelId: cb.modelId,
+          trialIndex: cb.trialIndex,
           planId: planIdsByTask[taskId],
           planMarkdown: planMarkdownsByTask[taskId],
           label: cb.label,
@@ -436,6 +454,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
         providerId: combo.provider.id,
         modelId: combo.modelId,
         taskId: combo.task.id,
+        trialIndex: combo.trialIndex,
       );
     } catch (_) {
       _retrying.remove(event.failedIndex);
@@ -637,6 +656,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       fixtures: task.fixtures,
       generatedCode: extracted,
       generatedCodePath: task.generatedCodePath,
+      trialIndex: combo.trialIndex,
     );
 
     updateActive(
@@ -690,6 +710,11 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     _emitProgress(emit);
 
     final aggregateScore = aggregate(evaluations, weights);
+    final primitives = determineResultPrimitives(
+      evaluations: evaluations,
+      aggregateScore: aggregateScore,
+      response: responseWithCode,
+    );
 
     return TaskRunResult(
       runId: runId,
@@ -700,6 +725,9 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       evaluations: evaluations,
       aggregateScore: aggregateScore,
       completedAt: now(),
+      trialIndex: combo.trialIndex,
+      primaryPass: primitives.primaryPass,
+      failureTag: primitives.failureTag,
       planId: combo.planId,
     );
   }

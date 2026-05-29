@@ -39,12 +39,59 @@ void main() {
     final loaded = await dao.taskRunsForRun('r1');
     expect(loaded, hasLength(1));
     expect(loaded.first.aggregateScore, 1.0);
+    expect(loaded.first.trialIndex, 0);
+    expect(loaded.first.taskVersion, 1);
+    expect(loaded.first.benchmarkTrack, 'codegen');
+    expect(loaded.first.harnessId, isNull);
+    expect(loaded.first.primaryPass, isNull);
+    expect(loaded.first.failureTag, isNull);
     expect(
       jsonDecode(
         (await dao.evaluationsForTaskRun(loaded.first.id)).first.detailsJson,
       ),
       isMap,
     );
+
+    await db.close();
+  });
+
+  test('persistTaskRun stores result primitive metadata', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+
+    await dao.startRun(runId: 'r-meta', startedAt: DateTime(2026, 5, 2));
+    await dao.persistTaskRun(
+      TaskRunResult(
+        runId: 'r-meta',
+        providerId: 'p',
+        modelId: 'm',
+        taskId: 't',
+        response: const ModelResponse(
+          rawText: 'ok',
+          extractedCode: 'ok',
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration(milliseconds: 10),
+        ),
+        evaluations: const [],
+        aggregateScore: 1.0,
+        completedAt: DateTime(2026, 5, 2, 12),
+        trialIndex: 2,
+        taskVersion: 3,
+        benchmarkTrack: 'planning',
+        harnessId: 'h1',
+        primaryPass: true,
+        failureTag: 'pass',
+      ),
+    );
+
+    final row = (await dao.taskRunsForRun('r-meta')).single;
+    expect(row.trialIndex, 2);
+    expect(row.taskVersion, 3);
+    expect(row.benchmarkTrack, 'planning');
+    expect(row.harnessId, 'h1');
+    expect(row.primaryPass, isTrue);
+    expect(row.failureTag, 'pass');
 
     await db.close();
   });
@@ -317,6 +364,56 @@ void main() {
 
     final rows = await dao.taskRunsForRun('r-nk');
     expect(rows, hasLength(1));
+
+    await db.close();
+  });
+
+  test('deleteTaskRunByKey targets a single trial index', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(runId: 'r-trial', startedAt: DateTime(2026, 5, 2));
+
+    Future<void> persistTrial(int trialIndex) => dao.persistTaskRun(
+      TaskRunResult(
+        runId: 'r-trial',
+        providerId: 'p',
+        modelId: 'm',
+        taskId: 't',
+        response: const ModelResponse(
+          rawText: 'x',
+          extractedCode: null,
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration.zero,
+        ),
+        evaluations: [
+          EvaluationResult(
+            evaluatorId: 'compile',
+            passed: trialIndex == 0,
+            score: trialIndex == 0 ? 1.0 : 0.0,
+          ),
+        ],
+        aggregateScore: trialIndex == 0 ? 1.0 : 0.0,
+        completedAt: DateTime(2026, 5, 2, 12, trialIndex),
+        trialIndex: trialIndex,
+      ),
+    );
+
+    await persistTrial(0);
+    await persistTrial(1);
+
+    await dao.deleteTaskRunByKey(
+      runId: 'r-trial',
+      providerId: 'p',
+      modelId: 'm',
+      taskId: 't',
+      trialIndex: 1,
+    );
+
+    final rows = await dao.taskRunsForRun('r-trial');
+    expect(rows, hasLength(1));
+    expect(rows.single.trialIndex, 0);
+    expect(await dao.evaluationsForTaskRun(rows.single.id), hasLength(1));
 
     await db.close();
   });

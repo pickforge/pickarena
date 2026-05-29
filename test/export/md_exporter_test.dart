@@ -23,6 +23,12 @@ RunSummary _summary({String? name}) {
     latencyMs: 1500,
     aggregateScore: 0.85,
     completedAt: DateTime.utc(2026, 5, 2, 14, 24),
+    trialIndex: 1,
+    taskVersion: 2,
+    benchmarkTrack: 'codegen',
+    harnessId: 'h1',
+    primaryPass: true,
+    failureTag: 'pass',
   );
   return RunSummary(
     run: run,
@@ -82,6 +88,8 @@ void main() {
   test('renders a markdown table with one data row', () {
     final md = runSummaryToMarkdown(_summary());
     expect(md, contains('| Task | Provider | Model |'));
+    expect(md, contains('| Trial | Task Version | Track | Harness |'));
+    expect(md, contains('| 1 | 2 | codegen | h1 | true | pass |'));
     expect(md, contains('hidden_test'));
     expect(md, contains('|------|'));
     expect(md, contains('| bug.off_by_one | openai | gpt-5'));

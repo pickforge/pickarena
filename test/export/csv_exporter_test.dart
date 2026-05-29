@@ -23,6 +23,12 @@ RunSummary _summary({String? name}) {
     latencyMs: 1500,
     aggregateScore: 0.85,
     completedAt: DateTime.utc(2026, 5, 2, 14, 24),
+    trialIndex: 1,
+    taskVersion: 2,
+    benchmarkTrack: 'codegen',
+    harnessId: 'h1',
+    primaryPass: true,
+    failureTag: 'pass',
   );
   return RunSummary(
     run: run,
@@ -66,6 +72,8 @@ void main() {
     final csv = runSummaryToCsv(_summary());
     final firstLine = csv.split('\n').first;
     expect(firstLine, startsWith('run_id,run_name,started_at,task_id'));
+    expect(firstLine, contains('trial_index,task_version,benchmark_track'));
+    expect(firstLine, contains('harness_id,primary_pass,failure_tag'));
     expect(firstLine, contains('score_compile,score_analyze,score_test'));
     expect(firstLine, contains('score_hidden_test'));
     expect(firstLine, endsWith('latency_ms,prompt_tokens,completion_tokens'));
@@ -81,10 +89,16 @@ void main() {
     expect(values[3], 'bug.off_by_one');
     expect(values[4], 'openai');
     expect(values[5], 'gpt-5');
-    expect(values[6], '0.8500');
-    expect(values[7], '1.0000'); // compile
-    expect(values[8], '0.9000'); // analyze
-    expect(values[9], '1.0000'); // test
+    expect(values[6], '1');
+    expect(values[7], '2');
+    expect(values[8], 'codegen');
+    expect(values[9], 'h1');
+    expect(values[10], 'true');
+    expect(values[11], 'pass');
+    expect(values[12], '0.8500');
+    expect(values[13], '1.0000'); // compile
+    expect(values[14], '0.9000'); // analyze
+    expect(values[15], '1.0000'); // test
   });
 
   test('null run name renders as empty cell', () {
@@ -98,10 +112,10 @@ void main() {
     final csv = runSummaryToCsv(s);
     final values = csv.split('\n')[1].split(',');
     // hidden_test, widget_tree, llm_judge, diff_size are missing.
-    expect(values[10], '0.0000');
-    expect(values[11], '0.0000');
-    expect(values[12], '0.0000');
-    expect(values[13], '0.0000');
+    expect(values[16], '0.0000');
+    expect(values[17], '0.0000');
+    expect(values[18], '0.0000');
+    expect(values[19], '0.0000');
   });
 
   test('CSV cells with commas are quoted', () {

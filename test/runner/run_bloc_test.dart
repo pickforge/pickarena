@@ -471,6 +471,57 @@ void main() {
     tmp.deleteSync(recursive: true);
   });
 
+  test('trialsPerTask expands matrix and labels trial runs', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'dart_arena_bloc_trials_',
+    );
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    final bloc = RunBloc(
+      workdirManager: WorkdirManager(root: tmp),
+      runDao: dao,
+      now: DateTime.now,
+      idGenerator: () => 'run-trials',
+    );
+
+    final states = <RunState>[];
+    final sub = bloc.stream.listen(states.add);
+
+    bloc.add(
+      StartRun(
+        tasks: [_StubTask()],
+        providers: [_FakeProvider()],
+        modelsByProvider: const {
+          'fake': ['fake-1'],
+        },
+        evaluatorConfig: const EvaluatorConfig(),
+        maxConcurrency: 1,
+        trialsPerTask: 2,
+      ),
+    );
+
+    await Future<void>.delayed(const Duration(seconds: 4));
+    expect(states.last, isA<RunCompleted>());
+    final completed = states.last as RunCompleted;
+    expect(completed.results.map((r) => r.trialIndex).toList(), [0, 1]);
+
+    final activeLabels = states
+        .whereType<RunInProgress>()
+        .expand((s) => s.active)
+        .map((s) => s.label)
+        .toSet();
+    expect(activeLabels.any((l) => l.contains('trial 1/2')), isTrue);
+    expect(activeLabels.any((l) => l.contains('trial 2/2')), isTrue);
+
+    final rows = await dao.taskRunsForRun('run-trials');
+    expect(rows.map((r) => r.trialIndex).toList()..sort(), [0, 1]);
+
+    await sub.cancel();
+    await bloc.close();
+    await db.close();
+    tmp.deleteSync(recursive: true);
+  });
+
   test('duplicate/blank model ids normalized, empty emits RunFailed', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_empty_');
     final db = AppDatabase(NativeDatabase.memory());
@@ -690,6 +741,60 @@ void main() {
     expect(rowsAfter.length, 1);
     expect(rowsAfter.first.aggregateScore, 1.0);
     expect(provider.calls, 2);
+
+    await sub.cancel();
+    await bloc.close();
+    await db.close();
+    tmp.deleteSync(recursive: true);
+  });
+
+  test('RetryCombo deletes only the failed trial row', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'dart_arena_bloc_trial_retry_',
+    );
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    final provider = _FailsOnceProvider();
+    final bloc = RunBloc(
+      workdirManager: WorkdirManager(root: tmp),
+      runDao: dao,
+      now: DateTime.now,
+      idGenerator: () => 'run-trial-retry',
+    );
+
+    final states = <RunState>[];
+    final sub = bloc.stream.listen(states.add);
+
+    bloc.add(
+      StartRun(
+        tasks: [_StubTask()],
+        providers: [provider],
+        modelsByProvider: const {
+          'flaky': ['flaky-1'],
+        },
+        evaluatorConfig: const EvaluatorConfig(),
+        maxConcurrency: 1,
+        trialsPerTask: 2,
+      ),
+    );
+
+    await Future<void>.delayed(const Duration(seconds: 4));
+    final inProgress = states.last as RunInProgress;
+    expect(inProgress.failed.single.index, 0);
+
+    final rowsBefore = await dao.taskRunsForRun('run-trial-retry');
+    expect(rowsBefore.map((r) => r.trialIndex).toList()..sort(), [0, 1]);
+
+    bloc.add(const RetryCombo(runId: 'run-trial-retry', failedIndex: 0));
+
+    await Future<void>.delayed(const Duration(seconds: 6));
+    expect(states.last, isA<RunCompleted>());
+
+    final rowsAfter = await dao.taskRunsForRun('run-trial-retry');
+    expect(rowsAfter, hasLength(2));
+    expect(rowsAfter.map((r) => r.trialIndex).toList()..sort(), [0, 1]);
+    expect(rowsAfter.singleWhere((r) => r.trialIndex == 1).aggregateScore, 1.0);
+    expect(provider.calls, 3);
 
     await sub.cancel();
     await bloc.close();

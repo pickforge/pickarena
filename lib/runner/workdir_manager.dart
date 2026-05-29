@@ -30,7 +30,11 @@ class WorkdirManager {
     required Map<String, String> fixtures,
     required String? generatedCode,
     required String generatedCodePath,
+    int trialIndex = 0,
   }) async {
+    final taskPath = trialIndex == 0
+        ? taskId
+        : p.join(taskId, 'trial_$trialIndex');
     final dir = Directory(
       p.join(
         root.path,
@@ -38,7 +42,7 @@ class WorkdirManager {
         runId,
         providerId,
         _sanitizePathSegment(modelId),
-        taskId,
+        taskPath,
       ),
     );
     await dir.create(recursive: true);

@@ -11,17 +11,31 @@ class ModelRanking extends Equatable {
     required this.modelId,
     required this.dimensions,
     required this.taskRunCount,
+    this.primaryPassCount = 0,
+    this.primaryPassSampleCount = 0,
   });
 
   final String providerId;
   final String modelId;
   final Dimensions dimensions;
   final int taskRunCount;
+  final int primaryPassCount;
+  final int primaryPassSampleCount;
 
   String get key => '$providerId:$modelId';
+  double? get primaryPassRate => primaryPassSampleCount == 0
+      ? null
+      : primaryPassCount / primaryPassSampleCount;
 
   @override
-  List<Object?> get props => [providerId, modelId, dimensions, taskRunCount];
+  List<Object?> get props => [
+    providerId,
+    modelId,
+    dimensions,
+    taskRunCount,
+    primaryPassCount,
+    primaryPassSampleCount,
+  ];
 }
 
 class PerTaskScore extends Equatable {
@@ -85,6 +99,8 @@ class LeaderboardRepository {
           modelId: rs.first.modelId,
           dimensions: Dimensions.fromTaskRuns(rs, evals),
           taskRunCount: rs.length,
+          primaryPassCount: rs.where((t) => t.primaryPass == true).length,
+          primaryPassSampleCount: rs.where((t) => t.primaryPass != null).length,
         ),
       );
     });
@@ -115,6 +131,10 @@ class LeaderboardRepository {
       modelId: modelId,
       dimensions: Dimensions.fromTaskRuns(taskRuns, evals),
       taskRunCount: taskRuns.length,
+      primaryPassCount: taskRuns.where((t) => t.primaryPass == true).length,
+      primaryPassSampleCount: taskRuns
+          .where((t) => t.primaryPass != null)
+          .length,
     );
 
     final byTask = <String, List<TaskRun>>{};

@@ -19,6 +19,7 @@ class StartRun extends RunEvent {
     this.name,
     this.maxConcurrency = 4,
     this.existingRunId,
+    this.trialsPerTask = 1,
   });
 
   final List<BenchmarkTask> tasks;
@@ -29,6 +30,7 @@ class StartRun extends RunEvent {
   final String? name;
   final int maxConcurrency;
   final String? existingRunId;
+  final int trialsPerTask;
 
   @override
   List<Object?> get props => [
@@ -40,6 +42,7 @@ class StartRun extends RunEvent {
     name,
     maxConcurrency,
     existingRunId,
+    trialsPerTask,
   ];
 }
 

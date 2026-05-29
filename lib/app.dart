@@ -60,6 +60,7 @@ final _router = GoRouter(
                 name: cfg.name,
                 maxConcurrency: cfg.maxConcurrency,
                 existingRunId: cfg.existingRunId,
+                trialsPerTask: cfg.trialsPerTask,
               ),
             );
             return bloc;

@@ -35,8 +35,9 @@ class RunDao {
   }
 
   Future<void> persistTaskRun(TaskRunResult r) async {
+    final trialPart = r.trialIndex == 0 ? '' : '-trial${r.trialIndex}';
     final taskRunId =
-        '${r.runId}-${r.providerId}-${r.modelId}-${r.taskId}-${r.completedAt.microsecondsSinceEpoch}';
+        '${r.runId}-${r.providerId}-${r.modelId}-${r.taskId}$trialPart-${r.completedAt.microsecondsSinceEpoch}';
     await _db
         .into(_db.taskRuns)
         .insert(
@@ -53,6 +54,12 @@ class RunDao {
             aggregateScore: r.aggregateScore,
             completedAt: r.completedAt,
             planId: Value(r.planId),
+            trialIndex: Value(r.trialIndex),
+            taskVersion: Value(r.taskVersion),
+            benchmarkTrack: Value(r.benchmarkTrack),
+            harnessId: Value(r.harnessId),
+            primaryPass: Value(r.primaryPass),
+            failureTag: Value(r.failureTag),
           ),
         );
     for (var i = 0; i < r.evaluations.length; i++) {
@@ -134,6 +141,7 @@ class RunDao {
     required String providerId,
     required String modelId,
     required String taskId,
+    int trialIndex = 0,
   }) async {
     await _db.transaction(() async {
       final matches =
@@ -142,7 +150,8 @@ class RunDao {
                     t.runId.equals(runId) &
                     t.providerId.equals(providerId) &
                     t.modelId.equals(modelId) &
-                    t.taskId.equals(taskId),
+                    t.taskId.equals(taskId) &
+                    t.trialIndex.equals(trialIndex),
               ))
               .get();
       for (final tr in matches) {
@@ -155,7 +164,8 @@ class RunDao {
                 t.runId.equals(runId) &
                 t.providerId.equals(providerId) &
                 t.modelId.equals(modelId) &
-                t.taskId.equals(taskId),
+                t.taskId.equals(taskId) &
+                t.trialIndex.equals(trialIndex),
           ))
           .go();
     });

@@ -150,6 +150,54 @@ void main() {
     expect(rows.first.providerId, 'fast');
   });
 
+  test('rank exposes primary pass summary and reliability uses it', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 1));
+    Future<void> seed({
+      required String provider,
+      required double aggregate,
+      required bool primaryPass,
+    }) {
+      return dao.persistTaskRun(
+        TaskRunResult(
+          runId: 'r1',
+          providerId: provider,
+          modelId: 'm',
+          taskId: 'bug.x',
+          response: const ModelResponse(
+            rawText: '',
+            extractedCode: null,
+            promptTokens: null,
+            completionTokens: null,
+            latency: Duration(milliseconds: 5000),
+          ),
+          evaluations: const [],
+          aggregateScore: aggregate,
+          completedAt: DateTime(2026, 5, 1, 0, 5),
+          primaryPass: primaryPass,
+          failureTag: primaryPass ? 'pass' : 'public_tests_failed',
+        ),
+      );
+    }
+
+    await seed(provider: 'measured-pass', aggregate: 0.1, primaryPass: true);
+    await seed(provider: 'measured-fail', aggregate: 1.0, primaryPass: false);
+
+    final repo = LeaderboardRepository(db);
+    final rows = await repo.rank(
+      filter: const LeaderboardFilter(dimension: ScoreDimension.reliability),
+    );
+
+    expect(rows.first.providerId, 'measured-pass');
+    expect(rows.first.primaryPassCount, 1);
+    expect(rows.first.primaryPassSampleCount, 1);
+    expect(rows.first.primaryPassRate, 1.0);
+    expect(rows.last.primaryPassRate, 0.0);
+
+    await db.close();
+  });
+
   test('detail returns one PerTaskScore per task within filter', () async {
     final s = await _seed();
     final repo = LeaderboardRepository(s.db);

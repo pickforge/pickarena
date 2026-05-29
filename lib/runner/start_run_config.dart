@@ -13,6 +13,7 @@ class StartRunConfig {
     this.name,
     this.maxConcurrency = 4,
     this.existingRunId,
+    this.trialsPerTask = 1,
   });
 
   final List<BenchmarkTask> tasks;
@@ -24,4 +25,5 @@ class StartRunConfig {
   final String? name;
   final int maxConcurrency;
   final String? existingRunId;
+  final int trialsPerTask;
 }

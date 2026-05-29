@@ -42,9 +42,44 @@ void main() {
     await db.close();
   });
 
-  test('schemaVersion is 3', () async {
+  test('schemaVersion is 4', () async {
     final db = AppDatabase(NativeDatabase.memory());
-    expect(db.schemaVersion, 3);
+    expect(db.schemaVersion, 4);
+    await db.close();
+  });
+
+  test('task run result primitive columns use safe defaults', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+
+    await db
+        .into(db.runs)
+        .insert(
+          RunsCompanion.insert(id: 'r3', startedAt: DateTime(2026, 5, 2)),
+        );
+    await db
+        .into(db.taskRuns)
+        .insert(
+          TaskRunsCompanion.insert(
+            id: 'tr1',
+            runId: 'r3',
+            providerId: 'p',
+            modelId: 'm',
+            taskId: 't',
+            responseText: '',
+            latencyMs: 1,
+            aggregateScore: 0.5,
+            completedAt: DateTime(2026, 5, 2),
+          ),
+        );
+
+    final row = await db.select(db.taskRuns).getSingle();
+    expect(row.trialIndex, 0);
+    expect(row.taskVersion, 1);
+    expect(row.benchmarkTrack, 'codegen');
+    expect(row.harnessId, isNull);
+    expect(row.primaryPass, isNull);
+    expect(row.failureTag, isNull);
+
     await db.close();
   });
 }

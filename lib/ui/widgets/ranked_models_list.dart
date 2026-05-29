@@ -41,6 +41,11 @@ class RankedModelsList extends StatelessWidget {
         final score = r.dimensions.byDimension(dimension);
         final isSelected = r.key == selectedKey;
         final isPinned = r.key == pinnedKey;
+        final passRate = r.primaryPassRate;
+        final subtitle = passRate == null
+            ? r.providerId
+            : '${r.providerId} · pass ${r.primaryPassCount}/${r.primaryPassSampleCount} '
+                  '(${(passRate * 100).toStringAsFixed(0)}%)';
         return ListTile(
           selected: isSelected,
           leading: SizedBox(
@@ -48,7 +53,7 @@ class RankedModelsList extends StatelessWidget {
             child: Text('${i + 1}', textAlign: TextAlign.right),
           ),
           title: Text(r.modelId),
-          subtitle: Text(r.providerId),
+          subtitle: Text(subtitle),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

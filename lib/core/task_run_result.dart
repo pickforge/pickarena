@@ -12,6 +12,12 @@ class TaskRunResult extends Equatable {
     required this.evaluations,
     required this.aggregateScore,
     required this.completedAt,
+    this.trialIndex = 0,
+    this.taskVersion = 1,
+    this.benchmarkTrack = 'codegen',
+    this.harnessId,
+    this.primaryPass,
+    this.failureTag,
     this.planId,
   });
 
@@ -23,6 +29,12 @@ class TaskRunResult extends Equatable {
   final List<EvaluationResult> evaluations;
   final double aggregateScore;
   final DateTime completedAt;
+  final int trialIndex;
+  final int taskVersion;
+  final String benchmarkTrack;
+  final String? harnessId;
+  final bool? primaryPass;
+  final String? failureTag;
   final String? planId;
 
   @override
@@ -35,6 +47,12 @@ class TaskRunResult extends Equatable {
     evaluations,
     aggregateScore,
     completedAt,
+    trialIndex,
+    taskVersion,
+    benchmarkTrack,
+    harnessId,
+    primaryPass,
+    failureTag,
     planId,
   ];
 }

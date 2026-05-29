@@ -86,10 +86,18 @@ Dimensions _computeDimensions(
   List<TaskRun> taskRuns,
   Map<String, List<Evaluation>> evalsByTaskRunId,
 ) {
-  final reliabilityPasses = taskRuns
-      .where((t) => t.aggregateScore >= Dimensions.reliabilityThreshold)
-      .length;
-  final reliability = reliabilityPasses / taskRuns.length;
+  final measuredPrimaryPass = taskRuns
+      .where((t) => t.primaryPass != null)
+      .toList();
+  final reliabilityRows = measuredPrimaryPass.isEmpty
+      ? taskRuns
+      : measuredPrimaryPass;
+  final reliabilityPasses = measuredPrimaryPass.isEmpty
+      ? reliabilityRows
+            .where((t) => t.aggregateScore >= Dimensions.reliabilityThreshold)
+            .length
+      : reliabilityRows.where((t) => t.primaryPass == true).length;
+  final reliability = reliabilityPasses / reliabilityRows.length;
 
   final latencies = taskRuns.map((t) => t.latencyMs.toDouble()).toList()
     ..sort();

@@ -23,6 +23,12 @@ TaskRun _tr(double agg) => TaskRun(
   latencyMs: 1000,
   aggregateScore: agg,
   completedAt: DateTime(2026, 5, 2, 10, 4),
+  trialIndex: 0,
+  taskVersion: 1,
+  benchmarkTrack: 'codegen',
+  harnessId: null,
+  primaryPass: null,
+  failureTag: null,
 );
 
 void main() {
