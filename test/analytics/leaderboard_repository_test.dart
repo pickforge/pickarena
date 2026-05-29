@@ -1,6 +1,7 @@
 import 'package:dart_arena/analytics/dimensions.dart';
 import 'package:dart_arena/analytics/leaderboard_filter.dart';
 import 'package:dart_arena/analytics/leaderboard_repository.dart';
+import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/model_response.dart';
@@ -89,6 +90,45 @@ void main() {
     );
     expect(rows.length, 1);
     expect(rows.single.providerId, 'openai');
+  });
+
+  test('track filter separates codegen and agentic runs', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 1));
+    Future<void> seed(String provider, BenchmarkTrack track) {
+      return dao.persistTaskRun(
+        TaskRunResult(
+          runId: 'r1',
+          providerId: provider,
+          modelId: 'm',
+          taskId: 'bug.x',
+          response: const ModelResponse(
+            rawText: '',
+            extractedCode: null,
+            promptTokens: null,
+            completionTokens: null,
+            latency: Duration(milliseconds: 1),
+          ),
+          evaluations: const [],
+          aggregateScore: 1.0,
+          completedAt: DateTime(2026, 5, 1, 0, 5),
+          benchmarkTrack: track.name,
+        ),
+      );
+    }
+
+    await seed('codegen-provider', BenchmarkTrack.codegen);
+    await seed('agent-provider', BenchmarkTrack.agentic);
+
+    final repo = LeaderboardRepository(db);
+    final rows = await repo.rank(
+      filter: const LeaderboardFilter(track: BenchmarkTrack.agentic),
+    );
+    expect(rows, hasLength(1));
+    expect(rows.single.providerId, 'agent-provider');
+
+    await db.close();
   });
 
   test('date range filter excludes runs outside the window', () async {

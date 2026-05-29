@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -67,5 +68,237 @@ void main() {
     expect(partsB, isNot(contains('openai/gpt-4o')));
 
     root.deleteSync(recursive: true);
+  });
+
+  test(
+    'createAgenticTaskWorkdir copies visible files and excludes secrets',
+    () async {
+      final fixtureRoot = await Directory.systemTemp.createTemp(
+        'dart_arena_fixture_',
+      );
+      final root = await Directory.systemTemp.createTemp('dart_arena_agentic_');
+      addTearDown(() async {
+        if (await fixtureRoot.exists()) {
+          await fixtureRoot.delete(recursive: true);
+        }
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      await File(p.join(fixtureRoot.path, 'pubspec.yaml')).writeAsString('''
+name: tmp
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+''');
+      await File(
+        p.join(fixtureRoot.path, 'lib', 'visible.dart'),
+      ).create(recursive: true);
+      await File(
+        p.join(fixtureRoot.path, 'lib', 'visible.dart'),
+      ).writeAsString('visible');
+      await File(
+        p.join(fixtureRoot.path, 'test', '_hidden', 'secret_test.dart'),
+      ).create(recursive: true);
+      await File(
+        p.join(fixtureRoot.path, 'test', '_hidden', 'secret_test.dart'),
+      ).writeAsString('secret');
+      await File(
+        p.join(fixtureRoot.path, 'reference', 'solution.dart'),
+      ).create(recursive: true);
+      await File(
+        p.join(fixtureRoot.path, 'reference', 'solution.dart'),
+      ).writeAsString('solution');
+
+      final dir = await WorkdirManager(root: root).createAgenticTaskWorkdir(
+        runId: 'r',
+        providerId: 'p',
+        modelId: 'm',
+        taskId: 't',
+        workspace: TaskWorkspace(fixtureRootPath: fixtureRoot.path),
+      );
+
+      expect(
+        File(p.join(dir.path, 'lib', 'visible.dart')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(
+          p.join(dir.path, 'test', '_hidden', 'secret_test.dart'),
+        ).existsSync(),
+        isFalse,
+      );
+      expect(
+        File(p.join(dir.path, 'reference', 'solution.dart')).existsSync(),
+        isFalse,
+      );
+      expect(Directory(p.join(dir.path, '.git')).existsSync(), isTrue);
+    },
+  );
+
+  test(
+    'createAgenticTaskWorkdir rejects absolute and escaping file paths',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_agentic_path_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      final manager = WorkdirManager(root: root);
+      await expectLater(
+        manager.createAgenticTaskWorkdir(
+          runId: 'r',
+          providerId: 'p',
+          modelId: 'm',
+          taskId: 'abs',
+          workspace: TaskWorkspace(files: {p.join(root.path, 'x.dart'): 'x'}),
+        ),
+        throwsArgumentError,
+      );
+      await expectLater(
+        manager.createAgenticTaskWorkdir(
+          runId: 'r',
+          providerId: 'p',
+          modelId: 'm',
+          taskId: 'escape',
+          workspace: const TaskWorkspace(files: {'../outside.dart': 'x'}),
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
+
+  test('createAgenticTaskWorkdir excludes explicit hidden assets', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'dart_arena_agentic_explicit_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+
+    final dir = await WorkdirManager(root: root).createAgenticTaskWorkdir(
+      runId: 'r',
+      providerId: 'p',
+      modelId: 'm',
+      taskId: 't',
+      workspace: const TaskWorkspace(
+        files: {
+          'lib/visible.dart': 'visible',
+          'test/_hidden/secret_test.dart': 'secret',
+          'reference/lib/solution.dart': 'solution',
+          'author_notes.md': 'notes',
+          'task_qa/report.md': 'qa',
+        },
+      ),
+    );
+
+    expect(File(p.join(dir.path, 'lib', 'visible.dart')).existsSync(), isTrue);
+    expect(
+      File(
+        p.join(dir.path, 'test', '_hidden', 'secret_test.dart'),
+      ).existsSync(),
+      isFalse,
+    );
+    expect(
+      File(p.join(dir.path, 'reference', 'lib', 'solution.dart')).existsSync(),
+      isFalse,
+    );
+    expect(File(p.join(dir.path, 'author_notes.md')).existsSync(), isFalse);
+    expect(
+      File(p.join(dir.path, 'task_qa', 'report.md')).existsSync(),
+      isFalse,
+    );
+  });
+
+  test('createAgenticTaskWorkdir recreates clean trial workspace', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'dart_arena_agentic_clean_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+
+    final manager = WorkdirManager(root: root);
+    final first = await manager.createAgenticTaskWorkdir(
+      runId: 'r',
+      providerId: 'p',
+      modelId: 'm',
+      taskId: 't',
+      trialIndex: 1,
+      workspace: const TaskWorkspace(files: {'lib/answer.dart': 'one'}),
+    );
+    await File(p.join(first.path, 'lib', 'stale.dart')).writeAsString('stale');
+
+    final second = await manager.createAgenticTaskWorkdir(
+      runId: 'r',
+      providerId: 'p',
+      modelId: 'm',
+      taskId: 't',
+      trialIndex: 1,
+      workspace: const TaskWorkspace(files: {'lib/answer.dart': 'two'}),
+    );
+
+    expect(second.path, first.path);
+    expect(
+      File(p.join(second.path, 'lib', 'answer.dart')).readAsStringSync(),
+      'two',
+    );
+    expect(
+      File(p.join(second.path, 'lib', 'stale.dart')).existsSync(),
+      isFalse,
+    );
+
+    final status = await Process.run('git', [
+      'status',
+      '--porcelain',
+    ], workingDirectory: second.path);
+    expect(status.exitCode, 0);
+    expect(status.stdout.toString(), isEmpty);
+  });
+
+  test('createAgenticTaskWorkdir keeps trials isolated as siblings', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'dart_arena_agentic_trials_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+
+    final manager = WorkdirManager(root: root);
+    final trial0 = await manager.createAgenticTaskWorkdir(
+      runId: 'r',
+      providerId: 'p',
+      modelId: 'm',
+      taskId: 'task/with/slash',
+      trialIndex: 0,
+      workspace: const TaskWorkspace(files: {'lib/answer.dart': 'zero'}),
+    );
+    final trial1 = await manager.createAgenticTaskWorkdir(
+      runId: 'r',
+      providerId: 'p',
+      modelId: 'm',
+      taskId: 'task/with/slash',
+      trialIndex: 1,
+      workspace: const TaskWorkspace(files: {'lib/answer.dart': 'one'}),
+    );
+
+    await File(
+      p.join(trial1.path, 'lib', 'trial_one_marker.dart'),
+    ).writeAsString('keep');
+    await manager.createAgenticTaskWorkdir(
+      runId: 'r',
+      providerId: 'p',
+      modelId: 'm',
+      taskId: 'task/with/slash',
+      trialIndex: 0,
+      workspace: const TaskWorkspace(files: {'lib/answer.dart': 'zero again'}),
+    );
+
+    expect(p.dirname(trial0.path), p.dirname(trial1.path));
+    expect(trial0.path, isNot(trial1.path));
+    expect(
+      File(p.join(trial1.path, 'lib', 'trial_one_marker.dart')).existsSync(),
+      isTrue,
+    );
   });
 }

@@ -1006,6 +1006,29 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _patchTextMeta = const VerificationMeta(
+    'patchText',
+  );
+  @override
+  late final GeneratedColumn<String> patchText = GeneratedColumn<String>(
+    'patch_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _trajectoryLogPathMeta = const VerificationMeta(
+    'trajectoryLogPath',
+  );
+  @override
+  late final GeneratedColumn<String> trajectoryLogPath =
+      GeneratedColumn<String>(
+        'trajectory_log_path',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1026,6 +1049,8 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
     harnessId,
     primaryPass,
     failureTag,
+    patchText,
+    trajectoryLogPath,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1186,6 +1211,21 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
         failureTag.isAcceptableOrUnknown(data['failure_tag']!, _failureTagMeta),
       );
     }
+    if (data.containsKey('patch_text')) {
+      context.handle(
+        _patchTextMeta,
+        patchText.isAcceptableOrUnknown(data['patch_text']!, _patchTextMeta),
+      );
+    }
+    if (data.containsKey('trajectory_log_path')) {
+      context.handle(
+        _trajectoryLogPathMeta,
+        trajectoryLogPath.isAcceptableOrUnknown(
+          data['trajectory_log_path']!,
+          _trajectoryLogPathMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1267,6 +1307,14 @@ class $TaskRunsTable extends TaskRuns with TableInfo<$TaskRunsTable, TaskRun> {
         DriftSqlType.string,
         data['${effectivePrefix}failure_tag'],
       ),
+      patchText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}patch_text'],
+      ),
+      trajectoryLogPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}trajectory_log_path'],
+      ),
     );
   }
 
@@ -1295,6 +1343,8 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
   final String? harnessId;
   final bool? primaryPass;
   final String? failureTag;
+  final String? patchText;
+  final String? trajectoryLogPath;
   const TaskRun({
     required this.id,
     required this.runId,
@@ -1314,6 +1364,8 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     this.harnessId,
     this.primaryPass,
     this.failureTag,
+    this.patchText,
+    this.trajectoryLogPath,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1347,6 +1399,12 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     }
     if (!nullToAbsent || failureTag != null) {
       map['failure_tag'] = Variable<String>(failureTag);
+    }
+    if (!nullToAbsent || patchText != null) {
+      map['patch_text'] = Variable<String>(patchText);
+    }
+    if (!nullToAbsent || trajectoryLogPath != null) {
+      map['trajectory_log_path'] = Variable<String>(trajectoryLogPath);
     }
     return map;
   }
@@ -1383,6 +1441,12 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
       failureTag: failureTag == null && nullToAbsent
           ? const Value.absent()
           : Value(failureTag),
+      patchText: patchText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(patchText),
+      trajectoryLogPath: trajectoryLogPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(trajectoryLogPath),
     );
   }
 
@@ -1410,6 +1474,10 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
       harnessId: serializer.fromJson<String?>(json['harnessId']),
       primaryPass: serializer.fromJson<bool?>(json['primaryPass']),
       failureTag: serializer.fromJson<String?>(json['failureTag']),
+      patchText: serializer.fromJson<String?>(json['patchText']),
+      trajectoryLogPath: serializer.fromJson<String?>(
+        json['trajectoryLogPath'],
+      ),
     );
   }
   @override
@@ -1434,6 +1502,8 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
       'harnessId': serializer.toJson<String?>(harnessId),
       'primaryPass': serializer.toJson<bool?>(primaryPass),
       'failureTag': serializer.toJson<String?>(failureTag),
+      'patchText': serializer.toJson<String?>(patchText),
+      'trajectoryLogPath': serializer.toJson<String?>(trajectoryLogPath),
     };
   }
 
@@ -1456,6 +1526,8 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     Value<String?> harnessId = const Value.absent(),
     Value<bool?> primaryPass = const Value.absent(),
     Value<String?> failureTag = const Value.absent(),
+    Value<String?> patchText = const Value.absent(),
+    Value<String?> trajectoryLogPath = const Value.absent(),
   }) => TaskRun(
     id: id ?? this.id,
     runId: runId ?? this.runId,
@@ -1477,6 +1549,10 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     harnessId: harnessId.present ? harnessId.value : this.harnessId,
     primaryPass: primaryPass.present ? primaryPass.value : this.primaryPass,
     failureTag: failureTag.present ? failureTag.value : this.failureTag,
+    patchText: patchText.present ? patchText.value : this.patchText,
+    trajectoryLogPath: trajectoryLogPath.present
+        ? trajectoryLogPath.value
+        : this.trajectoryLogPath,
   );
   TaskRun copyWithCompanion(TaskRunsCompanion data) {
     return TaskRun(
@@ -1520,6 +1596,10 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
       failureTag: data.failureTag.present
           ? data.failureTag.value
           : this.failureTag,
+      patchText: data.patchText.present ? data.patchText.value : this.patchText,
+      trajectoryLogPath: data.trajectoryLogPath.present
+          ? data.trajectoryLogPath.value
+          : this.trajectoryLogPath,
     );
   }
 
@@ -1543,7 +1623,9 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
           ..write('benchmarkTrack: $benchmarkTrack, ')
           ..write('harnessId: $harnessId, ')
           ..write('primaryPass: $primaryPass, ')
-          ..write('failureTag: $failureTag')
+          ..write('failureTag: $failureTag, ')
+          ..write('patchText: $patchText, ')
+          ..write('trajectoryLogPath: $trajectoryLogPath')
           ..write(')'))
         .toString();
   }
@@ -1568,6 +1650,8 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
     harnessId,
     primaryPass,
     failureTag,
+    patchText,
+    trajectoryLogPath,
   );
   @override
   bool operator ==(Object other) =>
@@ -1590,7 +1674,9 @@ class TaskRun extends DataClass implements Insertable<TaskRun> {
           other.benchmarkTrack == this.benchmarkTrack &&
           other.harnessId == this.harnessId &&
           other.primaryPass == this.primaryPass &&
-          other.failureTag == this.failureTag);
+          other.failureTag == this.failureTag &&
+          other.patchText == this.patchText &&
+          other.trajectoryLogPath == this.trajectoryLogPath);
 }
 
 class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
@@ -1612,6 +1698,8 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
   final Value<String?> harnessId;
   final Value<bool?> primaryPass;
   final Value<String?> failureTag;
+  final Value<String?> patchText;
+  final Value<String?> trajectoryLogPath;
   final Value<int> rowid;
   const TaskRunsCompanion({
     this.id = const Value.absent(),
@@ -1632,6 +1720,8 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     this.harnessId = const Value.absent(),
     this.primaryPass = const Value.absent(),
     this.failureTag = const Value.absent(),
+    this.patchText = const Value.absent(),
+    this.trajectoryLogPath = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TaskRunsCompanion.insert({
@@ -1653,6 +1743,8 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     this.harnessId = const Value.absent(),
     this.primaryPass = const Value.absent(),
     this.failureTag = const Value.absent(),
+    this.patchText = const Value.absent(),
+    this.trajectoryLogPath = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        runId = Value(runId),
@@ -1682,6 +1774,8 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     Expression<String>? harnessId,
     Expression<bool>? primaryPass,
     Expression<String>? failureTag,
+    Expression<String>? patchText,
+    Expression<String>? trajectoryLogPath,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1703,6 +1797,8 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
       if (harnessId != null) 'harness_id': harnessId,
       if (primaryPass != null) 'primary_pass': primaryPass,
       if (failureTag != null) 'failure_tag': failureTag,
+      if (patchText != null) 'patch_text': patchText,
+      if (trajectoryLogPath != null) 'trajectory_log_path': trajectoryLogPath,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1726,6 +1822,8 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     Value<String?>? harnessId,
     Value<bool?>? primaryPass,
     Value<String?>? failureTag,
+    Value<String?>? patchText,
+    Value<String?>? trajectoryLogPath,
     Value<int>? rowid,
   }) {
     return TaskRunsCompanion(
@@ -1747,6 +1845,8 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
       harnessId: harnessId ?? this.harnessId,
       primaryPass: primaryPass ?? this.primaryPass,
       failureTag: failureTag ?? this.failureTag,
+      patchText: patchText ?? this.patchText,
+      trajectoryLogPath: trajectoryLogPath ?? this.trajectoryLogPath,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1808,6 +1908,12 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
     if (failureTag.present) {
       map['failure_tag'] = Variable<String>(failureTag.value);
     }
+    if (patchText.present) {
+      map['patch_text'] = Variable<String>(patchText.value);
+    }
+    if (trajectoryLogPath.present) {
+      map['trajectory_log_path'] = Variable<String>(trajectoryLogPath.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1835,6 +1941,8 @@ class TaskRunsCompanion extends UpdateCompanion<TaskRun> {
           ..write('harnessId: $harnessId, ')
           ..write('primaryPass: $primaryPass, ')
           ..write('failureTag: $failureTag, ')
+          ..write('patchText: $patchText, ')
+          ..write('trajectoryLogPath: $trajectoryLogPath, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2966,6 +3074,8 @@ typedef $$TaskRunsTableCreateCompanionBuilder =
       Value<String?> harnessId,
       Value<bool?> primaryPass,
       Value<String?> failureTag,
+      Value<String?> patchText,
+      Value<String?> trajectoryLogPath,
       Value<int> rowid,
     });
 typedef $$TaskRunsTableUpdateCompanionBuilder =
@@ -2988,6 +3098,8 @@ typedef $$TaskRunsTableUpdateCompanionBuilder =
       Value<String?> harnessId,
       Value<bool?> primaryPass,
       Value<String?> failureTag,
+      Value<String?> patchText,
+      Value<String?> trajectoryLogPath,
       Value<int> rowid,
     });
 
@@ -3135,6 +3247,16 @@ class $$TaskRunsTableFilterComposer
 
   ColumnFilters<String> get failureTag => $composableBuilder(
     column: $table.failureTag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get patchText => $composableBuilder(
+    column: $table.patchText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get trajectoryLogPath => $composableBuilder(
+    column: $table.trajectoryLogPath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3299,6 +3421,16 @@ class $$TaskRunsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get patchText => $composableBuilder(
+    column: $table.patchText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get trajectoryLogPath => $composableBuilder(
+    column: $table.trajectoryLogPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RunsTableOrderingComposer get runId {
     final $$RunsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3425,6 +3557,14 @@ class $$TaskRunsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get patchText =>
+      $composableBuilder(column: $table.patchText, builder: (column) => column);
+
+  GeneratedColumn<String> get trajectoryLogPath => $composableBuilder(
+    column: $table.trajectoryLogPath,
+    builder: (column) => column,
+  );
+
   $$RunsTableAnnotationComposer get runId {
     final $$RunsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -3547,6 +3687,8 @@ class $$TaskRunsTableTableManager
                 Value<String?> harnessId = const Value.absent(),
                 Value<bool?> primaryPass = const Value.absent(),
                 Value<String?> failureTag = const Value.absent(),
+                Value<String?> patchText = const Value.absent(),
+                Value<String?> trajectoryLogPath = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TaskRunsCompanion(
                 id: id,
@@ -3567,6 +3709,8 @@ class $$TaskRunsTableTableManager
                 harnessId: harnessId,
                 primaryPass: primaryPass,
                 failureTag: failureTag,
+                patchText: patchText,
+                trajectoryLogPath: trajectoryLogPath,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3589,6 +3733,8 @@ class $$TaskRunsTableTableManager
                 Value<String?> harnessId = const Value.absent(),
                 Value<bool?> primaryPass = const Value.absent(),
                 Value<String?> failureTag = const Value.absent(),
+                Value<String?> patchText = const Value.absent(),
+                Value<String?> trajectoryLogPath = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TaskRunsCompanion.insert(
                 id: id,
@@ -3609,6 +3755,8 @@ class $$TaskRunsTableTableManager
                 harnessId: harnessId,
                 primaryPass: primaryPass,
                 failureTag: failureTag,
+                patchText: patchText,
+                trajectoryLogPath: trajectoryLogPath,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

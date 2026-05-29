@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/analytics/result_primitives.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/code_extractor.dart';
@@ -12,6 +13,7 @@ import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/model_stream_event.dart';
+import 'package:dart_arena/runner/agentic_run_orchestrator.dart';
 import 'package:dart_arena/runner/failed_combo_snapshot.dart';
 import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
 import 'package:dart_arena/runner/run_event.dart';
@@ -53,7 +55,19 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     required this.idGenerator,
     this.weights = defaultEvaluatorWeights,
     this.planDao,
+    List<AgentHarness> agentHarnesses = const [],
+    AgenticRunOrchestrator? agenticOrchestrator,
   }) : super(const RunIdle()) {
+    _agentHarnesses = {
+      for (final harness in agentHarnesses) harness.id: harness,
+    };
+    _agenticOrchestrator =
+        agenticOrchestrator ??
+        AgenticRunOrchestrator(
+          workdirManager: workdirManager,
+          weights: weights,
+          now: now,
+        );
     on<StartRun>(_onStart);
     on<RetryCombo>(_onRetry);
     on<FinishRun>(_onFinishRun);
@@ -73,6 +87,8 @@ class RunBloc extends Bloc<RunEvent, RunState> {
   final String Function() idGenerator;
   final Map<String, double> weights;
   final PlanDao? planDao;
+  late final Map<String, AgentHarness> _agentHarnesses;
+  late final AgenticRunOrchestrator _agenticOrchestrator;
   List<ModelProvider> _providers = const [];
 
   static const _maxPreviewChars = 16 * 1024;
@@ -249,6 +265,8 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       aggregateScore: 0.0,
       completedAt: now(),
       trialIndex: combo.trialIndex,
+      taskVersion: combo.task.version,
+      benchmarkTrack: combo.task.track.name,
       primaryPass: false,
       failureTag: determineFailureTag(
         primaryPass: false,
@@ -521,6 +539,57 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     final provider = combo.provider;
     final modelId = combo.modelId;
 
+    if (task.track == BenchmarkTrack.agentic) {
+      final harness = _agentHarnesses[provider.id];
+      void updateAgenticProgress(
+        RunComboPhase phase, {
+        String? answerPreview,
+        int? promptTokens,
+        int? completionTokens,
+      }) {
+        final existing = active[combo.index];
+        active[combo.index] =
+            (existing ??
+                    RunProgressSnapshot(
+                      index: combo.index,
+                      label: combo.label,
+                      phase: phase,
+                      startedAt: now(),
+                    ))
+                .copyWith(
+                  phase: phase,
+                  answerPreview: answerPreview,
+                  promptTokens: promptTokens,
+                  completionTokens: completionTokens,
+                );
+        _emitProgress(emit);
+      }
+
+      if (harness == null) {
+        updateAgenticProgress(RunComboPhase.persisting);
+        return _agenticOrchestrator.missingHarnessResult(
+          runId: runId,
+          task: task,
+          providerId: provider.id,
+          modelId: modelId,
+          trialIndex: combo.trialIndex,
+          planId: combo.planId,
+        );
+      }
+
+      return _agenticOrchestrator.run(
+        runId: runId,
+        task: task,
+        harness: harness,
+        providerId: provider.id,
+        modelId: modelId,
+        trialIndex: combo.trialIndex,
+        evaluatorConfig: evaluatorConfig,
+        planId: combo.planId,
+        onProgress: updateAgenticProgress,
+      );
+    }
+
     final prompt = buildPromptWithPlan(
       taskPrompt: task.prompt,
       planMarkdown: combo.planMarkdown,
@@ -726,6 +795,8 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       aggregateScore: aggregateScore,
       completedAt: now(),
       trialIndex: combo.trialIndex,
+      taskVersion: task.version,
+      benchmarkTrack: task.track.name,
       primaryPass: primitives.primaryPass,
       failureTag: primitives.failureTag,
       planId: combo.planId,

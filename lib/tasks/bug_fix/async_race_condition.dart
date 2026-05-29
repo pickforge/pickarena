@@ -114,3 +114,25 @@ Return ONE composite score and a 1-2 sentence rationale.
     DiffSizeEvaluator(originalFixturePath: 'lib/search_controller.dart'),
   ];
 }
+
+class AgenticAsyncRaceConditionTask extends AsyncRaceConditionTask {
+  @override
+  String get id => 'agentic.bug.async_race_condition';
+
+  @override
+  BenchmarkTrack get track => BenchmarkTrack.agentic;
+
+  @override
+  String get prompt => '''
+You are working in a small Dart package. The file `lib/search_controller.dart` contains `SearchController.onQueryChanged(String query)`.
+
+There is a race condition: rapid query changes can cause stale results to overwrite fresh ones. The visible test in `test/search_controller_test.dart` covers basic non-overlapping behavior; additional grading checks verify overlapping queries.
+
+Fix the controller so only the latest query's results are emitted. Constraints:
+- Preserve the public API (constructor, `results` stream, `onQueryChanged`, `dispose`).
+- Keep the stream-based control flow.
+- No busy-waiting or polling.
+
+Edit the workspace files as needed and leave the package ready for `dart test`.
+''';
+}

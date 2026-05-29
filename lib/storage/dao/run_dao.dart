@@ -60,6 +60,8 @@ class RunDao {
             harnessId: Value(r.harnessId),
             primaryPass: Value(r.primaryPass),
             failureTag: Value(r.failureTag),
+            patchText: Value(r.patchText),
+            trajectoryLogPath: Value(r.trajectoryLogPath),
           ),
         );
     for (var i = 0; i < r.evaluations.length; i++) {

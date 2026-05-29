@@ -38,6 +38,8 @@ class TaskRuns extends Table {
   TextColumn get harnessId => text().nullable()();
   BoolColumn get primaryPass => boolean().nullable()();
   TextColumn get failureTag => text().nullable()();
+  TextColumn get patchText => text().nullable()();
+  TextColumn get trajectoryLogPath => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -73,7 +75,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -92,6 +94,10 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(taskRuns, taskRuns.harnessId);
         await m.addColumn(taskRuns, taskRuns.primaryPass);
         await m.addColumn(taskRuns, taskRuns.failureTag);
+      }
+      if (from < 5) {
+        await m.addColumn(taskRuns, taskRuns.patchText);
+        await m.addColumn(taskRuns, taskRuns.trajectoryLogPath);
       }
     },
   );

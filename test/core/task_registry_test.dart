@@ -3,7 +3,9 @@ import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
+import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 
 class _StubTask extends BenchmarkTask {
   @override
@@ -29,6 +31,8 @@ class _StubTask extends BenchmarkTask {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('register and lookup', () {
     final registry = TaskRegistry();
     registry.register(_StubTask());
@@ -41,4 +45,48 @@ void main() {
     registry.register(_StubTask());
     expect(() => registry.register(_StubTask()), throwsStateError);
   });
+
+  test(
+    'default registry includes an agentic task with visible workspace',
+    () async {
+      final registry = buildDefaultTaskRegistry();
+      final task = registry.byId('agentic.bug.async_race_condition');
+
+      expect(task, isNotNull);
+      expect(task!.track, BenchmarkTrack.agentic);
+      await task.ensureLoaded();
+
+      expect(task.workspace.files, isNotEmpty);
+      expect(task.hiddenVerifiers, isNotEmpty);
+      expect(
+        task.workspace.files.keys,
+        everyElement(
+          predicate<String>((path) => !_isExcludedWorkspacePath(path)),
+        ),
+      );
+    },
+  );
+}
+
+bool _isExcludedWorkspacePath(String relativePath) {
+  final parts = p
+      .split(p.normalize(relativePath))
+      .map((part) => part.toLowerCase())
+      .toList(growable: false);
+  if (parts.any(
+    (part) =>
+        part == '.git' ||
+        part == '_hidden' ||
+        part == 'reference' ||
+        part == '_reference' ||
+        part == 'author_notes' ||
+        part == '_author' ||
+        part == 'task_qa',
+  )) {
+    return true;
+  }
+  final basename = parts.isEmpty ? '' : parts.last;
+  return basename == 'author_notes.md' ||
+      basename == 'qa_report.md' ||
+      basename == 'task_qa_report.md';
 }

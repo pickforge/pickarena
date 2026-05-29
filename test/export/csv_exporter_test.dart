@@ -29,6 +29,8 @@ RunSummary _summary({String? name}) {
     harnessId: 'h1',
     primaryPass: true,
     failureTag: 'pass',
+    patchText: 'abc',
+    trajectoryLogPath: '/tmp/trajectory.log',
   );
   return RunSummary(
     run: run,
@@ -74,6 +76,7 @@ void main() {
     expect(firstLine, startsWith('run_id,run_name,started_at,task_id'));
     expect(firstLine, contains('trial_index,task_version,benchmark_track'));
     expect(firstLine, contains('harness_id,primary_pass,failure_tag'));
+    expect(firstLine, contains('patch_chars,trajectory_log_path'));
     expect(firstLine, contains('score_compile,score_analyze,score_test'));
     expect(firstLine, contains('score_hidden_test'));
     expect(firstLine, endsWith('latency_ms,prompt_tokens,completion_tokens'));
@@ -95,10 +98,12 @@ void main() {
     expect(values[9], 'h1');
     expect(values[10], 'true');
     expect(values[11], 'pass');
-    expect(values[12], '0.8500');
-    expect(values[13], '1.0000'); // compile
-    expect(values[14], '0.9000'); // analyze
-    expect(values[15], '1.0000'); // test
+    expect(values[12], '3');
+    expect(values[13], '/tmp/trajectory.log');
+    expect(values[14], '0.8500');
+    expect(values[15], '1.0000'); // compile
+    expect(values[16], '0.9000'); // analyze
+    expect(values[17], '1.0000'); // test
   });
 
   test('null run name renders as empty cell', () {
@@ -112,10 +117,10 @@ void main() {
     final csv = runSummaryToCsv(s);
     final values = csv.split('\n')[1].split(',');
     // hidden_test, widget_tree, llm_judge, diff_size are missing.
-    expect(values[16], '0.0000');
-    expect(values[17], '0.0000');
     expect(values[18], '0.0000');
     expect(values[19], '0.0000');
+    expect(values[20], '0.0000');
+    expect(values[21], '0.0000');
   });
 
   test('CSV cells with commas are quoted', () {

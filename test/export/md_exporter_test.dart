@@ -29,6 +29,8 @@ RunSummary _summary({String? name}) {
     harnessId: 'h1',
     primaryPass: true,
     failureTag: 'pass',
+    patchText: 'abc',
+    trajectoryLogPath: '/tmp/trajectory.log',
   );
   return RunSummary(
     run: run,
@@ -89,7 +91,12 @@ void main() {
     final md = runSummaryToMarkdown(_summary());
     expect(md, contains('| Task | Provider | Model |'));
     expect(md, contains('| Trial | Task Version | Track | Harness |'));
-    expect(md, contains('| 1 | 2 | codegen | h1 | true | pass |'));
+    expect(
+      md,
+      contains(
+        '| 1 | 2 | codegen | h1 | true | pass | 3 | /tmp/trajectory.log |',
+      ),
+    );
     expect(md, contains('hidden_test'));
     expect(md, contains('|------|'));
     expect(md, contains('| bug.off_by_one | openai | gpt-5'));

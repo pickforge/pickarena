@@ -45,6 +45,8 @@ void main() {
     expect(loaded.first.harnessId, isNull);
     expect(loaded.first.primaryPass, isNull);
     expect(loaded.first.failureTag, isNull);
+    expect(loaded.first.patchText, isNull);
+    expect(loaded.first.trajectoryLogPath, isNull);
     expect(
       jsonDecode(
         (await dao.evaluationsForTaskRun(loaded.first.id)).first.detailsJson,
@@ -82,6 +84,8 @@ void main() {
         harnessId: 'h1',
         primaryPass: true,
         failureTag: 'pass',
+        patchText: 'diff --git a/lib/a.dart b/lib/a.dart\n',
+        trajectoryLogPath: '/tmp/trajectory.log',
       ),
     );
 
@@ -92,6 +96,8 @@ void main() {
     expect(row.harnessId, 'h1');
     expect(row.primaryPass, isTrue);
     expect(row.failureTag, 'pass');
+    expect(row.patchText, contains('diff --git'));
+    expect(row.trajectoryLogPath, '/tmp/trajectory.log');
 
     await db.close();
   });

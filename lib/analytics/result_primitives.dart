@@ -32,6 +32,8 @@ bool determinePrimaryPass({
   required List<EvaluationResult> evaluations,
   required double aggregateScore,
 }) {
+  if (evaluations.any(_isHarnessError)) return false;
+
   final hidden = evaluations.where(_isHiddenVerifier).toList();
   if (hidden.isNotEmpty) return hidden.every((e) => e.passed);
 

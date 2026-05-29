@@ -42,9 +42,9 @@ void main() {
     await db.close();
   });
 
-  test('schemaVersion is 4', () async {
+  test('schemaVersion is 5', () async {
     final db = AppDatabase(NativeDatabase.memory());
-    expect(db.schemaVersion, 4);
+    expect(db.schemaVersion, 5);
     await db.close();
   });
 
@@ -79,6 +79,8 @@ void main() {
     expect(row.harnessId, isNull);
     expect(row.primaryPass, isNull);
     expect(row.failureTag, isNull);
+    expect(row.patchText, isNull);
+    expect(row.trajectoryLogPath, isNull);
 
     await db.close();
   });

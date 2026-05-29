@@ -1,5 +1,6 @@
 import 'package:dart_arena/analytics/dimensions.dart';
 import 'package:dart_arena/analytics/leaderboard_filter.dart';
+import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/ui/widgets/leaderboard_filters.dart';
 import 'package:flutter/material.dart';
@@ -68,5 +69,25 @@ void main() {
     await tester.tap(find.text('7d'));
     await tester.pumpAndSettle();
     expect(captured?.dateRange, DateRange.last7d);
+  });
+
+  testWidgets('emits new filter when track is changed', (tester) async {
+    LeaderboardFilter? captured;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LeaderboardFilters(
+            filter: const LeaderboardFilter(),
+            providerOptions: const [],
+            onChanged: (f) => captured = f,
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('track-dropdown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('agentic').last);
+    await tester.pumpAndSettle();
+    expect(captured?.track, BenchmarkTrack.agentic);
   });
 }

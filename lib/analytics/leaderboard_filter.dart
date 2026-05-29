@@ -1,4 +1,5 @@
 import 'package:dart_arena/analytics/dimensions.dart';
+import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:equatable/equatable.dart';
 
@@ -62,12 +63,14 @@ class LeaderboardFilter extends Equatable {
   const LeaderboardFilter({
     this.category,
     this.providerId,
+    this.track,
     this.dateRange = DateRange.allTime,
     this.dimension = ScoreDimension.overall,
   });
 
   final Category? category;
   final String? providerId;
+  final BenchmarkTrack? track;
   final DateRange dateRange;
   final ScoreDimension dimension;
 
@@ -76,15 +79,24 @@ class LeaderboardFilter extends Equatable {
     bool clearCategory = false,
     String? providerId,
     bool clearProviderId = false,
+    BenchmarkTrack? track,
+    bool clearTrack = false,
     DateRange? dateRange,
     ScoreDimension? dimension,
   }) => LeaderboardFilter(
     category: clearCategory ? null : (category ?? this.category),
     providerId: clearProviderId ? null : (providerId ?? this.providerId),
+    track: clearTrack ? null : (track ?? this.track),
     dateRange: dateRange ?? this.dateRange,
     dimension: dimension ?? this.dimension,
   );
 
   @override
-  List<Object?> get props => [category, providerId, dateRange, dimension];
+  List<Object?> get props => [
+    category,
+    providerId,
+    track,
+    dateRange,
+    dimension,
+  ];
 }

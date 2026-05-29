@@ -171,6 +171,9 @@ class LeaderboardRepository {
     if (filter.providerId != null) {
       q.where((t) => t.providerId.equals(filter.providerId!));
     }
+    if (filter.track != null) {
+      q.where((t) => t.benchmarkTrack.equals(filter.track!.name));
+    }
     if (filter.category != null && taskIdsForCategory != null) {
       q.where((t) => t.taskId.isIn(taskIdsForCategory));
     }

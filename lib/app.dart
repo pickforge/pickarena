@@ -1,4 +1,5 @@
 import 'package:dart_arena/analytics/leaderboard_repository.dart';
+import 'package:dart_arena/agent/droid_agent_harness.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
@@ -49,6 +50,7 @@ final _router = GoRouter(
               weights: cfg.weights,
               now: () => DateTime.now(),
               idGenerator: () => 'run-${DateTime.now().millisecondsSinceEpoch}',
+              agentHarnesses: [DroidAgentHarness()],
             );
             bloc.add(
               StartRun(

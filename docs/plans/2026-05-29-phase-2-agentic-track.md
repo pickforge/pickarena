@@ -1,8 +1,8 @@
 # Phase 2 — Agentic Flutter Dev Track Implementation Plan
 
-> **Status:** Draft plan.
+> **Status:** Reviewed plan.
 > **Parent spec:** `docs/specs/2026-05-29-flutter-benchmark-v2-design.md`
-> **Dependency:** Phase 1 hidden verifier support.
+> **Dependency:** Phase 1 hidden verifier support and Phase 4-lite result primitives.
 
 ## Goal
 
@@ -22,7 +22,20 @@ Add a patch-based benchmark mode where agents can inspect a workspace, edit mult
 - `ProviderMode.agent` already exists, but `DroidExecProvider.generate` intentionally disables tools and answers from the prompt. Do not reuse it as the tool-enabled agent harness.
 - `RunBloc._runCombo` currently assumes every run produces one extracted Dart file. Agentic execution needs a separate orchestrator path.
 - `WorkdirManager.createTaskWorkdir` currently writes a file map and optional generated code. Agentic tasks need workspace-copy support and must exclude hidden verifier/reference files.
-- `TaskRunResult` and Drift `TaskRuns` currently have no patch, track, harness, or trajectory fields.
+- `BenchmarkTrack`, `TaskRunResult`, and Drift `TaskRuns` already include Phase 4-lite primitives: `trialIndex`, `taskVersion`, `benchmarkTrack`, `harnessId`, `primaryPass`, and `failureTag`.
+- Phase 2 should reuse those primitives and add only agentic-specific evidence fields such as patch and trajectory artifacts.
+
+## Phase 2 MVP constraints
+
+- Route execution by `BenchmarkTask.track`; legacy tasks remain `BenchmarkTrack.codegen`.
+- Keep codegen as the default path and preserve current generated-file behavior.
+- Fail fast with a clear evaluator/result failure when an agentic task has no configured harness.
+- Set existing primitives on every result:
+  - `taskVersion: task.version`;
+  - `benchmarkTrack: task.track.name`;
+  - `harnessId: harness.id` for agentic runs and `null` for codegen.
+- Do not add duplicate track, harness, primary pass, or failure taxonomy columns.
+- Limit new persistence to nullable agentic evidence fields needed for auditability.
 
 ## Architecture
 
@@ -75,7 +88,7 @@ Likely files to modify:
 
 ## Task 1: Add track-aware task execution
 
-- [ ] Add `BenchmarkTrack.codegen` and `BenchmarkTrack.agentic`.
+- [ ] Verify existing `BenchmarkTrack.codegen` and `BenchmarkTrack.agentic` are wired end-to-end.
 - [ ] Branch `RunBloc` execution by task track or selected run mode.
 - [ ] Keep codegen behavior identical for current tasks.
 - [ ] Add tests proving mixed codegen/agentic task lists route correctly.
@@ -150,12 +163,10 @@ Patch capture should use `Process.run('git', ['diff', '--binary'], workingDirect
 
 Persistence additions for Phase 2:
 
-- `benchmarkTrack` or `track`;
-- `harnessId`;
 - `patchArtifactPath` or bounded patch text;
 - `trajectoryLogPath` when available.
 
-If Phase 4 has not run yet, add these fields with nullable/default values and include a Drift migration plus regenerated `database.g.dart`.
+Phase 4-lite already added `benchmarkTrack`, `harnessId`, `primaryPass`, `failureTag`, `trialIndex`, and `taskVersion`. Do not add duplicates. If patch/trajectory evidence is persisted in Drift, add nullable fields with a schema migration from the current schema `4` to `5`, preserving codegen defaults/nulls, then regenerate `database.g.dart`.
 
 ## Task 6: Evaluate final workspace
 
@@ -169,7 +180,7 @@ If Phase 4 has not run yet, add these fields with nullable/default values and in
 
 ## Task 7: UI support
 
-- [ ] Add a run-mode selector: `Codegen`, `Agentic`, or `Both` if useful.
+- [ ] For the MVP, route by each task's `BenchmarkTrack`; do not add an open-ended run-mode selector unless needed to start an agentic task.
 - [ ] Show agentic task-run phases: preparing workspace, running agent, capturing patch, grading.
 - [ ] Show trajectory/log path and final patch in task details.
 - [ ] Clearly separate raw API models from agent harnesses in leaderboard filters.

@@ -1,5 +1,6 @@
 import 'package:dart_arena/analytics/dimensions.dart';
 import 'package:dart_arena/analytics/leaderboard_filter.dart';
+import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -8,6 +9,7 @@ void main() {
     const f = LeaderboardFilter();
     expect(f.category, isNull);
     expect(f.providerId, isNull);
+    expect(f.track, isNull);
     expect(f.dateRange, DateRange.allTime);
     expect(f.dimension, ScoreDimension.overall);
   });
@@ -37,7 +39,16 @@ void main() {
     final f2 = f.copyWith(category: Category.bugFix);
     expect(f2.category, Category.bugFix);
     expect(f2.providerId, isNull);
+    expect(f2.track, isNull);
     expect(f2.dateRange, DateRange.allTime);
     expect(f2.dimension, ScoreDimension.overall);
+  });
+
+  test('LeaderboardFilter.copyWith can set and clear track', () {
+    final withTrack = const LeaderboardFilter().copyWith(
+      track: BenchmarkTrack.agentic,
+    );
+    expect(withTrack.track, BenchmarkTrack.agentic);
+    expect(withTrack.copyWith(clearTrack: true).track, isNull);
   });
 }

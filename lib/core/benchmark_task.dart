@@ -1,6 +1,7 @@
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/reference_solution.dart';
+import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/core/task_verifier.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 
@@ -20,6 +21,8 @@ abstract class BenchmarkTask {
   BenchmarkTrack get track => BenchmarkTrack.codegen;
   String get prompt;
   Map<String, String> get fixtures;
+  TaskWorkspace get workspace =>
+      TaskWorkspace.fromFixtures(fixtures, instruction: prompt);
   List<VerifierFixture> get hiddenVerifiers => const [];
   ReferenceSolution? get referenceSolution => null;
   String? get judgeRubric;

@@ -87,15 +87,41 @@ class _NewRunPageState extends State<NewRunPage> {
 
   bool get _canRun {
     if (_selectedTaskIds.isEmpty) return false;
+    final selectedTasks = _registry
+        .all()
+        .where((t) => _selectedTaskIds.contains(t.id))
+        .toList();
+    final selectedProviders = _providers
+        .where((p) => _checkedProvider[p.id] == true)
+        .toList();
+    final hasAgenticTask = selectedTasks.any(
+      (t) => t.track == BenchmarkTrack.agentic,
+    );
+    if (hasAgenticTask &&
+        selectedProviders.every((p) => p.mode != ProviderMode.agent)) {
+      return false;
+    }
     for (final p in _providers) {
       if (_checkedProvider[p.id] != true) continue;
       final set = _models[p.id];
       if (set == null || set.isEmpty) return false;
     }
-    if (_providers.where((p) => _checkedProvider[p.id] == true).isEmpty) {
+    if (selectedProviders.isEmpty) return false;
+    return true;
+  }
+
+  bool get _agenticNeedsHarness {
+    final selectedTasks = _registry
+        .all()
+        .where((t) => _selectedTaskIds.contains(t.id))
+        .toList();
+    if (!selectedTasks.any((t) => t.track == BenchmarkTrack.agentic)) {
       return false;
     }
-    return true;
+    final selectedProviders = _providers
+        .where((p) => _checkedProvider[p.id] == true)
+        .toList();
+    return selectedProviders.every((p) => p.mode != ProviderMode.agent);
   }
 
   @override
@@ -166,6 +192,14 @@ class _NewRunPageState extends State<NewRunPage> {
                           ', ≈ $_maxConcurrency× parallel',
                           style: const TextStyle(fontSize: 13),
                         ),
+                      if (_agenticNeedsHarness)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text(
+                            'Agentic tasks require a configured agent harness provider.',
+                            style: TextStyle(fontSize: 13, color: Colors.red),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -231,7 +265,9 @@ class _NewRunPageState extends State<NewRunPage> {
         evaluatorConfig: evaluatorConfig,
         weights: weights,
         useReferencePlan: _useReferencePlan,
-        name: _labelController.text.trim().isEmpty ? null : _labelController.text.trim(),
+        name: _labelController.text.trim().isEmpty
+            ? null
+            : _labelController.text.trim(),
         maxConcurrency: _maxConcurrency,
       ),
     );

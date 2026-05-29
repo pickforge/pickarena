@@ -1,5 +1,6 @@
 import 'package:dart_arena/analytics/dimensions.dart';
 import 'package:dart_arena/analytics/leaderboard_filter.dart';
+import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:flutter/material.dart';
 
@@ -73,6 +74,19 @@ class LeaderboardFilters extends StatelessWidget {
             ],
             onChanged: (p) => onChanged(
               filter.copyWith(providerId: p, clearProviderId: p == null),
+            ),
+          ),
+          DropdownButton<BenchmarkTrack?>(
+            key: const Key('track-dropdown'),
+            value: filter.track,
+            hint: const Text('All tracks'),
+            items: [
+              const DropdownMenuItem(value: null, child: Text('All tracks')),
+              for (final track in BenchmarkTrack.values)
+                DropdownMenuItem(value: track, child: Text(track.name)),
+            ],
+            onChanged: (track) => onChanged(
+              filter.copyWith(track: track, clearTrack: track == null),
             ),
           ),
           _RangeChips(

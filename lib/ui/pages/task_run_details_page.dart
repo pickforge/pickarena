@@ -146,6 +146,13 @@ class _Header extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            'Track: ${tr.benchmarkTrack}'
+            '${tr.harnessId == null ? '' : ' · Harness: ${tr.harnessId}'}'
+            '${tr.trajectoryLogPath == null ? '' : ' · Trajectory: ${tr.trajectoryLogPath}'}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
       ),
     );
@@ -242,6 +249,34 @@ class _DiffTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final patch = bundle.taskRun.patchText;
+    if (patch != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+              icon: const Icon(Icons.copy),
+              tooltip: 'Copy patch',
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: patch));
+              },
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(8),
+              child: SelectableText(
+                patch.isEmpty ? '(empty patch)' : patch,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     final task = bundle.task;
     if (task == null) {
       return const Center(

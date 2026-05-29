@@ -1,6 +1,7 @@
 import 'package:dart_arena/analytics/dimensions.dart';
 import 'package:dart_arena/analytics/leaderboard_filter.dart';
 import 'package:dart_arena/analytics/leaderboard_repository.dart';
+import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/ui/widgets/dimension_radar.dart';
@@ -62,6 +63,12 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               orElse: () => Category.bugFix,
             ),
       providerId: q['provider'],
+      track: q['track'] == null
+          ? null
+          : BenchmarkTrack.values.firstWhere(
+              (t) => t.name == q['track'],
+              orElse: () => BenchmarkTrack.codegen,
+            ),
       dateRange: DateRange.fromQueryParam(q['since']),
       dimension: ScoreDimension.values.firstWhere(
         (d) => d.name == q['dim'],
@@ -111,9 +118,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       });
       return;
     }
-    final (:providerId, :modelId) = splitLeaderboardSelectionKey(
-      _selectedKey!,
-    );
+    final (:providerId, :modelId) = splitLeaderboardSelectionKey(_selectedKey!);
     final taskIds = _taskIdsForCurrentCategory();
     final categoryByTaskId = _categoryByTaskId();
     final future = _repo!.detail(
@@ -134,6 +139,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     final qp = <String, String>{};
     if (_filter.category != null) qp['category'] = _filter.category!.name;
     if (_filter.providerId != null) qp['provider'] = _filter.providerId!;
+    if (_filter.track != null) qp['track'] = _filter.track!.name;
     if (_filter.dateRange != DateRange.allTime) {
       qp['since'] = _filter.dateRange.toQueryParam();
     }
@@ -246,57 +252,65 @@ class _DetailPane extends StatelessWidget {
     if (detailFuture == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    return FutureBuilder<ModelDetail?>(
-      future: detailFuture,
-      builder: (context, snap) {
-        if (snap.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final detail = snap.data;
-        if (detail == null) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text(
-                'No models match this filter — try widening the date range.',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
-        }
-        final pinned = pinnedKey == null
-            ? null
-            : rankings
-                  .where((r) => r.key == pinnedKey)
-                  .map((r) => r.dimensions)
-                  .firstOrNull;
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: SizedBox(
-                height: 240,
-                child: DimensionRadar(
-                  selected: detail.ranking.dimensions,
-                  pinned: pinned,
-                  selectedLabel: detail.ranking.modelId,
-                  pinnedLabel: pinnedKey,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final radarHeight = constraints.maxHeight < 500 ? 180.0 : 240.0;
+        return FutureBuilder<ModelDetail?>(
+          future: detailFuture,
+          builder: (context, snap) {
+            if (snap.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final detail = snap.data;
+            if (detail == null) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'No models match this filter — try widening the date range.',
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: PerTaskBarChart(scores: detail.perTask, onTap: onTaskTap),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Text(
-                '${detail.ranking.taskRunCount} task-runs · '
-                '${detail.ranking.dimensions.problems} problems',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          ],
+              );
+            }
+            final pinned = pinnedKey == null
+                ? null
+                : rankings
+                      .where((r) => r.key == pinnedKey)
+                      .map((r) => r.dimensions)
+                      .firstOrNull;
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: SizedBox(
+                    height: radarHeight,
+                    child: DimensionRadar(
+                      selected: detail.ranking.dimensions,
+                      pinned: pinned,
+                      selectedLabel: detail.ranking.modelId,
+                      pinnedLabel: pinnedKey,
+                    ),
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: PerTaskBarChart(
+                    scores: detail.perTask,
+                    onTap: onTaskTap,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    '${detail.ranking.taskRunCount} task-runs · '
+                    '${detail.ranking.dimensions.problems} problems',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );

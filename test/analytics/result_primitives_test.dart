@@ -66,6 +66,25 @@ void main() {
     expect(primitives.failureTag, 'harness_timeout');
   });
 
+  test('harness errors fail primary pass even when hidden verifier passes', () {
+    final primitives = determineResultPrimitives(
+      evaluations: [
+        _ev('hidden_test', true),
+        const EvaluationResult(
+          evaluatorId: 'agent_harness',
+          passed: false,
+          score: 0,
+          rationale: 'agent harness failed',
+          details: {'error': 'exit code 1'},
+        ),
+      ],
+      aggregateScore: 0.5,
+    );
+
+    expect(primitives.primaryPass, isFalse);
+    expect(primitives.failureTag, 'harness_error');
+  });
+
   test(
     'empty output is classified as invalid output when failing fallback',
     () {

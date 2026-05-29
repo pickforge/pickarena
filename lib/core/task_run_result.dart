@@ -18,6 +18,8 @@ class TaskRunResult extends Equatable {
     this.harnessId,
     this.primaryPass,
     this.failureTag,
+    this.patchText,
+    this.trajectoryLogPath,
     this.planId,
   });
 
@@ -35,6 +37,8 @@ class TaskRunResult extends Equatable {
   final String? harnessId;
   final bool? primaryPass;
   final String? failureTag;
+  final String? patchText;
+  final String? trajectoryLogPath;
   final String? planId;
 
   @override
@@ -53,6 +57,8 @@ class TaskRunResult extends Equatable {
     harnessId,
     primaryPass,
     failureTag,
+    patchText,
+    trajectoryLogPath,
     planId,
   ];
 }

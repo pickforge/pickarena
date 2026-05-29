@@ -24,6 +24,7 @@ TaskRegistry buildDefaultTaskRegistry() {
   registry.register(TodoInputTestTask());
   registry.register(FormValidationTestTask());
   registry.register(AsyncRaceConditionTask());
+  registry.register(AgenticAsyncRaceConditionTask());
   registry.register(AddEvaluatorTypeTask());
   registry.register(AddFilterDimensionTask());
   return registry;
