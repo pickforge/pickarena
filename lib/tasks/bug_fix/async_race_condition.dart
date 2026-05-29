@@ -2,10 +2,13 @@ import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/fixture_loader.dart';
+import 'package:dart_arena/core/reference_solution.dart';
+import 'package:dart_arena/core/task_verifier.dart';
 import 'package:dart_arena/evaluators/analyze_evaluator.dart';
 import 'package:dart_arena/evaluators/compile_evaluator.dart';
 import 'package:dart_arena/evaluators/diff_size_evaluator.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
+import 'package:dart_arena/evaluators/hidden_test_evaluator.dart';
 import 'package:dart_arena/evaluators/llm_judge_evaluator.dart';
 import 'package:dart_arena/evaluators/test_evaluator.dart';
 
@@ -19,11 +22,24 @@ class AsyncRaceConditionTask extends BenchmarkTask {
       'test/search_controller_test.dart',
     ],
   );
+  static final _hiddenLoader = FixtureLoader(
+    assetRoot: _root,
+    files: const ['test/_hidden/search_controller_hidden_test.dart'],
+  );
+  static final _referenceLoader = FixtureLoader(
+    assetRoot: _root,
+    files: const ['reference/lib/search_controller.dart'],
+  );
 
   Map<String, String> _fixtures = const {};
+  Map<String, String> _hiddenVerifierFiles = const {};
+  Map<String, String> _referenceFiles = const {};
 
   @override
   String get id => 'bug.async_race_condition';
+
+  @override
+  int get version => 2;
 
   @override
   Category get category => Category.bugFix;
@@ -33,7 +49,7 @@ class AsyncRaceConditionTask extends BenchmarkTask {
 
   @override
   String get prompt => '''
-You are given `lib/search_controller.dart` containing `SearchController.onQueryChanged(String query)`. There is a race condition: rapid query changes can cause stale results to overwrite fresh ones. Failing tests in `test/search_controller_test.dart` (using `fake_async`) demonstrate the bug.
+You are given `lib/search_controller.dart` containing `SearchController.onQueryChanged(String query)`. There is a race condition: rapid query changes can cause stale results to overwrite fresh ones. The visible test in `test/search_controller_test.dart` covers basic non-overlapping behavior; additional grading checks verify the race-condition fix.
 
 Fix the controller so only the latest query's results are emitted. Constraints:
 - Preserve the public API (constructor, `results` stream, `onQueryChanged`, `dispose`).
@@ -50,10 +66,29 @@ Return ONLY the corrected contents of `lib/search_controller.dart` inside a sing
   Future<void> ensureLoaded() async {
     if (_fixtures.isNotEmpty) return;
     _fixtures = await _loader.load();
+    _hiddenVerifierFiles = await _hiddenLoader.load();
+    _referenceFiles = await _referenceLoader.load();
   }
 
   @override
   String get generatedCodePath => 'lib/search_controller.dart';
+
+  @override
+  List<VerifierFixture> get hiddenVerifiers => _hiddenVerifierFiles.isEmpty
+      ? const []
+      : [
+          VerifierFixture(
+            files: _hiddenVerifierFiles,
+            testPath: 'test/_hidden/search_controller_hidden_test.dart',
+          ),
+        ];
+
+  @override
+  ReferenceSolution? get referenceSolution {
+    final reference = _referenceFiles['reference/lib/search_controller.dart'];
+    if (reference == null) return null;
+    return ReferenceFileSolution({'lib/search_controller.dart': reference});
+  }
 
   @override
   String? get judgeRubric => '''
@@ -70,6 +105,7 @@ Return ONE composite score and a 1-2 sentence rationale.
     CompileEvaluator(),
     AnalyzeEvaluator(),
     TestEvaluator(),
+    ...hiddenVerifiers.map(HiddenTestEvaluator.new),
     if (config.hasJudge)
       LlmJudgeEvaluator(
         judge: config.judgeProvider!,

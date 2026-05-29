@@ -79,6 +79,8 @@ flutter:
     - lib/tasks/ui_from_spec/fixtures/profile_card/pubspec.yaml
     - lib/tasks/ui_from_spec/fixtures/profile_card/lib/profile_card.dart
     - lib/tasks/ui_from_spec/fixtures/profile_card/test/profile_card_test.dart
+    - lib/tasks/ui_from_spec/fixtures/profile_card/test/_hidden/profile_card_hidden_test.dart
+    - lib/tasks/ui_from_spec/fixtures/profile_card/reference/lib/profile_card.dart
     - lib/tasks/ui_from_spec/fixtures/expandable_list_tile/pubspec.yaml
     - lib/tasks/ui_from_spec/fixtures/expandable_list_tile/lib/expandable_list_tile.dart
     - lib/tasks/ui_from_spec/fixtures/expandable_list_tile/test/expandable_list_tile_test.dart
@@ -97,6 +99,8 @@ flutter:
     - lib/tasks/bug_fix/fixtures/async_race_condition/pubspec.yaml
     - lib/tasks/bug_fix/fixtures/async_race_condition/lib/search_controller.dart
     - lib/tasks/bug_fix/fixtures/async_race_condition/test/search_controller_test.dart
+    - lib/tasks/bug_fix/fixtures/async_race_condition/test/_hidden/search_controller_hidden_test.dart
+    - lib/tasks/bug_fix/fixtures/async_race_condition/reference/lib/search_controller.dart
     - lib/tasks/planning_and_execution/fixtures/add_evaluator_type/pubspec.yaml
     - lib/tasks/planning_and_execution/fixtures/add_evaluator_type/lib/evaluator.dart
     - lib/tasks/planning_and_execution/fixtures/add_evaluator_type/test/coverage_evaluator_test.dart

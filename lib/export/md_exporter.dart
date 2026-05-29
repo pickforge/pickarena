@@ -13,12 +13,12 @@ String runSummaryToMarkdown(RunSummary s) {
 
   buf.writeln(
     '| Task | Provider | Model | Aggregate '
-    '| compile | analyze | test | widget_tree | llm_judge | diff_size '
+    '| compile | analyze | test | hidden_test | widget_tree | llm_judge | diff_size '
     '| Latency |',
   );
   buf.writeln(
     '|------|----------|-------|-----------'
-    '|---------|---------|------|-------------|-----------|-----------'
+    '|---------|---------|------|-------------|-------------|-----------|-----------'
     '|---------|',
   );
   for (final tr in s.taskRuns) {
@@ -31,7 +31,8 @@ String runSummaryToMarkdown(RunSummary s) {
       '| ${tr.taskId} | ${tr.providerId} | ${tr.modelId} '
       '| **${tr.aggregateScore.toStringAsFixed(2)}** '
       '| ${fmt('compile')} | ${fmt('analyze')} | ${fmt('test')} '
-      '| ${fmt('widget_tree')} | ${fmt('llm_judge')} | ${fmt('diff_size')} '
+      '| ${fmt('hidden_test')} | ${fmt('widget_tree')} '
+      '| ${fmt('llm_judge')} | ${fmt('diff_size')} '
       '| ${tr.latencyMs}ms |',
     );
   }

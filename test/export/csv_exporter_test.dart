@@ -67,6 +67,7 @@ void main() {
     final firstLine = csv.split('\n').first;
     expect(firstLine, startsWith('run_id,run_name,started_at,task_id'));
     expect(firstLine, contains('score_compile,score_analyze,score_test'));
+    expect(firstLine, contains('score_hidden_test'));
     expect(firstLine, endsWith('latency_ms,prompt_tokens,completion_tokens'));
   });
 
@@ -96,10 +97,11 @@ void main() {
     final s = _summary();
     final csv = runSummaryToCsv(s);
     final values = csv.split('\n')[1].split(',');
-    // widget_tree, llm_judge, diff_size are missing; should be 0.0000
+    // hidden_test, widget_tree, llm_judge, diff_size are missing.
     expect(values[10], '0.0000');
     expect(values[11], '0.0000');
     expect(values[12], '0.0000');
+    expect(values[13], '0.0000');
   });
 
   test('CSV cells with commas are quoted', () {

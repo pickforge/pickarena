@@ -21,7 +21,7 @@ class ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: name,
+      label: '$name $handle',
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(12),

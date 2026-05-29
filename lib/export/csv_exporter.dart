@@ -5,6 +5,7 @@ const _evaluatorIds = <String>[
   'compile',
   'analyze',
   'test',
+  'hidden_test',
   'widget_tree',
   'llm_judge',
   'diff_size',

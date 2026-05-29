@@ -82,6 +82,7 @@ void main() {
   test('renders a markdown table with one data row', () {
     final md = runSummaryToMarkdown(_summary());
     expect(md, contains('| Task | Provider | Model |'));
+    expect(md, contains('hidden_test'));
     expect(md, contains('|------|'));
     expect(md, contains('| bug.off_by_one | openai | gpt-5'));
     expect(md, contains('**0.85**'));

@@ -148,6 +148,20 @@ void main() {
       expect(d.intelligence, 1.0);
     });
 
+    test('includes hidden_test as a correctness evaluator', () {
+      final tr = _tr(id: '1', aggregate: 1.0);
+      final d = Dimensions.fromTaskRuns(
+        [tr],
+        {
+          '1': [
+            _ev(taskRunId: '1', evaluatorId: 'test', score: 1.0),
+            _ev(taskRunId: '1', evaluatorId: 'hidden_test', score: 0.0),
+          ],
+        },
+      );
+      expect(d.intelligence, 0.5);
+    });
+
     test('no correctness evaluators present yields 0.0', () {
       final tr = _tr(id: '1', aggregate: 0.0);
       final d = Dimensions.fromTaskRuns(

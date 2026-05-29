@@ -77,6 +77,7 @@ const _correctnessEvaluatorIds = {
   'compile',
   'analyze',
   'test',
+  'hidden_test',
   'test_author',
   'widget_tree',
 };

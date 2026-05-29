@@ -57,6 +57,7 @@ void main() {
         'compile',
         'analyze',
         'test',
+        'hidden_test',
         'widget_tree',
         'llm_judge',
         'diff_size',
