@@ -38,6 +38,7 @@ class _NewRunPageState extends State<NewRunPage> {
   bool _loading = true;
   bool _useReferencePlan = false;
   int _maxConcurrency = 4;
+  int _trialsPerTask = 1;
 
   @override
   void initState() {
@@ -81,7 +82,7 @@ class _NewRunPageState extends State<NewRunPage> {
       if (set == null || set.isEmpty) continue;
       count += set.length;
     }
-    return count * _selectedTaskIds.length;
+    return count * _selectedTaskIds.length * _trialsPerTask;
   }
 
   int get _pairCount {
@@ -188,6 +189,13 @@ class _NewRunPageState extends State<NewRunPage> {
                         value: _useReferencePlan,
                         onChanged: (v) => setState(() => _useReferencePlan = v),
                       ),
+                      const SizedBox(height: 12),
+                      _TrialsPerTaskControl(
+                        value: _trialsPerTask,
+                        onChanged: (value) => setState(() {
+                          _trialsPerTask = value < 1 ? 1 : value;
+                        }),
+                      ),
                       const Divider(height: 32),
                       const Text(
                         'Providers',
@@ -214,7 +222,8 @@ class _NewRunPageState extends State<NewRunPage> {
                         Text(
                           'Will run $_pairCount (provider, model) pairs'
                           ' × ${_selectedTaskIds.length} tasks'
-                          ' = $_comboCount combos'
+                          ' × $_trialsPerTask trials'
+                          ' = $_comboCount ${_comboCount == 1 ? 'task-run' : 'task-runs'}'
                           ', ≈ $_maxConcurrency× parallel',
                           style: const TextStyle(fontSize: 13),
                         ),
@@ -295,6 +304,7 @@ class _NewRunPageState extends State<NewRunPage> {
             ? null
             : _labelController.text.trim(),
         maxConcurrency: _maxConcurrency,
+        trialsPerTask: _trialsPerTask < 1 ? 1 : _trialsPerTask,
       ),
     );
   }
@@ -306,6 +316,33 @@ class _NewRunPageState extends State<NewRunPage> {
       debugPrint('Failed to load evaluator weights: $e\n$st');
       return const {};
     }
+  }
+}
+
+class _TrialsPerTaskControl extends StatelessWidget {
+  const _TrialsPerTaskControl({required this.value, required this.onChanged});
+
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    const options = [1, 2, 3, 5, 10];
+    final safeValue = value < 1 ? 1 : value;
+    return DropdownButtonFormField<int>(
+      key: const Key('trials-per-task'),
+      initialValue: options.contains(safeValue) ? safeValue : 1,
+      decoration: const InputDecoration(
+        labelText: 'Trials per task',
+        helperText: 'Repeat every selected model/task pair for reliability.',
+        border: OutlineInputBorder(),
+      ),
+      items: [
+        for (final option in options)
+          DropdownMenuItem(value: option, child: Text('$option')),
+      ],
+      onChanged: (value) => onChanged(value == null || value < 1 ? 1 : value),
+    );
   }
 }
 

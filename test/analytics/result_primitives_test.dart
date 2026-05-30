@@ -104,4 +104,62 @@ void main() {
       expect(primitives.failureTag, 'invalid_output');
     },
   );
+
+  test('secondary LLM judge failure does not override correctness pass', () {
+    final primitives = determineResultPrimitives(
+      evaluations: const [
+        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1),
+        EvaluationResult(
+          evaluatorId: 'llm_judge',
+          passed: false,
+          score: 0,
+          details: {'error': 'judge unavailable'},
+        ),
+      ],
+      aggregateScore: 1,
+    );
+
+    expect(primitives.primaryPass, isTrue);
+    expect(primitives.failureTag, 'pass');
+  });
+
+  test('environment errors have stable taxonomy before harness errors', () {
+    final primitives = determineResultPrimitives(
+      evaluations: const [
+        EvaluationResult(
+          evaluatorId: 'environment',
+          passed: false,
+          score: 0,
+          details: {'code': 'environment_error', 'error': 'disk full'},
+        ),
+        EvaluationResult(
+          evaluatorId: 'agent_harness',
+          passed: false,
+          score: 0,
+          details: {'error': 'exit code 1'},
+        ),
+      ],
+      aggregateScore: 0,
+    );
+
+    expect(primitives.primaryPass, isFalse);
+    expect(primitives.failureTag, 'environment_error');
+  });
+
+  test('non-empty output without extracted patch is no_patch', () {
+    final primitives = determineResultPrimitives(
+      evaluations: const [],
+      aggregateScore: 0,
+      response: const ModelResponse(
+        rawText: 'I cannot modify the code.',
+        extractedCode: null,
+        promptTokens: null,
+        completionTokens: null,
+        latency: Duration.zero,
+      ),
+    );
+
+    expect(primitives.primaryPass, isFalse);
+    expect(primitives.failureTag, 'no_patch');
+  });
 }

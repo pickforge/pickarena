@@ -1,10 +1,20 @@
+import 'package:dart_arena/analytics/confidence_interval.dart';
 import 'package:dart_arena/analytics/dimensions.dart';
 import 'package:dart_arena/analytics/leaderboard_repository.dart';
 import 'package:dart_arena/ui/widgets/ranked_models_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-ModelRanking _r(String model, double overall) => ModelRanking(
+ModelRanking _r(
+  String model,
+  double overall, {
+  int primaryPassCount = 0,
+  int primaryPassSampleCount = 0,
+  ConfidenceInterval? primaryPassInterval,
+  bool lowSample = false,
+  int? medianLatencyMs,
+  int? medianEstimatedCostMicros,
+}) => ModelRanking(
   providerId: 'p',
   modelId: model,
   dimensions: Dimensions(
@@ -15,6 +25,12 @@ ModelRanking _r(String model, double overall) => ModelRanking(
     problems: 0,
   ),
   taskRunCount: 1,
+  primaryPassCount: primaryPassCount,
+  primaryPassSampleCount: primaryPassSampleCount,
+  primaryPassInterval: primaryPassInterval,
+  lowSample: lowSample,
+  medianLatencyMs: medianLatencyMs,
+  medianEstimatedCostMicros: medianEstimatedCostMicros,
 );
 
 void main() {
@@ -96,5 +112,43 @@ void main() {
     await tester.tap(find.text('alpha'));
     await tester.pumpAndSettle();
     expect(selected, 'p:alpha');
+  });
+
+  testWidgets('shows reliable pass rate, CI, trials, cost, and duration', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: RankedModelsList(
+            rankings: [
+              _r(
+                'alpha',
+                0.9,
+                primaryPassCount: 4,
+                primaryPassSampleCount: 5,
+                primaryPassInterval: const ConfidenceInterval(
+                  lower: 0.38,
+                  upper: 0.96,
+                  confidenceLevel: 0.95,
+                ),
+                medianLatencyMs: 1200,
+                medianEstimatedCostMicros: 250,
+              ),
+            ],
+            dimension: ScoreDimension.overall,
+            selectedKey: null,
+            pinnedKey: null,
+            onSelect: (_) {},
+            onTogglePin: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('pass 4/5 (80%, CI 38%–96%)'), findsOneWidget);
+    expect(find.textContaining('1 task-run'), findsOneWidget);
+    expect(find.textContaining('1.2s median'), findsOneWidget);
+    expect(find.textContaining(r'$0.0003 median'), findsOneWidget);
   });
 }

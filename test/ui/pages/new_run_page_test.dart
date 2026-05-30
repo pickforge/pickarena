@@ -213,7 +213,7 @@ void main() {
     await tester.dragUntilVisible(
       find.text(
         'Will run 2 (provider, model) pairs'
-        ' × 1 tasks = 2 combos, ≈ 4× parallel',
+        ' × 1 tasks × 1 trials = 2 task-runs, ≈ 4× parallel',
       ),
       find.byType(ListView),
       const Offset(0, -200),
@@ -223,7 +223,7 @@ void main() {
     expect(
       find.text(
         'Will run 2 (provider, model) pairs'
-        ' × 1 tasks = 2 combos, ≈ 4× parallel',
+        ' × 1 tasks × 1 trials = 2 task-runs, ≈ 4× parallel',
       ),
       findsOneWidget,
     );
@@ -330,7 +330,7 @@ void main() {
     await tester.dragUntilVisible(
       find.text(
         'Will run 1 (provider, model) pairs'
-        ' × 2 tasks = 2 combos, ≈ 4× parallel',
+        ' × 2 tasks × 1 trials = 2 task-runs, ≈ 4× parallel',
       ),
       find.byType(ListView),
       const Offset(0, -200),
@@ -340,7 +340,7 @@ void main() {
     expect(
       find.text(
         'Will run 1 (provider, model) pairs'
-        ' × 2 tasks = 2 combos, ≈ 4× parallel',
+        ' × 2 tasks × 1 trials = 2 task-runs, ≈ 4× parallel',
       ),
       findsOneWidget,
     );
@@ -355,10 +355,20 @@ void main() {
     await tester.tap(find.text('state.b'));
     await tester.pumpAndSettle();
 
+    await tester.dragUntilVisible(
+      find.text(
+        'Will run 1 (provider, model) pairs'
+        ' × 1 tasks × 1 trials = 1 task-run, ≈ 4× parallel',
+      ),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+
     expect(
       find.text(
         'Will run 1 (provider, model) pairs'
-        ' × 1 tasks = 1 combos, ≈ 4× parallel',
+        ' × 1 tasks × 1 trials = 1 task-run, ≈ 4× parallel',
       ),
       findsOneWidget,
     );
@@ -426,6 +436,21 @@ void main() {
     await tester.tap(find.text('model-a'));
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.byKey(const Key('trials-per-task')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('trials-per-task')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('3').last);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Will run 1 (provider, model) pairs'
+        ' × 1 tasks × 3 trials = 3 task-runs, ≈ 4× parallel',
+      ),
+      findsOneWidget,
+    );
+
     await tester.tap(find.widgetWithText(FilledButton, 'Run'));
     await tester.pumpAndSettle();
 
@@ -434,5 +459,6 @@ void main() {
     expect(cfg.modelsByProvider, contains('list'));
     expect(cfg.modelsByProvider['list'], ['model-a']);
     expect(cfg.maxConcurrency, 4);
+    expect(cfg.trialsPerTask, 3);
   });
 }

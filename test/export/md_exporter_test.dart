@@ -3,7 +3,14 @@ import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
 import 'package:flutter_test/flutter_test.dart' hide Evaluation;
 
-RunSummary _summary({String? name}) {
+RunSummary _summary({
+  String? name,
+  String modelId = 'gpt-5',
+  int? promptTokens = 10,
+  int? completionTokens = 20,
+  bool? primaryPass = true,
+  String? failureTag = 'pass',
+}) {
   final run = Run(
     id: 'r1',
     startedAt: DateTime.utc(2026, 5, 2, 14, 23),
@@ -15,11 +22,11 @@ RunSummary _summary({String? name}) {
     id: 'tr1',
     runId: 'r1',
     providerId: 'openai',
-    modelId: 'gpt-5',
+    modelId: modelId,
     taskId: 'bug.off_by_one',
     responseText: 'raw',
-    promptTokens: 10,
-    completionTokens: 20,
+    promptTokens: promptTokens,
+    completionTokens: completionTokens,
     latencyMs: 1500,
     aggregateScore: 0.85,
     completedAt: DateTime.utc(2026, 5, 2, 14, 24),
@@ -27,8 +34,8 @@ RunSummary _summary({String? name}) {
     taskVersion: 2,
     benchmarkTrack: 'codegen',
     harnessId: 'h1',
-    primaryPass: true,
-    failureTag: 'pass',
+    primaryPass: primaryPass,
+    failureTag: failureTag,
     patchText: 'abc',
     trajectoryLogPath: '/tmp/trajectory.log',
   );
@@ -103,14 +110,46 @@ void main() {
     expect(md, contains('**0.85**'));
   });
 
-  test('missing evaluator score renders as 0.00', () {
+  test('missing evaluator score renders as unknown', () {
     final md = runSummaryToMarkdown(_summary());
     final dataLine = md
         .split('\n')
         .firstWhere((l) => l.contains('bug.off_by_one'));
-    // widget_tree, llm_judge, diff_size missing => 0.00
-    final zeroOccurrences = '0.00'.allMatches(dataLine).length;
-    expect(zeroOccurrences, greaterThanOrEqualTo(3));
+    // hidden_test, widget_tree, llm_judge, diff_size missing => unknown
+    final unknownOccurrences = 'unknown'.allMatches(dataLine).length;
+    expect(unknownOccurrences, greaterThanOrEqualTo(4));
+  });
+
+  test('includes leaderboard summary with uncertainty and low-sample flag', () {
+    final md = runSummaryToMarkdown(_summary());
+
+    expect(md, contains('## Leaderboard summary'));
+    expect(md, contains('| Provider | Model | Task-runs | Primary Pass |'));
+    expect(md, contains('| openai | gpt-5 | 1 | 1/1 | 100% |'));
+    expect(
+      md,
+      contains('Low-sample rows have fewer than 5 pass/fail samples.'),
+    );
+    expect(md, contains('pass: 1'));
+  });
+
+  test('summary renders legacy unknown values as unknown', () {
+    final md = runSummaryToMarkdown(
+      _summary(
+        modelId: 'unpriced',
+        promptTokens: null,
+        completionTokens: null,
+        primaryPass: null,
+        failureTag: null,
+      ),
+    );
+
+    expect(
+      md,
+      contains(
+        '| openai | unpriced | 1 | 0/0 | unknown | unknown | yes | 1.5s | unknown | unknown | unknown | unknown: 1 |',
+      ),
+    );
   });
 
   test('empty task-runs renders heading + empty table header', () {

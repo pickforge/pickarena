@@ -284,7 +284,7 @@ class _DetailPane extends StatelessWidget {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final radarHeight = constraints.maxHeight < 500 ? 180.0 : 240.0;
+        final radarHeight = constraints.maxHeight < 500 ? 96.0 : 240.0;
         return FutureBuilder<ModelDetail?>(
           future: detailFuture,
           builder: (context, snap) {
@@ -323,6 +323,7 @@ class _DetailPane extends StatelessWidget {
                     ),
                   ),
                 ),
+                _RankingSummary(ranking: detail.ranking),
                 const Divider(height: 1),
                 Expanded(
                   child: PerTaskBarChart(
@@ -334,7 +335,8 @@ class _DetailPane extends StatelessWidget {
                   padding: const EdgeInsets.all(8),
                   child: Text(
                     '${detail.ranking.taskRunCount} task-runs · '
-                    '${detail.ranking.dimensions.problems} problems',
+                    '${detail.ranking.primaryPassSampleCount} pass/fail samples · '
+                    '${detail.ranking.dimensions.problems} evaluator problems',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
@@ -346,3 +348,81 @@ class _DetailPane extends StatelessWidget {
     );
   }
 }
+
+class _RankingSummary extends StatelessWidget {
+  const _RankingSummary({required this.ranking});
+
+  final ModelRanking ranking;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: DefaultTextStyle.merge(
+        style: theme.textTheme.bodySmall,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Reliable pass rate: ${_formatPassRate(ranking)}'),
+            Text(
+              'Medians: ${_formatDuration(ranking.medianLatencyMs)}, '
+              '${_formatTokens(ranking)}, '
+              '${_formatCost(ranking.medianEstimatedCostMicros)}',
+            ),
+            Text(
+              'Cost per solved task: ${_formatCost(ranking.costPerSolvedTaskMicros)}',
+            ),
+            Text(
+              'Failures: ${_formatFailureBreakdown(ranking.failureBreakdown)}',
+            ),
+            if (ranking.lowSample)
+              const Text(
+                'Low sample: run at least 5 pass/fail samples before comparing.',
+              ),
+            if (ranking.primaryPassRate != null)
+              const Text('Legacy aggregate dimensions are secondary.'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _formatPassRate(ModelRanking ranking) {
+  final passRate = ranking.primaryPassRate;
+  if (passRate == null) return 'unknown';
+  final interval = ranking.primaryPassInterval;
+  final ci = interval == null
+      ? ''
+      : ' (${_percent(interval.lower)}–${_percent(interval.upper)} Wilson 95%)';
+  return '${ranking.primaryPassCount}/${ranking.primaryPassSampleCount} '
+      '${_percent(passRate)}$ci';
+}
+
+String _formatDuration(int? medianLatencyMs) {
+  if (medianLatencyMs == null) return 'duration unknown';
+  if (medianLatencyMs < 1000) return '${medianLatencyMs}ms';
+  return '${(medianLatencyMs / 1000).toStringAsFixed(1)}s';
+}
+
+String _formatTokens(ModelRanking ranking) {
+  final prompt = ranking.medianPromptTokens;
+  final completion = ranking.medianCompletionTokens;
+  if (prompt == null && completion == null) return 'tokens unknown';
+  return '${prompt ?? '?'} in / ${completion ?? '?'} out tokens';
+}
+
+String _formatCost(int? costMicros) {
+  if (costMicros == null) return 'unknown';
+  return '\$${(costMicros / 1000000).toStringAsFixed(4)}';
+}
+
+String _formatFailureBreakdown(Map<String, int> breakdown) {
+  if (breakdown.isEmpty) return 'unknown';
+  final entries = breakdown.entries.toList()
+    ..sort((a, b) => a.key.compareTo(b.key));
+  return entries.map((e) => '${e.key} ${e.value}').join(', ');
+}
+
+String _percent(double value) => '${(value * 100).toStringAsFixed(0)}%';

@@ -1,3 +1,6 @@
+import 'package:dart_arena/analytics/benchmark_statistics.dart';
+import 'package:dart_arena/analytics/confidence_interval.dart';
+import 'package:dart_arena/analytics/cost_estimator.dart';
 import 'package:dart_arena/analytics/dimensions.dart';
 import 'package:dart_arena/analytics/leaderboard_filter.dart';
 import 'package:dart_arena/core/category.dart';
@@ -13,6 +16,14 @@ class ModelRanking extends Equatable {
     required this.taskRunCount,
     this.primaryPassCount = 0,
     this.primaryPassSampleCount = 0,
+    this.primaryPassInterval,
+    this.lowSample = false,
+    this.medianLatencyMs,
+    this.medianPromptTokens,
+    this.medianCompletionTokens,
+    this.medianEstimatedCostMicros,
+    this.costPerSolvedTaskMicros,
+    this.failureBreakdown = const {},
   });
 
   final String providerId;
@@ -21,11 +32,20 @@ class ModelRanking extends Equatable {
   final int taskRunCount;
   final int primaryPassCount;
   final int primaryPassSampleCount;
+  final ConfidenceInterval? primaryPassInterval;
+  final bool lowSample;
+  final int? medianLatencyMs;
+  final int? medianPromptTokens;
+  final int? medianCompletionTokens;
+  final int? medianEstimatedCostMicros;
+  final int? costPerSolvedTaskMicros;
+  final Map<String, int> failureBreakdown;
 
   String get key => '$providerId:$modelId';
   double? get primaryPassRate => primaryPassSampleCount == 0
       ? null
       : primaryPassCount / primaryPassSampleCount;
+  bool get hasMeasuredPrimaryPass => primaryPassSampleCount > 0;
 
   @override
   List<Object?> get props => [
@@ -35,6 +55,14 @@ class ModelRanking extends Equatable {
     taskRunCount,
     primaryPassCount,
     primaryPassSampleCount,
+    primaryPassInterval,
+    lowSample,
+    medianLatencyMs,
+    medianPromptTokens,
+    medianCompletionTokens,
+    medianEstimatedCostMicros,
+    costPerSolvedTaskMicros,
+    failureBreakdown,
   ];
 }
 
@@ -45,6 +73,10 @@ class PerTaskScore extends Equatable {
     required this.aggregateScore,
     required this.lastRunId,
     required this.lastTaskRunId,
+    this.taskRunCount = 1,
+    this.primaryPassCount = 0,
+    this.primaryPassSampleCount = 0,
+    this.primaryPassInterval,
   });
 
   final String taskId;
@@ -52,6 +84,15 @@ class PerTaskScore extends Equatable {
   final double aggregateScore;
   final String? lastRunId;
   final String? lastTaskRunId;
+  final int taskRunCount;
+  final int primaryPassCount;
+  final int primaryPassSampleCount;
+  final ConfidenceInterval? primaryPassInterval;
+
+  double? get primaryPassRate => primaryPassSampleCount == 0
+      ? null
+      : primaryPassCount / primaryPassSampleCount;
+  double get displayScore => primaryPassRate ?? aggregateScore;
 
   @override
   List<Object?> get props => [
@@ -60,6 +101,10 @@ class PerTaskScore extends Equatable {
     aggregateScore,
     lastRunId,
     lastTaskRunId,
+    taskRunCount,
+    primaryPassCount,
+    primaryPassSampleCount,
+    primaryPassInterval,
   ];
 }
 
@@ -73,10 +118,15 @@ class ModelDetail extends Equatable {
 }
 
 class LeaderboardRepository {
-  LeaderboardRepository(this._db, {DateTime Function()? now})
-    : _now = now ?? DateTime.now;
+  LeaderboardRepository(
+    this._db, {
+    DateTime Function()? now,
+    CostEstimator costEstimator = const CostEstimator(),
+  }) : _now = now ?? DateTime.now,
+       _costEstimator = costEstimator;
   final AppDatabase _db;
   final DateTime Function() _now;
+  final CostEstimator _costEstimator;
 
   Future<List<ModelRanking>> rank({
     required LeaderboardFilter filter,
@@ -96,23 +146,10 @@ class LeaderboardRepository {
           .add(tr);
     }
     final out = <ModelRanking>[];
-    groups.forEach((key, rs) {
-      out.add(
-        ModelRanking(
-          providerId: rs.first.providerId,
-          modelId: rs.first.modelId,
-          dimensions: Dimensions.fromTaskRuns(rs, evals),
-          taskRunCount: rs.length,
-          primaryPassCount: rs.where((t) => t.primaryPass == true).length,
-          primaryPassSampleCount: rs.where((t) => t.primaryPass != null).length,
-        ),
-      );
+    groups.forEach((_, rs) {
+      out.add(_rankingForTaskRuns(rs, evals));
     });
-    out.sort(
-      (a, b) => b.dimensions
-          .byDimension(filter.dimension)
-          .compareTo(a.dimensions.byDimension(filter.dimension)),
-    );
+    out.sort((a, b) => _compareRankings(a, b, filter.dimension));
     return out;
   }
 
@@ -135,16 +172,15 @@ class LeaderboardRepository {
     final evals = taskRuns.isEmpty
         ? const <String, List<Evaluation>>{}
         : await _evaluationsByTaskRunId(taskRuns.map((t) => t.id));
-    final ranking = ModelRanking(
-      providerId: providerId,
-      modelId: modelId,
-      dimensions: Dimensions.fromTaskRuns(taskRuns, evals),
-      taskRunCount: taskRuns.length,
-      primaryPassCount: taskRuns.where((t) => t.primaryPass == true).length,
-      primaryPassSampleCount: taskRuns
-          .where((t) => t.primaryPass != null)
-          .length,
-    );
+    final ranking = taskRuns.isEmpty
+        ? ModelRanking(
+            providerId: providerId,
+            modelId: modelId,
+            dimensions: Dimensions.zero,
+            taskRunCount: 0,
+            lowSample: true,
+          )
+        : _rankingForTaskRuns(taskRuns, evals);
 
     final byTask = <String, List<TaskRun>>{};
     for (final tr in taskRuns) {
@@ -154,6 +190,7 @@ class LeaderboardRepository {
     byTask.forEach((taskId, rs) {
       rs.sort((a, b) => b.completedAt.compareTo(a.completedAt));
       final latest = rs.first;
+      final metrics = buildRankingMetrics(rs, costEstimator: _costEstimator);
       perTask.add(
         PerTaskScore(
           taskId: taskId,
@@ -161,11 +198,41 @@ class LeaderboardRepository {
           aggregateScore: latest.aggregateScore,
           lastRunId: latest.runId,
           lastTaskRunId: latest.id,
+          taskRunCount: metrics.taskRunCount,
+          primaryPassCount: metrics.primaryPassCount,
+          primaryPassSampleCount: metrics.primaryPassSampleCount,
+          primaryPassInterval: metrics.primaryPassInterval,
         ),
       );
     });
-    perTask.sort((a, b) => b.aggregateScore.compareTo(a.aggregateScore));
+    perTask.sort((a, b) => b.displayScore.compareTo(a.displayScore));
     return ModelDetail(ranking: ranking, perTask: perTask);
+  }
+
+  ModelRanking _rankingForTaskRuns(
+    List<TaskRun> taskRuns,
+    Map<String, List<Evaluation>> evals,
+  ) {
+    final metrics = buildRankingMetrics(
+      taskRuns,
+      costEstimator: _costEstimator,
+    );
+    return ModelRanking(
+      providerId: taskRuns.first.providerId,
+      modelId: taskRuns.first.modelId,
+      dimensions: Dimensions.fromTaskRuns(taskRuns, evals),
+      taskRunCount: metrics.taskRunCount,
+      primaryPassCount: metrics.primaryPassCount,
+      primaryPassSampleCount: metrics.primaryPassSampleCount,
+      primaryPassInterval: metrics.primaryPassInterval,
+      lowSample: metrics.lowSample,
+      medianLatencyMs: metrics.medianLatencyMs,
+      medianPromptTokens: metrics.medianPromptTokens,
+      medianCompletionTokens: metrics.medianCompletionTokens,
+      medianEstimatedCostMicros: metrics.medianEstimatedCostMicros,
+      costPerSolvedTaskMicros: metrics.costPerSolvedTaskMicros,
+      failureBreakdown: metrics.failureBreakdown,
+    );
   }
 
   Future<List<TaskRun>> _filteredTaskRuns(
@@ -202,4 +269,71 @@ class LeaderboardRepository {
     }
     return out;
   }
+}
+
+int _compareRankings(ModelRanking a, ModelRanking b, ScoreDimension dimension) {
+  if (dimension != ScoreDimension.overall) {
+    return _compareLegacyRankings(a, b, dimension);
+  }
+  final measured = _compareBoolDesc(
+    a.hasMeasuredPrimaryPass,
+    b.hasMeasuredPrimaryPass,
+  );
+  if (measured != 0) return measured;
+  if (!a.hasMeasuredPrimaryPass && !b.hasMeasuredPrimaryPass) {
+    return _compareLegacyRankings(a, b, dimension);
+  }
+  final lower = _compareNullableDoubleDesc(
+    a.primaryPassInterval?.lower,
+    b.primaryPassInterval?.lower,
+  );
+  if (lower != 0) return lower;
+  final rate = _compareNullableDoubleDesc(a.primaryPassRate, b.primaryPassRate);
+  if (rate != 0) return rate;
+  final samples = b.primaryPassSampleCount.compareTo(a.primaryPassSampleCount);
+  if (samples != 0) return samples;
+  final cost = _compareNullableIntAsc(
+    a.medianEstimatedCostMicros,
+    b.medianEstimatedCostMicros,
+  );
+  if (cost != 0) return cost;
+  final duration = _compareNullableIntAsc(a.medianLatencyMs, b.medianLatencyMs);
+  if (duration != 0) return duration;
+  return a.key.compareTo(b.key);
+}
+
+int _compareLegacyRankings(
+  ModelRanking a,
+  ModelRanking b,
+  ScoreDimension dimension,
+) {
+  final measured = _compareBoolDesc(
+    a.hasMeasuredPrimaryPass,
+    b.hasMeasuredPrimaryPass,
+  );
+  if (measured != 0) return measured;
+  final score = b.dimensions
+      .byDimension(dimension)
+      .compareTo(a.dimensions.byDimension(dimension));
+  if (score != 0) return score;
+  return a.key.compareTo(b.key);
+}
+
+int _compareBoolDesc(bool a, bool b) {
+  if (a == b) return 0;
+  return a ? -1 : 1;
+}
+
+int _compareNullableDoubleDesc(double? a, double? b) {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return b.compareTo(a);
+}
+
+int _compareNullableIntAsc(int? a, int? b) {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return a.compareTo(b);
 }

@@ -3,7 +3,14 @@ import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
 import 'package:flutter_test/flutter_test.dart' hide Evaluation;
 
-RunSummary _summary({String? name}) {
+RunSummary _summary({
+  String? name,
+  String modelId = 'gpt-5',
+  int? promptTokens = 10,
+  int? completionTokens = 20,
+  bool? primaryPass = true,
+  String? failureTag = 'pass',
+}) {
   final run = Run(
     id: 'r1',
     startedAt: DateTime.utc(2026, 5, 2, 14, 23),
@@ -15,11 +22,11 @@ RunSummary _summary({String? name}) {
     id: 'tr1',
     runId: 'r1',
     providerId: 'openai',
-    modelId: 'gpt-5',
+    modelId: modelId,
     taskId: 'bug.off_by_one',
     responseText: 'raw',
-    promptTokens: 10,
-    completionTokens: 20,
+    promptTokens: promptTokens,
+    completionTokens: completionTokens,
     latencyMs: 1500,
     aggregateScore: 0.85,
     completedAt: DateTime.utc(2026, 5, 2, 14, 24),
@@ -27,8 +34,8 @@ RunSummary _summary({String? name}) {
     taskVersion: 2,
     benchmarkTrack: 'codegen',
     harnessId: 'h1',
-    primaryPass: true,
-    failureTag: 'pass',
+    primaryPass: primaryPass,
+    failureTag: failureTag,
     patchText: 'abc',
     trajectoryLogPath: '/tmp/trajectory.log',
   );
@@ -85,7 +92,7 @@ void main() {
   test('writes one row per task run with named run', () {
     final csv = runSummaryToCsv(_summary(name: 'demo'));
     final lines = csv.split('\n');
-    expect(lines, hasLength(2));
+    expect(lines.length, greaterThan(2));
     final values = lines[1].split(',');
     expect(values[0], 'r1');
     expect(values[1], 'demo');
@@ -112,15 +119,66 @@ void main() {
     expect(values[1], '');
   });
 
-  test('missing evaluator score defaults to 0.0000', () {
+  test('missing evaluator score renders as empty', () {
     final s = _summary();
     final csv = runSummaryToCsv(s);
     final values = csv.split('\n')[1].split(',');
     // hidden_test, widget_tree, llm_judge, diff_size are missing.
-    expect(values[18], '0.0000');
-    expect(values[19], '0.0000');
-    expect(values[20], '0.0000');
-    expect(values[21], '0.0000');
+    expect(values[18], '');
+    expect(values[19], '');
+    expect(values[20], '');
+    expect(values[21], '');
+  });
+
+  test('includes aggregate leaderboard summary fields', () {
+    final csv = runSummaryToCsv(_summary());
+    final lines = csv.split('\n');
+    final marker = lines.indexOf('leaderboard_summary');
+    expect(marker, greaterThan(0));
+    final headers = lines[marker + 1].split(',');
+    final values = lines[marker + 2].split(',');
+
+    expect(headers, contains('primary_pass_rate'));
+    expect(headers, contains('wilson_low'));
+    expect(headers, contains('median_estimated_cost'));
+    expect(headers, contains('cost_per_solved_task'));
+    expect(headers, contains('failure_pass'));
+    expect(values[headers.indexOf('provider_id')], 'openai');
+    expect(values[headers.indexOf('model_id')], 'gpt-5');
+    expect(values[headers.indexOf('task_run_count')], '1');
+    expect(values[headers.indexOf('primary_pass_count')], '1');
+    expect(values[headers.indexOf('primary_pass_sample_count')], '1');
+    expect(values[headers.indexOf('primary_pass_rate')], '1.0000');
+    expect(values[headers.indexOf('low_sample')], 'true');
+    expect(values[headers.indexOf('median_latency_ms')], '1500');
+    expect(values[headers.indexOf('median_prompt_tokens')], '10');
+    expect(values[headers.indexOf('median_completion_tokens')], '20');
+    expect(values[headers.indexOf('failure_pass')], '1');
+  });
+
+  test('summary leaves unknown legacy values empty instead of zero', () {
+    final csv = runSummaryToCsv(
+      _summary(
+        modelId: 'unpriced',
+        promptTokens: null,
+        completionTokens: null,
+        primaryPass: null,
+        failureTag: null,
+      ),
+    );
+    final lines = csv.split('\n');
+    final marker = lines.indexOf('leaderboard_summary');
+    final headers = lines[marker + 1].split(',');
+    final values = lines[marker + 2].split(',');
+
+    expect(values[headers.indexOf('primary_pass_rate')], '');
+    expect(values[headers.indexOf('wilson_low')], '');
+    expect(values[headers.indexOf('wilson_high')], '');
+    expect(values[headers.indexOf('median_prompt_tokens')], '');
+    expect(values[headers.indexOf('median_completion_tokens')], '');
+    expect(values[headers.indexOf('median_estimated_cost')], '');
+    expect(values[headers.indexOf('cost_per_solved_task')], '');
+    expect(values[headers.indexOf('failure_unknown')], '1');
   });
 
   test('CSV cells with commas are quoted', () {

@@ -1,3 +1,5 @@
+import 'package:dart_arena/analytics/result_primitives.dart';
+import 'package:dart_arena/export/run_summary_leaderboard_summary.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
 
@@ -56,10 +58,57 @@ String runSummaryToCsv(RunSummary s) {
       (tr.patchText?.length ?? 0).toString(),
       tr.trajectoryLogPath ?? '',
       tr.aggregateScore.toStringAsFixed(4),
-      ..._evaluatorIds.map((id) => (evals[id] ?? 0).toStringAsFixed(4)),
+      ..._evaluatorIds.map((id) => evals[id]?.toStringAsFixed(4) ?? ''),
       tr.latencyMs.toString(),
       (tr.promptTokens ?? '').toString(),
       (tr.completionTokens ?? '').toString(),
+    ]);
+  }
+
+  final summaryRows = runSummaryLeaderboardRows(s);
+  if (summaryRows.isEmpty) return rows.map(_csvLine).join('\n');
+
+  final leaderboardHeaders = <String>[
+    'provider_id',
+    'model_id',
+    'task_run_count',
+    'primary_pass_count',
+    'primary_pass_sample_count',
+    'primary_pass_rate',
+    'wilson_low',
+    'wilson_high',
+    'low_sample',
+    'median_latency_ms',
+    'median_prompt_tokens',
+    'median_completion_tokens',
+    'median_estimated_cost',
+    'cost_per_solved_task',
+    ...supportedFailureTags.map((tag) => 'failure_$tag'),
+  ];
+  rows
+    ..add(const [])
+    ..add(const ['leaderboard_summary'])
+    ..add(leaderboardHeaders);
+  for (final row in summaryRows) {
+    final metrics = row.metrics;
+    rows.add([
+      row.providerId,
+      row.modelId,
+      metrics.taskRunCount.toString(),
+      metrics.primaryPassCount.toString(),
+      metrics.primaryPassSampleCount.toString(),
+      exportRate(metrics.primaryPassRate),
+      exportRate(metrics.primaryPassInterval?.lower),
+      exportRate(metrics.primaryPassInterval?.upper),
+      metrics.lowSample.toString(),
+      exportInt(metrics.medianLatencyMs),
+      exportInt(metrics.medianPromptTokens),
+      exportInt(metrics.medianCompletionTokens),
+      exportCostDollars(metrics.medianEstimatedCostMicros),
+      exportCostDollars(metrics.costPerSolvedTaskMicros),
+      ...supportedFailureTags.map(
+        (tag) => (metrics.failureBreakdown[tag] ?? 0).toString(),
+      ),
     ]);
   }
 

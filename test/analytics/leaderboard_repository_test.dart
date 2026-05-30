@@ -1,4 +1,5 @@
 import 'package:dart_arena/analytics/dimensions.dart';
+import 'package:dart_arena/analytics/cost_estimator.dart';
 import 'package:dart_arena/analytics/leaderboard_filter.dart';
 import 'package:dart_arena/analytics/leaderboard_repository.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
@@ -257,6 +258,119 @@ void main() {
 
     await db.close();
   });
+
+  test(
+    'rank computes reliable statistics, cost summaries, and failures',
+    () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final dao = RunDao(db);
+      await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 1));
+      for (var i = 0; i < 3; i++) {
+        final pass = i != 1;
+        await dao.persistTaskRun(
+          TaskRunResult(
+            runId: 'r1',
+            providerId: 'p',
+            modelId: 'm',
+            taskId: 'task-$i',
+            response: ModelResponse(
+              rawText: '',
+              extractedCode: null,
+              promptTokens: 10 + i * 10,
+              completionTokens: 20 + i * 10,
+              latency: Duration(milliseconds: 1000 + i * 1000),
+            ),
+            evaluations: const [],
+            aggregateScore: pass ? 1 : 0,
+            completedAt: DateTime(2026, 5, 1, 0, i),
+            primaryPass: pass,
+            failureTag: pass ? 'pass' : 'compile_failed',
+          ),
+        );
+      }
+
+      final repo = LeaderboardRepository(
+        db,
+        costEstimator: const CostEstimator(
+          pricingRegistry: {
+            'p:m': ModelPricing(inputCostPerMToken: 1, outputCostPerMToken: 3),
+          },
+        ),
+      );
+      final row = (await repo.rank(filter: const LeaderboardFilter())).single;
+
+      expect(row.primaryPassCount, 2);
+      expect(row.primaryPassSampleCount, 3);
+      expect(row.primaryPassInterval, isNotNull);
+      expect(row.lowSample, isTrue);
+      expect(row.medianLatencyMs, 2000);
+      expect(row.medianPromptTokens, 20);
+      expect(row.medianCompletionTokens, 30);
+      expect(row.medianEstimatedCostMicros, 110);
+      expect(row.costPerSolvedTaskMicros, 165);
+      expect(row.failureBreakdown['pass'], 2);
+      expect(row.failureBreakdown['compile_failed'], 1);
+
+      await db.close();
+    },
+  );
+
+  test(
+    'default rank uses reliable comparator before legacy aggregate',
+    () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final dao = RunDao(db);
+      await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 1));
+      Future<void> seed({
+        required String provider,
+        required int index,
+        bool? primaryPass,
+        double aggregate = 1,
+      }) {
+        return dao.persistTaskRun(
+          TaskRunResult(
+            runId: 'r1',
+            providerId: provider,
+            modelId: 'm',
+            taskId: 'task-$index',
+            response: const ModelResponse(
+              rawText: '',
+              extractedCode: null,
+              promptTokens: null,
+              completionTokens: null,
+              latency: Duration(milliseconds: 1000),
+            ),
+            evaluations: const [],
+            aggregateScore: aggregate,
+            completedAt: DateTime(2026, 5, 1, 0, index),
+            primaryPass: primaryPass,
+            failureTag: primaryPass == true
+                ? 'pass'
+                : primaryPass == false
+                ? 'public_tests_failed'
+                : null,
+          ),
+        );
+      }
+
+      for (var i = 0; i < 5; i++) {
+        await seed(provider: 'four-of-five', index: i, primaryPass: i != 0);
+      }
+      await seed(provider: 'one-shot', index: 10, primaryPass: true);
+      await seed(provider: 'legacy-high', index: 11, primaryPass: null);
+
+      final repo = LeaderboardRepository(db);
+      final rows = await repo.rank(filter: const LeaderboardFilter());
+
+      expect(rows.map((row) => row.providerId), [
+        'four-of-five',
+        'one-shot',
+        'legacy-high',
+      ]);
+
+      await db.close();
+    },
+  );
 
   test('detail returns one PerTaskScore per task within filter', () async {
     final s = await _seed();

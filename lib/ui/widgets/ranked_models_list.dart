@@ -41,11 +41,14 @@ class RankedModelsList extends StatelessWidget {
         final score = r.dimensions.byDimension(dimension);
         final isSelected = r.key == selectedKey;
         final isPinned = r.key == pinnedKey;
-        final passRate = r.primaryPassRate;
-        final subtitle = passRate == null
-            ? r.providerId
-            : '${r.providerId} · pass ${r.primaryPassCount}/${r.primaryPassSampleCount} '
-                  '(${(passRate * 100).toStringAsFixed(0)}%)';
+        final subtitle = [
+          r.providerId,
+          _formatPassRate(r),
+          '${r.taskRunCount} ${_plural(r.taskRunCount, 'task-run')}',
+          _formatDuration(r.medianLatencyMs),
+          _formatCost(r.medianEstimatedCostMicros),
+          if (r.lowSample) 'low sample',
+        ].join(' · ');
         return ListTile(
           selected: isSelected,
           leading: SizedBox(
@@ -58,7 +61,7 @@ class RankedModelsList extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                score.toStringAsFixed(2),
+                'legacy ${score.toStringAsFixed(2)}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(width: 8),
@@ -76,4 +79,32 @@ class RankedModelsList extends StatelessWidget {
       },
     );
   }
+}
+
+String _formatPassRate(ModelRanking r) {
+  final passRate = r.primaryPassRate;
+  if (passRate == null) return 'pass unknown';
+  final interval = r.primaryPassInterval;
+  final ci = interval == null
+      ? ''
+      : ', CI ${_percent(interval.lower)}–${_percent(interval.upper)}';
+  return 'pass ${r.primaryPassCount}/${r.primaryPassSampleCount} '
+      '(${_percent(passRate)}$ci)';
+}
+
+String _formatDuration(int? medianLatencyMs) {
+  if (medianLatencyMs == null) return 'duration unknown';
+  if (medianLatencyMs < 1000) return '${medianLatencyMs}ms median';
+  return '${(medianLatencyMs / 1000).toStringAsFixed(1)}s median';
+}
+
+String _formatCost(int? costMicros) {
+  if (costMicros == null) return 'cost unknown';
+  return '\$${(costMicros / 1000000).toStringAsFixed(4)} median';
+}
+
+String _percent(double value) => '${(value * 100).toStringAsFixed(0)}%';
+
+String _plural(int count, String singular) {
+  return count == 1 ? singular : '${singular}s';
 }

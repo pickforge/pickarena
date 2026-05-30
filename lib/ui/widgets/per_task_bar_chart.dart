@@ -72,8 +72,8 @@ class PerTaskBarChart extends StatelessWidget {
                 x: i,
                 barRods: [
                   BarChartRodData(
-                    toY: scores[i].aggregateScore,
-                    color: _tint(scores[i].aggregateScore),
+                    toY: scores[i].displayScore,
+                    color: _tint(scores[i].displayScore),
                     width: 16,
                     borderRadius: BorderRadius.circular(2),
                   ),
