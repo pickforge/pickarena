@@ -33,6 +33,7 @@ dependencies:
   flutter_bloc: ^8.1.6
   equatable: ^2.0.5
   file_picker: ^8.1.2
+  crypto: ^3.0.7
   diff_match_patch: ^0.4.1
   dio: ^5.7.0
   drift: ^2.20.3

@@ -3,14 +3,19 @@ import 'package:dart_arena/export/run_summary_leaderboard_summary.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
 
-String runSummaryToMarkdown(RunSummary s) {
+String runSummaryToMarkdown(
+  RunSummary s, {
+  List<TaskRun>? taskRuns,
+  String Function(TaskRun taskRun)? trajectoryPathFor,
+}) {
   final buf = StringBuffer();
   final ts = s.run.startedAt.toIso8601String();
   buf.writeln('# Benchmark run');
   if (s.run.name != null) {
     buf.writeln('**${s.run.name}**');
   }
-  buf.writeln('Started: `$ts`  ·  Task-runs: ${s.taskRuns.length}');
+  final taskRunRows = taskRuns ?? s.taskRuns;
+  buf.writeln('Started: `$ts`  ·  Task-runs: ${taskRunRows.length}');
   buf.writeln();
 
   final summaryRows = runSummaryLeaderboardRows(s);
@@ -55,7 +60,7 @@ String runSummaryToMarkdown(RunSummary s) {
     '|---------|---------|------|-------------|-------------|-----------|-----------'
     '|---------|',
   );
-  for (final tr in s.taskRuns) {
+  for (final tr in taskRunRows) {
     final evals = <String, double>{};
     for (final e in s.evaluationsByTaskRunId[tr.id] ?? const <Evaluation>[]) {
       evals[e.evaluatorId] = e.score;
@@ -66,7 +71,8 @@ String runSummaryToMarkdown(RunSummary s) {
       '| ${tr.trialIndex} | ${tr.taskVersion} | ${tr.benchmarkTrack} '
       '| ${tr.harnessId ?? ''} | ${tr.primaryPass?.toString() ?? ''} '
       '| ${tr.failureTag ?? ''} '
-      '| ${tr.patchText?.length ?? 0} | ${tr.trajectoryLogPath ?? ''} '
+      '| ${tr.patchText?.length ?? 0} '
+      '| ${trajectoryPathFor?.call(tr) ?? tr.trajectoryLogPath ?? ''} '
       '| **${tr.aggregateScore.toStringAsFixed(2)}** '
       '| ${fmt('compile')} | ${fmt('analyze')} | ${fmt('test')} '
       '| ${fmt('hidden_test')} | ${fmt('widget_tree')} '

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_arena/core/task_registry.dart';
+import 'package:dart_arena/export/artifact_bundle.dart';
 import 'package:dart_arena/export/csv_exporter.dart';
 import 'package:dart_arena/export/md_exporter.dart';
 import 'package:dart_arena/export/readme_publisher.dart';
@@ -13,6 +14,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path/path.dart' as p;
 
 class RunDetailsPage extends StatefulWidget {
   const RunDetailsPage({
@@ -85,6 +87,43 @@ class _RunDetailsPageState extends State<RunDetailsPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Saved to $path')));
+  }
+
+  Future<void> _exportBundle(RunSummary s) async {
+    final parentPath = await FilePicker.platform.getDirectoryPath(
+      dialogTitle: 'Select export bundle parent directory',
+    );
+    if (parentPath == null) return;
+
+    final target = Directory(
+      p.join(parentPath, runBundleDirectoryName(s.run.id)),
+    );
+    if (await target.exists()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Export target already exists: ${target.path}')),
+      );
+      return;
+    }
+
+    try {
+      final result = await exportRunBundle(summary: s, targetDirectory: target);
+      if (!mounted) return;
+      final warningCount = result.warnings.length;
+      final warningText = warningCount == 0
+          ? 'no warnings'
+          : '$warningCount warning${warningCount == 1 ? '' : 's'}';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Exported bundle to ${target.path} ($warningText)'),
+        ),
+      );
+    } on Object catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
+    }
   }
 
   Future<void> _publishToReadme(RunSummary s) async {
@@ -193,31 +232,43 @@ class _RunDetailsPageState extends State<RunDetailsPage> {
                         ],
                       ),
                     ),
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        TextButton(
-                          onPressed: inProgress
-                              ? null
-                              : () => _saveCsv(summary),
-                          child: const Text('Export CSV'),
-                        ),
-                        TextButton(
-                          onPressed: inProgress ? null : () => _saveMd(summary),
-                          child: const Text('Export Markdown'),
-                        ),
-                        Tooltip(
-                          message: _readmePath == null
-                              ? 'Set README path in Settings'
-                              : '',
-                          child: TextButton(
-                            onPressed: canPublish
-                                ? () => _publishToReadme(summary)
-                                : null,
-                            child: const Text('Publish to README'),
+                    Flexible(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        alignment: WrapAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: inProgress
+                                ? null
+                                : () => _saveCsv(summary),
+                            child: const Text('Export CSV'),
                           ),
-                        ),
-                      ],
+                          TextButton(
+                            onPressed: inProgress
+                                ? null
+                                : () => _saveMd(summary),
+                            child: const Text('Export Markdown'),
+                          ),
+                          TextButton(
+                            onPressed: inProgress
+                                ? null
+                                : () => _exportBundle(summary),
+                            child: const Text('Export Bundle'),
+                          ),
+                          Tooltip(
+                            message: _readmePath == null
+                                ? 'Set README path in Settings'
+                                : '',
+                            child: TextButton(
+                              onPressed: canPublish
+                                  ? () => _publishToReadme(summary)
+                                  : null,
+                              child: const Text('Publish to README'),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

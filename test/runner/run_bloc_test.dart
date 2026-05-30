@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
@@ -12,8 +14,10 @@ import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_progress_snapshot.dart';
+import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/run_state.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
+import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:drift/native.dart';
@@ -236,6 +240,44 @@ class _TwoEvaluatorTask extends _StubTask {
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) => _evals;
 }
 
+class _FixedRunProvenanceEnvironment
+    implements RunProvenanceEnvironmentProvider {
+  @override
+  Future<Map<String, Object?>> capture() async => const {
+    'hostPlatform': 'test-os',
+    'dartVersion': 'test-dart',
+    'flutterVersion': 'test-flutter',
+    'gitCommit': 'abc123',
+    'gitDirty': false,
+  };
+}
+
+class _LoadingPlanTask extends _StubTask {
+  var loaded = false;
+
+  @override
+  String get id => 'loaded-plan-task';
+  @override
+  int get version => 7;
+  @override
+  Set<TaskTag> get tags => const {TaskTag.bugfix};
+  @override
+  TaskDifficulty get difficulty => TaskDifficulty.medium;
+  @override
+  Duration? get timeout => const Duration(minutes: 2);
+  @override
+  Set<TaskPlatform> get platformRequirements => const {TaskPlatform.linux};
+  @override
+  String get prompt => loaded ? 'loaded prompt' : 'unloaded prompt';
+  @override
+  ReferencePlan? get referencePlan =>
+      const ReferencePlan(version: 1, markdown: 'reference plan secret');
+  @override
+  Future<void> ensureLoaded() async {
+    loaded = true;
+  }
+}
+
 void main() {
   test('happy path emits RunCompleted with aggregate 1.0', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_ok_');
@@ -397,6 +439,184 @@ void main() {
     await db.close();
     tmp.deleteSync(recursive: true);
   });
+
+  test(
+    'captures provenance after task loading and reference plan resolution',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_bloc_prov_',
+      );
+      final db = AppDatabase(NativeDatabase.memory());
+      final dao = RunDao(db);
+      final task = _LoadingPlanTask();
+      final bloc = RunBloc(
+        workdirManager: WorkdirManager(root: tmp),
+        runDao: dao,
+        planDao: PlanDao(db),
+        now: () => DateTime.utc(2026, 5, 30, 12),
+        idGenerator: () => 'run-prov',
+        weights: const {'pass': 2.0},
+        provenanceEnvironmentProvider: _FixedRunProvenanceEnvironment(),
+      );
+
+      final states = <RunState>[];
+      final sub = bloc.stream.listen(states.add);
+
+      bloc.add(
+        StartRun(
+          tasks: [task],
+          providers: [_FakeProvider()],
+          modelsByProvider: const {
+            'fake': [' fake-2 ', '', 'fake-2', 'fake-1'],
+          },
+          evaluatorConfig: EvaluatorConfig(
+            judgeProvider: _SecondFakeProvider(),
+            judgeModel: 'judge-model',
+          ),
+          useReferencePlan: true,
+          maxConcurrency: 99,
+          trialsPerTask: 2,
+          name: 'prov run',
+        ),
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 4));
+      expect(states.last, isA<RunCompleted>());
+      expect(task.loaded, isTrue);
+
+      final row = await dao.runById('run-prov');
+      expect(row!.provenanceJson, isNotNull);
+      final provenance =
+          jsonDecode(row.provenanceJson!) as Map<String, Object?>;
+      final config = provenance['config'] as Map<String, Object?>;
+      expect(config['name'], 'prov run');
+      expect(config['maxConcurrency'], 8);
+      expect(config['trialsPerTask'], 2);
+      expect(
+        ((config['modelsByProvider'] as Map<String, Object?>)['fake'] as List),
+        ['fake-1', 'fake-2'],
+      );
+      expect(config['evaluatorWeights'], {'pass': 2.0});
+      expect(config['judge'], {
+        'providerId': 'fake2',
+        'modelId': 'judge-model',
+      });
+
+      final taskJson =
+          (provenance['tasks'] as List).single as Map<String, Object?>;
+      expect(taskJson['version'], 7);
+      expect(taskJson['tags'], ['bugfix']);
+      expect(taskJson['difficulty'], 'medium');
+      expect(taskJson['timeoutMs'], 120000);
+      expect(taskJson['platformRequirements'], ['linux']);
+      expect(
+        taskJson['promptSha256'],
+        sha256.convert(utf8.encode('loaded prompt')).toString(),
+      );
+
+      final combos = provenance['combos'] as List;
+      expect(combos, hasLength(4));
+      expect((combos.first as Map<String, Object?>)['modelId'], 'fake-2');
+      for (final combo in combos.cast<Map<String, Object?>>()) {
+        expect(combo['planId'], startsWith('ref-loaded-plan-task-v1'));
+      }
+      expect(row.provenanceJson, isNot(contains('reference plan secret')));
+      expect(row.provenanceJson, isNot(contains('unloaded prompt')));
+      expect(
+        provenance['environment'],
+        containsPair('hostPlatform', 'test-os'),
+      );
+
+      await sub.cancel();
+      await bloc.close();
+      await db.close();
+      tmp.deleteSync(recursive: true);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'existingRunId preserves or backfills run provenance',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_bloc_existing_prov_',
+      );
+      final db = AppDatabase(NativeDatabase.memory());
+      final dao = RunDao(db);
+
+      await dao.startRun(
+        runId: 'existing-keep',
+        startedAt: DateTime.utc(2026, 5, 30),
+        provenanceJson: '{"schemaVersion":1,"keep":true}',
+      );
+      var bloc = RunBloc(
+        workdirManager: WorkdirManager(root: tmp),
+        runDao: dao,
+        now: () => DateTime.utc(2026, 5, 30, 12),
+        idGenerator: () => 'unused',
+        provenanceEnvironmentProvider: _FixedRunProvenanceEnvironment(),
+      );
+      var states = <RunState>[];
+      var sub = bloc.stream.listen(states.add);
+      bloc.add(
+        StartRun(
+          tasks: [_StubTask()],
+          providers: [_FakeProvider()],
+          modelsByProvider: const {
+            'fake': ['fake-1'],
+          },
+          evaluatorConfig: const EvaluatorConfig(),
+          existingRunId: 'existing-keep',
+        ),
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 2));
+      expect(states.last, isA<RunCompleted>());
+      expect(
+        (await dao.runById('existing-keep'))!.provenanceJson,
+        '{"schemaVersion":1,"keep":true}',
+      );
+      await sub.cancel();
+      await bloc.close();
+
+      await dao.startRun(
+        runId: 'existing-fill',
+        startedAt: DateTime.utc(2026, 5, 30),
+      );
+      bloc = RunBloc(
+        workdirManager: WorkdirManager(root: tmp),
+        runDao: dao,
+        now: () => DateTime.utc(2026, 5, 30, 12),
+        idGenerator: () => 'unused',
+        provenanceEnvironmentProvider: _FixedRunProvenanceEnvironment(),
+      );
+      states = <RunState>[];
+      sub = bloc.stream.listen(states.add);
+      bloc.add(
+        StartRun(
+          tasks: [_StubTask()],
+          providers: [_FakeProvider()],
+          modelsByProvider: const {
+            'fake': ['fake-1'],
+          },
+          evaluatorConfig: const EvaluatorConfig(),
+          existingRunId: 'existing-fill',
+        ),
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 2));
+      expect(states.last, isA<RunCompleted>());
+      final backfilled = await dao.runById('existing-fill');
+      expect(backfilled!.provenanceJson, isNotNull);
+      expect(backfilled.provenanceJson, contains('"runId": "existing-fill"'));
+
+      await sub.cancel();
+      await bloc.close();
+      await db.close();
+      tmp.deleteSync(recursive: true);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 
   test('many-models-one-provider produces N task_runs per task', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_bloc_many_');

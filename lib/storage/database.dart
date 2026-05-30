@@ -7,12 +7,15 @@ import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
 
+const appDatabaseSchemaVersion = 7;
+
 class Runs extends Table {
   TextColumn get id => text()();
   DateTimeColumn get startedAt => dateTime()();
   DateTimeColumn get completedAt => dateTime().nullable()();
   TextColumn get judgeModel => text().nullable()();
   TextColumn get name => text().nullable()();
+  TextColumn get provenanceJson => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -102,7 +105,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => appDatabaseSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -128,6 +131,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 6) {
         await m.createTable(reviewBattles);
+      }
+      if (from < 7) {
+        await m.addColumn(runs, runs.provenanceJson);
       }
     },
   );

@@ -55,9 +55,7 @@ void main() {
         await outside.delete(recursive: true);
       }
     });
-    await File(
-      p.join(outside.path, 'big'),
-    ).writeAsBytes(List.filled(1000, 0));
+    await File(p.join(outside.path, 'big')).writeAsBytes(List.filled(1000, 0));
     try {
       Link(p.join(root.path, 'link')).createSync(outside.path);
     } on FileSystemException {
@@ -77,10 +75,7 @@ void main() {
     final ancient = DateTime.now().subtract(const Duration(days: 30));
     oldFile.setLastModifiedSync(ancient);
 
-    final mgr = TmpDirManager(
-      root: root,
-      maxAge: const Duration(days: 7),
-    );
+    final mgr = TmpDirManager(root: root, maxAge: const Duration(days: 7));
     await mgr.sweep();
 
     expect(oldFile.existsSync(), isFalse);
@@ -89,13 +84,8 @@ void main() {
 
   test('sweep retains entries newer than maxAge', () async {
     final root = await makeRoot();
-    File(
-      p.join(root.path, 'fresh'),
-    ).writeAsBytesSync(List.filled(10, 0));
-    final mgr = TmpDirManager(
-      root: root,
-      maxAge: const Duration(days: 7),
-    );
+    File(p.join(root.path, 'fresh')).writeAsBytesSync(List.filled(10, 0));
+    final mgr = TmpDirManager(root: root, maxAge: const Duration(days: 7));
     await mgr.sweep();
     expect(File(p.join(root.path, 'fresh')).existsSync(), isTrue);
   });

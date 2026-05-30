@@ -43,9 +43,28 @@ void main() {
     await db.close();
   });
 
-  test('schemaVersion is 6', () async {
+  test('schemaVersion is 7', () async {
     final db = AppDatabase(NativeDatabase.memory());
-    expect(db.schemaVersion, 6);
+    expect(db.schemaVersion, 7);
+    await db.close();
+  });
+
+  test('runs.provenanceJson is writable and nullable', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+
+    await db
+        .into(db.runs)
+        .insert(
+          RunsCompanion.insert(
+            id: 'r-provenance',
+            startedAt: DateTime(2026, 5, 2),
+            provenanceJson: const Value('{"schemaVersion":1}'),
+          ),
+        );
+
+    final row = await db.select(db.runs).getSingle();
+    expect(row.provenanceJson, '{"schemaVersion":1}');
+
     await db.close();
   });
 
@@ -200,6 +219,27 @@ void main() {
         .get();
 
     expect(tables, hasLength(1));
+    await db.close();
+  });
+
+  test('version 6 databases migrate by adding run provenance', () async {
+    final raw = sqlite3.openInMemory();
+    raw.execute('''
+      CREATE TABLE runs (
+        id TEXT NOT NULL PRIMARY KEY,
+        started_at INTEGER NOT NULL,
+        completed_at INTEGER NULL,
+        judge_model TEXT NULL,
+        name TEXT NULL
+      );
+      PRAGMA user_version = 6;
+    ''');
+    final db = AppDatabase(NativeDatabase.opened(raw));
+
+    final columns = await db.customSelect('PRAGMA table_info(runs)').get();
+    final columnNames = columns.map((row) => row.data['name']).toSet();
+    expect(columnNames, contains('provenance_json'));
+
     await db.close();
   });
 }

@@ -12,6 +12,7 @@ class RunDao {
     required String runId,
     required DateTime startedAt,
     String? name,
+    String? provenanceJson,
   }) {
     return _db
         .into(_db.runs)
@@ -20,8 +21,24 @@ class RunDao {
             id: runId,
             startedAt: startedAt,
             name: Value(name),
+            provenanceJson: Value(provenanceJson),
           ),
         );
+  }
+
+  Future<void> updateRunProvenance(String runId, String provenanceJson) {
+    return (_db.update(_db.runs)..where((r) => r.id.equals(runId))).write(
+      RunsCompanion(provenanceJson: Value(provenanceJson)),
+    );
+  }
+
+  Future<void> backfillRunProvenanceIfNull(
+    String runId,
+    String provenanceJson,
+  ) {
+    return (_db.update(_db.runs)
+          ..where((r) => r.id.equals(runId) & r.provenanceJson.isNull()))
+        .write(RunsCompanion(provenanceJson: Value(provenanceJson)));
   }
 
   Future<void> finishRun(String runId, DateTime completedAt) {

@@ -16,6 +16,7 @@ import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dart_arena/runner/agentic_run_orchestrator.dart';
 import 'package:dart_arena/runner/failed_combo_snapshot.dart';
 import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
+import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_progress_snapshot.dart';
 import 'package:dart_arena/runner/run_state.dart';
@@ -55,6 +56,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
     required this.idGenerator,
     this.weights = defaultEvaluatorWeights,
     this.planDao,
+    this.provenanceEnvironmentProvider,
     List<AgentHarness> agentHarnesses = const [],
     AgenticRunOrchestrator? agenticOrchestrator,
   }) : super(const RunIdle()) {
@@ -87,6 +89,7 @@ class RunBloc extends Bloc<RunEvent, RunState> {
   final String Function() idGenerator;
   final Map<String, double> weights;
   final PlanDao? planDao;
+  final RunProvenanceEnvironmentProvider? provenanceEnvironmentProvider;
   late final Map<String, AgentHarness> _agentHarnesses;
   late final AgenticRunOrchestrator _agenticOrchestrator;
   List<ModelProvider> _providers = const [];
@@ -434,6 +437,31 @@ class RunBloc extends Bloc<RunEvent, RunState> {
         );
       }
       _combos = combos;
+
+      final provenanceJson = await buildRunProvenanceJson(
+        runId: runId,
+        event: event,
+        normalizedModelsByProvider: normalizedModels,
+        combos: [
+          for (final combo in _combos)
+            RunProvenanceCombo(
+              index: combo.index,
+              task: combo.task,
+              providerId: combo.provider.id,
+              modelId: combo.modelId,
+              trialIndex: combo.trialIndex,
+              planId: combo.planId,
+            ),
+        ],
+        evaluatorWeights: weights,
+        capturedAt: now(),
+        environmentProvider: provenanceEnvironmentProvider,
+      );
+      if (event.existingRunId == null) {
+        await runDao.updateRunProvenance(runId, provenanceJson);
+      } else {
+        await runDao.backfillRunProvenanceIfNull(runId, provenanceJson);
+      }
 
       for (var i = 0; i < _combos.length; i++) {
         _pendingQueue.add(i);

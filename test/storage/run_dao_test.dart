@@ -116,6 +116,70 @@ void main() {
     await db.close();
   });
 
+  test('startRun persists optional provenance', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(
+      runId: 'r-prov',
+      startedAt: DateTime(2026, 5, 2),
+      provenanceJson: '{"schemaVersion":1}',
+    );
+    final row = await dao.runById('r-prov');
+    expect(row, isNotNull);
+    expect(row!.provenanceJson, '{"schemaVersion":1}');
+    await db.close();
+  });
+
+  test('updateRunProvenance overwrites provenance explicitly', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+    await dao.startRun(
+      runId: 'r-prov-update',
+      startedAt: DateTime(2026, 5, 2),
+      provenanceJson: '{"schemaVersion":1,"old":true}',
+    );
+
+    await dao.updateRunProvenance(
+      'r-prov-update',
+      '{"schemaVersion":1,"new":true}',
+    );
+
+    final row = await dao.runById('r-prov-update');
+    expect(row!.provenanceJson, '{"schemaVersion":1,"new":true}');
+    await db.close();
+  });
+
+  test(
+    'backfillRunProvenanceIfNull preserves existing non-null value',
+    () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final dao = RunDao(db);
+      await dao.startRun(
+        runId: 'r-prov-keep',
+        startedAt: DateTime(2026, 5, 2),
+        provenanceJson: '{"schemaVersion":1,"keep":true}',
+      );
+
+      await dao.backfillRunProvenanceIfNull(
+        'r-prov-keep',
+        '{"schemaVersion":1,"replace":true}',
+      );
+
+      var row = await dao.runById('r-prov-keep');
+      expect(row!.provenanceJson, '{"schemaVersion":1,"keep":true}');
+
+      await dao.startRun(runId: 'r-prov-fill', startedAt: DateTime(2026, 5, 2));
+      await dao.backfillRunProvenanceIfNull(
+        'r-prov-fill',
+        '{"schemaVersion":1,"filled":true}',
+      );
+
+      row = await dao.runById('r-prov-fill');
+      expect(row!.provenanceJson, '{"schemaVersion":1,"filled":true}');
+      await db.close();
+    },
+  );
+
   test('runById returns null for unknown id', () async {
     final db = AppDatabase(NativeDatabase.memory());
     final dao = RunDao(db);

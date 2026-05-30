@@ -13,7 +13,11 @@ const _evaluatorIds = <String>[
   'diff_size',
 ];
 
-String runSummaryToCsv(RunSummary s) {
+String runSummaryToCsv(
+  RunSummary s, {
+  List<TaskRun>? taskRuns,
+  String Function(TaskRun taskRun)? trajectoryPathFor,
+}) {
   final headers = <String>[
     'run_id',
     'run_name',
@@ -37,7 +41,7 @@ String runSummaryToCsv(RunSummary s) {
   ];
 
   final rows = <List<String>>[headers];
-  for (final tr in s.taskRuns) {
+  for (final tr in taskRuns ?? s.taskRuns) {
     final evals = <String, double>{};
     for (final e in s.evaluationsByTaskRunId[tr.id] ?? const <Evaluation>[]) {
       evals[e.evaluatorId] = e.score;
@@ -56,7 +60,7 @@ String runSummaryToCsv(RunSummary s) {
       tr.primaryPass?.toString() ?? '',
       tr.failureTag ?? '',
       (tr.patchText?.length ?? 0).toString(),
-      tr.trajectoryLogPath ?? '',
+      trajectoryPathFor?.call(tr) ?? tr.trajectoryLogPath ?? '',
       tr.aggregateScore.toStringAsFixed(4),
       ..._evaluatorIds.map((id) => evals[id]?.toStringAsFixed(4) ?? ''),
       tr.latencyMs.toString(),

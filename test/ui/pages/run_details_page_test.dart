@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Future<RunDao> _seedRun() async {
+Future<RunDao> _seedRun({bool completed = true}) async {
   final db = AppDatabase(NativeDatabase.memory());
   final dao = RunDao(db);
   await dao.startRun(
@@ -37,7 +37,9 @@ Future<RunDao> _seedRun() async {
       completedAt: DateTime(2026, 5, 2, 14, 24),
     ),
   );
-  await dao.finishRun('r1', DateTime(2026, 5, 2, 14, 31));
+  if (completed) {
+    await dao.finishRun('r1', DateTime(2026, 5, 2, 14, 31));
+  }
   return dao;
 }
 
@@ -70,6 +72,32 @@ void main() {
     await tester.pumpAndSettle();
     final btn = tester.widget<TextButton>(
       find.widgetWithText(TextButton, 'Publish to README'),
+    );
+    expect(btn.onPressed, isNull);
+  });
+
+  testWidgets('Export Bundle is enabled only after completion', (tester) async {
+    final completedDao = await _seedRun();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RunDetailsPage(runId: 'r1', dao: completedDao),
+      ),
+    );
+    await tester.pumpAndSettle();
+    var btn = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Export Bundle'),
+    );
+    expect(btn.onPressed, isNotNull);
+
+    final inProgressDao = await _seedRun(completed: false);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RunDetailsPage(key: UniqueKey(), runId: 'r1', dao: inProgressDao),
+      ),
+    );
+    await tester.pumpAndSettle();
+    btn = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Export Bundle'),
     );
     expect(btn.onPressed, isNull);
   });

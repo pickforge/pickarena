@@ -56,10 +56,9 @@ void _windowsSetEnv(String name, String value) {
   Pointer<Utf16>? valuePtr;
   try {
     final kernel32 = DynamicLibrary.open('kernel32.dll');
-    final setEnv = kernel32
-        .lookupFunction<_SetEnvVarNative, _SetEnvVarDart>(
-          'SetEnvironmentVariableW',
-        );
+    final setEnv = kernel32.lookupFunction<_SetEnvVarNative, _SetEnvVarDart>(
+      'SetEnvironmentVariableW',
+    );
     namePtr = name.toNativeUtf16();
     valuePtr = value.toNativeUtf16();
     setEnv(namePtr, valuePtr);
