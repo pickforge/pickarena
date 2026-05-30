@@ -31,7 +31,9 @@ void main() {
     final card = find.byType(Card);
     expect(card, findsOneWidget);
     expect(
-        find.descendant(of: card, matching: find.byType(Row)), findsOneWidget);
+      find.descendant(of: card, matching: find.byType(Row)),
+      findsOneWidget,
+    );
 
     final avatar = find.byType(CircleAvatar);
     expect(avatar, findsOneWidget);
@@ -59,8 +61,9 @@ void main() {
     expect(find.text('Mathematician.'), findsNothing);
   });
 
-  testWidgets('follow button reflects state and fires callback',
-      (tester) async {
+  testWidgets('follow button reflects state and fires callback', (
+    tester,
+  ) async {
     var pressed = 0;
     await tester.pumpWidget(
       _wrap(_card(isFollowing: true, onFollowPressed: () => pressed++)),

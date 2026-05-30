@@ -1,5 +1,5 @@
 name: dart_arena
-description: "A new Flutter project."
+description: "Desktop benchmarking app for comparing AI coding models on Dart and Flutter tasks."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -69,6 +69,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/branding/dart_arena_logo.png
     - lib/tasks/bug_fix/fixtures/off_by_one_pagination/pubspec.yaml
     - lib/tasks/bug_fix/fixtures/off_by_one_pagination/lib/pagination.dart
     - lib/tasks/bug_fix/fixtures/off_by_one_pagination/test/pagination_test.dart

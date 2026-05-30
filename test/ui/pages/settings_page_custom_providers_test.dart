@@ -102,10 +102,12 @@ void main() {
       ' low , , medium ',
     );
 
-    await tester.tap(find.descendant(
-      of: find.byType(AlertDialog),
-      matching: find.widgetWithText(FilledButton, 'Save'),
-    ));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(FilledButton, 'Save'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     final providers = await repo.getCustomLocalProviders();

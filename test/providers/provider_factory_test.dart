@@ -149,9 +149,12 @@ void main() {
     expect(providers.any((p) => p.id == 'blank'), isFalse);
   });
 
-  test('local_openai is not present without legacy settings or custom entry', () async {
-    FlutterSecureStorage.setMockInitialValues({});
-    final providers = await buildEnabledProviders(SettingsRepository());
-    expect(providers.any((p) => p.id == 'local_openai'), isFalse);
-  });
+  test(
+    'local_openai is not present without legacy settings or custom entry',
+    () async {
+      FlutterSecureStorage.setMockInitialValues({});
+      final providers = await buildEnabledProviders(SettingsRepository());
+      expect(providers.any((p) => p.id == 'local_openai'), isFalse);
+    },
+  );
 }

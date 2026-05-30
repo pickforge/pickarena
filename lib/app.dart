@@ -140,7 +140,7 @@ class App extends StatelessWidget {
         ),
       ],
       child: MaterialApp.router(
-        title: 'dart_arena',
+        title: 'Dart Arena',
         theme: buildAppTheme(),
         routerConfig: _router,
       ),

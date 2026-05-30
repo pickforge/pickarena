@@ -41,15 +41,17 @@ Future<List<ModelProvider>> buildEnabledProviders(
   for (final c in customs) {
     final url = (await repo.getBaseUrlOverride(c.id))?.trim();
     if (url == null || url.isEmpty) continue;
-    providers.add(OpenAiCompatibleProvider(
-      null,
-      id: c.id,
-      displayName: c.name,
-      baseUrl: url,
-      apiKey: await repo.getApiKey(c.id) ?? '',
-      extraHeaders: c.extraHeaders,
-      defaultEfforts: c.defaultEfforts,
-    ));
+    providers.add(
+      OpenAiCompatibleProvider(
+        null,
+        id: c.id,
+        displayName: c.name,
+        baseUrl: url,
+        apiKey: await repo.getApiKey(c.id) ?? '',
+        extraHeaders: c.extraHeaders,
+        defaultEfforts: c.defaultEfforts,
+      ),
+    );
   }
 
   Future<void> addProvider(

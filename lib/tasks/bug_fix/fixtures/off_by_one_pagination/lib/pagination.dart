@@ -4,7 +4,8 @@ class Paginator<T> {
   final List<T> items;
   final int pageSize;
 
-  int get pageCount => items.isEmpty ? 0 : ((items.length + pageSize - 1) ~/ pageSize);
+  int get pageCount =>
+      items.isEmpty ? 0 : ((items.length + pageSize - 1) ~/ pageSize);
 
   List<T> page(int index) {
     if (index < 0) return [];

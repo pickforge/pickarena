@@ -40,18 +40,23 @@ void main() {
     expect(task.judgeRubric, isNull);
   });
 
-  test('judgeRubric is non-null after ensureLoaded and contains expected content',
-      () async {
-    await task.ensureLoaded();
+  test(
+    'judgeRubric is non-null after ensureLoaded and contains expected content',
+    () async {
+      await task.ensureLoaded();
 
-    final rubric = task.judgeRubric;
-    expect(rubric, isNotNull);
-    expect(rubric, contains('REFERENCE PLAN (canonical solution)'));
-    expect(rubric, contains('CoverageEvaluator'));
-    expect(rubric, contains('EvaluationResult'));
-    expect(rubric, contains('0.5'));
-    expect(rubric, contains('Return ONE composite score and a 1-2 sentence rationale'));
-  });
+      final rubric = task.judgeRubric;
+      expect(rubric, isNotNull);
+      expect(rubric, contains('REFERENCE PLAN (canonical solution)'));
+      expect(rubric, contains('CoverageEvaluator'));
+      expect(rubric, contains('EvaluationResult'));
+      expect(rubric, contains('0.5'));
+      expect(
+        rubric,
+        contains('Return ONE composite score and a 1-2 sentence rationale'),
+      );
+    },
+  );
 
   test('evaluatorsFor without judge returns compile, analyze, test', () {
     final evs = task.evaluatorsFor(const EvaluatorConfig());
@@ -59,15 +64,17 @@ void main() {
     expect(ids, ['compile', 'analyze', 'test']);
   });
 
-  test('evaluatorsFor with judge includes llm_judge and is LlmJudgeEvaluator',
-      () {
-    final config = EvaluatorConfig(
-      judgeProvider: _FakeJudge(),
-      judgeModel: 'fj',
-    );
-    final evs = task.evaluatorsFor(config);
-    final ids = evs.map((e) => e.id).toList();
-    expect(ids, ['compile', 'analyze', 'test', 'llm_judge']);
-    expect(evs.last, isA<LlmJudgeEvaluator>());
-  });
+  test(
+    'evaluatorsFor with judge includes llm_judge and is LlmJudgeEvaluator',
+    () {
+      final config = EvaluatorConfig(
+        judgeProvider: _FakeJudge(),
+        judgeModel: 'fj',
+      );
+      final evs = task.evaluatorsFor(config);
+      final ids = evs.map((e) => e.id).toList();
+      expect(ids, ['compile', 'analyze', 'test', 'llm_judge']);
+      expect(evs.last, isA<LlmJudgeEvaluator>());
+    },
+  );
 }

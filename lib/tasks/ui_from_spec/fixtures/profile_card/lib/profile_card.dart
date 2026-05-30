@@ -28,8 +28,9 @@ class ProfileCard extends StatelessWidget {
           child: Row(
             children: [
               CircleAvatar(
-                backgroundImage:
-                    avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+                backgroundImage: avatarUrl != null
+                    ? NetworkImage(avatarUrl!)
+                    : null,
                 onBackgroundImageError: avatarUrl != null ? (_, __) {} : null,
                 child: avatarUrl == null
                     ? Text(name.isNotEmpty ? name[0].toUpperCase() : '')

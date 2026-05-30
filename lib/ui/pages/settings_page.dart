@@ -160,9 +160,9 @@ class _CacheSectionState extends State<_CacheSection> {
       _busy = false;
     });
     final freed = (before - after).clamp(0, before);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Freed ${_format(freed)}')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Freed ${_format(freed)}')));
   }
 
   @override
@@ -444,21 +444,20 @@ class _CustomLocalProvidersSectionState
   Future<void> _delete(String id) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Delete provider?'),
-            content: Text('Delete "$id" and its stored URL and API key?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete provider?'),
+        content: Text('Delete "$id" and its stored URL and API key?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
           ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
     if (confirmed == true) {
       await widget.repo.deleteCustomLocalProvider(id);
@@ -557,7 +556,10 @@ class _KeyBadge extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               hasKey ? 'Key set' : 'No key',
-              style: TextStyle(fontSize: 11, color: hasKey ? Colors.green : Colors.grey),
+              style: TextStyle(
+                fontSize: 11,
+                color: hasKey ? Colors.green : Colors.grey,
+              ),
             ),
           ],
         );
@@ -584,7 +586,8 @@ class _LocalProviderDialogState extends State<_LocalProviderDialog> {
   final _effortsController = TextEditingController();
   bool _obscured = true;
   bool _testing = false;
-  final _headerRows = <({TextEditingController key, TextEditingController value})>[];
+  final _headerRows =
+      <({TextEditingController key, TextEditingController value})>[];
 
   bool get _isEdit => widget.entry != null;
 
@@ -646,14 +649,14 @@ class _LocalProviderDialogState extends State<_LocalProviderDialog> {
       );
       final models = await provider.listModels();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('OK (${models.length} models)')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('OK (${models.length} models)')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Connection failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Connection failed: $e')));
     } finally {
       if (mounted) setState(() => _testing = false);
     }
@@ -714,9 +717,9 @@ class _LocalProviderDialogState extends State<_LocalProviderDialog> {
     final idError = _validateId(_idController.text);
     if (idError != null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(idError)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(idError)));
       return;
     }
 
@@ -780,8 +783,9 @@ class _LocalProviderDialogState extends State<_LocalProviderDialog> {
                     labelText: 'Display name',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Name is required'
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -790,7 +794,8 @@ class _LocalProviderDialogState extends State<_LocalProviderDialog> {
                   decoration: const InputDecoration(
                     labelText: 'ID',
                     border: OutlineInputBorder(),
-                    helperText: 'Lowercase letters, digits, underscores. 2–32 chars.',
+                    helperText:
+                        'Lowercase letters, digits, underscores. 2–32 chars.',
                   ),
                   validator: _validateId,
                 ),
@@ -801,8 +806,9 @@ class _LocalProviderDialogState extends State<_LocalProviderDialog> {
                     labelText: 'Base URL',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'URL is required' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'URL is required'
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -853,7 +859,9 @@ class _LocalProviderDialogState extends State<_LocalProviderDialog> {
                             ),
                             validator: (v) {
                               if ((v ?? '').trim().isEmpty &&
-                                  (_headerRows[i].value.text.trim().isNotEmpty)) {
+                                  (_headerRows[i].value.text
+                                      .trim()
+                                      .isNotEmpty)) {
                                 return 'Key required';
                               }
                               return null;
@@ -923,8 +931,6 @@ class _LocalProviderDialogState extends State<_LocalProviderDialog> {
     );
   }
 }
-
-
 
 class _OllamaLocalSection extends StatefulWidget {
   const _OllamaLocalSection({required this.repo});
