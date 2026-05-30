@@ -70,12 +70,39 @@ class Evaluations extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Runs, TaskRuns, Evaluations, Plans])
+class ReviewBattles extends Table {
+  TextColumn get id => text()();
+  TextColumn get taskId => text()();
+  IntColumn get taskVersion => integer()();
+  TextColumn get benchmarkTrack => text()();
+  @ReferenceName('leftReviewBattles')
+  TextColumn get leftTaskRunId => text().references(TaskRuns, #id)();
+  @ReferenceName('rightReviewBattles')
+  TextColumn get rightTaskRunId => text().references(TaskRuns, #id)();
+  TextColumn get canonicalPairKey => text()();
+  TextColumn get leftLabel => text()();
+  TextColumn get rightLabel => text()();
+  TextColumn get reviewerId => text()();
+  TextColumn get reviewerAlias => text().nullable()();
+  TextColumn get vote => text()();
+  TextColumn get rationale => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {reviewerId, canonicalPairKey},
+  ];
+}
+
+@DriftDatabase(tables: [Runs, TaskRuns, Evaluations, Plans, ReviewBattles])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -98,6 +125,9 @@ class AppDatabase extends _$AppDatabase {
       if (from < 5) {
         await m.addColumn(taskRuns, taskRuns.patchText);
         await m.addColumn(taskRuns, taskRuns.trajectoryLogPath);
+      }
+      if (from < 6) {
+        await m.createTable(reviewBattles);
       }
     },
   );

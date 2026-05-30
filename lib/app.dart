@@ -1,6 +1,7 @@
 import 'package:dart_arena/analytics/leaderboard_repository.dart';
 import 'package:dart_arena/agent/droid_agent_harness.dart';
 import 'package:dart_arena/core/task_registry.dart';
+import 'package:dart_arena/review/review_repository.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/start_run_config.dart';
@@ -14,6 +15,7 @@ import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:dart_arena/ui/pages/dashboard_page.dart';
 import 'package:dart_arena/ui/pages/leaderboard_page.dart';
 import 'package:dart_arena/ui/pages/new_run_page.dart';
+import 'package:dart_arena/ui/pages/review_queue_page.dart';
 import 'package:dart_arena/ui/pages/run_details_page.dart';
 import 'package:dart_arena/ui/pages/task_run_details_page.dart';
 import 'package:dart_arena/ui/pages/run_history_page.dart';
@@ -37,6 +39,10 @@ final _router = GoRouter(
       builder: (_, __) => DashboardPage(registry: _registry),
     ),
     GoRoute(path: '/new-run', builder: (_, __) => const NewRunPage()),
+    GoRoute(
+      path: '/review',
+      builder: (_, __) => ReviewQueuePage(registry: _registry),
+    ),
     GoRoute(
       path: '/run',
       builder: (context, state) {
@@ -125,6 +131,12 @@ class App extends StatelessWidget {
         ),
         RepositoryProvider<LeaderboardRepository>(
           create: (ctx) => LeaderboardRepository(ctx.read<AppDatabase>()),
+        ),
+        RepositoryProvider<ReviewRepository>(
+          create: (ctx) => ReviewRepository(
+            ctx.read<AppDatabase>(),
+            settings: ctx.read<SettingsRepository>(),
+          ),
         ),
       ],
       child: MaterialApp.router(

@@ -56,7 +56,9 @@ ReviewBattle
   benchmarkTrack
   leftTaskRunId
   rightTaskRunId
-  reviewerId/local alias
+  canonicalPairKey
+  reviewerId
+  reviewerAlias
   vote
   rationale
   createdAt
@@ -65,7 +67,7 @@ ReviewBattle
 Quality leaderboard:
 
 ```text
-pairwise votes -> win rates -> Bradley-Terry/Elo-style score
+filtered non-skip pairwise votes -> win rates -> Bradley-Terry/Elo-style score
 ```
 
 Start simple with win-rate tables, then add Bradley-Terry once enough votes exist.
@@ -80,30 +82,53 @@ Likely files to create:
 - `lib/ui/pages/review_queue_page.dart`
 - `lib/ui/widgets/review_comparison_view.dart`
 - `test/review/preference_ranking_test.dart`
+- `test/review/review_repository_test.dart`
 - `test/ui/pages/review_queue_page_test.dart`
+- `test/ui/widgets/review_comparison_view_test.dart`
 
 Likely files to modify:
 
 - `lib/storage/database.dart`
+- `lib/storage/database.g.dart`
+- `lib/storage/settings.dart`
 - `lib/app.dart`
 - `lib/ui/pages/run_details_page.dart`
 - `lib/ui/pages/leaderboard_page.dart`
+- `test/storage/database_migration_test.dart`
+- `test/ui/pages/dashboard_page_test.dart`
+- `test/ui/pages/leaderboard_page_test.dart`
 
 ## Task 1: Add review storage
 
-- [ ] Add `ReviewBattles` table.
+- [ ] Add `ReviewBattles` table to `@DriftDatabase(tables: [...])`.
+- [ ] Bump Drift `schemaVersion` from 5 to 6.
+- [ ] Add migration:
+  - `if (from < 6) await m.createTable(reviewBattles);`
+  - update migration tests for schema version 6 and additive table creation.
+- [ ] Regenerate `lib/storage/database.g.dart` with build runner.
 - [ ] Store:
+  - battle ID;
   - task ID;
   - task version;
   - benchmark track;
   - left/right task-run IDs;
-  - anonymized labels;
+  - canonical unordered pair key;
+  - anonymized left/right labels;
+  - stable local reviewer ID;
+  - optional reviewer alias snapshot;
   - vote;
   - optional rationale;
   - created time.
+- [ ] Compute `canonicalPairKey` from the two task-run IDs in lexicographic order, for example `minId|maxId`; keep randomized left/right display assignment separate from this key.
+- [ ] Enforce duplicate prevention at the database layer with a unique key or unique index on `(reviewerId, canonicalPairKey)`.
+- [ ] Add foreign-key references from left/right task-run IDs to `TaskRuns`.
 - [ ] Add DAO/repository methods.
 - [ ] Add migration and tests.
-- [ ] Add a uniqueness guard for reviewer + unordered task-run pair so the same reviewer does not repeatedly vote on the same battle.
+- [ ] Add storage tests for inserting battles, reading battles, and rejecting a duplicate reviewer + unordered pair even when left/right IDs are swapped.
+- [ ] Extend `SettingsRepository` with a stable local reviewer ID lifecycle:
+  - `getOrCreateReviewReviewerId()` returns a generated opaque local UUID-like ID and persists it;
+  - reviewer alias is editable and optional;
+  - uniqueness uses the stable ID, not the alias.
 
 Vote enum:
 
@@ -118,40 +143,67 @@ Store reviewer identity as a local alias or generated local ID only. Do not requ
 
 ## Task 2: Build battle selection
 
-- [ ] Select pairs from the same task and compatible track.
-- [ ] Prefer submissions that passed primary correctness.
+- [ ] Select pairs with the same `taskId`, `taskVersion`, and `benchmarkTrack`.
+- [ ] Prefer submissions that passed primary correctness:
+  - first try pairs where both `primaryPass == true`;
+  - then pairs where both are in the same non-passing/unknown bucket;
+  - only mix pass buckets if no same-bucket pair is available.
 - [ ] Avoid showing the same pair repeatedly.
 - [ ] Randomize left/right order.
 - [ ] Hide model/provider/run identity until after voting.
-- [ ] Prefer pairs with the same task version and similar verifier status.
-- [ ] Avoid pairing two submissions from the same provider/model unless there are no alternatives.
-- [ ] Do not select task runs whose output/patch is unavailable.
+- [ ] Avoid pairing two submissions from the same provider/model unless there are no cross-model alternatives.
+- [ ] Do not select task runs whose review artifact is unavailable:
+  - codegen track requires usable generated output/diff input;
+  - agentic track requires `patchText != null`;
+  - evaluation summaries may be shown only after removing model/run identifiers.
+- [ ] Exclude already-reviewed pairs by checking the current reviewer ID plus `canonicalPairKey`.
+- [ ] Avoid unbounded O(n²) scans across all historical task runs:
+  - query a bounded candidate set for one task/version/track and preferred pass bucket;
+  - build candidate pairs in Dart from that bounded set;
+  - filter out reviewed pair keys before random selection;
+  - use fallback buckets only when the preferred bucket has fewer than two eligible candidates.
+- [ ] If fewer than two eligible submissions exist, show a cold-start placeholder explaining that more runs are needed.
 
 ## Task 3: Build review UI
 
 - [ ] Add a review queue page.
+- [ ] Add `/review` route wiring in `lib/app.dart`.
+- [ ] Add a dashboard/app-bar navigation entry for Review.
+- [ ] Register a `ReviewRepository` provider in `App`.
 - [ ] Show task prompt and relevant public context.
 - [ ] Show two submissions side-by-side:
   - code diff or final file for codegen tasks;
   - patch for agentic tasks;
   - evaluator summary;
   - screenshots/golden artifacts later if available.
+- [ ] First pass rendering should use scrollable code/patch blocks with existing widgets such as `SelectableText`/`DiffView`; defer adding a true side-by-side diff package.
 - [ ] Add voting controls: A, B, Tie, Skip.
 - [ ] Add optional rationale field.
 - [ ] Reveal identities only after vote submission if desired.
 - [ ] Use stable anonymous labels per battle, such as `A` and `B`, not model-derived names.
 - [ ] Clearly label automated correctness status without exposing model identity.
 - [ ] Keep screenshots/golden artifacts out of the first pass unless Phase 3 produced stable artifacts.
+- [ ] Do not reuse `TaskRunDetailsPage` directly for pre-vote review, because it renders provider/model/run metadata.
+- [ ] Build a review-only comparison bundle/view that never exposes provider ID, model ID, task-run ID, run ID, harness ID, trajectory path, or raw log names before the vote is submitted.
+- [ ] Add widget tests asserting that model/provider/run identifiers are absent before voting and only appear in the optional post-vote reveal state.
+- [ ] Add route/provider widget tests for opening `/review` from the app shell.
 
 ## Task 4: Add preference ranking
 
-- [ ] Compute per-model pairwise wins/losses/ties.
-- [ ] Add average win rate against other models.
-- [ ] Add minimum-vote thresholds.
+- [ ] Compute per-model pairwise wins/losses/ties from `ReviewBattle` rows joined to their left/right `TaskRun` rows.
+- [ ] Group quality rankings by `benchmarkTrack`, `taskVersion`, and `providerId:modelId`; keep task-level filtering available for drill-downs.
+- [ ] Exclude battles where both sides have the same `providerId:modelId` from preference score denominators.
+- [ ] Count votes:
+  - `left`/`right` as one win and one loss;
+  - `tie` as 0.5 win for each side;
+  - `skip` for audit volume only, not score denominators.
+- [ ] Compute MVP win rate as `(wins + 0.5 * ties) / (wins + losses + ties)`.
+- [ ] Add a minimum non-skip vote threshold before displaying a quality rank; start with a small local default such as 3 non-skip votes per displayed model and show low-sample warnings below it.
 - [ ] Later add Bradley-Terry or Elo-style ranking.
 - [ ] Show confidence/low-vote warnings.
-- [ ] Count `skip` for audit volume but exclude it from win-rate denominators.
 - [ ] Report human preference separately by track and task version when enough data exists.
+- [ ] Follow the existing `LeaderboardRepository` pattern for filters and sorting, but compute the initial preference rankings in Dart from filtered review rows rather than adding a cache table.
+- [ ] Keep Bradley-Terry/Elo and cached ranking tables as later follow-ups, not MVP requirements.
 
 ## Task 5: Add Flutter-specific review rubrics
 
@@ -179,6 +231,7 @@ Rubrics should be task-type hints only; they should not change hidden-verifier p
 - [ ] Add model detail view with battle history and common reviewer rationales.
 - [ ] Do not blend human preference into aggregate correctness scores.
 - [ ] Add low-vote warnings anywhere preference rank is displayed.
+- [ ] Add leaderboard tests proving the correctness ranking remains the default/primary view and quality scores are displayed only in the separate Quality view.
 
 ## Validation
 
@@ -195,6 +248,9 @@ Targeted:
 ```sh
 flutter test test/review/
 flutter test test/ui/pages/review_queue_page_test.dart
+flutter test test/ui/widgets/review_comparison_view_test.dart
+flutter test test/storage/database_migration_test.dart
+flutter test test/ui/pages/leaderboard_page_test.dart
 ```
 
 Manual smoke:
@@ -204,6 +260,7 @@ Manual smoke:
 - vote on a battle;
 - confirm identities are hidden before vote;
 - confirm ranking updates.
+- open the app from a cold start with fewer than two eligible submissions and confirm the review placeholder is shown.
 
 ## Risks
 

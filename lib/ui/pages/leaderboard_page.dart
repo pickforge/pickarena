@@ -4,6 +4,8 @@ import 'package:dart_arena/analytics/leaderboard_repository.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/task_registry.dart';
+import 'package:dart_arena/review/preference_ranking.dart';
+import 'package:dart_arena/review/review_repository.dart';
 import 'package:dart_arena/ui/widgets/dimension_radar.dart';
 import 'package:dart_arena/ui/widgets/leaderboard_filters.dart';
 import 'package:dart_arena/ui/widgets/per_task_bar_chart.dart';
@@ -18,11 +20,13 @@ class LeaderboardPage extends StatefulWidget {
     required this.registry,
     required this.initialQuery,
     this.repository,
+    this.reviewRepository,
   });
 
   final TaskRegistry registry;
   final Map<String, String> initialQuery;
   final LeaderboardRepository? repository;
+  final ReviewRepository? reviewRepository;
 
   @override
   State<LeaderboardPage> createState() => _LeaderboardPageState();
@@ -38,6 +42,7 @@ class LeaderboardPage extends StatefulWidget {
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
   LeaderboardRepository? _repo;
+  ReviewRepository? _reviewRepo;
   late LeaderboardFilter _filter;
   String? _selectedKey;
   String? _pinnedKey;
@@ -48,6 +53,11 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   void initState() {
     super.initState();
     _repo = widget.repository ?? context.read<LeaderboardRepository>();
+    try {
+      _reviewRepo = widget.reviewRepository ?? context.read<ReviewRepository>();
+    } on Object {
+      _reviewRepo = widget.reviewRepository;
+    }
     _filter = _filterFromQuery(widget.initialQuery);
     _selectedKey = widget.initialQuery['sel'];
     _pinnedKey = widget.initialQuery['pin'];
@@ -209,57 +219,244 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Leaderboard')),
-      body: FutureBuilder<List<ModelRanking>>(
-        future: _rankFuture,
-        builder: (context, snap) {
-          final rows = snap.data ?? const [];
-          final providerOptions = {
-            if (_filter.providerId != null) _filter.providerId!,
-            ...rows.map((r) => r.providerId),
-          }.toList()..sort();
-          return Column(
-            children: [
-              LeaderboardFilters(
-                filter: _filter,
-                providerOptions: providerOptions,
-                onChanged: _onFilterChanged,
-              ),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      flex: 55,
-                      child: RankedModelsList(
-                        rankings: rows,
-                        dimension: _filter.dimension,
-                        selectedKey: _selectedKey,
-                        pinnedKey: _pinnedKey,
-                        onSelect: _onSelect,
-                        onTogglePin: _onTogglePin,
-                      ),
-                    ),
-                    const VerticalDivider(width: 1),
-                    Expanded(
-                      flex: 45,
-                      child: _DetailPane(
-                        detailFuture: _detailFuture,
-                        rankings: rows,
-                        pinnedKey: _pinnedKey,
-                        onTaskTap: (s) => context.push(
-                          '/runs/${s.lastRunId}/task-runs/${s.lastTaskRunId}',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    return DefaultTabController(
+      length: 2,
+      initialIndex: widget.initialQuery['view'] == 'quality' ? 1 : 0,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Leaderboard'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Correctness'),
+              Tab(text: 'Quality'),
             ],
-          );
-        },
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _CorrectnessLeaderboardView(
+              rankFuture: _rankFuture,
+              detailFuture: _detailFuture,
+              filter: _filter,
+              selectedKey: _selectedKey,
+              pinnedKey: _pinnedKey,
+              onFilterChanged: _onFilterChanged,
+              onSelect: _onSelect,
+              onTogglePin: _onTogglePin,
+            ),
+            _QualityLeaderboardTab(
+              repository: _reviewRepo,
+              filter: _filter,
+              taskIds: _taskIdsForCurrentCategory(),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _CorrectnessLeaderboardView extends StatelessWidget {
+  const _CorrectnessLeaderboardView({
+    required this.rankFuture,
+    required this.detailFuture,
+    required this.filter,
+    required this.selectedKey,
+    required this.pinnedKey,
+    required this.onFilterChanged,
+    required this.onSelect,
+    required this.onTogglePin,
+  });
+
+  final Future<List<ModelRanking>>? rankFuture;
+  final Future<ModelDetail?>? detailFuture;
+  final LeaderboardFilter filter;
+  final String? selectedKey;
+  final String? pinnedKey;
+  final ValueChanged<LeaderboardFilter> onFilterChanged;
+  final ValueChanged<String> onSelect;
+  final ValueChanged<String> onTogglePin;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<ModelRanking>>(
+      future: rankFuture,
+      builder: (context, snap) {
+        final rows = snap.data ?? const [];
+        final providerOptions = {
+          if (filter.providerId != null) filter.providerId!,
+          ...rows.map((r) => r.providerId),
+        }.toList()..sort();
+        return Column(
+          children: [
+            LeaderboardFilters(
+              filter: filter,
+              providerOptions: providerOptions,
+              onChanged: onFilterChanged,
+            ),
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    flex: 55,
+                    child: RankedModelsList(
+                      rankings: rows,
+                      dimension: filter.dimension,
+                      selectedKey: selectedKey,
+                      pinnedKey: pinnedKey,
+                      onSelect: onSelect,
+                      onTogglePin: onTogglePin,
+                    ),
+                  ),
+                  const VerticalDivider(width: 1),
+                  Expanded(
+                    flex: 45,
+                    child: _DetailPane(
+                      detailFuture: detailFuture,
+                      rankings: rows,
+                      pinnedKey: pinnedKey,
+                      onTaskTap: (s) => context.push(
+                        '/runs/${s.lastRunId}/task-runs/${s.lastTaskRunId}',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _QualityLeaderboardTab extends StatefulWidget {
+  const _QualityLeaderboardTab({
+    required this.repository,
+    required this.filter,
+    required this.taskIds,
+  });
+
+  final ReviewRepository? repository;
+  final LeaderboardFilter filter;
+  final Set<String>? taskIds;
+
+  @override
+  State<_QualityLeaderboardTab> createState() => _QualityLeaderboardTabState();
+}
+
+class _QualityLeaderboardTabState extends State<_QualityLeaderboardTab> {
+  Future<List<QualityRanking>>? _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  @override
+  void didUpdateWidget(_QualityLeaderboardTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository ||
+        oldWidget.filter != widget.filter ||
+        oldWidget.taskIds != widget.taskIds) {
+      _refresh();
+    }
+  }
+
+  void _refresh() {
+    final repo = widget.repository;
+    _future = repo?.qualityRankings(
+      benchmarkTrack: widget.filter.track?.name,
+      taskIds: widget.taskIds,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.repository == null) {
+      return const Center(child: Text('Quality review data unavailable.'));
+    }
+    return FutureBuilder<List<QualityRanking>>(
+      future: _future,
+      builder: (context, snap) {
+        final allRows = snap.data ?? const [];
+        final rows = widget.filter.providerId == null
+            ? allRows
+            : allRows
+                  .where((row) => row.providerId == widget.filter.providerId)
+                  .toList();
+        if (snap.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (rows.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'No quality votes yet — collect blind review battles first.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+        return ListView.separated(
+          itemCount: rows.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final row = rows[index];
+            return ExpansionTile(
+              leading: SizedBox(
+                width: 24,
+                child: Text('${index + 1}', textAlign: TextAlign.right),
+              ),
+              title: Text(row.modelId),
+              subtitle: Text(
+                [
+                  row.providerId,
+                  row.benchmarkTrack,
+                  'v${row.taskVersion}',
+                  '${row.nonSkipVotes} non-skip votes',
+                  if (row.skipVotes > 0) '${row.skipVotes} skips',
+                  if (row.lowVoteCount) 'low vote count',
+                ].join(' · '),
+              ),
+              trailing: Text(
+                row.displayScore == null
+                    ? 'pending'
+                    : _percent(row.displayScore!),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Preference score: ${_percent(row.preferenceScore)} '
+                      '(${row.wins.toStringAsFixed(0)}W / '
+                      '${row.losses.toStringAsFixed(0)}L / '
+                      '${row.ties.toStringAsFixed(0)}T). '
+                      '${row.lowVoteCount ? 'Needs at least ${row.minimumVotes} non-skip votes before ranking display.' : 'Meets the minimum vote threshold.'}',
+                    ),
+                  ),
+                ),
+                if (row.rationales.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Recent rationales: ${row.rationales.join(' · ')}',
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -284,7 +481,11 @@ class _DetailPane extends StatelessWidget {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final radarHeight = constraints.maxHeight < 500 ? 96.0 : 240.0;
+        final radarHeight = constraints.maxHeight < 360
+            ? 64.0
+            : constraints.maxHeight < 500
+            ? 96.0
+            : 240.0;
         return FutureBuilder<ModelDetail?>(
           future: detailFuture,
           builder: (context, snap) {
@@ -309,6 +510,32 @@ class _DetailPane extends StatelessWidget {
                       .where((r) => r.key == pinnedKey)
                       .map((r) => r.dimensions)
                       .firstOrNull;
+            final footer = Padding(
+              padding: const EdgeInsets.all(8),
+              child: Text(
+                '${detail.ranking.taskRunCount} task-runs · '
+                '${detail.ranking.primaryPassSampleCount} pass/fail samples · '
+                '${detail.ranking.dimensions.problems} evaluator problems',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            );
+            if (constraints.maxHeight < 360) {
+              return ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _RankingSummary(ranking: detail.ranking),
+                  const Divider(height: 1),
+                  SizedBox(
+                    height: 160,
+                    child: PerTaskBarChart(
+                      scores: detail.perTask,
+                      onTap: onTaskTap,
+                    ),
+                  ),
+                  footer,
+                ],
+              );
+            }
             return Column(
               children: [
                 Padding(
@@ -331,15 +558,7 @@ class _DetailPane extends StatelessWidget {
                     onTap: onTaskTap,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(
-                    '${detail.ranking.taskRunCount} task-runs · '
-                    '${detail.ranking.primaryPassSampleCount} pass/fail samples · '
-                    '${detail.ranking.dimensions.problems} evaluator problems',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
+                footer,
               ],
             );
           },

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:dart_arena/core/scoring.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -99,6 +100,8 @@ class SettingsRepository {
   static const _judgeModelId = 'judge_model_id';
   static const _evaluatorWeightsJson = 'evaluator_weights_json';
   static const _readmePath = 'readme_path';
+  static const _reviewReviewerId = 'review_reviewer_id';
+  static const _reviewReviewerAlias = 'review_reviewer_alias';
 
   static const _customLocalProvidersKey = 'custom_local_providers';
 
@@ -263,4 +266,34 @@ class SettingsRepository {
       await _storage.write(key: _readmePath, value: value);
     }
   }
+
+  Future<String> getOrCreateReviewReviewerId() async {
+    final existing = await _storage.read(key: _reviewReviewerId);
+    if (existing != null && existing.isNotEmpty) return existing;
+    final generated = _generateLocalReviewerId();
+    await _storage.write(key: _reviewReviewerId, value: generated);
+    return generated;
+  }
+
+  Future<String?> getReviewReviewerAlias() async {
+    final raw = await _storage.read(key: _reviewReviewerAlias);
+    final trimmed = raw?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
+  Future<void> setReviewReviewerAlias(String? value) async {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      await _storage.delete(key: _reviewReviewerAlias);
+    } else {
+      await _storage.write(key: _reviewReviewerAlias, value: trimmed);
+    }
+  }
+}
+
+String _generateLocalReviewerId() {
+  final random = Random.secure();
+  final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+  final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  return 'local-reviewer-$hex';
 }

@@ -2426,6 +2426,850 @@ class EvaluationsCompanion extends UpdateCompanion<Evaluation> {
   }
 }
 
+class $ReviewBattlesTable extends ReviewBattles
+    with TableInfo<$ReviewBattlesTable, ReviewBattle> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReviewBattlesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
+  @override
+  late final GeneratedColumn<String> taskId = GeneratedColumn<String>(
+    'task_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _taskVersionMeta = const VerificationMeta(
+    'taskVersion',
+  );
+  @override
+  late final GeneratedColumn<int> taskVersion = GeneratedColumn<int>(
+    'task_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _benchmarkTrackMeta = const VerificationMeta(
+    'benchmarkTrack',
+  );
+  @override
+  late final GeneratedColumn<String> benchmarkTrack = GeneratedColumn<String>(
+    'benchmark_track',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _leftTaskRunIdMeta = const VerificationMeta(
+    'leftTaskRunId',
+  );
+  @override
+  late final GeneratedColumn<String> leftTaskRunId = GeneratedColumn<String>(
+    'left_task_run_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES task_runs (id)',
+    ),
+  );
+  static const VerificationMeta _rightTaskRunIdMeta = const VerificationMeta(
+    'rightTaskRunId',
+  );
+  @override
+  late final GeneratedColumn<String> rightTaskRunId = GeneratedColumn<String>(
+    'right_task_run_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES task_runs (id)',
+    ),
+  );
+  static const VerificationMeta _canonicalPairKeyMeta = const VerificationMeta(
+    'canonicalPairKey',
+  );
+  @override
+  late final GeneratedColumn<String> canonicalPairKey = GeneratedColumn<String>(
+    'canonical_pair_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _leftLabelMeta = const VerificationMeta(
+    'leftLabel',
+  );
+  @override
+  late final GeneratedColumn<String> leftLabel = GeneratedColumn<String>(
+    'left_label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rightLabelMeta = const VerificationMeta(
+    'rightLabel',
+  );
+  @override
+  late final GeneratedColumn<String> rightLabel = GeneratedColumn<String>(
+    'right_label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reviewerIdMeta = const VerificationMeta(
+    'reviewerId',
+  );
+  @override
+  late final GeneratedColumn<String> reviewerId = GeneratedColumn<String>(
+    'reviewer_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reviewerAliasMeta = const VerificationMeta(
+    'reviewerAlias',
+  );
+  @override
+  late final GeneratedColumn<String> reviewerAlias = GeneratedColumn<String>(
+    'reviewer_alias',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _voteMeta = const VerificationMeta('vote');
+  @override
+  late final GeneratedColumn<String> vote = GeneratedColumn<String>(
+    'vote',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rationaleMeta = const VerificationMeta(
+    'rationale',
+  );
+  @override
+  late final GeneratedColumn<String> rationale = GeneratedColumn<String>(
+    'rationale',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    taskId,
+    taskVersion,
+    benchmarkTrack,
+    leftTaskRunId,
+    rightTaskRunId,
+    canonicalPairKey,
+    leftLabel,
+    rightLabel,
+    reviewerId,
+    reviewerAlias,
+    vote,
+    rationale,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'review_battles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ReviewBattle> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('task_id')) {
+      context.handle(
+        _taskIdMeta,
+        taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_taskIdMeta);
+    }
+    if (data.containsKey('task_version')) {
+      context.handle(
+        _taskVersionMeta,
+        taskVersion.isAcceptableOrUnknown(
+          data['task_version']!,
+          _taskVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_taskVersionMeta);
+    }
+    if (data.containsKey('benchmark_track')) {
+      context.handle(
+        _benchmarkTrackMeta,
+        benchmarkTrack.isAcceptableOrUnknown(
+          data['benchmark_track']!,
+          _benchmarkTrackMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_benchmarkTrackMeta);
+    }
+    if (data.containsKey('left_task_run_id')) {
+      context.handle(
+        _leftTaskRunIdMeta,
+        leftTaskRunId.isAcceptableOrUnknown(
+          data['left_task_run_id']!,
+          _leftTaskRunIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_leftTaskRunIdMeta);
+    }
+    if (data.containsKey('right_task_run_id')) {
+      context.handle(
+        _rightTaskRunIdMeta,
+        rightTaskRunId.isAcceptableOrUnknown(
+          data['right_task_run_id']!,
+          _rightTaskRunIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_rightTaskRunIdMeta);
+    }
+    if (data.containsKey('canonical_pair_key')) {
+      context.handle(
+        _canonicalPairKeyMeta,
+        canonicalPairKey.isAcceptableOrUnknown(
+          data['canonical_pair_key']!,
+          _canonicalPairKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_canonicalPairKeyMeta);
+    }
+    if (data.containsKey('left_label')) {
+      context.handle(
+        _leftLabelMeta,
+        leftLabel.isAcceptableOrUnknown(data['left_label']!, _leftLabelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_leftLabelMeta);
+    }
+    if (data.containsKey('right_label')) {
+      context.handle(
+        _rightLabelMeta,
+        rightLabel.isAcceptableOrUnknown(data['right_label']!, _rightLabelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rightLabelMeta);
+    }
+    if (data.containsKey('reviewer_id')) {
+      context.handle(
+        _reviewerIdMeta,
+        reviewerId.isAcceptableOrUnknown(data['reviewer_id']!, _reviewerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reviewerIdMeta);
+    }
+    if (data.containsKey('reviewer_alias')) {
+      context.handle(
+        _reviewerAliasMeta,
+        reviewerAlias.isAcceptableOrUnknown(
+          data['reviewer_alias']!,
+          _reviewerAliasMeta,
+        ),
+      );
+    }
+    if (data.containsKey('vote')) {
+      context.handle(
+        _voteMeta,
+        vote.isAcceptableOrUnknown(data['vote']!, _voteMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_voteMeta);
+    }
+    if (data.containsKey('rationale')) {
+      context.handle(
+        _rationaleMeta,
+        rationale.isAcceptableOrUnknown(data['rationale']!, _rationaleMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {reviewerId, canonicalPairKey},
+  ];
+  @override
+  ReviewBattle map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReviewBattle(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      taskId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_id'],
+      )!,
+      taskVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}task_version'],
+      )!,
+      benchmarkTrack: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}benchmark_track'],
+      )!,
+      leftTaskRunId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}left_task_run_id'],
+      )!,
+      rightTaskRunId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}right_task_run_id'],
+      )!,
+      canonicalPairKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}canonical_pair_key'],
+      )!,
+      leftLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}left_label'],
+      )!,
+      rightLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}right_label'],
+      )!,
+      reviewerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reviewer_id'],
+      )!,
+      reviewerAlias: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reviewer_alias'],
+      ),
+      vote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}vote'],
+      )!,
+      rationale: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rationale'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ReviewBattlesTable createAlias(String alias) {
+    return $ReviewBattlesTable(attachedDatabase, alias);
+  }
+}
+
+class ReviewBattle extends DataClass implements Insertable<ReviewBattle> {
+  final String id;
+  final String taskId;
+  final int taskVersion;
+  final String benchmarkTrack;
+  final String leftTaskRunId;
+  final String rightTaskRunId;
+  final String canonicalPairKey;
+  final String leftLabel;
+  final String rightLabel;
+  final String reviewerId;
+  final String? reviewerAlias;
+  final String vote;
+  final String? rationale;
+  final DateTime createdAt;
+  const ReviewBattle({
+    required this.id,
+    required this.taskId,
+    required this.taskVersion,
+    required this.benchmarkTrack,
+    required this.leftTaskRunId,
+    required this.rightTaskRunId,
+    required this.canonicalPairKey,
+    required this.leftLabel,
+    required this.rightLabel,
+    required this.reviewerId,
+    this.reviewerAlias,
+    required this.vote,
+    this.rationale,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['task_id'] = Variable<String>(taskId);
+    map['task_version'] = Variable<int>(taskVersion);
+    map['benchmark_track'] = Variable<String>(benchmarkTrack);
+    map['left_task_run_id'] = Variable<String>(leftTaskRunId);
+    map['right_task_run_id'] = Variable<String>(rightTaskRunId);
+    map['canonical_pair_key'] = Variable<String>(canonicalPairKey);
+    map['left_label'] = Variable<String>(leftLabel);
+    map['right_label'] = Variable<String>(rightLabel);
+    map['reviewer_id'] = Variable<String>(reviewerId);
+    if (!nullToAbsent || reviewerAlias != null) {
+      map['reviewer_alias'] = Variable<String>(reviewerAlias);
+    }
+    map['vote'] = Variable<String>(vote);
+    if (!nullToAbsent || rationale != null) {
+      map['rationale'] = Variable<String>(rationale);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ReviewBattlesCompanion toCompanion(bool nullToAbsent) {
+    return ReviewBattlesCompanion(
+      id: Value(id),
+      taskId: Value(taskId),
+      taskVersion: Value(taskVersion),
+      benchmarkTrack: Value(benchmarkTrack),
+      leftTaskRunId: Value(leftTaskRunId),
+      rightTaskRunId: Value(rightTaskRunId),
+      canonicalPairKey: Value(canonicalPairKey),
+      leftLabel: Value(leftLabel),
+      rightLabel: Value(rightLabel),
+      reviewerId: Value(reviewerId),
+      reviewerAlias: reviewerAlias == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reviewerAlias),
+      vote: Value(vote),
+      rationale: rationale == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rationale),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ReviewBattle.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReviewBattle(
+      id: serializer.fromJson<String>(json['id']),
+      taskId: serializer.fromJson<String>(json['taskId']),
+      taskVersion: serializer.fromJson<int>(json['taskVersion']),
+      benchmarkTrack: serializer.fromJson<String>(json['benchmarkTrack']),
+      leftTaskRunId: serializer.fromJson<String>(json['leftTaskRunId']),
+      rightTaskRunId: serializer.fromJson<String>(json['rightTaskRunId']),
+      canonicalPairKey: serializer.fromJson<String>(json['canonicalPairKey']),
+      leftLabel: serializer.fromJson<String>(json['leftLabel']),
+      rightLabel: serializer.fromJson<String>(json['rightLabel']),
+      reviewerId: serializer.fromJson<String>(json['reviewerId']),
+      reviewerAlias: serializer.fromJson<String?>(json['reviewerAlias']),
+      vote: serializer.fromJson<String>(json['vote']),
+      rationale: serializer.fromJson<String?>(json['rationale']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'taskId': serializer.toJson<String>(taskId),
+      'taskVersion': serializer.toJson<int>(taskVersion),
+      'benchmarkTrack': serializer.toJson<String>(benchmarkTrack),
+      'leftTaskRunId': serializer.toJson<String>(leftTaskRunId),
+      'rightTaskRunId': serializer.toJson<String>(rightTaskRunId),
+      'canonicalPairKey': serializer.toJson<String>(canonicalPairKey),
+      'leftLabel': serializer.toJson<String>(leftLabel),
+      'rightLabel': serializer.toJson<String>(rightLabel),
+      'reviewerId': serializer.toJson<String>(reviewerId),
+      'reviewerAlias': serializer.toJson<String?>(reviewerAlias),
+      'vote': serializer.toJson<String>(vote),
+      'rationale': serializer.toJson<String?>(rationale),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ReviewBattle copyWith({
+    String? id,
+    String? taskId,
+    int? taskVersion,
+    String? benchmarkTrack,
+    String? leftTaskRunId,
+    String? rightTaskRunId,
+    String? canonicalPairKey,
+    String? leftLabel,
+    String? rightLabel,
+    String? reviewerId,
+    Value<String?> reviewerAlias = const Value.absent(),
+    String? vote,
+    Value<String?> rationale = const Value.absent(),
+    DateTime? createdAt,
+  }) => ReviewBattle(
+    id: id ?? this.id,
+    taskId: taskId ?? this.taskId,
+    taskVersion: taskVersion ?? this.taskVersion,
+    benchmarkTrack: benchmarkTrack ?? this.benchmarkTrack,
+    leftTaskRunId: leftTaskRunId ?? this.leftTaskRunId,
+    rightTaskRunId: rightTaskRunId ?? this.rightTaskRunId,
+    canonicalPairKey: canonicalPairKey ?? this.canonicalPairKey,
+    leftLabel: leftLabel ?? this.leftLabel,
+    rightLabel: rightLabel ?? this.rightLabel,
+    reviewerId: reviewerId ?? this.reviewerId,
+    reviewerAlias: reviewerAlias.present
+        ? reviewerAlias.value
+        : this.reviewerAlias,
+    vote: vote ?? this.vote,
+    rationale: rationale.present ? rationale.value : this.rationale,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ReviewBattle copyWithCompanion(ReviewBattlesCompanion data) {
+    return ReviewBattle(
+      id: data.id.present ? data.id.value : this.id,
+      taskId: data.taskId.present ? data.taskId.value : this.taskId,
+      taskVersion: data.taskVersion.present
+          ? data.taskVersion.value
+          : this.taskVersion,
+      benchmarkTrack: data.benchmarkTrack.present
+          ? data.benchmarkTrack.value
+          : this.benchmarkTrack,
+      leftTaskRunId: data.leftTaskRunId.present
+          ? data.leftTaskRunId.value
+          : this.leftTaskRunId,
+      rightTaskRunId: data.rightTaskRunId.present
+          ? data.rightTaskRunId.value
+          : this.rightTaskRunId,
+      canonicalPairKey: data.canonicalPairKey.present
+          ? data.canonicalPairKey.value
+          : this.canonicalPairKey,
+      leftLabel: data.leftLabel.present ? data.leftLabel.value : this.leftLabel,
+      rightLabel: data.rightLabel.present
+          ? data.rightLabel.value
+          : this.rightLabel,
+      reviewerId: data.reviewerId.present
+          ? data.reviewerId.value
+          : this.reviewerId,
+      reviewerAlias: data.reviewerAlias.present
+          ? data.reviewerAlias.value
+          : this.reviewerAlias,
+      vote: data.vote.present ? data.vote.value : this.vote,
+      rationale: data.rationale.present ? data.rationale.value : this.rationale,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReviewBattle(')
+          ..write('id: $id, ')
+          ..write('taskId: $taskId, ')
+          ..write('taskVersion: $taskVersion, ')
+          ..write('benchmarkTrack: $benchmarkTrack, ')
+          ..write('leftTaskRunId: $leftTaskRunId, ')
+          ..write('rightTaskRunId: $rightTaskRunId, ')
+          ..write('canonicalPairKey: $canonicalPairKey, ')
+          ..write('leftLabel: $leftLabel, ')
+          ..write('rightLabel: $rightLabel, ')
+          ..write('reviewerId: $reviewerId, ')
+          ..write('reviewerAlias: $reviewerAlias, ')
+          ..write('vote: $vote, ')
+          ..write('rationale: $rationale, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    taskId,
+    taskVersion,
+    benchmarkTrack,
+    leftTaskRunId,
+    rightTaskRunId,
+    canonicalPairKey,
+    leftLabel,
+    rightLabel,
+    reviewerId,
+    reviewerAlias,
+    vote,
+    rationale,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReviewBattle &&
+          other.id == this.id &&
+          other.taskId == this.taskId &&
+          other.taskVersion == this.taskVersion &&
+          other.benchmarkTrack == this.benchmarkTrack &&
+          other.leftTaskRunId == this.leftTaskRunId &&
+          other.rightTaskRunId == this.rightTaskRunId &&
+          other.canonicalPairKey == this.canonicalPairKey &&
+          other.leftLabel == this.leftLabel &&
+          other.rightLabel == this.rightLabel &&
+          other.reviewerId == this.reviewerId &&
+          other.reviewerAlias == this.reviewerAlias &&
+          other.vote == this.vote &&
+          other.rationale == this.rationale &&
+          other.createdAt == this.createdAt);
+}
+
+class ReviewBattlesCompanion extends UpdateCompanion<ReviewBattle> {
+  final Value<String> id;
+  final Value<String> taskId;
+  final Value<int> taskVersion;
+  final Value<String> benchmarkTrack;
+  final Value<String> leftTaskRunId;
+  final Value<String> rightTaskRunId;
+  final Value<String> canonicalPairKey;
+  final Value<String> leftLabel;
+  final Value<String> rightLabel;
+  final Value<String> reviewerId;
+  final Value<String?> reviewerAlias;
+  final Value<String> vote;
+  final Value<String?> rationale;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const ReviewBattlesCompanion({
+    this.id = const Value.absent(),
+    this.taskId = const Value.absent(),
+    this.taskVersion = const Value.absent(),
+    this.benchmarkTrack = const Value.absent(),
+    this.leftTaskRunId = const Value.absent(),
+    this.rightTaskRunId = const Value.absent(),
+    this.canonicalPairKey = const Value.absent(),
+    this.leftLabel = const Value.absent(),
+    this.rightLabel = const Value.absent(),
+    this.reviewerId = const Value.absent(),
+    this.reviewerAlias = const Value.absent(),
+    this.vote = const Value.absent(),
+    this.rationale = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReviewBattlesCompanion.insert({
+    required String id,
+    required String taskId,
+    required int taskVersion,
+    required String benchmarkTrack,
+    required String leftTaskRunId,
+    required String rightTaskRunId,
+    required String canonicalPairKey,
+    required String leftLabel,
+    required String rightLabel,
+    required String reviewerId,
+    this.reviewerAlias = const Value.absent(),
+    required String vote,
+    this.rationale = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       taskId = Value(taskId),
+       taskVersion = Value(taskVersion),
+       benchmarkTrack = Value(benchmarkTrack),
+       leftTaskRunId = Value(leftTaskRunId),
+       rightTaskRunId = Value(rightTaskRunId),
+       canonicalPairKey = Value(canonicalPairKey),
+       leftLabel = Value(leftLabel),
+       rightLabel = Value(rightLabel),
+       reviewerId = Value(reviewerId),
+       vote = Value(vote),
+       createdAt = Value(createdAt);
+  static Insertable<ReviewBattle> custom({
+    Expression<String>? id,
+    Expression<String>? taskId,
+    Expression<int>? taskVersion,
+    Expression<String>? benchmarkTrack,
+    Expression<String>? leftTaskRunId,
+    Expression<String>? rightTaskRunId,
+    Expression<String>? canonicalPairKey,
+    Expression<String>? leftLabel,
+    Expression<String>? rightLabel,
+    Expression<String>? reviewerId,
+    Expression<String>? reviewerAlias,
+    Expression<String>? vote,
+    Expression<String>? rationale,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (taskId != null) 'task_id': taskId,
+      if (taskVersion != null) 'task_version': taskVersion,
+      if (benchmarkTrack != null) 'benchmark_track': benchmarkTrack,
+      if (leftTaskRunId != null) 'left_task_run_id': leftTaskRunId,
+      if (rightTaskRunId != null) 'right_task_run_id': rightTaskRunId,
+      if (canonicalPairKey != null) 'canonical_pair_key': canonicalPairKey,
+      if (leftLabel != null) 'left_label': leftLabel,
+      if (rightLabel != null) 'right_label': rightLabel,
+      if (reviewerId != null) 'reviewer_id': reviewerId,
+      if (reviewerAlias != null) 'reviewer_alias': reviewerAlias,
+      if (vote != null) 'vote': vote,
+      if (rationale != null) 'rationale': rationale,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReviewBattlesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? taskId,
+    Value<int>? taskVersion,
+    Value<String>? benchmarkTrack,
+    Value<String>? leftTaskRunId,
+    Value<String>? rightTaskRunId,
+    Value<String>? canonicalPairKey,
+    Value<String>? leftLabel,
+    Value<String>? rightLabel,
+    Value<String>? reviewerId,
+    Value<String?>? reviewerAlias,
+    Value<String>? vote,
+    Value<String?>? rationale,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return ReviewBattlesCompanion(
+      id: id ?? this.id,
+      taskId: taskId ?? this.taskId,
+      taskVersion: taskVersion ?? this.taskVersion,
+      benchmarkTrack: benchmarkTrack ?? this.benchmarkTrack,
+      leftTaskRunId: leftTaskRunId ?? this.leftTaskRunId,
+      rightTaskRunId: rightTaskRunId ?? this.rightTaskRunId,
+      canonicalPairKey: canonicalPairKey ?? this.canonicalPairKey,
+      leftLabel: leftLabel ?? this.leftLabel,
+      rightLabel: rightLabel ?? this.rightLabel,
+      reviewerId: reviewerId ?? this.reviewerId,
+      reviewerAlias: reviewerAlias ?? this.reviewerAlias,
+      vote: vote ?? this.vote,
+      rationale: rationale ?? this.rationale,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (taskId.present) {
+      map['task_id'] = Variable<String>(taskId.value);
+    }
+    if (taskVersion.present) {
+      map['task_version'] = Variable<int>(taskVersion.value);
+    }
+    if (benchmarkTrack.present) {
+      map['benchmark_track'] = Variable<String>(benchmarkTrack.value);
+    }
+    if (leftTaskRunId.present) {
+      map['left_task_run_id'] = Variable<String>(leftTaskRunId.value);
+    }
+    if (rightTaskRunId.present) {
+      map['right_task_run_id'] = Variable<String>(rightTaskRunId.value);
+    }
+    if (canonicalPairKey.present) {
+      map['canonical_pair_key'] = Variable<String>(canonicalPairKey.value);
+    }
+    if (leftLabel.present) {
+      map['left_label'] = Variable<String>(leftLabel.value);
+    }
+    if (rightLabel.present) {
+      map['right_label'] = Variable<String>(rightLabel.value);
+    }
+    if (reviewerId.present) {
+      map['reviewer_id'] = Variable<String>(reviewerId.value);
+    }
+    if (reviewerAlias.present) {
+      map['reviewer_alias'] = Variable<String>(reviewerAlias.value);
+    }
+    if (vote.present) {
+      map['vote'] = Variable<String>(vote.value);
+    }
+    if (rationale.present) {
+      map['rationale'] = Variable<String>(rationale.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReviewBattlesCompanion(')
+          ..write('id: $id, ')
+          ..write('taskId: $taskId, ')
+          ..write('taskVersion: $taskVersion, ')
+          ..write('benchmarkTrack: $benchmarkTrack, ')
+          ..write('leftTaskRunId: $leftTaskRunId, ')
+          ..write('rightTaskRunId: $rightTaskRunId, ')
+          ..write('canonicalPairKey: $canonicalPairKey, ')
+          ..write('leftLabel: $leftLabel, ')
+          ..write('rightLabel: $rightLabel, ')
+          ..write('reviewerId: $reviewerId, ')
+          ..write('reviewerAlias: $reviewerAlias, ')
+          ..write('vote: $vote, ')
+          ..write('rationale: $rationale, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2433,6 +3277,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PlansTable plans = $PlansTable(this);
   late final $TaskRunsTable taskRuns = $TaskRunsTable(this);
   late final $EvaluationsTable evaluations = $EvaluationsTable(this);
+  late final $ReviewBattlesTable reviewBattles = $ReviewBattlesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2442,6 +3287,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     plans,
     taskRuns,
     evaluations,
+    reviewBattles,
   ];
 }
 
@@ -3159,6 +4005,48 @@ final class $$TaskRunsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$ReviewBattlesTable, List<ReviewBattle>>
+  _leftReviewBattlesTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.reviewBattles,
+    aliasName: $_aliasNameGenerator(
+      db.taskRuns.id,
+      db.reviewBattles.leftTaskRunId,
+    ),
+  );
+
+  $$ReviewBattlesTableProcessedTableManager get leftReviewBattles {
+    final manager = $$ReviewBattlesTableTableManager(
+      $_db,
+      $_db.reviewBattles,
+    ).filter((f) => f.leftTaskRunId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_leftReviewBattlesTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ReviewBattlesTable, List<ReviewBattle>>
+  _rightReviewBattlesTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.reviewBattles,
+    aliasName: $_aliasNameGenerator(
+      db.taskRuns.id,
+      db.reviewBattles.rightTaskRunId,
+    ),
+  );
+
+  $$ReviewBattlesTableProcessedTableManager get rightReviewBattles {
+    final manager = $$ReviewBattlesTableTableManager(
+      $_db,
+      $_db.reviewBattles,
+    ).filter((f) => f.rightTaskRunId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_rightReviewBattlesTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$TaskRunsTableFilterComposer
@@ -3322,6 +4210,56 @@ class $$TaskRunsTableFilterComposer
           }) => $$EvaluationsTableFilterComposer(
             $db: $db,
             $table: $db.evaluations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> leftReviewBattles(
+    Expression<bool> Function($$ReviewBattlesTableFilterComposer f) f,
+  ) {
+    final $$ReviewBattlesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.reviewBattles,
+      getReferencedColumn: (t) => t.leftTaskRunId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReviewBattlesTableFilterComposer(
+            $db: $db,
+            $table: $db.reviewBattles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> rightReviewBattles(
+    Expression<bool> Function($$ReviewBattlesTableFilterComposer f) f,
+  ) {
+    final $$ReviewBattlesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.reviewBattles,
+      getReferencedColumn: (t) => t.rightTaskRunId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReviewBattlesTableFilterComposer(
+            $db: $db,
+            $table: $db.reviewBattles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3635,6 +4573,56 @@ class $$TaskRunsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> leftReviewBattles<T extends Object>(
+    Expression<T> Function($$ReviewBattlesTableAnnotationComposer a) f,
+  ) {
+    final $$ReviewBattlesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.reviewBattles,
+      getReferencedColumn: (t) => t.leftTaskRunId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReviewBattlesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.reviewBattles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> rightReviewBattles<T extends Object>(
+    Expression<T> Function($$ReviewBattlesTableAnnotationComposer a) f,
+  ) {
+    final $$ReviewBattlesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.reviewBattles,
+      getReferencedColumn: (t) => t.rightTaskRunId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReviewBattlesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.reviewBattles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TaskRunsTableTableManager
@@ -3654,6 +4642,8 @@ class $$TaskRunsTableTableManager
             bool runId,
             bool planId,
             bool evaluationsRefs,
+            bool leftReviewBattles,
+            bool rightReviewBattles,
           })
         > {
   $$TaskRunsTableTableManager(_$AppDatabase db, $TaskRunsTable table)
@@ -3768,11 +4758,19 @@ class $$TaskRunsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({runId = false, planId = false, evaluationsRefs = false}) {
+              ({
+                runId = false,
+                planId = false,
+                evaluationsRefs = false,
+                leftReviewBattles = false,
+                rightReviewBattles = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (evaluationsRefs) db.evaluations,
+                    if (leftReviewBattles) db.reviewBattles,
+                    if (rightReviewBattles) db.reviewBattles,
                   ],
                   addJoins:
                       <
@@ -3842,6 +4840,48 @@ class $$TaskRunsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (leftReviewBattles)
+                        await $_getPrefetchedData<
+                          TaskRun,
+                          $TaskRunsTable,
+                          ReviewBattle
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TaskRunsTableReferences
+                              ._leftReviewBattlesTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TaskRunsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).leftReviewBattles,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.leftTaskRunId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (rightReviewBattles)
+                        await $_getPrefetchedData<
+                          TaskRun,
+                          $TaskRunsTable,
+                          ReviewBattle
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TaskRunsTableReferences
+                              ._rightReviewBattlesTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TaskRunsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).rightReviewBattles,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.rightTaskRunId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -3862,7 +4902,13 @@ typedef $$TaskRunsTableProcessedTableManager =
       $$TaskRunsTableUpdateCompanionBuilder,
       (TaskRun, $$TaskRunsTableReferences),
       TaskRun,
-      PrefetchHooks Function({bool runId, bool planId, bool evaluationsRefs})
+      PrefetchHooks Function({
+        bool runId,
+        bool planId,
+        bool evaluationsRefs,
+        bool leftReviewBattles,
+        bool rightReviewBattles,
+      })
     >;
 typedef $$EvaluationsTableCreateCompanionBuilder =
     EvaluationsCompanion Function({
@@ -4225,6 +5271,605 @@ typedef $$EvaluationsTableProcessedTableManager =
       Evaluation,
       PrefetchHooks Function({bool taskRunId})
     >;
+typedef $$ReviewBattlesTableCreateCompanionBuilder =
+    ReviewBattlesCompanion Function({
+      required String id,
+      required String taskId,
+      required int taskVersion,
+      required String benchmarkTrack,
+      required String leftTaskRunId,
+      required String rightTaskRunId,
+      required String canonicalPairKey,
+      required String leftLabel,
+      required String rightLabel,
+      required String reviewerId,
+      Value<String?> reviewerAlias,
+      required String vote,
+      Value<String?> rationale,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$ReviewBattlesTableUpdateCompanionBuilder =
+    ReviewBattlesCompanion Function({
+      Value<String> id,
+      Value<String> taskId,
+      Value<int> taskVersion,
+      Value<String> benchmarkTrack,
+      Value<String> leftTaskRunId,
+      Value<String> rightTaskRunId,
+      Value<String> canonicalPairKey,
+      Value<String> leftLabel,
+      Value<String> rightLabel,
+      Value<String> reviewerId,
+      Value<String?> reviewerAlias,
+      Value<String> vote,
+      Value<String?> rationale,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$ReviewBattlesTableReferences
+    extends BaseReferences<_$AppDatabase, $ReviewBattlesTable, ReviewBattle> {
+  $$ReviewBattlesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TaskRunsTable _leftTaskRunIdTable(_$AppDatabase db) =>
+      db.taskRuns.createAlias(
+        $_aliasNameGenerator(db.reviewBattles.leftTaskRunId, db.taskRuns.id),
+      );
+
+  $$TaskRunsTableProcessedTableManager get leftTaskRunId {
+    final $_column = $_itemColumn<String>('left_task_run_id')!;
+
+    final manager = $$TaskRunsTableTableManager(
+      $_db,
+      $_db.taskRuns,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_leftTaskRunIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $TaskRunsTable _rightTaskRunIdTable(_$AppDatabase db) =>
+      db.taskRuns.createAlias(
+        $_aliasNameGenerator(db.reviewBattles.rightTaskRunId, db.taskRuns.id),
+      );
+
+  $$TaskRunsTableProcessedTableManager get rightTaskRunId {
+    final $_column = $_itemColumn<String>('right_task_run_id')!;
+
+    final manager = $$TaskRunsTableTableManager(
+      $_db,
+      $_db.taskRuns,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_rightTaskRunIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ReviewBattlesTableFilterComposer
+    extends Composer<_$AppDatabase, $ReviewBattlesTable> {
+  $$ReviewBattlesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get taskVersion => $composableBuilder(
+    column: $table.taskVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get benchmarkTrack => $composableBuilder(
+    column: $table.benchmarkTrack,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get canonicalPairKey => $composableBuilder(
+    column: $table.canonicalPairKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get leftLabel => $composableBuilder(
+    column: $table.leftLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rightLabel => $composableBuilder(
+    column: $table.rightLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reviewerId => $composableBuilder(
+    column: $table.reviewerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reviewerAlias => $composableBuilder(
+    column: $table.reviewerAlias,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get vote => $composableBuilder(
+    column: $table.vote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rationale => $composableBuilder(
+    column: $table.rationale,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TaskRunsTableFilterComposer get leftTaskRunId {
+    final $$TaskRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.leftTaskRunId,
+      referencedTable: $db.taskRuns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TaskRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.taskRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TaskRunsTableFilterComposer get rightTaskRunId {
+    final $$TaskRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rightTaskRunId,
+      referencedTable: $db.taskRuns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TaskRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.taskRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ReviewBattlesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ReviewBattlesTable> {
+  $$ReviewBattlesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get taskVersion => $composableBuilder(
+    column: $table.taskVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get benchmarkTrack => $composableBuilder(
+    column: $table.benchmarkTrack,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get canonicalPairKey => $composableBuilder(
+    column: $table.canonicalPairKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get leftLabel => $composableBuilder(
+    column: $table.leftLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rightLabel => $composableBuilder(
+    column: $table.rightLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reviewerId => $composableBuilder(
+    column: $table.reviewerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reviewerAlias => $composableBuilder(
+    column: $table.reviewerAlias,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get vote => $composableBuilder(
+    column: $table.vote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rationale => $composableBuilder(
+    column: $table.rationale,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TaskRunsTableOrderingComposer get leftTaskRunId {
+    final $$TaskRunsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.leftTaskRunId,
+      referencedTable: $db.taskRuns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TaskRunsTableOrderingComposer(
+            $db: $db,
+            $table: $db.taskRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TaskRunsTableOrderingComposer get rightTaskRunId {
+    final $$TaskRunsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rightTaskRunId,
+      referencedTable: $db.taskRuns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TaskRunsTableOrderingComposer(
+            $db: $db,
+            $table: $db.taskRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ReviewBattlesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ReviewBattlesTable> {
+  $$ReviewBattlesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get taskId =>
+      $composableBuilder(column: $table.taskId, builder: (column) => column);
+
+  GeneratedColumn<int> get taskVersion => $composableBuilder(
+    column: $table.taskVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get benchmarkTrack => $composableBuilder(
+    column: $table.benchmarkTrack,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get canonicalPairKey => $composableBuilder(
+    column: $table.canonicalPairKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get leftLabel =>
+      $composableBuilder(column: $table.leftLabel, builder: (column) => column);
+
+  GeneratedColumn<String> get rightLabel => $composableBuilder(
+    column: $table.rightLabel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reviewerId => $composableBuilder(
+    column: $table.reviewerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reviewerAlias => $composableBuilder(
+    column: $table.reviewerAlias,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get vote =>
+      $composableBuilder(column: $table.vote, builder: (column) => column);
+
+  GeneratedColumn<String> get rationale =>
+      $composableBuilder(column: $table.rationale, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$TaskRunsTableAnnotationComposer get leftTaskRunId {
+    final $$TaskRunsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.leftTaskRunId,
+      referencedTable: $db.taskRuns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TaskRunsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.taskRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TaskRunsTableAnnotationComposer get rightTaskRunId {
+    final $$TaskRunsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rightTaskRunId,
+      referencedTable: $db.taskRuns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TaskRunsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.taskRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ReviewBattlesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ReviewBattlesTable,
+          ReviewBattle,
+          $$ReviewBattlesTableFilterComposer,
+          $$ReviewBattlesTableOrderingComposer,
+          $$ReviewBattlesTableAnnotationComposer,
+          $$ReviewBattlesTableCreateCompanionBuilder,
+          $$ReviewBattlesTableUpdateCompanionBuilder,
+          (ReviewBattle, $$ReviewBattlesTableReferences),
+          ReviewBattle,
+          PrefetchHooks Function({bool leftTaskRunId, bool rightTaskRunId})
+        > {
+  $$ReviewBattlesTableTableManager(_$AppDatabase db, $ReviewBattlesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReviewBattlesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReviewBattlesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ReviewBattlesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> taskId = const Value.absent(),
+                Value<int> taskVersion = const Value.absent(),
+                Value<String> benchmarkTrack = const Value.absent(),
+                Value<String> leftTaskRunId = const Value.absent(),
+                Value<String> rightTaskRunId = const Value.absent(),
+                Value<String> canonicalPairKey = const Value.absent(),
+                Value<String> leftLabel = const Value.absent(),
+                Value<String> rightLabel = const Value.absent(),
+                Value<String> reviewerId = const Value.absent(),
+                Value<String?> reviewerAlias = const Value.absent(),
+                Value<String> vote = const Value.absent(),
+                Value<String?> rationale = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReviewBattlesCompanion(
+                id: id,
+                taskId: taskId,
+                taskVersion: taskVersion,
+                benchmarkTrack: benchmarkTrack,
+                leftTaskRunId: leftTaskRunId,
+                rightTaskRunId: rightTaskRunId,
+                canonicalPairKey: canonicalPairKey,
+                leftLabel: leftLabel,
+                rightLabel: rightLabel,
+                reviewerId: reviewerId,
+                reviewerAlias: reviewerAlias,
+                vote: vote,
+                rationale: rationale,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String taskId,
+                required int taskVersion,
+                required String benchmarkTrack,
+                required String leftTaskRunId,
+                required String rightTaskRunId,
+                required String canonicalPairKey,
+                required String leftLabel,
+                required String rightLabel,
+                required String reviewerId,
+                Value<String?> reviewerAlias = const Value.absent(),
+                required String vote,
+                Value<String?> rationale = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ReviewBattlesCompanion.insert(
+                id: id,
+                taskId: taskId,
+                taskVersion: taskVersion,
+                benchmarkTrack: benchmarkTrack,
+                leftTaskRunId: leftTaskRunId,
+                rightTaskRunId: rightTaskRunId,
+                canonicalPairKey: canonicalPairKey,
+                leftLabel: leftLabel,
+                rightLabel: rightLabel,
+                reviewerId: reviewerId,
+                reviewerAlias: reviewerAlias,
+                vote: vote,
+                rationale: rationale,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ReviewBattlesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({leftTaskRunId = false, rightTaskRunId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (leftTaskRunId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.leftTaskRunId,
+                                    referencedTable:
+                                        $$ReviewBattlesTableReferences
+                                            ._leftTaskRunIdTable(db),
+                                    referencedColumn:
+                                        $$ReviewBattlesTableReferences
+                                            ._leftTaskRunIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (rightTaskRunId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.rightTaskRunId,
+                                    referencedTable:
+                                        $$ReviewBattlesTableReferences
+                                            ._rightTaskRunIdTable(db),
+                                    referencedColumn:
+                                        $$ReviewBattlesTableReferences
+                                            ._rightTaskRunIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ReviewBattlesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ReviewBattlesTable,
+      ReviewBattle,
+      $$ReviewBattlesTableFilterComposer,
+      $$ReviewBattlesTableOrderingComposer,
+      $$ReviewBattlesTableAnnotationComposer,
+      $$ReviewBattlesTableCreateCompanionBuilder,
+      $$ReviewBattlesTableUpdateCompanionBuilder,
+      (ReviewBattle, $$ReviewBattlesTableReferences),
+      ReviewBattle,
+      PrefetchHooks Function({bool leftTaskRunId, bool rightTaskRunId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4236,4 +5881,6 @@ class $AppDatabaseManager {
       $$TaskRunsTableTableManager(_db, _db.taskRuns);
   $$EvaluationsTableTableManager get evaluations =>
       $$EvaluationsTableTableManager(_db, _db.evaluations);
+  $$ReviewBattlesTableTableManager get reviewBattles =>
+      $$ReviewBattlesTableTableManager(_db, _db.reviewBattles);
 }

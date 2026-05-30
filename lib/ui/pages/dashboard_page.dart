@@ -111,6 +111,11 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
             onPressed: () => context.push('/leaderboard'),
           ),
           IconButton(
+            icon: const Icon(Icons.rate_review),
+            tooltip: 'Review',
+            onPressed: () => context.push('/review'),
+          ),
+          IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Settings',
             onPressed: () => context.push('/settings'),

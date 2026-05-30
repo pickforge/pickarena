@@ -82,6 +82,28 @@ void main() {
     expect(await repo.getRunConcurrency(), 4);
   });
 
+  test('reviewer ID is generated once and persisted', () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final repo = SettingsRepository();
+
+    final first = await repo.getOrCreateReviewReviewerId();
+    final second = await repo.getOrCreateReviewReviewerId();
+
+    expect(first, startsWith('local-reviewer-'));
+    expect(second, first);
+  });
+
+  test('reviewer alias is optional and trimmed', () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final repo = SettingsRepository();
+
+    expect(await repo.getReviewReviewerAlias(), isNull);
+    await repo.setReviewReviewerAlias('  Local Reviewer  ');
+    expect(await repo.getReviewReviewerAlias(), 'Local Reviewer');
+    await repo.setReviewReviewerAlias('   ');
+    expect(await repo.getReviewReviewerAlias(), isNull);
+  });
+
   group('custom local providers', () {
     setUp(() {
       FlutterSecureStorage.setMockInitialValues({});
@@ -103,20 +125,23 @@ void main() {
       expect(result.first.name, 'Test');
     });
 
-    test('setCustomLocalProviders stores extraHeaders and defaultEfforts', () async {
-      final repo = SettingsRepository();
-      await repo.setCustomLocalProviders(const [
-        CustomLocalProviderEntry(
-          id: 'with_headers',
-          name: 'H',
-          extraHeaders: {'X-Foo': 'bar'},
-          defaultEfforts: ['low', 'medium'],
-        ),
-      ]);
-      final result = await repo.getCustomLocalProviders();
-      expect(result.first.extraHeaders, {'X-Foo': 'bar'});
-      expect(result.first.defaultEfforts, ['low', 'medium']);
-    });
+    test(
+      'setCustomLocalProviders stores extraHeaders and defaultEfforts',
+      () async {
+        final repo = SettingsRepository();
+        await repo.setCustomLocalProviders(const [
+          CustomLocalProviderEntry(
+            id: 'with_headers',
+            name: 'H',
+            extraHeaders: {'X-Foo': 'bar'},
+            defaultEfforts: ['low', 'medium'],
+          ),
+        ]);
+        final result = await repo.getCustomLocalProviders();
+        expect(result.first.extraHeaders, {'X-Foo': 'bar'});
+        expect(result.first.defaultEfforts, ['low', 'medium']);
+      },
+    );
 
     test('setCustomLocalProviders trims fields', () async {
       final repo = SettingsRepository();
@@ -209,14 +234,17 @@ void main() {
       expect(url, 'http://127.0.0.1:8080/v1');
     });
 
-    test('migration does not seed when legacy keys are empty/whitespace', () async {
-      FlutterSecureStorage.setMockInitialValues({
-        'base_url:local_openai': '   ',
-      });
-      final repo = SettingsRepository();
-      final result = await repo.getCustomLocalProviders();
-      expect(result, isEmpty);
-    });
+    test(
+      'migration does not seed when legacy keys are empty/whitespace',
+      () async {
+        FlutterSecureStorage.setMockInitialValues({
+          'base_url:local_openai': '   ',
+        });
+        final repo = SettingsRepository();
+        final result = await repo.getCustomLocalProviders();
+        expect(result, isEmpty);
+      },
+    );
 
     test('migration does not seed when legacy keys are absent', () async {
       FlutterSecureStorage.setMockInitialValues({});
@@ -266,28 +294,28 @@ void main() {
       // Should not throw
     });
 
-    test('setCustomLocalProviders does not clear secrets for removed entries', () async {
-      final repo = SettingsRepository();
-      await repo.setApiKey('old_id', 'sk');
-      await repo.setBaseUrlOverride('old_id', 'http://old');
-      await repo.setCustomLocalProviders([
-        const CustomLocalProviderEntry(id: 'old_id', name: 'Old'),
-      ]);
+    test(
+      'setCustomLocalProviders does not clear secrets for removed entries',
+      () async {
+        final repo = SettingsRepository();
+        await repo.setApiKey('old_id', 'sk');
+        await repo.setBaseUrlOverride('old_id', 'http://old');
+        await repo.setCustomLocalProviders([
+          const CustomLocalProviderEntry(id: 'old_id', name: 'Old'),
+        ]);
 
-      await repo.setCustomLocalProviders([
-        const CustomLocalProviderEntry(id: 'new_id', name: 'New'),
-      ]);
+        await repo.setCustomLocalProviders([
+          const CustomLocalProviderEntry(id: 'new_id', name: 'New'),
+        ]);
 
-      expect(await repo.getApiKey('old_id'), 'sk');
-      expect(await repo.getBaseUrlOverride('old_id'), 'http://old');
-    });
+        expect(await repo.getApiKey('old_id'), 'sk');
+        expect(await repo.getBaseUrlOverride('old_id'), 'http://old');
+      },
+    );
 
     test('ID validation rejects reserved IDs', () {
       expect(
-        validateCustomLocalProviderId(
-          'openai',
-          existingIds: const [],
-        ),
+        validateCustomLocalProviderId('openai', existingIds: const []),
         isNotNull,
       );
     });
