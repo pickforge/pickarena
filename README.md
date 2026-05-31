@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/branding/dart_arena_logo.png" alt="Dart Arena logo" width="160">
+  <img src="assets/branding/dart_arena_logo_horizontal_dark.png" alt="Dart Arena logo" height="250">
 </p>
 
 # Dart Arena
