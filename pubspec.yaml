@@ -72,7 +72,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/branding/dart_arena_logo.png
+    - assets/branding/
     - lib/tasks/bug_fix/fixtures/off_by_one_pagination/pubspec.yaml
     - lib/tasks/bug_fix/fixtures/off_by_one_pagination/lib/pagination.dart
     - lib/tasks/bug_fix/fixtures/off_by_one_pagination/test/pagination_test.dart
