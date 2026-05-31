@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:dart_arena/core/code_extractor.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/evaluator_classification.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
 
 class LlmJudgeEvaluator implements Evaluator {
   LlmJudgeEvaluator({required this.judge, required this.judgeModel});
@@ -17,6 +19,25 @@ class LlmJudgeEvaluator implements Evaluator {
 
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
+    final objectiveFailures = ctx.previousResults
+        .where(isObjectiveFailure)
+        .map((result) => result.evaluatorId)
+        .toList(growable: false);
+    if (objectiveFailures.isNotEmpty) {
+      return EvaluationResult(
+        evaluatorId: id,
+        passed: false,
+        score: 0.0,
+        rationale: 'ignored due to objective evaluator failure',
+        details: {
+          'ignored': true,
+          'skipped': true,
+          'reason': 'objective_failure',
+          'failed_evaluator_ids': objectiveFailures,
+        },
+      );
+    }
+
     final rubric = ctx.task.judgeRubric;
     if (rubric == null) {
       return EvaluationResult(
@@ -24,17 +45,36 @@ class LlmJudgeEvaluator implements Evaluator {
         passed: true,
         score: 1.0,
         rationale: 'no rubric',
-        details: const {'skipped': true},
+        details: const {'skipped': true, 'reason': 'no_rubric'},
       );
     }
 
     final submission = ctx.response.extractedCode ?? ctx.response.rawText;
+    final targetContext = buildPromptSafeTargetContext(
+      targetPath: ctx.task.generatedCodePath,
+      fixtures: ctx.task.fixtures,
+    );
+    final publicTests = buildPublicTestFixtureContext(
+      fixtures: ctx.task.fixtures,
+    );
+    final priorSummary = _priorObjectiveSummary(ctx.previousResults);
     final prompt =
         '''
 You are a strict code reviewer for Dart/Flutter.
 
+Penalize public API breakage, compile failures, analysis failures, and public or hidden test failures. Do not let stylistic strengths outweigh objective correctness failures.
+
 TASK PROMPT:
 ${ctx.task.prompt}
+
+TARGET API/SKELETON:
+${targetContext ?? 'Not available.'}
+
+PUBLIC TEST FIXTURE SNIPPETS:
+${publicTests ?? 'Not available.'}
+
+PRIOR OBJECTIVE EVALUATION SUMMARY:
+$priorSummary
 
 RUBRIC:
 $rubric
@@ -70,6 +110,25 @@ Reply with ONLY a fenced ```json block of the form:
         'parse_strategy': parsed.strategy,
       },
     );
+  }
+
+  String _priorObjectiveSummary(List<EvaluationResult> previousResults) {
+    final objectiveResults = previousResults
+        .where((result) => isObjectiveEvaluatorId(result.evaluatorId))
+        .toList(growable: false);
+    if (objectiveResults.isEmpty) {
+      return 'No prior objective evaluator results.';
+    }
+
+    return objectiveResults
+        .map(
+          (result) =>
+              '- ${result.evaluatorId}: '
+              '${result.passed ? 'passed' : 'failed'}, '
+              'score=${result.score.toStringAsFixed(2)}'
+              '${result.rationale == null ? '' : ', ${result.rationale}'}',
+        )
+        .join('\n');
   }
 
   _ParsedJudgeReply _parse(String raw) {

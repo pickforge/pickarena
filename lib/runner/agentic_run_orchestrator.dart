@@ -176,6 +176,7 @@ class AgenticRunOrchestrator {
               workDir: workspace,
               response: response,
               task: task,
+              previousResults: evaluations,
             ),
           ),
         );

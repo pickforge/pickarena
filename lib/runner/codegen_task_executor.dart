@@ -54,8 +54,13 @@ class CodegenTaskExecutor {
     Future<void>? cancellationSignal,
   }) async {
     cancellationCheck?.call();
+    final targetContext = buildPromptSafeTargetContext(
+      targetPath: task.generatedCodePath,
+      fixtures: task.fixtures,
+    );
     final prompt = buildPromptWithPlan(
       taskPrompt: task.prompt,
+      targetContext: targetContext,
       planMarkdown: planMarkdown,
     );
     final taskTimeout = task.timeout ?? const Duration(minutes: 10);
@@ -198,6 +203,7 @@ class CodegenTaskExecutor {
             workDir: dir,
             response: responseWithCode,
             task: task,
+            previousResults: evaluations,
           ),
         );
         cancellationCheck?.call();

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
+import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
@@ -13,6 +14,8 @@ import 'package:flutter_test/flutter_test.dart';
 class _ScriptedJudge with Disposable implements ModelProvider {
   _ScriptedJudge(this._reply);
   final String _reply;
+  var generateCalls = 0;
+  String? lastPrompt;
 
   @override
   String get id => 'fake_judge';
@@ -29,18 +32,23 @@ class _ScriptedJudge with Disposable implements ModelProvider {
     required String prompt,
     required String model,
     Duration? timeout,
-  }) async => ModelResponse(
-    rawText: _reply,
-    extractedCode: null,
-    promptTokens: null,
-    completionTokens: null,
-    latency: const Duration(milliseconds: 1),
-  );
+  }) async {
+    generateCalls++;
+    lastPrompt = prompt;
+    return ModelResponse(
+      rawText: _reply,
+      extractedCode: null,
+      promptTokens: null,
+      completionTokens: null,
+      latency: const Duration(milliseconds: 1),
+    );
+  }
 }
 
 class _Task extends BenchmarkTask {
-  _Task({this.rubric});
+  _Task({this.rubric, this.fixtureMap = const {}});
   final String? rubric;
+  final Map<String, String> fixtureMap;
 
   @override
   String get id => 'task';
@@ -49,7 +57,7 @@ class _Task extends BenchmarkTask {
   @override
   String get prompt => 'fix it';
   @override
-  Map<String, String> get fixtures => const {};
+  Map<String, String> get fixtures => fixtureMap;
   @override
   String get generatedCodePath => 'lib/tmp.dart';
   @override
@@ -58,7 +66,10 @@ class _Task extends BenchmarkTask {
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) => const [];
 }
 
-EvaluationContext _ctx(BenchmarkTask task) => EvaluationContext(
+EvaluationContext _ctx(
+  BenchmarkTask task, {
+  List<EvaluationResult> previousResults = const [],
+}) => EvaluationContext(
   workDir: Directory.systemTemp,
   response: const ModelResponse(
     rawText: 'submission text',
@@ -68,6 +79,7 @@ EvaluationContext _ctx(BenchmarkTask task) => EvaluationContext(
     latency: Duration.zero,
   ),
   task: task,
+  previousResults: previousResults,
 );
 
 void main() {
@@ -129,4 +141,112 @@ void main() {
     expect(r.score, 0.0);
     expect(r.passed, isFalse);
   });
+
+  test(
+    'skips without calling judge when prior objective failure exists',
+    () async {
+      final judge = _ScriptedJudge('irrelevant');
+      final ev = LlmJudgeEvaluator(judge: judge, judgeModel: 'j1');
+
+      final r = await ev.evaluate(
+        _ctx(
+          _Task(rubric: 'r'),
+          previousResults: const [
+            EvaluationResult(evaluatorId: 'compile', passed: false, score: 0.0),
+          ],
+        ),
+      );
+
+      expect(judge.generateCalls, 0);
+      expect(r.passed, isFalse);
+      expect(r.score, 0.0);
+      expect(r.details['ignored'], isTrue);
+      expect(r.details['reason'], 'objective_failure');
+      expect(r.details['failed_evaluator_ids'], contains('compile'));
+    },
+  );
+
+  test('custom hidden verifier failure gates the judge', () async {
+    final judge = _ScriptedJudge('irrelevant');
+    final ev = LlmJudgeEvaluator(judge: judge, judgeModel: 'j1');
+
+    final r = await ev.evaluate(
+      _ctx(
+        _Task(rubric: 'r'),
+        previousResults: const [
+          EvaluationResult(
+            evaluatorId: 'reference_hidden',
+            passed: false,
+            score: 0.0,
+          ),
+        ],
+      ),
+    );
+
+    expect(judge.generateCalls, 0);
+    expect(r.details['failed_evaluator_ids'], contains('reference_hidden'));
+  });
+
+  test('non-objective agent harness failure does not gate the judge', () async {
+    const reply = '```json\n{"score": 0.6, "rationale": "ok"}\n```';
+    final judge = _ScriptedJudge(reply);
+    final ev = LlmJudgeEvaluator(judge: judge, judgeModel: 'j1');
+
+    final r = await ev.evaluate(
+      _ctx(
+        _Task(rubric: 'r'),
+        previousResults: const [
+          EvaluationResult(
+            evaluatorId: 'agent_harness',
+            passed: false,
+            score: 0.0,
+          ),
+        ],
+      ),
+    );
+
+    expect(judge.generateCalls, 1);
+    expect(r.score, 0.6);
+  });
+
+  test(
+    'judge prompt includes safe target, public tests, and prior summary',
+    () async {
+      const reply = '```json\n{"score": 0.75, "rationale": "mostly ok"}\n```';
+      final judge = _ScriptedJudge(reply);
+      final ev = LlmJudgeEvaluator(judge: judge, judgeModel: 'j1');
+
+      await ev.evaluate(
+        _ctx(
+          _Task(
+            rubric: 'be strict',
+            fixtureMap: const {
+              'lib/tmp.dart': '''
+class Api {
+  const Api();
+  int value() => 1;
+}
+''',
+              'test/tmp_test.dart': 'void main() => expect(Api().value(), 1);',
+              'test/_hidden/tmp_hidden_test.dart': 'hidden secret',
+            },
+          ),
+          previousResults: const [
+            EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+          ],
+        ),
+      );
+
+      final prompt = judge.lastPrompt!;
+      expect(prompt, contains('TARGET API/SKELETON'));
+      expect(prompt, contains('const Api();'));
+      expect(prompt, contains('implementation omitted'));
+      expect(prompt, isNot(contains('=> 1')));
+      expect(prompt, contains('PUBLIC TEST FIXTURE SNIPPETS'));
+      expect(prompt, contains('test/tmp_test.dart'));
+      expect(prompt, contains('expect(Api().value(), 1)'));
+      expect(prompt, isNot(contains('hidden secret')));
+      expect(prompt, contains('- compile: passed, score=1.00'));
+    },
+  );
 }

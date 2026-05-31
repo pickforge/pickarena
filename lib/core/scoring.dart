@@ -1,5 +1,6 @@
 import 'dart:math' show sqrt;
 
+import 'package:dart_arena/core/evaluator_classification.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 
 const Map<String, double> defaultEvaluatorWeights = {
@@ -17,12 +18,23 @@ double aggregate(List<EvaluationResult> results, Map<String, double> weights) {
   if (results.isEmpty) return 0.0;
   var num = 0.0;
   var den = 0.0;
+  double? cap;
   for (final r in results) {
+    final objectiveCap = objectiveFailureCap(r);
+    if (objectiveCap != null) {
+      cap = cap == null
+          ? objectiveCap
+          : (objectiveCap < cap ? objectiveCap : cap);
+    }
+    if (isSecondaryEvaluatorId(r.evaluatorId) && isIgnoredOrSkipped(r)) {
+      continue;
+    }
     final w = weights[r.evaluatorId] ?? 1.0;
     num += r.score * w;
     den += w;
   }
-  return den == 0 ? 0.0 : num / den;
+  final score = den == 0 ? 0.0 : num / den;
+  return cap == null ? score : score.clamp(0.0, cap).toDouble();
 }
 
 enum StageCombine { geometricMean, product, weightedSum }

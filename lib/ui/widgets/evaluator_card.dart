@@ -8,6 +8,19 @@ class EvaluatorCard extends StatelessWidget {
 
   final Evaluation evaluation;
 
+  Map<String, dynamic>? _decodedDetails() {
+    try {
+      final decoded = jsonDecode(evaluation.detailsJson);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) {
+        return decoded.map((key, value) => MapEntry('$key', value));
+      }
+    } on FormatException {
+      return null;
+    }
+    return null;
+  }
+
   String _prettyJson() {
     try {
       final decoded = jsonDecode(evaluation.detailsJson);
@@ -17,8 +30,19 @@ class EvaluatorCard extends StatelessWidget {
     }
   }
 
+  String? _statusLine() {
+    final details = _decodedDetails();
+    if (details == null) return null;
+    final reason = details['reason'];
+    final suffix = reason == null ? '' : ': $reason';
+    if (details['ignored'] == true) return 'Ignored$suffix';
+    if (details['skipped'] == true) return 'Skipped$suffix';
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final statusLine = _statusLine();
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Padding(
@@ -41,6 +65,13 @@ class EvaluatorCard extends StatelessWidget {
             if (evaluation.rationale != null) ...[
               const SizedBox(height: 8),
               Text(evaluation.rationale!),
+            ],
+            if (statusLine != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                statusLine,
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              ),
             ],
             const SizedBox(height: 8),
             ExpansionTile(

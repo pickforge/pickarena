@@ -1,5 +1,6 @@
 import 'package:dart_arena/analytics/dimensions.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/evaluator_classification.dart';
 import 'package:dart_arena/core/model_response.dart';
 
 class ResultPrimitives {
@@ -93,19 +94,15 @@ String determineFailureTag({
 }
 
 bool _isHiddenVerifier(EvaluationResult e) {
-  return e.evaluatorId == 'hidden_test' || e.evaluatorId.contains('hidden');
+  return isHiddenVerifierEvaluatorId(e.evaluatorId);
 }
 
 bool _isCorrectnessEvaluator(EvaluationResult e) {
-  return _isPublicTestEvaluator(e) ||
-      e.evaluatorId == 'compile' ||
-      e.evaluatorId == 'analyze';
+  return isObjectiveEvaluatorId(e.evaluatorId);
 }
 
 bool _isPublicTestEvaluator(EvaluationResult e) {
-  return e.evaluatorId == 'test' ||
-      e.evaluatorId == 'test_author' ||
-      e.evaluatorId == 'widget_tree';
+  return isPublicTestEvaluatorId(e.evaluatorId);
 }
 
 bool _isHarnessTimeout(EvaluationResult e) {
@@ -136,15 +133,13 @@ bool _isHarnessError(EvaluationResult e) {
   if (e.evaluatorId == 'combo_failure') return true;
   if (_combinedDetails(e).contains('prepare failed')) return true;
   if (e.evaluatorId.contains('harness')) return true;
-  if (_isSecondaryEvaluator(e) || _isHiddenVerifier(e)) return false;
+  if (isSecondaryEvaluatorId(e.evaluatorId) || _isHiddenVerifier(e)) {
+    return false;
+  }
   return e.details.containsKey('error') &&
       !_isPublicTestEvaluator(e) &&
       e.evaluatorId != 'compile' &&
       e.evaluatorId != 'analyze';
-}
-
-bool _isSecondaryEvaluator(EvaluationResult e) {
-  return e.evaluatorId == 'llm_judge' || e.evaluatorId == 'diff_size';
 }
 
 String _combinedDetails(EvaluationResult e) {

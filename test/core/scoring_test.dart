@@ -48,6 +48,105 @@ void main() {
       );
       expect(aggregate([r], const {'compile': 0.0}), 0.0);
     });
+
+    test('compile failure caps high secondary scores', () {
+      const results = [
+        EvaluationResult(evaluatorId: 'compile', passed: false, score: 0.0),
+        EvaluationResult(evaluatorId: 'llm_judge', passed: true, score: 1.0),
+        EvaluationResult(evaluatorId: 'diff_size', passed: true, score: 1.0),
+      ];
+
+      expect(aggregate(results, defaultEvaluatorWeights), 0.20);
+    });
+
+    test('analyze failure caps high secondary scores', () {
+      const results = [
+        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+        EvaluationResult(evaluatorId: 'analyze', passed: false, score: 0.0),
+        EvaluationResult(evaluatorId: 'llm_judge', passed: true, score: 1.0),
+      ];
+
+      expect(aggregate(results, defaultEvaluatorWeights), 0.35);
+    });
+
+    test('test correctness failures cap aggregate at 0.60', () {
+      const results = [
+        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+        EvaluationResult(evaluatorId: 'analyze', passed: true, score: 1.0),
+        EvaluationResult(evaluatorId: 'test', passed: false, score: 0.0),
+        EvaluationResult(evaluatorId: 'llm_judge', passed: true, score: 1.0),
+      ];
+
+      expect(
+        aggregate(results, defaultEvaluatorWeights),
+        lessThanOrEqualTo(0.60),
+      );
+    });
+
+    test('multiple objective failures apply the lowest cap', () {
+      const results = [
+        EvaluationResult(evaluatorId: 'compile', passed: false, score: 0.0),
+        EvaluationResult(evaluatorId: 'test', passed: false, score: 0.0),
+        EvaluationResult(evaluatorId: 'llm_judge', passed: true, score: 1.0),
+      ];
+
+      expect(aggregate(results, defaultEvaluatorWeights), 0.20);
+    });
+
+    test('custom hidden verifier ids ending in _hidden cap aggregate', () {
+      const results = [
+        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+        EvaluationResult(evaluatorId: 'analyze', passed: true, score: 1.0),
+        EvaluationResult(
+          evaluatorId: 'reference_hidden',
+          passed: false,
+          score: 0.0,
+        ),
+        EvaluationResult(evaluatorId: 'llm_judge', passed: true, score: 1.0),
+        EvaluationResult(evaluatorId: 'diff_size', passed: true, score: 1.0),
+      ];
+
+      expect(aggregate(results, defaultEvaluatorWeights), 0.60);
+    });
+
+    test(
+      'ignored and skipped secondary results have zero effective weight',
+      () {
+        const results = [
+          EvaluationResult(evaluatorId: 'compile', passed: true, score: 0.5),
+          EvaluationResult(
+            evaluatorId: 'llm_judge',
+            passed: false,
+            score: 1.0,
+            details: {'ignored': true, 'reason': 'objective_failure'},
+          ),
+          EvaluationResult(
+            evaluatorId: 'diff_size',
+            passed: true,
+            score: 1.0,
+            details: {'skipped': true},
+          ),
+        ];
+
+        expect(aggregate(results, defaultEvaluatorWeights), 0.5);
+      },
+    );
+
+    test('non-objective failures are not aggregate cap reasons', () {
+      const results = [
+        EvaluationResult(
+          evaluatorId: 'agent_harness',
+          passed: false,
+          score: 0.0,
+        ),
+        EvaluationResult(evaluatorId: 'llm_judge', passed: true, score: 1.0),
+      ];
+
+      expect(
+        aggregate(results, const {'agent_harness': 1, 'llm_judge': 1}),
+        0.5,
+      );
+    });
   });
 
   test('defaultEvaluatorWeights covers all built-in evaluators', () {

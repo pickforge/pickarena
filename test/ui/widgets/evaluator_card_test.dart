@@ -74,4 +74,23 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('warnings'), findsOneWidget);
   });
+
+  testWidgets('renders ignored evaluator status before details', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        EvaluatorCard(
+          evaluation: _eval(
+            id: 'llm_judge',
+            passed: false,
+            score: 0,
+            detailsJson: '{"ignored": true, "reason": "objective_failure"}',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Ignored: objective_failure'), findsOneWidget);
+  });
 }
