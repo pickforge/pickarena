@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-31T00:00:00.000Z",
+  "benchmark": {
+    "name": "Dart Arena",
+    "brand": "Pickforge",
+    "title": "Dart Arena by Pickforge",
+    "track": "agentic",
+    "dataPolicy": "aggregate-compatible"
+  },
+  "source": {
+    "anchorRunId": "sample-run-2026-05-31",
+    "runIds": [
+      "sample-run-2026-05-31"
+    ],
+    "taskCount": 2,
+    "taskRunCount": 4,
+    "modelCount": 2,
+    "warnings": [
+      "Sample static data for web scaffold preview; replace with leaderboard:export output."
+    ]
+  },
+  "models": [
+    {
+      "providerId": "openai",
+      "modelId": "gpt-5-sample",
+      "rank": 1,
+      "score": 0.75,
+      "passRate": 0.75,
+      "passCount": 3,
+      "sampleCount": 4,
+      "confidenceInterval": {
+        "lower": 0.3006,
+        "upper": 0.9544
+      },
+      "lowSample": true,
+      "medianLatencyMs": 42000,
+      "medianPromptTokens": 5200,
+      "medianCompletionTokens": 1800,
+      "medianEstimatedCostMicros": 125000,
+      "costPerSolvedTaskMicros": 166667,
+      "failureBreakdown": {
+        "hidden_test": 1
+      }
+    },
+    {
+      "providerId": "anthropic",
+      "modelId": "claude-sample",
+      "rank": 2,
+      "score": 0.5,
+      "passRate": 0.5,
+      "passCount": 2,
+      "sampleCount": 4,
+      "confidenceInterval": {
+        "lower": 0.1500,
+        "upper": 0.8500
+      },
+      "lowSample": true,
+      "medianLatencyMs": 39000,
+      "medianPromptTokens": 5100,
+      "medianCompletionTokens": 1600,
+      "medianEstimatedCostMicros": 140000,
+      "costPerSolvedTaskMicros": 280000,
+      "failureBreakdown": {
+        "analyzer": 1,
+        "visible_test": 1
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "taskId": "sample.counter_bloc",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "sampleCount": 2,
+      "modelCount": 2,
+      "passRate": 0.5
+    },
+    {
+      "taskId": "sample.profile_card",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "sampleCount": 2,
+      "modelCount": 2,
+      "passRate": 1.0
+    }
+  ]
+}

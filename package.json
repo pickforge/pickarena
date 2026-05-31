@@ -1,10 +1,19 @@
 {
   "private": true,
+  "workspaces": [
+    "web"
+  ],
   "scripts": {
     "app:pub": "cd app && flutter pub get",
     "app:analyze": "cd app && flutter analyze",
     "app:test": "cd app && flutter test",
     "app:headless": "cd app && dart run --verbosity=error dart_arena:dart_arena_headless",
-    "check": "bun run app:analyze && bun run app:test"
+    "web:install": "cd web && bun install",
+    "web:dev": "cd web && bun run dev",
+    "web:check": "cd web && bun run check",
+    "web:build": "cd web && bun run build",
+    "leaderboard:export": "cd app && dart run --verbosity=error dart_arena:dart_arena_export_leaderboard --database .dart_arena/dart_arena.sqlite --out ../web/static/data/leaderboard.v1.json --track agentic",
+    "check": "bun run app:analyze && bun run app:test && bun run web:check",
+    "build": "bun run web:build"
   }
 }
