@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/branding/dart_arena_logo_horizontal_dark.png" alt="Dart Arena logo" height="250">
+  <img src="app/assets/branding/dart_arena_logo_horizontal_dark.png" alt="Dart Arena logo" height="250">
 </p>
 
 # Dart Arena
@@ -20,6 +20,7 @@ Dart Arena is a Flutter desktop app for benchmarking AI coding models on Dart an
 Install Flutter for your desktop platform, then run:
 
 ```sh
+cd app
 flutter pub get
 flutter run -d linux
 ```
@@ -54,6 +55,7 @@ API keys and provider base URLs are stored through platform secure storage. Do n
 Use these commands before submitting changes:
 
 ```sh
+cd app
 flutter pub get
 dart format --set-exit-if-changed lib test
 flutter analyze
@@ -64,6 +66,7 @@ flutter build linux --debug
 The CI smoke workflow also runs:
 
 ```sh
+cd app
 flutter test test/headless/headless_benchmark_runner_test.dart
 ```
 
@@ -72,6 +75,7 @@ flutter test test/headless/headless_benchmark_runner_test.dart
 Build debug desktop artifacts from the matching host OS:
 
 ```sh
+cd app
 flutter build linux --debug
 flutter build windows --debug
 flutter build macos --debug
@@ -93,6 +97,7 @@ Contributions should keep the package/import name as `dart_arena`, preserve benc
 Before opening a pull request:
 
 ```sh
+cd app
 dart format --set-exit-if-changed lib test
 flutter analyze
 flutter test
@@ -105,5 +110,5 @@ Dart Arena is released under the MIT License. See [LICENSE](LICENSE).
 ---
 
 <p align="center">
-  <img src="assets/branding/pickforge_logo.png" alt="Pickforge" width="160">
+  <img src="app/assets/branding/pickforge_logo.png" alt="Pickforge" width="160">
 </p>

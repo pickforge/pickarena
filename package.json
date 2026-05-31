@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "app:pub": "cd app && flutter pub get",
+    "app:analyze": "cd app && flutter analyze",
+    "app:test": "cd app && flutter test",
+    "app:headless": "cd app && dart run --verbosity=error dart_arena:dart_arena_headless",
+    "check": "bun run app:analyze && bun run app:test"
+  }
+}

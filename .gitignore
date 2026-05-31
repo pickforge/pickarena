@@ -16,7 +16,7 @@
 # As packages are no longer pinned, we use a lockfile for testing locally.
 # When unpinning packages, Using lockfiles ensures that failures in PRs are
 # actually due to those PRs, not due to a package being updated.
-!/pubspec.lock
+!/app/pubspec.lock
 
 # IntelliJ related
 *.iml
@@ -155,6 +155,7 @@ app.*.symbols
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
 !.vscode/settings.json
+!.vscode/launch.json
 
 # Monorepo
 .cipd

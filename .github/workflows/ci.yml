@@ -15,7 +15,12 @@ jobs:
         with:
           channel: stable
       - run: flutter pub get
-      - run: dart format --set-exit-if-changed bin lib/core lib/export lib/headless lib/runner lib/storage test/core test/headless test/runner test/support .github/workflows
+        working-directory: app
+      - run: dart format --set-exit-if-changed bin lib/core lib/export lib/headless lib/runner lib/storage test/core test/headless test/runner test/support
+        working-directory: app
       - run: dart run --verbosity=error dart_arena:dart_arena_headless --help
+        working-directory: app
       - run: flutter analyze
+        working-directory: app
       - run: flutter test test/headless
+        working-directory: app
