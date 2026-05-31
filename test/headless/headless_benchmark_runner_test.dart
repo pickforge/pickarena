@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -6,6 +7,7 @@ import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
+import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/export/artifact_bundle.dart';
 import 'package:dart_arena/headless/headless_benchmark_runner.dart';
@@ -104,6 +106,54 @@ class _GeneratedFilePresentEvaluator implements Evaluator {
       rationale: passed ? 'generated file present' : 'generated file missing',
       details: {'generatedCodePath': ctx.task.generatedCodePath},
     );
+  }
+}
+
+class _SlowFakeProvider with Disposable implements ModelProvider {
+  final String providerId = 'slow_headless';
+  final String providerDisplayName = 'Slow Headless';
+  final String modelId = 'slow-headless-model';
+  final Duration delay = const Duration(milliseconds: 180);
+  final started = Completer<void>();
+  final completed = Completer<void>();
+  var disposed = false;
+
+  @override
+  String get id => providerId;
+
+  @override
+  String get displayName => providerDisplayName;
+
+  @override
+  ProviderMode get mode => ProviderMode.rawApi;
+
+  @override
+  Future<List<ModelInfo>> listModels() async => [ModelInfo(id: modelId)];
+
+  @override
+  Future<ModelResponse> generate({
+    required String prompt,
+    required String model,
+    Duration? timeout,
+  }) async {
+    if (model != modelId) {
+      throw ArgumentError.value(model, 'model', 'unknown fake model');
+    }
+    if (!started.isCompleted) started.complete();
+    await Future<void>.delayed(delay);
+    if (!completed.isCompleted) completed.complete();
+    return ModelResponse(
+      rawText: '```dart\nString headlessAnswer() => \'phase7\';\n```',
+      extractedCode: null,
+      promptTokens: 13,
+      completionTokens: 8,
+      latency: delay,
+    );
+  }
+
+  @override
+  void dispose() {
+    disposed = true;
   }
 }
 
@@ -297,6 +347,122 @@ void main() {
     expect((await runDao.runById('headless-failed-run'))!.completedAt, isNull);
   });
 
+  test(
+    'timeout cancels slow provider without completing run or bundle',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_headless_timeout_',
+      );
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(() async {
+        await db.close();
+        if (await tmp.exists()) {
+          await tmp.delete(recursive: true);
+        }
+      });
+
+      const runId = 'headless-timeout-run';
+      final runDao = RunDao(db);
+      final workdirRoot = Directory(p.join(tmp.path, 'workdirs'))
+        ..createSync(recursive: true);
+      final outputParent = Directory(p.join(tmp.path, 'bundles'))
+        ..createSync(recursive: true);
+      final provider = _SlowFakeProvider();
+      final bundlePath = p.join(
+        outputParent.path,
+        runBundleDirectoryName(runId),
+      );
+
+      final runFuture = const HeadlessBenchmarkRunner().run(
+        _config(
+          runId: runId,
+          runDao: runDao,
+          workdirManager: NoOpPrepareWorkdirManager(root: workdirRoot),
+          outputParent: outputParent,
+          allowedTrajectoryRoots: [workdirRoot],
+          provider: provider,
+          modelId: provider.modelId,
+          timeout: const Duration(milliseconds: 40),
+        ),
+      );
+
+      await provider.started.future.timeout(const Duration(seconds: 2));
+      await expectLater(runFuture, throwsA(isA<TimeoutException>()));
+      expect(provider.disposed, isTrue);
+
+      await provider.completed.future.timeout(const Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final storedRun = await runDao.runById(runId);
+      expect(storedRun, isNotNull);
+      expect(storedRun!.completedAt, isNull);
+      expect(Directory(bundlePath).existsSync(), isFalse);
+    },
+  );
+
+  test(
+    'timeout cancels prepare subprocess without completing run or bundle',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_headless_prepare_timeout_',
+      );
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(() async {
+        await db.close();
+        if (await tmp.exists()) {
+          await tmp.delete(recursive: true);
+        }
+      });
+
+      const runId = 'headless-prepare-timeout-run';
+      final runDao = RunDao(db);
+      final workdirRoot = Directory(p.join(tmp.path, 'workdirs'))
+        ..createSync(recursive: true);
+      final outputParent = Directory(p.join(tmp.path, 'bundles'))
+        ..createSync(recursive: true);
+      final marker = File(p.join(tmp.path, 'prepare-marker.txt'));
+      final fakeDart = await _writeHangingExecutable(tmp, marker);
+      final provider = DeterministicFakeProvider();
+      final bundlePath = p.join(
+        outputParent.path,
+        runBundleDirectoryName(runId),
+      );
+
+      final stopwatch = Stopwatch()..start();
+      await expectLater(
+        const HeadlessBenchmarkRunner().run(
+          _config(
+            runId: runId,
+            runDao: runDao,
+            workdirManager: WorkdirManager(
+              root: workdirRoot,
+              dartExecutable: fakeDart.path,
+            ),
+            outputParent: outputParent,
+            allowedTrajectoryRoots: [workdirRoot],
+            provider: provider,
+            modelId: provider.modelId,
+            timeout: const Duration(milliseconds: 160),
+          ),
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+      stopwatch.stop();
+
+      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 2)));
+      expect(provider.disposed, isTrue);
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      expect(marker.readAsStringSync(), contains('started'));
+      expect(marker.readAsStringSync(), isNot(contains('done')));
+      final storedRun = await runDao.runById(runId);
+      expect(storedRun, isNotNull);
+      expect(storedRun!.completedAt, isNull);
+      expect(Directory(bundlePath).existsSync(), isFalse);
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    timeout: const Timeout(Duration(seconds: 5)),
+  );
+
   test('fake provider is deterministic without settings or API keys', () async {
     final provider = DeterministicFakeProvider();
 
@@ -362,20 +528,8 @@ void main() {
     expect(sentinel.readAsStringSync(), 'keep me');
   });
 
-  test('does not add a standalone dart run CLI in Phase 7', () {
-    final cliEntrypoints = [
-      File('bin/dart_arena_headless.dart'),
-      File('bin/headless_benchmark_runner.dart'),
-    ];
-    for (final cliEntrypoint in cliEntrypoints) {
-      expect(
-        cliEntrypoint.existsSync(),
-        isFalse,
-        reason:
-            'Phase 7 validates the reusable headless service through '
-            'flutter test until Flutter plugin imports are split out.',
-      );
-    }
+  test('exposes the standalone dart run CLI entrypoint', () {
+    expect(File('bin/dart_arena_headless.dart').existsSync(), isTrue);
   });
 }
 
@@ -387,6 +541,7 @@ HeadlessBenchmarkConfig _config({
   required List<Directory> allowedTrajectoryRoots,
   required ModelProvider provider,
   required String modelId,
+  Duration timeout = const Duration(seconds: 5),
 }) {
   return HeadlessBenchmarkConfig(
     runId: runId,
@@ -416,6 +571,19 @@ HeadlessBenchmarkConfig _config({
     allowedTrajectoryRoots: allowedTrajectoryRoots,
     maxConcurrency: 1,
     trialsPerTask: 1,
-    timeout: const Duration(seconds: 5),
+    timeout: timeout,
   );
+}
+
+Future<File> _writeHangingExecutable(Directory root, File marker) async {
+  final script = File(p.join(root.path, 'fake_dart.sh'));
+  await script.writeAsString('''
+#!/bin/sh
+echo started >> '${marker.path}'
+sleep 20
+echo done >> '${marker.path}'
+''');
+  final chmod = await Process.run('chmod', ['+x', script.path]);
+  expect(chmod.exitCode, 0, reason: chmod.stderr.toString());
+  return script;
 }

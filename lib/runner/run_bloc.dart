@@ -4,18 +4,15 @@ import 'dart:collection';
 import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/analytics/result_primitives.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
-import 'package:dart_arena/core/code_extractor.dart';
-import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/providers/model_provider.dart';
-import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dart_arena/runner/agentic_run_orchestrator.dart';
+import 'package:dart_arena/runner/codegen_task_executor.dart';
 import 'package:dart_arena/runner/failed_combo_snapshot.dart';
-import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_progress_snapshot.dart';
@@ -94,8 +91,6 @@ class RunBloc extends Bloc<RunEvent, RunState> {
   late final AgenticRunOrchestrator _agenticOrchestrator;
   List<ModelProvider> _providers = const [];
 
-  static const _maxPreviewChars = 16 * 1024;
-
   String _currentRunId = '';
   int _existingCount = 0;
   List<_Combo> _combos = [];
@@ -108,11 +103,6 @@ class RunBloc extends Bloc<RunEvent, RunState> {
   int _maxConcurrency = 4;
   EvaluatorConfig _evaluatorConfig = const EvaluatorConfig();
   Completer<void>? _drainDone;
-
-  String _trimPreview(String value) {
-    if (value.length <= _maxPreviewChars) return value;
-    return value.substring(value.length - _maxPreviewChars);
-  }
 
   void _resetScheduler() {
     _currentRunId = '';
@@ -618,225 +608,46 @@ class RunBloc extends Bloc<RunEvent, RunState> {
       );
     }
 
-    final prompt = buildPromptWithPlan(
-      taskPrompt: task.prompt,
-      planMarkdown: combo.planMarkdown,
-    );
-    final taskTimeout = task.timeout ?? const Duration(minutes: 10);
-
-    ModelResponse response;
-
-    void updateActive(int index, RunProgressSnapshot snapshot) {
-      active[index] = snapshot;
-    }
-
-    if (provider is StreamingModelProvider) {
-      final snapshot = active[combo.index];
-      var reasoningPreview = snapshot?.reasoningPreview ?? '';
-      var answerPreview = snapshot?.answerPreview ?? '';
-      final rawBuf = StringBuffer();
-      final stopwatch = Stopwatch()..start();
-      int? pt;
-      int? ct;
-
-      updateActive(
-        combo.index,
-        (active[combo.index] ??
-                RunProgressSnapshot(
-                  index: combo.index,
-                  label: combo.label,
-                  phase: RunComboPhase.requestingModel,
-                  startedAt: now(),
-                ))
-            .copyWith(phase: RunComboPhase.streamingResponse),
-      );
-      _emitProgress(emit);
-
-      await for (final event in provider.generateStream(
-        prompt: prompt,
-        model: modelId,
-        timeout: taskTimeout,
-      )) {
-        switch (event) {
-          case ModelStreamReasoningDelta(:final text):
-            reasoningPreview = _trimPreview(reasoningPreview + text);
-            updateActive(
-              combo.index,
-              active[combo.index]!.copyWith(reasoningPreview: reasoningPreview),
-            );
-            _emitProgress(emit);
-          case ModelStreamContentDelta(:final text):
-            answerPreview = _trimPreview(answerPreview + text);
-            rawBuf.write(text);
-            updateActive(
-              combo.index,
-              active[combo.index]!.copyWith(answerPreview: answerPreview),
-            );
-            _emitProgress(emit);
-          case ModelStreamUsage(:final promptTokens, :final completionTokens):
-            pt = promptTokens;
-            ct = completionTokens;
-            updateActive(
-              combo.index,
-              active[combo.index]!.copyWith(
-                promptTokens: pt,
-                completionTokens: ct,
-              ),
-            );
-            _emitProgress(emit);
-          case ModelStreamStarted():
-          case ModelStreamCompleted():
-            break;
-        }
-      }
-
-      stopwatch.stop();
-      response = ModelResponse(
-        rawText: rawBuf.toString(),
-        extractedCode: null,
-        promptTokens: pt,
-        completionTokens: ct,
-        latency: stopwatch.elapsed,
-      );
-    } else {
-      final snapshot = active[combo.index];
-      updateActive(
-        combo.index,
-        (snapshot ??
-                RunProgressSnapshot(
-                  index: combo.index,
-                  label: combo.label,
-                  phase: RunComboPhase.requestingModel,
-                  startedAt: now(),
-                ))
-            .copyWith(phase: RunComboPhase.requestingModel),
-      );
-      _emitProgress(emit);
-
-      response = await provider.generate(
-        prompt: prompt,
-        model: modelId,
-        timeout: taskTimeout,
-      );
-
-      updateActive(
-        combo.index,
-        active[combo.index]!.copyWith(
-          answerPreview: _trimPreview(response.rawText),
-          promptTokens: response.promptTokens,
-          completionTokens: response.completionTokens,
-          phase: RunComboPhase.extractingCode,
-        ),
-      );
+    void updateCodegenProgress(
+      RunComboPhase phase, {
+      String? reasoningPreview,
+      String? answerPreview,
+      int? promptTokens,
+      int? completionTokens,
+    }) {
+      final existing = active[combo.index];
+      active[combo.index] =
+          (existing ??
+                  RunProgressSnapshot(
+                    index: combo.index,
+                    label: combo.label,
+                    phase: phase,
+                    startedAt: now(),
+                  ))
+              .copyWith(
+                phase: phase,
+                reasoningPreview: reasoningPreview,
+                answerPreview: answerPreview,
+                promptTokens: promptTokens,
+                completionTokens: completionTokens,
+              );
       _emitProgress(emit);
     }
 
-    updateActive(
-      combo.index,
-      active[combo.index]!.copyWith(phase: RunComboPhase.extractingCode),
-    );
-    _emitProgress(emit);
-
-    final extracted = extractDartCode(response.rawText) ?? response.rawText;
-    final responseWithCode = _copyWithCode(response, extracted);
-
-    updateActive(
-      combo.index,
-      active[combo.index]!.copyWith(phase: RunComboPhase.creatingWorkdir),
-    );
-    _emitProgress(emit);
-
-    final dir = await workdirManager.createTaskWorkdir(
+    return CodegenTaskExecutor(
+      workdirManager: workdirManager,
+      weights: weights,
+      now: now,
+    ).run(
       runId: runId,
-      providerId: provider.id,
+      task: task,
+      provider: provider,
       modelId: modelId,
-      taskId: task.id,
-      fixtures: task.fixtures,
-      generatedCode: extracted,
-      generatedCodePath: task.generatedCodePath,
       trialIndex: combo.trialIndex,
-    );
-
-    updateActive(
-      combo.index,
-      active[combo.index]!.copyWith(phase: RunComboPhase.preparing),
-    );
-    _emitProgress(emit);
-
-    final evaluators = task.evaluatorsFor(evaluatorConfig);
-    final prepResult = await workdirManager.prepare(
-      dir,
-      isFlutter: task.isFlutter,
-    );
-    final evaluations = <EvaluationResult>[];
-
-    if (prepResult is PrepareFailed) {
-      for (final evaluator in evaluators) {
-        evaluations.add(
-          EvaluationResult(
-            evaluatorId: evaluator.id,
-            passed: false,
-            score: 0.0,
-            rationale: 'prepare failed',
-            details: {'stderr': prepResult.stderr},
-          ),
-        );
-      }
-    } else {
-      updateActive(
-        combo.index,
-        active[combo.index]!.copyWith(phase: RunComboPhase.evaluating),
-      );
-      _emitProgress(emit);
-
-      for (final evaluator in evaluators) {
-        final result = await evaluator.evaluate(
-          EvaluationContext(
-            workDir: dir,
-            response: responseWithCode,
-            task: task,
-          ),
-        );
-        evaluations.add(result);
-      }
-    }
-
-    updateActive(
-      combo.index,
-      active[combo.index]!.copyWith(phase: RunComboPhase.persisting),
-    );
-    _emitProgress(emit);
-
-    final aggregateScore = aggregate(evaluations, weights);
-    final primitives = determineResultPrimitives(
-      evaluations: evaluations,
-      aggregateScore: aggregateScore,
-      response: responseWithCode,
-    );
-
-    return TaskRunResult(
-      runId: runId,
-      providerId: provider.id,
-      modelId: modelId,
-      taskId: task.id,
-      response: responseWithCode,
-      evaluations: evaluations,
-      aggregateScore: aggregateScore,
-      completedAt: now(),
-      trialIndex: combo.trialIndex,
-      taskVersion: task.version,
-      benchmarkTrack: task.track.name,
-      primaryPass: primitives.primaryPass,
-      failureTag: primitives.failureTag,
+      evaluatorConfig: evaluatorConfig,
       planId: combo.planId,
+      planMarkdown: combo.planMarkdown,
+      onProgress: updateCodegenProgress,
     );
   }
 }
-
-ModelResponse _copyWithCode(ModelResponse r, String? code) => ModelResponse(
-  rawText: r.rawText,
-  extractedCode: code,
-  promptTokens: r.promptTokens,
-  completionTokens: r.completionTokens,
-  latency: r.latency,
-);

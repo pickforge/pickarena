@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:dart_arena/core/path_safety.dart';
 import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/core/workspace_path.dart';
 import 'package:path/path.dart' as p;
@@ -17,12 +19,22 @@ class PrepareFailed extends PrepareResult {
   final String stderr;
 }
 
+typedef WorkdirCancellationCheck = void Function();
+typedef WorkdirRemainingTimeout = Duration? Function();
+
 class WorkdirManager {
-  WorkdirManager({required this.root});
+  WorkdirManager({
+    required this.root,
+    this.dartExecutable = 'dart',
+    this.flutterExecutable = 'flutter',
+  });
 
   final Directory root;
+  final String dartExecutable;
+  final String flutterExecutable;
 
-  String _sanitizePathSegment(String segment) => Uri.encodeComponent(segment);
+  String _sanitizePathSegment(String segment) =>
+      safePathSegment(segment, prefix: 'segment');
 
   Future<Directory> createTaskWorkdir({
     required String runId,
@@ -43,7 +55,7 @@ class WorkdirManager {
         'runs',
         runId,
         providerId,
-        _sanitizePathSegment(modelId),
+        safePathSegment(modelId, prefix: 'model'),
         taskPath,
       ),
     );
@@ -79,7 +91,7 @@ class WorkdirManager {
         'runs',
         runId,
         providerId,
-        _sanitizePathSegment(modelId),
+        safePathSegment(modelId, prefix: 'model'),
         taskPath,
       ),
     );
@@ -104,19 +116,29 @@ class WorkdirManager {
   Future<PrepareResult> prepare(
     Directory workDir, {
     bool isFlutter = false,
+    WorkdirRemainingTimeout? remainingTimeout,
+    WorkdirCancellationCheck? cancellationCheck,
+    Future<void>? cancellationSignal,
   }) async {
-    final exe = isFlutter ? 'flutter' : 'dart';
-    final offline = await Process.run(exe, [
-      'pub',
-      'get',
-      '--offline',
-    ], workingDirectory: workDir.path);
+    final exe = isFlutter ? flutterExecutable : dartExecutable;
+    final offline = await _runPrepareProcess(
+      exe,
+      ['pub', 'get', '--offline'],
+      workDir,
+      remainingTimeout: remainingTimeout,
+      cancellationCheck: cancellationCheck,
+      cancellationSignal: cancellationSignal,
+    );
     if (offline.exitCode == 0) return const PrepareOk();
 
-    final online = await Process.run(exe, [
-      'pub',
-      'get',
-    ], workingDirectory: workDir.path);
+    final online = await _runPrepareProcess(
+      exe,
+      ['pub', 'get'],
+      workDir,
+      remainingTimeout: remainingTimeout,
+      cancellationCheck: cancellationCheck,
+      cancellationSignal: cancellationSignal,
+    );
     if (online.exitCode == 0) return const PrepareOk();
 
     return PrepareFailed(
@@ -124,6 +146,149 @@ class WorkdirManager {
           ? offline.stderr.toString()
           : online.stderr.toString(),
     );
+  }
+
+  Future<_PrepareProcessResult> _runPrepareProcess(
+    String executable,
+    List<String> args,
+    Directory workDir, {
+    WorkdirRemainingTimeout? remainingTimeout,
+    WorkdirCancellationCheck? cancellationCheck,
+    Future<void>? cancellationSignal,
+  }) async {
+    cancellationCheck?.call();
+    final process = await Process.start(
+      executable,
+      args,
+      workingDirectory: workDir.path,
+      runInShell: false,
+    );
+    final stdoutBuffer = StringBuffer();
+    final stderrBuffer = StringBuffer();
+    final stdoutDone = process.stdout
+        .transform(systemEncoding.decoder)
+        .listen(stdoutBuffer.write)
+        .asFuture<void>();
+    final stderrDone = process.stderr
+        .transform(systemEncoding.decoder)
+        .listen(stderrBuffer.write)
+        .asFuture<void>();
+
+    final timeout = remainingTimeout?.call();
+    if (timeout != null && timeout.compareTo(Duration.zero) <= 0) {
+      await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
+      await _awaitProcessExit(process);
+      await Future.wait([stdoutDone, stderrDone]);
+      throw TimeoutException('prepare timed out', timeout);
+    }
+
+    final signal = await Future.any<_PrepareProcessSignal>([
+      process.exitCode.then(_PrepareProcessExit.new),
+      if (timeout != null)
+        Future<void>.delayed(
+          timeout,
+        ).then((_) => _PrepareProcessTimedOut(timeout)),
+      if (cancellationSignal != null)
+        cancellationSignal.then((_) => const _PrepareProcessCancelled()),
+    ]);
+
+    if (signal is _PrepareProcessExit) {
+      await Future.wait([stdoutDone, stderrDone]);
+      cancellationCheck?.call();
+      return _PrepareProcessResult(
+        stdout: stdoutBuffer.toString(),
+        stderr: stderrBuffer.toString(),
+        exitCode: signal.exitCode,
+      );
+    }
+
+    await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
+    await _awaitProcessExit(process);
+    await Future.wait([stdoutDone, stderrDone]);
+    if (signal is _PrepareProcessTimedOut) {
+      throw TimeoutException('prepare timed out', signal.timeout);
+    }
+    throw TimeoutException('prepare cancelled');
+  }
+
+  Future<void> _awaitProcessExit(Process process) async {
+    await process.exitCode.timeout(
+      const Duration(seconds: 2),
+      onTimeout: () async {
+        await _terminateProcessTree(process.pid, ProcessSignal.sigkill);
+        return -1;
+      },
+    );
+  }
+
+  Future<void> _terminateProcessTree(int pid, ProcessSignal signal) async {
+    if (Platform.isWindows) {
+      final args = ['/PID', '$pid', '/T'];
+      if (signal == ProcessSignal.sigkill) args.add('/F');
+      await _tryRunProcess('taskkill', args);
+      return;
+    }
+
+    final descendants = await _descendantPids(pid);
+    for (final childPid in descendants.reversed) {
+      _killPid(childPid, signal);
+    }
+    _killPid(pid, signal);
+  }
+
+  Future<List<int>> _descendantPids(int pid) async {
+    final descendants = <int>[];
+    for (final childPid in await _childPids(pid)) {
+      descendants.add(childPid);
+      descendants.addAll(await _descendantPids(childPid));
+    }
+    return descendants;
+  }
+
+  Future<List<int>> _childPids(int pid) async {
+    final pgrep = await _tryRunProcess('pgrep', ['-P', '$pid']);
+    if (pgrep?.exitCode == 0) {
+      return _parsePids(pgrep!.stdout.toString());
+    }
+
+    final ps = await _tryRunProcess('ps', ['-o', 'pid=', '--ppid', '$pid']);
+    if (ps?.exitCode == 0) {
+      return _parsePids(ps!.stdout.toString());
+    }
+    return const [];
+  }
+
+  Future<ProcessResult?> _tryRunProcess(
+    String executable,
+    List<String> arguments,
+  ) async {
+    try {
+      return await Process.run(executable, arguments);
+    } on Object {
+      return null;
+    }
+  }
+
+  List<int> _parsePids(String output) => output
+      .split(RegExp(r'\s+'))
+      .map((s) => int.tryParse(s.trim()))
+      .whereType<int>()
+      .toList(growable: false);
+
+  void _killPid(int pid, ProcessSignal signal) {
+    if (!_tryKillPid(pid, signal)) {
+      _tryKillPid(pid, null);
+    }
+  }
+
+  bool _tryKillPid(int pid, ProcessSignal? signal) {
+    try {
+      return signal == null
+          ? Process.killPid(pid)
+          : Process.killPid(pid, signal);
+    } on Object {
+      return false;
+    }
   }
 
   Future<void> _copyFixtureRoot(Directory sourceRoot, Directory target) async {
@@ -213,4 +378,36 @@ class WorkdirManager {
       );
     }
   }
+}
+
+class _PrepareProcessResult {
+  const _PrepareProcessResult({
+    required this.stdout,
+    required this.stderr,
+    required this.exitCode,
+  });
+
+  final String stdout;
+  final String stderr;
+  final int exitCode;
+}
+
+sealed class _PrepareProcessSignal {
+  const _PrepareProcessSignal();
+}
+
+class _PrepareProcessExit extends _PrepareProcessSignal {
+  const _PrepareProcessExit(this.exitCode);
+
+  final int exitCode;
+}
+
+class _PrepareProcessTimedOut extends _PrepareProcessSignal {
+  const _PrepareProcessTimedOut(this.timeout);
+
+  final Duration timeout;
+}
+
+class _PrepareProcessCancelled extends _PrepareProcessSignal {
+  const _PrepareProcessCancelled();
 }

@@ -6,11 +6,11 @@ import 'package:crypto/crypto.dart';
 import 'package:dart_arena/export/csv_exporter.dart';
 import 'package:dart_arena/export/json_exporter.dart';
 import 'package:dart_arena/export/md_exporter.dart';
+import 'package:dart_arena/export/artifact_bundle_defaults.dart';
 import 'package:dart_arena/export/run_manifest.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 class ExportBundleResult {
   const ExportBundleResult({
@@ -65,8 +65,7 @@ Future<ExportBundleResult> exportRunBundle({
   final patchPaths = <String, String>{};
   final trajectoryPaths = <String, String>{};
   final usedArtifactNames = <String>{};
-  final roots =
-      allowedTrajectoryRoots ?? await _defaultAllowedTrajectoryRoots();
+  final roots = allowedTrajectoryRoots ?? await defaultAllowedTrajectoryRoots();
 
   for (final taskRun in taskRuns) {
     if (taskRun.responseText.isEmpty) {
@@ -540,18 +539,6 @@ Map<String, int> _failureSummary(List<TaskRun> taskRuns) {
   }
   final keys = counts.keys.toList()..sort();
   return {for (final key in keys) key: counts[key]!};
-}
-
-Future<List<Directory>> _defaultAllowedTrajectoryRoots() async {
-  try {
-    final supportDir = await getApplicationSupportDirectory();
-    return [
-      Directory(p.join(supportDir.path, 'workdirs', 'runs')),
-      Directory(p.join(supportDir.path, 'tmp')),
-    ];
-  } on Object {
-    return const [];
-  }
 }
 
 Future<Map<String, Object?>> _defaultExportEnvironment() async {

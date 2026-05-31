@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dart_arena/core/path_safety.dart';
 import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,7 +36,7 @@ void main() {
     },
   );
 
-  test('sanitizes ::effort and / in modelId path segment', () async {
+  test('uses safe modelId path segments', () async {
     final root = await Directory.systemTemp.createTemp('dart_arena_sanitize_');
     final mgr = WorkdirManager(root: root);
 
@@ -50,7 +51,10 @@ void main() {
     );
     expect(dirA.existsSync(), isTrue);
     final partsA = p.split(dirA.path);
-    expect(partsA, contains('deepseek-v4-pro%3A%3Ahigh'));
+    expect(
+      partsA,
+      contains(safePathSegment('deepseek-v4-pro::high', prefix: 'model')),
+    );
     expect(partsA, isNot(contains('deepseek-v4-pro::high')));
 
     final dirB = await mgr.createTaskWorkdir(
@@ -64,7 +68,7 @@ void main() {
     );
     expect(dirB.existsSync(), isTrue);
     final partsB = p.split(dirB.path);
-    expect(partsB, contains('openai%2Fgpt-4o'));
+    expect(partsB, contains(safePathSegment('openai/gpt-4o', prefix: 'model')));
     expect(partsB, isNot(contains('openai/gpt-4o')));
 
     root.deleteSync(recursive: true);

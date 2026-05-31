@@ -3,17 +3,22 @@ import 'dart:io';
 
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
+import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/model_response.dart';
+import 'package:dart_arena/core/task_run_result.dart';
+import 'package:dart_arena/analytics/result_primitives.dart';
 import 'package:dart_arena/export/artifact_bundle.dart';
 import 'package:dart_arena/providers/model_provider.dart';
-import 'package:dart_arena/runner/run_bloc.dart';
+import 'package:dart_arena/runner/codegen_task_executor.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
-import 'package:dart_arena/runner/run_state.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/run_summary.dart';
 import 'package:path/path.dart' as p;
+
+const _timeoutCleanupGrace = Duration(milliseconds: 2500);
 
 class HeadlessBenchmarkConfig {
   HeadlessBenchmarkConfig({
@@ -85,114 +90,476 @@ class HeadlessBenchmarkRunner {
   const HeadlessBenchmarkRunner();
 
   Future<HeadlessBenchmarkResult> run(HeadlessBenchmarkConfig config) async {
-    final bloc = RunBloc(
-      workdirManager: config.workdirManager,
-      runDao: config.runDao,
-      planDao: config.planDao,
-      weights: config.evaluatorWeights,
-      now: config.now,
-      idGenerator: config.idGenerator,
-      provenanceEnvironmentProvider: config.provenanceEnvironmentProvider,
-    );
+    final cancellation = _HeadlessRunCancellation(config.timeout);
+    var providersDisposed = false;
 
-    final terminal = Completer<RunCompleted>();
-    late final StreamSubscription<RunState> subscription;
-    subscription = bloc.stream.listen(
-      (state) {
-        if (terminal.isCompleted) return;
-        switch (state) {
-          case RunCompleted():
-            terminal.complete(state);
-          case RunFailed(:final error):
-            terminal.completeError(StateError('Headless run failed: $error'));
-          case RunInProgress(:final failed, :final pending, :final active)
-              when failed.isNotEmpty && pending == 0 && active.isEmpty:
-            terminal.completeError(StateError(_failedComboMessage(state)));
-          case _:
-            break;
-        }
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        if (!terminal.isCompleted) {
-          terminal.completeError(error, stackTrace);
-        }
-      },
-    );
+    void disposeProviders() {
+      if (providersDisposed) return;
+      providersDisposed = true;
+      for (final provider in config.providers) {
+        provider.dispose();
+      }
+    }
 
     try {
-      bloc.add(
-        StartRun(
-          tasks: config.tasks,
-          providers: config.providers,
-          modelsByProvider: config.modelsByProvider,
-          evaluatorConfig: config.evaluatorConfig,
-          useReferencePlan: config.useReferencePlan,
-          name: config.name,
-          maxConcurrency: config.maxConcurrency,
-          trialsPerTask: config.trialsPerTask,
+      final runFuture = _run(config, cancellation);
+      final signal = await Future.any<_HeadlessRunSignal>([
+        runFuture.then<_HeadlessRunSignal>(
+          _HeadlessRunCompleted.new,
+          onError: (Object error, StackTrace stackTrace) =>
+              _HeadlessRunFailed(error, stackTrace),
         ),
-      );
-
-      final completed = await terminal.future.timeout(
-        config.timeout,
-        onTimeout: () => throw TimeoutException(
-          'Headless benchmark run timed out after ${config.timeout}',
+        Future<void>.delayed(
           config.timeout,
-        ),
-      );
-      if (completed.runId != config.runId) {
-        throw StateError(
-          'Headless run completed with unexpected run id '
-          '${completed.runId}; expected ${config.runId}',
-        );
+        ).then<_HeadlessRunSignal>((_) => const _HeadlessRunTimedOut()),
+      ]);
+
+      switch (signal) {
+        case _HeadlessRunCompleted(:final result):
+          return result;
+        case _HeadlessRunFailed(:final error, :final stackTrace):
+          Error.throwWithStackTrace(error, stackTrace);
+        case _HeadlessRunTimedOut():
+          cancellation.cancel();
+          disposeProviders();
+          try {
+            return await runFuture.timeout(
+              _timeoutCleanupGrace,
+              onTimeout: () => throw cancellation.timeoutException,
+            );
+          } on Object {
+            if (cancellation.isCancelled) {
+              throw cancellation.timeoutException;
+            }
+            rethrow;
+          }
       }
-
-      final summary = await config.runDao.loadSummary(completed.runId);
-      if (summary == null) {
-        throw StateError(
-          'Headless run completed but no summary was found for '
-          '${completed.runId}',
-        );
-      }
-
-      final bundleDirectory = Directory(
-        p.join(
-          config.bundleOutputParent.path,
-          runBundleDirectoryName(completed.runId),
-        ),
-      );
-      final export = await exportRunBundle(
-        summary: summary,
-        targetDirectory: bundleDirectory,
-        now: config.now,
-        allowedTrajectoryRoots: config.allowedTrajectoryRoots,
-        environmentProvider: config.exportEnvironmentProvider,
-        appVersionProvider: config.exportAppVersionProvider,
-      );
-
-      return HeadlessBenchmarkResult(
-        runId: completed.runId,
-        finalSummary: summary,
-        exportedBundleDirectory: export.directory,
-        bundleWarningCount: export.warnings.length,
-        taskRunCount: summary.taskRuns.length,
-        evaluationCount: summary.evaluationsByTaskRunId.values.fold<int>(
-          0,
-          (sum, evaluations) => sum + evaluations.length,
-        ),
-      );
     } finally {
-      await subscription.cancel();
-      await bloc.close();
+      disposeProviders();
     }
+  }
+
+  Future<HeadlessBenchmarkResult> _run(
+    HeadlessBenchmarkConfig config,
+    _HeadlessRunCancellation cancellation,
+  ) async {
+    cancellation.throwIfCancelled();
+    final normalizedModels = _normalizeModels(config);
+    for (final task in config.tasks) {
+      if (task.track == BenchmarkTrack.agentic) {
+        throw UnsupportedError(
+          'unsupported benchmark track for headless CLI MVP: '
+          '${task.id} uses agentic',
+        );
+      }
+    }
+
+    final combos = _buildCombos(config, normalizedModels);
+    if (combos.isEmpty) {
+      throw StateError('No benchmark combos selected');
+    }
+
+    cancellation.throwIfCancelled();
+    await config.runDao.startRun(
+      runId: config.runId,
+      startedAt: config.now(),
+      name: config.name,
+    );
+    cancellation.throwIfCancelled();
+
+    for (final task in config.tasks) {
+      await task.ensureLoaded();
+      cancellation.throwIfCancelled();
+    }
+
+    final planIdsByTask = <String, String?>{};
+    final planMarkdownsByTask = <String, String?>{};
+    if (config.useReferencePlan) {
+      for (final task in config.tasks) {
+        if (task.referencePlan != null) {
+          planMarkdownsByTask[task.id] = task.referencePlan!.markdown;
+          if (config.planDao != null) {
+            planIdsByTask[task.id] = await config.planDao!.upsertReferencePlan(
+              taskId: task.id,
+              version: task.referencePlan!.version,
+              artifact: task.referencePlan!.markdown,
+            );
+            cancellation.throwIfCancelled();
+          }
+        }
+      }
+    }
+
+    final plannedCombos = [
+      for (final combo in combos)
+        combo.copyWith(
+          planId: planIdsByTask[combo.task.id],
+          planMarkdown: planMarkdownsByTask[combo.task.id],
+        ),
+    ];
+
+    final startEvent = StartRun(
+      tasks: config.tasks,
+      providers: config.providers,
+      modelsByProvider: config.modelsByProvider,
+      evaluatorConfig: config.evaluatorConfig,
+      useReferencePlan: config.useReferencePlan,
+      name: config.name,
+      maxConcurrency: config.maxConcurrency,
+      trialsPerTask: config.trialsPerTask,
+    );
+    final provenanceJson = await buildRunProvenanceJson(
+      runId: config.runId,
+      event: startEvent,
+      normalizedModelsByProvider: normalizedModels,
+      combos: [
+        for (final combo in plannedCombos)
+          RunProvenanceCombo(
+            index: combo.index,
+            task: combo.task,
+            providerId: combo.provider.id,
+            modelId: combo.modelId,
+            trialIndex: combo.trialIndex,
+            planId: combo.planId,
+          ),
+      ],
+      evaluatorWeights: config.evaluatorWeights,
+      capturedAt: config.now(),
+      environmentProvider: config.provenanceEnvironmentProvider,
+    );
+    cancellation.throwIfCancelled();
+    await config.runDao.updateRunProvenance(config.runId, provenanceJson);
+    cancellation.throwIfCancelled();
+
+    await _runCombos(config, plannedCombos, cancellation);
+    cancellation.throwIfCancelled();
+    await config.runDao.finishRun(config.runId, config.now());
+    cancellation.throwIfCancelled();
+
+    final summary = await config.runDao.loadSummary(config.runId);
+    cancellation.throwIfCancelled();
+    if (summary == null) {
+      throw StateError(
+        'Headless run completed but no summary was found for ${config.runId}',
+      );
+    }
+
+    final bundleDirectory = Directory(
+      p.join(
+        config.bundleOutputParent.path,
+        runBundleDirectoryName(config.runId),
+      ),
+    );
+    cancellation.throwIfCancelled();
+    final export = await exportRunBundle(
+      summary: summary,
+      targetDirectory: bundleDirectory,
+      now: config.now,
+      allowedTrajectoryRoots: config.allowedTrajectoryRoots,
+      environmentProvider: config.exportEnvironmentProvider,
+      appVersionProvider: config.exportAppVersionProvider,
+    );
+    cancellation.throwIfCancelled();
+
+    return HeadlessBenchmarkResult(
+      runId: config.runId,
+      finalSummary: summary,
+      exportedBundleDirectory: export.directory,
+      bundleWarningCount: export.warnings.length,
+      taskRunCount: summary.taskRuns.length,
+      evaluationCount: summary.evaluationsByTaskRunId.values.fold<int>(
+        0,
+        (sum, evaluations) => sum + evaluations.length,
+      ),
+    );
+  }
+
+  Map<String, List<String>> _normalizeModels(HeadlessBenchmarkConfig config) {
+    final normalizedModels = <String, List<String>>{};
+    for (final provider in config.providers) {
+      final models = config.modelsByProvider[provider.id];
+      if (models == null) continue;
+      final seen = <String>{};
+      final deduped = <String>[];
+      for (final model in models) {
+        final trimmed = model.trim();
+        if (trimmed.isEmpty) continue;
+        if (seen.add(trimmed)) deduped.add(trimmed);
+      }
+      if (deduped.isEmpty) {
+        throw StateError('No models selected for ${provider.id}');
+      }
+      normalizedModels[provider.id] = deduped;
+    }
+    return normalizedModels;
+  }
+
+  List<_HeadlessCombo> _buildCombos(
+    HeadlessBenchmarkConfig config,
+    Map<String, List<String>> normalizedModels,
+  ) {
+    final trialsPerTask = config.trialsPerTask < 1 ? 1 : config.trialsPerTask;
+    final combos = <_HeadlessCombo>[];
+    var index = 0;
+    for (final task in config.tasks) {
+      for (final provider in config.providers) {
+        final models = normalizedModels[provider.id];
+        if (models == null) continue;
+        for (final modelId in models) {
+          for (var trialIndex = 0; trialIndex < trialsPerTask; trialIndex++) {
+            final baseLabel =
+                '${provider.displayName} / $modelId on ${task.id}';
+            final label = trialsPerTask == 1
+                ? baseLabel
+                : '$baseLabel (trial ${trialIndex + 1}/$trialsPerTask)';
+            combos.add(
+              _HeadlessCombo(
+                index: index,
+                task: task,
+                provider: provider,
+                modelId: modelId,
+                trialIndex: trialIndex,
+                label: label,
+              ),
+            );
+            index++;
+          }
+        }
+      }
+    }
+    return combos;
+  }
+
+  Future<void> _runCombos(
+    HeadlessBenchmarkConfig config,
+    List<_HeadlessCombo> combos,
+    _HeadlessRunCancellation cancellation,
+  ) async {
+    final executor = CodegenTaskExecutor(
+      workdirManager: config.workdirManager,
+      weights: config.evaluatorWeights,
+      now: config.now,
+    );
+    final failures = <_HeadlessComboFailure>[];
+    var nextIndex = 0;
+    final workerCount = config.maxConcurrency.clamp(1, 8);
+
+    Future<void> worker() async {
+      while (true) {
+        cancellation.throwIfCancelled();
+        final index = nextIndex;
+        nextIndex++;
+        if (index >= combos.length) return;
+        final combo = combos[index];
+        try {
+          final result = await executor.run(
+            runId: config.runId,
+            task: combo.task,
+            provider: combo.provider,
+            modelId: combo.modelId,
+            trialIndex: combo.trialIndex,
+            evaluatorConfig: config.evaluatorConfig,
+            planId: combo.planId,
+            planMarkdown: combo.planMarkdown,
+            cancellationCheck: cancellation.throwIfCancelled,
+            remainingTimeout: cancellation.remainingTimeout,
+            cancellationSignal: cancellation.signal,
+          );
+          cancellation.throwIfCancelled();
+          await config.runDao.persistTaskRun(result);
+          cancellation.throwIfCancelled();
+        } catch (error, stackTrace) {
+          cancellation.throwIfCancelled();
+          failures.add(
+            await _persistComboFailure(
+              config,
+              combo,
+              error,
+              stackTrace,
+              cancellation,
+            ),
+          );
+        }
+      }
+    }
+
+    await Future.wait([
+      for (var i = 0; i < workerCount && i < combos.length; i++) worker(),
+    ], eagerError: true);
+
+    if (failures.isNotEmpty) {
+      failures.sort((a, b) => a.index.compareTo(b.index));
+      throw StateError(_failedComboMessage(failures));
+    }
+  }
+
+  Future<_HeadlessComboFailure> _persistComboFailure(
+    HeadlessBenchmarkConfig config,
+    _HeadlessCombo combo,
+    Object error,
+    StackTrace stackTrace,
+    _HeadlessRunCancellation cancellation,
+  ) async {
+    final failureEvaluation = EvaluationResult(
+      evaluatorId: 'combo_failure',
+      passed: false,
+      score: 0.0,
+      rationale: 'combo failed during run: $error',
+      details: {'phase': 'run', 'error': '$error'},
+    );
+    final synthetic = TaskRunResult(
+      runId: config.runId,
+      providerId: combo.provider.id,
+      modelId: combo.modelId,
+      taskId: combo.task.id,
+      response: const ModelResponse(
+        rawText: '<error>',
+        extractedCode: null,
+        promptTokens: null,
+        completionTokens: null,
+        latency: Duration.zero,
+      ),
+      evaluations: [failureEvaluation],
+      aggregateScore: 0.0,
+      completedAt: config.now(),
+      trialIndex: combo.trialIndex,
+      taskVersion: combo.task.version,
+      benchmarkTrack: combo.task.track.name,
+      primaryPass: false,
+      failureTag: determineFailureTag(
+        primaryPass: false,
+        evaluations: [failureEvaluation],
+      ),
+      planId: combo.planId,
+    );
+
+    cancellation.throwIfCancelled();
+    try {
+      await config.runDao.persistTaskRun(synthetic);
+    } on Object catch (persistError) {
+      return _HeadlessComboFailure(
+        index: combo.index,
+        label: combo.label,
+        errorMessage: 'persist failed: $persistError',
+      );
+    }
+    cancellation.throwIfCancelled();
+    return _HeadlessComboFailure(
+      index: combo.index,
+      label: combo.label,
+      errorMessage: '$error',
+    );
   }
 }
 
-String _failedComboMessage(RunInProgress state) {
-  final first = state.failed.first;
-  final countSuffix = state.failed.length == 1
+class _HeadlessRunCancellation {
+  _HeadlessRunCancellation(this.timeout) : _stopwatch = Stopwatch()..start();
+
+  final Duration timeout;
+  final Stopwatch _stopwatch;
+  final _cancelled = Completer<void>();
+
+  TimeoutException get timeoutException => TimeoutException(
+    'Headless benchmark run timed out after $timeout',
+    timeout,
+  );
+
+  void cancel() {
+    if (!_cancelled.isCompleted) {
+      _cancelled.complete();
+    }
+  }
+
+  Future<void> get signal => _cancelled.future;
+
+  bool get isCancelled =>
+      _cancelled.isCompleted || _stopwatch.elapsed.compareTo(timeout) >= 0;
+
+  Duration remainingTimeout() {
+    final remaining = timeout - _stopwatch.elapsed;
+    return remaining.compareTo(Duration.zero) <= 0 ? Duration.zero : remaining;
+  }
+
+  void throwIfCancelled() {
+    if (!isCancelled) return;
+    cancel();
+    throw timeoutException;
+  }
+}
+
+sealed class _HeadlessRunSignal {
+  const _HeadlessRunSignal();
+}
+
+class _HeadlessRunCompleted extends _HeadlessRunSignal {
+  const _HeadlessRunCompleted(this.result);
+
+  final HeadlessBenchmarkResult result;
+}
+
+class _HeadlessRunFailed extends _HeadlessRunSignal {
+  const _HeadlessRunFailed(this.error, this.stackTrace);
+
+  final Object error;
+  final StackTrace stackTrace;
+}
+
+class _HeadlessRunTimedOut extends _HeadlessRunSignal {
+  const _HeadlessRunTimedOut();
+}
+
+class _HeadlessCombo {
+  const _HeadlessCombo({
+    required this.index,
+    required this.task,
+    required this.provider,
+    required this.modelId,
+    required this.trialIndex,
+    required this.label,
+    this.planId,
+    this.planMarkdown,
+  });
+
+  final int index;
+  final BenchmarkTask task;
+  final ModelProvider provider;
+  final String modelId;
+  final int trialIndex;
+  final String label;
+  final String? planId;
+  final String? planMarkdown;
+
+  _HeadlessCombo copyWith({String? planId, String? planMarkdown}) {
+    return _HeadlessCombo(
+      index: index,
+      task: task,
+      provider: provider,
+      modelId: modelId,
+      trialIndex: trialIndex,
+      label: label,
+      planId: planId,
+      planMarkdown: planMarkdown,
+    );
+  }
+}
+
+class _HeadlessComboFailure {
+  const _HeadlessComboFailure({
+    required this.index,
+    required this.label,
+    required this.errorMessage,
+  });
+
+  final int index;
+  final String label;
+  final String errorMessage;
+}
+
+String _failedComboMessage(List<_HeadlessComboFailure> failures) {
+  final first = failures.first;
+  final countSuffix = failures.length == 1
       ? ''
-      : ' (${state.failed.length} failed combos)';
+      : ' (${failures.length} failed combos)';
   return 'Headless run failed$countSuffix: '
       '${first.label}: ${first.errorMessage}';
 }

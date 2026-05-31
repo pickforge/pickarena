@@ -109,6 +109,9 @@ class NoOpPrepareWorkdirManager extends WorkdirManager {
   Future<PrepareResult> prepare(
     Directory workDir, {
     bool isFlutter = false,
+    WorkdirRemainingTimeout? remainingTimeout,
+    WorkdirCancellationCheck? cancellationCheck,
+    Future<void>? cancellationSignal,
   }) async {
     return const PrepareOk();
   }

@@ -1,9 +1,6 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+
+import 'database_connection.dart';
 
 part 'database.g.dart';
 
@@ -102,7 +99,8 @@ class ReviewBattles extends Table {
 
 @DriftDatabase(tables: [Runs, TaskRuns, Evaluations, Plans, ReviewBattles])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
+  AppDatabase([QueryExecutor? executor])
+    : super(executor ?? openDefaultDatabaseConnection());
 
   @override
   int get schemaVersion => appDatabaseSchemaVersion;
@@ -137,12 +135,4 @@ class AppDatabase extends _$AppDatabase {
       }
     },
   );
-}
-
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dir = await getApplicationSupportDirectory();
-    await dir.create(recursive: true);
-    return NativeDatabase(File(p.join(dir.path, 'dart_arena.sqlite')));
-  });
 }

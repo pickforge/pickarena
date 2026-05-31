@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -19,6 +20,7 @@ typedef DroidProcessRunner =
     Future<DroidProcessResult> Function(
       String executable,
       List<String> arguments,
+      Duration? timeout,
     );
 
 class DroidExecProvider implements ModelProvider {
@@ -47,17 +49,53 @@ class DroidExecProvider implements ModelProvider {
   static Future<DroidProcessResult> _defaultRunner(
     String exe,
     List<String> args,
+    Duration? timeout,
   ) async {
-    final res = await Process.run(
+    final process = await Process.start(
       exe,
       args,
       runInShell: false,
       includeParentEnvironment: true,
     );
+    final stdoutBuffer = StringBuffer();
+    final stderrBuffer = StringBuffer();
+    final stdoutDone = process.stdout
+        .transform(systemEncoding.decoder)
+        .listen(stdoutBuffer.write)
+        .asFuture<void>();
+    final stderrDone = process.stderr
+        .transform(systemEncoding.decoder)
+        .listen(stderrBuffer.write)
+        .asFuture<void>();
+
+    var timedOut = false;
+    final exitCode = timeout == null
+        ? await process.exitCode
+        : await process.exitCode.timeout(
+            timeout,
+            onTimeout: () async {
+              timedOut = true;
+              await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
+              return process.exitCode.timeout(
+                const Duration(seconds: 2),
+                onTimeout: () async {
+                  await _terminateProcessTree(
+                    process.pid,
+                    ProcessSignal.sigkill,
+                  );
+                  return -1;
+                },
+              );
+            },
+          );
+    await Future.wait([stdoutDone, stderrDone]);
+    if (timedOut) {
+      throw TimeoutException('droid exec timed out', timeout);
+    }
     return DroidProcessResult(
-      stdout: res.stdout.toString(),
-      stderr: res.stderr.toString(),
-      exitCode: res.exitCode,
+      stdout: stdoutBuffer.toString(),
+      stderr: stderrBuffer.toString(),
+      exitCode: exitCode,
     );
   }
 
@@ -149,7 +187,7 @@ class DroidExecProvider implements ModelProvider {
       model,
       directPrompt,
     ];
-    final res = await _runner(_exe, args);
+    final res = await _runner(_exe, args, timeout);
     sw.stop();
     if (res.exitCode != 0) {
       final stdoutPreview = res.stdout.substring(
@@ -186,5 +224,78 @@ class DroidExecProvider implements ModelProvider {
       completionTokens: null,
       latency: sw.elapsed,
     );
+  }
+
+  static Future<void> _terminateProcessTree(
+    int pid,
+    ProcessSignal signal,
+  ) async {
+    if (Platform.isWindows) {
+      final args = ['/PID', '$pid', '/T'];
+      if (signal == ProcessSignal.sigkill) args.add('/F');
+      await _tryRunProcess('taskkill', args);
+      return;
+    }
+
+    final descendants = await _descendantPids(pid);
+    for (final childPid in descendants.reversed) {
+      _killPid(childPid, signal);
+    }
+    _killPid(pid, signal);
+  }
+
+  static Future<List<int>> _descendantPids(int pid) async {
+    final descendants = <int>[];
+    for (final childPid in await _childPids(pid)) {
+      descendants.add(childPid);
+      descendants.addAll(await _descendantPids(childPid));
+    }
+    return descendants;
+  }
+
+  static Future<List<int>> _childPids(int pid) async {
+    final pgrep = await _tryRunProcess('pgrep', ['-P', '$pid']);
+    if (pgrep?.exitCode == 0) {
+      return _parsePids(pgrep!.stdout.toString());
+    }
+
+    final ps = await _tryRunProcess('ps', ['-o', 'pid=', '--ppid', '$pid']);
+    if (ps?.exitCode == 0) {
+      return _parsePids(ps!.stdout.toString());
+    }
+    return const [];
+  }
+
+  static Future<ProcessResult?> _tryRunProcess(
+    String executable,
+    List<String> arguments,
+  ) async {
+    try {
+      return await Process.run(executable, arguments);
+    } on Object {
+      return null;
+    }
+  }
+
+  static List<int> _parsePids(String output) => output
+      .split(RegExp(r'\s+'))
+      .map((s) => int.tryParse(s.trim()))
+      .whereType<int>()
+      .toList(growable: false);
+
+  static void _killPid(int pid, ProcessSignal signal) {
+    if (!_tryKillPid(pid, signal)) {
+      _tryKillPid(pid, null);
+    }
+  }
+
+  static bool _tryKillPid(int pid, ProcessSignal? signal) {
+    try {
+      return signal == null
+          ? Process.killPid(pid)
+          : Process.killPid(pid, signal);
+    } on Object {
+      return false;
+    }
   }
 }
