@@ -17,6 +17,11 @@ const requiredBrandingAssets = [
 ];
 const requiredAnchors = ['leaderboard', 'tasks', 'methodology'];
 const publicTitle = 'Dart Arena by Pickforge';
+const basePath = normalizeBasePath(process.env.PUBLIC_BASE_PATH ?? '');
+const appAssetPath = `${basePath}/_app/`;
+const brandingAssetPath = `${basePath}/branding/`;
+const leaderboardDataUrl = `${basePath}/data/leaderboard.v1.json`;
+const homeHref = `${basePath}/`;
 
 async function main(): Promise<void> {
   await assertFileExists(indexPath);
@@ -29,7 +34,23 @@ async function main(): Promise<void> {
 
   const html = await readFile(indexPath, 'utf8');
   assertHtmlIncludes(html, publicTitle, `public title text "${publicTitle}"`);
-  assertHtmlIncludes(html, '_app/', 'SvelteKit client asset references');
+  assertHtmlIncludes(html, appAssetPath, `SvelteKit asset path "${appAssetPath}"`);
+  assertHtmlIncludes(
+    html,
+    brandingAssetPath,
+    `branding asset path "${brandingAssetPath}"`
+  );
+  assertHtmlIncludes(
+    html,
+    `data-url="${leaderboardDataUrl}"`,
+    `leaderboard fetch URL "${leaderboardDataUrl}"`
+  );
+  assertHtmlIncludes(html, `href="${homeHref}"`, `home link "${homeHref}"`);
+  assertHtmlExcludes(html, './_app/', 'relative SvelteKit asset references');
+
+  if (basePath.length > 0) {
+    assertNoRootRelativeRenderedUrls(html, basePath);
+  }
 
   for (const anchor of requiredAnchors) {
     assertHtmlIncludes(html, `id="${anchor}"`, `section anchor #${anchor}`);
@@ -38,6 +59,7 @@ async function main(): Promise<void> {
   assertNoVisibleRenderingArtifacts(html);
 
   console.log('Static smoke passed:');
+  console.log(`- base path: ${basePath || '(root)'}`);
   console.log(`- ${repoRelative(indexPath)}`);
   console.log(`- ${repoRelative(leaderboardPath)}`);
   console.log(
@@ -71,6 +93,45 @@ function assertHtmlIncludes(html: string, expected: string, label: string): void
   }
 }
 
+function assertHtmlExcludes(html: string, unexpected: string, label: string): void {
+  if (html.includes(unexpected)) {
+    throw new Error(`Found ${label} in ${repoRelative(indexPath)}`);
+  }
+}
+
+function assertNoRootRelativeRenderedUrls(html: string, basePath: string): void {
+  const allowedPrefix = escapeRegExp(`${basePath.slice(1)}/`);
+  const rootRelativeAttributes = [
+    {
+      label: 'root-relative href',
+      pattern: new RegExp(`\\bhref="/(?!${allowedPrefix})[^"]*"`, 'g')
+    },
+    {
+      label: 'root-relative src',
+      pattern: new RegExp(`\\bsrc="/(?!${allowedPrefix})[^"]*"`, 'g')
+    },
+    {
+      label: 'root-relative data URL',
+      pattern: new RegExp(`\\bdata-url="/(?!${allowedPrefix})[^"]*"`, 'g')
+    }
+  ];
+
+  for (const attribute of rootRelativeAttributes) {
+    assertNoHtmlMatches(html, attribute.pattern, attribute.label);
+  }
+}
+
+function assertNoHtmlMatches(html: string, pattern: RegExp, label: string): void {
+  const matches = html.match(pattern);
+  if (matches && matches.length > 0) {
+    throw new Error(
+      `Found ${label} in ${repoRelative(indexPath)}: ${matches
+        .slice(0, 3)
+        .join(', ')}`
+    );
+  }
+}
+
 function assertNoVisibleRenderingArtifacts(html: string): void {
   const visibleText = visibleHtmlText(html);
   const artifacts = [
@@ -101,6 +162,20 @@ function visibleHtmlText(html: string): string {
 
 function repoRelative(filePath: string): string {
   return relative(repoRoot, filePath).split(sep).join('/');
+}
+
+function normalizeBasePath(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed === '/') return '';
+
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return withLeadingSlash.endsWith('/')
+    ? withLeadingSlash.slice(0, -1)
+    : withLeadingSlash;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 main().catch((error: unknown) => {

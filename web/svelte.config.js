@@ -10,7 +10,11 @@ const config = {
       fallback: undefined,
       precompress: false,
       strict: true
-    })
+    }),
+    paths: {
+      base: process.env.PUBLIC_BASE_PATH ?? '',
+      relative: false
+    }
   }
 };
 

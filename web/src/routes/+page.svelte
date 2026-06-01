@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import {
     formatCost,
     formatCount,
@@ -21,6 +22,10 @@
   };
 
   let { data }: { data: PageData } = $props();
+
+  const homeHref = `${base}/`;
+  const pickforgeMarkSrc = `${base}/branding/pickforge_mark.png`;
+  const dartArenaLogoSrc = `${base}/branding/dart_arena_logo_horizontal_light.png`;
 
   let leaderboard = $derived(data.leaderboard);
   let rankedModels = $derived(sortModels(leaderboard.models));
@@ -132,8 +137,8 @@
 
 <main class="shell">
   <header class="site-header">
-    <a class="brand-lockup" href="/" aria-label="Dart Arena by Pickforge home">
-      <img src="/branding/pickforge_mark.png" alt="" width="44" height="44" />
+    <a class="brand-lockup" href={homeHref} aria-label="Dart Arena by Pickforge home">
+      <img src={pickforgeMarkSrc} alt="" width="44" height="44" />
       <span>Dart Arena by Pickforge</span>
     </a>
     <nav class="nav-links" aria-label="Page sections">
@@ -147,7 +152,7 @@
     <div class="hero-content">
       <img
         class="hero-logo"
-        src="/branding/dart_arena_logo_horizontal_light.png"
+        src={dartArenaLogoSrc}
         alt="Dart Arena"
       />
       <p class="eyebrow">Static public benchmark</p>
@@ -451,7 +456,7 @@
 
   <footer class="site-footer">
     <div class="footer-brand">
-      <img src="/branding/pickforge_mark.png" alt="" width="32" height="32" />
+      <img src={pickforgeMarkSrc} alt="" width="32" height="32" />
       <strong>Pickforge</strong>
     </div>
     <span>Dart Arena static data · leaderboard.v{leaderboard.schemaVersion}</span>

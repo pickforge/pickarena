@@ -1,3 +1,5 @@
+import { base } from '$app/paths';
+
 export type LeaderboardBenchmark = {
   title: string;
   track: string;
@@ -86,7 +88,7 @@ export async function loadLeaderboard(
   fetcher: LeaderboardFetch = fetch
 ): Promise<LeaderboardLoadResult> {
   try {
-    const response = await fetcher('/data/leaderboard.v1.json');
+    const response = await fetcher(`${base}/data/leaderboard.v1.json`);
     if (!response.ok) {
       return withWarning(`Leaderboard data is unavailable (${response.status}).`);
     }
