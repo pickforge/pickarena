@@ -1,18 +1,18 @@
-# Plan 6 — Deployment and CI
+# Plan 6 — Web CI and Deployment Readiness
 
 ## Goal
 
-Make the Pickforge/Dart Arena static web landing page continuously validated and deployable from `main`, without changing benchmark execution or the public leaderboard export contract.
+Make the Pickforge/Dart Arena static web landing page continuously validated and deployment-ready from `main`, without changing benchmark execution or the public leaderboard export contract.
 
 ## Success criteria
 
 - GitHub Actions validates both the Flutter benchmark app and the Svelte static web app.
 - Web CI runs Bun install, Svelte checks, static build, and static smoke validation.
-- `main` deployments publish the generated `web/build/` artifact through GitHub Pages.
-- The static web app works when hosted at a root domain or a GitHub Pages project path.
+- The static web app works when hosted at a root domain or a non-root deployment base path.
 - CI/deployment does not require provider API keys, local SQLite databases, or private benchmark artifacts.
 - Build artifacts, `.svelte-kit/`, and `web/build/` remain uncommitted.
 - Existing `leaderboard.v1.json` sample data remains the deployed data source for this slice.
+- Provider-specific deployment wiring remains deferred until Vercel or another host is selected.
 
 ## Current context
 
@@ -25,6 +25,7 @@ Make the Pickforge/Dart Arena static web landing page continuously validated and
 - `.github/workflows/ci.yml` currently validates only the Flutter/headless path.
 - The web app currently assumes root hosting for URLs such as `/data/leaderboard.v1.json` and `/branding/dart_arena_mark.png`.
 - `leaderboard:export` depends on a local read-only SQLite database, so CI should not generate public data in this slice.
+- GitHub Pages deployment was deferred because repository Pages is not enabled and the likely deployment target is Vercel or another host.
 
 ## Proposed changes
 
@@ -33,7 +34,7 @@ Make the Pickforge/Dart Arena static web landing page continuously validated and
 Update the web app so it can be built for either:
 
 - root hosting, such as a custom domain; or
-- GitHub Pages project hosting, such as `/dart_arena`.
+- non-root hosting, such as `/dart_arena`.
 
 Use SvelteKit base path support rather than hard-coded absolute URLs.
 
@@ -69,32 +70,13 @@ Update `.github/workflows/ci.yml` with a separate web job:
 - run `bun run web:smoke`.
 
 Keep the existing Flutter/headless job intact.
-This job validates the default root/custom-domain build mode. The Pages deployment job validates the `/dart_arena` build mode separately.
+This job validates the default root/custom-domain build mode. The `/dart_arena` build mode remains covered by local smoke validation until a deployment provider is selected.
 
-### 4. Add GitHub Pages deployment
+### 4. Keep deployment provider wiring deferred
 
-Add a deployment job in `.github/workflows/ci.yml` that:
+Do not add a GitHub Pages deployment job in this slice.
 
-- runs only on `push` to `main`;
-- depends on the Flutter/headless and web jobs;
-- runs `PUBLIC_BASE_PATH=/dart_arena bun run web:smoke` to build and smoke-validate the Pages-safe output;
-- uploads `web/build` via `actions/upload-pages-artifact`;
-- deploys via `actions/deploy-pages`.
-- does not rebuild `web/build` after the Pages-safe smoke validation.
-
-Use repository Pages permissions:
-
-```yaml
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-```
-
-Use `concurrency` for Pages deployments.
-
-Default the deployment base path to `/dart_arena` for GitHub Pages project hosting. If the repository later uses a custom domain/root Pages URL, set `PUBLIC_BASE_PATH` to an empty value in the deployment environment.
-Before relying on the workflow, repository settings must have **Pages → Source** set to **GitHub Actions**.
+The repo should remain ready for a later provider-specific deployment by keeping `PUBLIC_BASE_PATH` configurable and smoke-validating a non-root base path locally/when needed. Vercel or another host can be wired in a later plan once the target is chosen.
 
 ### 5. Keep data publishing out of scope
 
@@ -168,10 +150,9 @@ git diff --stat
 
 ## Risks and mitigations
 
-- **GitHub Pages base path breaks assets:** validate both root and `/dart_arena` builds with smoke checks.
+- **Deployment base path breaks assets:** validate both root and `/dart_arena` builds with smoke checks.
 - **Custom-domain mismatch:** keep `PUBLIC_BASE_PATH` configurable; document in the workflow comments only if needed.
 - **CI time increases:** split Flutter/headless and web jobs so failures are isolated and jobs can run in parallel.
 - **Accidental data publishing:** deploy committed sample/public JSON only; leave official data refresh for a later plan.
 - **Secrets exposure:** do not add provider keys or database credentials to CI.
-- **Workflow permissions too broad:** use only `contents: read`, `pages: write`, and `id-token: write` for deployment.
-- **Deployment hides validation failures:** make deploy depend on both validation jobs.
+- **Unsupported deployment target:** avoid adding a deployment job until the target host is selected and configured.
