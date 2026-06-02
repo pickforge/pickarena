@@ -12,6 +12,18 @@ class ReferencePlan {
   final String markdown;
 }
 
+class TaskNegativeCase {
+  const TaskNegativeCase({
+    required this.id,
+    required this.description,
+    required this.solution,
+  });
+
+  final String id;
+  final String description;
+  final ReferenceSolution solution;
+}
+
 enum BenchmarkTrack { codegen, agentic }
 
 extension BenchmarkTrackLabel on BenchmarkTrack {
@@ -116,6 +128,7 @@ abstract class BenchmarkTask {
       TaskWorkspace.fromFixtures(fixtures, instruction: prompt);
   List<VerifierFixture> get hiddenVerifiers => const [];
   ReferenceSolution? get referenceSolution => null;
+  List<TaskNegativeCase> get negativeCases => const [];
   String? get judgeRubric;
   String get generatedCodePath;
   bool get isFlutter => false;

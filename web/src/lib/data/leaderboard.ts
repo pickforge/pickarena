@@ -23,6 +23,12 @@ export type LeaderboardModel = {
   passRate: number | null;
   passCount: number;
   sampleCount: number;
+  publicPassCount: number;
+  publicSampleCount: number;
+  publicPassRate: number | null;
+  hiddenPassCount: number;
+  hiddenSampleCount: number;
+  hiddenPassRate: number | null;
   confidenceInterval: {
     lower: number | null;
     upper: number | null;
@@ -32,7 +38,11 @@ export type LeaderboardModel = {
   medianPromptTokens: number | null;
   medianCompletionTokens: number | null;
   medianEstimatedCostMicros: number | null;
+  knownEstimatedCostCount: number;
+  unknownEstimatedCostCount: number;
+  totalEstimatedCostMicros: number | null;
   costPerSolvedTaskMicros: number | null;
+  cheapestPassingEstimatedCostMicros: number | null;
   failureBreakdown: Record<string, number>;
 };
 
@@ -43,6 +53,12 @@ export type LeaderboardTask = {
   sampleCount: number;
   modelCount: number;
   passRate: number | null;
+  publicPassCount: number;
+  publicSampleCount: number;
+  publicPassRate: number | null;
+  hiddenPassCount: number;
+  hiddenSampleCount: number;
+  hiddenPassRate: number | null;
 };
 
 export type LeaderboardData = {
@@ -177,6 +193,12 @@ function parseModelRow(value: Record<string, unknown>): LeaderboardModel {
     passRate: parseNumber(value.passRate),
     passCount: parseNumber(value.passCount) ?? 0,
     sampleCount: parseNumber(value.sampleCount) ?? 0,
+    publicPassCount: parseNumber(value.publicPassCount) ?? 0,
+    publicSampleCount: parseNumber(value.publicSampleCount) ?? 0,
+    publicPassRate: parseNumber(value.publicPassRate),
+    hiddenPassCount: parseNumber(value.hiddenPassCount) ?? 0,
+    hiddenSampleCount: parseNumber(value.hiddenSampleCount) ?? 0,
+    hiddenPassRate: parseNumber(value.hiddenPassRate),
     confidenceInterval: {
       lower: parseNumber(confidenceInterval.lower),
       upper: parseNumber(confidenceInterval.upper)
@@ -186,7 +208,13 @@ function parseModelRow(value: Record<string, unknown>): LeaderboardModel {
     medianPromptTokens: parseNumber(value.medianPromptTokens),
     medianCompletionTokens: parseNumber(value.medianCompletionTokens),
     medianEstimatedCostMicros: parseNumber(value.medianEstimatedCostMicros),
+    knownEstimatedCostCount: parseNumber(value.knownEstimatedCostCount) ?? 0,
+    unknownEstimatedCostCount: parseNumber(value.unknownEstimatedCostCount) ?? 0,
+    totalEstimatedCostMicros: parseNumber(value.totalEstimatedCostMicros),
     costPerSolvedTaskMicros: parseNumber(value.costPerSolvedTaskMicros),
+    cheapestPassingEstimatedCostMicros: parseNumber(
+      value.cheapestPassingEstimatedCostMicros
+    ),
     failureBreakdown: parseNumberRecord(value.failureBreakdown)
   };
 }
@@ -202,7 +230,13 @@ function parseTaskRow(value: Record<string, unknown>): LeaderboardTask {
       typeof value.benchmarkTrack === 'string' ? value.benchmarkTrack : null,
     sampleCount: parseNumber(value.sampleCount) ?? 0,
     modelCount: parseNumber(value.modelCount) ?? 0,
-    passRate: parseNumber(value.passRate)
+    passRate: parseNumber(value.passRate),
+    publicPassCount: parseNumber(value.publicPassCount) ?? 0,
+    publicSampleCount: parseNumber(value.publicSampleCount) ?? 0,
+    publicPassRate: parseNumber(value.publicPassRate),
+    hiddenPassCount: parseNumber(value.hiddenPassCount) ?? 0,
+    hiddenSampleCount: parseNumber(value.hiddenSampleCount) ?? 0,
+    hiddenPassRate: parseNumber(value.hiddenPassRate)
   };
 }
 

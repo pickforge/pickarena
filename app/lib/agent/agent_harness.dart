@@ -10,5 +10,6 @@ abstract class AgentHarness {
     required String instruction,
     required String modelId,
     required Duration timeout,
+    Iterable<String> deniedEnvironmentKeys = const [],
   });
 }

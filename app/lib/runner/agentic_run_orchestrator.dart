@@ -6,6 +6,7 @@ import 'package:dart_arena/analytics/result_primitives.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/patch_capture.dart';
@@ -114,6 +115,7 @@ class AgenticRunOrchestrator {
           task.timeout ?? const Duration(minutes: 30),
           remainingTimeout,
         ),
+        deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
       );
     } on Object catch (e) {
       harnessStopwatch.stop();
@@ -177,6 +179,14 @@ class AgenticRunOrchestrator {
     final evaluators = task.evaluatorsFor(evaluatorConfig);
     if (gradingPrep is PrepareFailed) {
       for (final evaluator in evaluators) {
+        final blocked = blockedEvaluationFor(
+          evaluatorId: evaluator.id,
+          previousResults: evaluations,
+        );
+        if (blocked != null) {
+          evaluations.add(blocked);
+          continue;
+        }
         evaluations.add(
           EvaluationResult(
             evaluatorId: evaluator.id,
@@ -189,6 +199,14 @@ class AgenticRunOrchestrator {
       }
     } else {
       for (final evaluator in evaluators) {
+        final blocked = blockedEvaluationFor(
+          evaluatorId: evaluator.id,
+          previousResults: evaluations,
+        );
+        if (blocked != null) {
+          evaluations.add(blocked);
+          continue;
+        }
         evaluations.add(
           await evaluator.evaluate(
             EvaluationContext(
@@ -196,6 +214,7 @@ class AgenticRunOrchestrator {
               response: response,
               task: task,
               previousResults: evaluations,
+              deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
             ),
           ),
         );

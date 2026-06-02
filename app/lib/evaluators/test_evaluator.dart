@@ -4,6 +4,7 @@ import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/evaluators/_test_reporter_parser.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
+import 'package:dart_arena/runner/subprocess_environment.dart';
 
 class TestEvaluator implements Evaluator {
   TestEvaluator({this.testPath});
@@ -27,6 +28,10 @@ class TestEvaluator implements Evaluator {
       exe,
       args,
       workingDirectory: ctx.workDir.path,
+      environment: benchmarkSubprocessEnvironment(
+        additionalDeniedKeys: ctx.deniedEnvironmentKeys,
+      ),
+      includeParentEnvironment: false,
     );
     final summary = parseTestReporterJson(res.stdout.toString());
 

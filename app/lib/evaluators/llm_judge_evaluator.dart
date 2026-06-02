@@ -19,6 +19,27 @@ class LlmJudgeEvaluator implements Evaluator {
 
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
+    final blockingFailures = ctx.previousResults
+        .where(
+          (result) => result.evaluatorId == 'agent_harness' && !result.passed,
+        )
+        .map((result) => result.evaluatorId)
+        .toList(growable: false);
+    if (blockingFailures.isNotEmpty) {
+      return EvaluationResult(
+        evaluatorId: id,
+        passed: false,
+        score: 0.0,
+        rationale: 'ignored due to blocking evaluator failure',
+        details: {
+          'ignored': true,
+          'skipped': true,
+          'reason': 'blocking_failure',
+          'failed_evaluator_ids': blockingFailures,
+        },
+      );
+    }
+
     final objectiveFailures = ctx.previousResults
         .where(isObjectiveFailure)
         .map((result) => result.evaluatorId)

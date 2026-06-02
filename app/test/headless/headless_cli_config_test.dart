@@ -38,6 +38,7 @@ void main() {
       expect(config.providers.single.id, 'openai');
       expect(config.providers.single.models, ['gpt-5.5']);
       expect(config.judge!.providerId, 'openai');
+      expect(config.taskBundleRoots, isEmpty);
       expect(config.maxConcurrency, 2);
       expect(config.trialsPerTask, 1);
       expect(config.timeout, const Duration(seconds: 600));
@@ -64,6 +65,18 @@ void main() {
           ),
         ),
       );
+    });
+
+    test('resolves file-backed task bundle roots relative to config', () {
+      final config = parseHeadlessCliConfig({
+        ..._validConfig(),
+        'taskBundleRoots': ['tasks/flutter', '/abs/tasks'],
+      }, configPath: p.join(Directory.current.path, 'configs', 'run.json'));
+
+      expect(config.taskBundleRoots, [
+        p.normalize(p.join(Directory.current.path, 'configs', 'tasks/flutter')),
+        p.normalize('/abs/tasks'),
+      ]);
     });
 
     test('rejects malformed required fields and types', () {

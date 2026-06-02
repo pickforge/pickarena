@@ -10,10 +10,13 @@ class EvaluationContext {
     required this.response,
     required this.task,
     List<EvaluationResult> previousResults = const [],
-  }) : previousResults = List.unmodifiable(previousResults);
+    Iterable<String> deniedEnvironmentKeys = const [],
+  }) : previousResults = List.unmodifiable(previousResults),
+       deniedEnvironmentKeys = Set.unmodifiable(deniedEnvironmentKeys);
 
   final Directory workDir;
   final ModelResponse response;
   final BenchmarkTask task;
   final List<EvaluationResult> previousResults;
+  final Set<String> deniedEnvironmentKeys;
 }

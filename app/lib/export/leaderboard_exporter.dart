@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dart_arena/analytics/benchmark_statistics.dart';
+import 'package:dart_arena/core/evaluator_classification.dart';
 import 'package:dart_arena/storage/database.dart';
 
 enum LeaderboardExportStrategy { aggregateCompatible, latestRun, bestObserved }
@@ -77,8 +78,20 @@ Future<Map<String, Object?>> buildLeaderboardExport(
     );
   }
 
-  final models = _buildModelRows(selected.taskRuns, warnings);
-  final tasks = _buildTaskRows(selected.taskRuns, warnings);
+  final evaluationsByTaskRunId = await _loadEvaluationsByTaskRunId(
+    db,
+    selected.taskRuns,
+  );
+  final models = _buildModelRows(
+    selected.taskRuns,
+    warnings,
+    evaluationsByTaskRunId,
+  );
+  final tasks = _buildTaskRows(
+    selected.taskRuns,
+    warnings,
+    evaluationsByTaskRunId,
+  );
 
   return <String, Object?>{
     'schemaVersion': 1,
@@ -255,6 +268,7 @@ int _passRank(bool? value) => value == true
 List<Map<String, Object?>> _buildModelRows(
   List<TaskRun> taskRuns,
   List<String> warnings,
+  Map<String, List<Evaluation>> evaluationsByTaskRunId,
 ) {
   final groups = <String, List<TaskRun>>{};
   for (final taskRun in taskRuns) {
@@ -275,7 +289,13 @@ List<Map<String, Object?>> _buildModelRows(
         'Model ${group.first.providerId}:${group.first.modelId} has no primary-pass samples.',
       );
     }
-    rows.add(_ModelRow.fromMetrics(group.first, metrics));
+    rows.add(
+      _ModelRow.fromMetrics(
+        group.first,
+        metrics,
+        _PassSplit.fromTaskRuns(group, evaluationsByTaskRunId),
+      ),
+    );
   }
   rows.sort(_compareModelRows);
 
@@ -307,6 +327,7 @@ int _compareModelRows(_ModelRow a, _ModelRow b) {
 List<Map<String, Object?>> _buildTaskRows(
   List<TaskRun> taskRuns,
   List<String> warnings,
+  Map<String, List<Evaluation>> evaluationsByTaskRunId,
 ) {
   final groups = <String, List<TaskRun>>{};
   for (final taskRun in taskRuns) {
@@ -331,6 +352,7 @@ List<Map<String, Object?>> _buildTaskRows(
         .map((taskRun) => '${taskRun.providerId}:${taskRun.modelId}')
         .toSet()
         .length;
+    final passSplit = _PassSplit.fromTaskRuns(group, evaluationsByTaskRunId);
     rows.add(<String, Object?>{
       'taskId': group.first.taskId,
       'taskVersion': group.first.taskVersion,
@@ -338,6 +360,7 @@ List<Map<String, Object?>> _buildTaskRows(
       'sampleCount': sampleCount,
       'modelCount': modelCount,
       'passRate': sampleCount == 0 ? 0.0 : passCount / sampleCount,
+      ...passSplit.toJson(),
     });
   }
 
@@ -359,6 +382,24 @@ List<Map<String, Object?>> _buildTaskRows(
 
 String _taskKey(TaskRun taskRun) =>
     '${taskRun.taskId}@${taskRun.taskVersion}@${taskRun.benchmarkTrack}';
+
+Future<Map<String, List<Evaluation>>> _loadEvaluationsByTaskRunId(
+  AppDatabase db,
+  List<TaskRun> taskRuns,
+) async {
+  final ids = taskRuns.map((taskRun) => taskRun.id).toList();
+  if (ids.isEmpty) return const {};
+  final evaluations = await (db.select(
+    db.evaluations,
+  )..where((evaluation) => evaluation.taskRunId.isIn(ids))).get();
+  final grouped = <String, List<Evaluation>>{};
+  for (final evaluation in evaluations) {
+    grouped
+        .putIfAbsent(evaluation.taskRunId, () => <Evaluation>[])
+        .add(evaluation);
+  }
+  return grouped;
+}
 
 int _compareNullableIntAsc(int? a, int? b) {
   if (a == null && b == null) return 0;
@@ -437,6 +478,7 @@ class _ModelRow {
     required this.score,
     required this.passCount,
     required this.sampleCount,
+    required this.passSplit,
     required this.confidenceLower,
     required this.confidenceUpper,
     required this.lowSample,
@@ -444,11 +486,19 @@ class _ModelRow {
     required this.medianPromptTokens,
     required this.medianCompletionTokens,
     required this.medianEstimatedCostMicros,
+    required this.knownEstimatedCostCount,
+    required this.unknownEstimatedCostCount,
+    required this.totalEstimatedCostMicros,
     required this.costPerSolvedTaskMicros,
+    required this.cheapestPassingEstimatedCostMicros,
     required this.failureBreakdown,
   });
 
-  factory _ModelRow.fromMetrics(TaskRun first, RankingMetrics metrics) {
+  factory _ModelRow.fromMetrics(
+    TaskRun first,
+    RankingMetrics metrics,
+    _PassSplit passSplit,
+  ) {
     final passRate = metrics.primaryPassSampleCount == 0
         ? 0.0
         : metrics.primaryPassCount / metrics.primaryPassSampleCount;
@@ -458,6 +508,7 @@ class _ModelRow {
       score: passRate,
       passCount: metrics.primaryPassCount,
       sampleCount: metrics.primaryPassSampleCount,
+      passSplit: passSplit,
       confidenceLower: metrics.primaryPassInterval?.lower ?? 0.0,
       confidenceUpper: metrics.primaryPassInterval?.upper ?? 0.0,
       lowSample: metrics.lowSample,
@@ -465,7 +516,12 @@ class _ModelRow {
       medianPromptTokens: metrics.medianPromptTokens,
       medianCompletionTokens: metrics.medianCompletionTokens,
       medianEstimatedCostMicros: metrics.medianEstimatedCostMicros,
+      knownEstimatedCostCount: metrics.knownEstimatedCostCount,
+      unknownEstimatedCostCount: metrics.unknownEstimatedCostCount,
+      totalEstimatedCostMicros: metrics.totalEstimatedCostMicros,
       costPerSolvedTaskMicros: metrics.costPerSolvedTaskMicros,
+      cheapestPassingEstimatedCostMicros:
+          metrics.cheapestPassingEstimatedCostMicros,
       failureBreakdown: metrics.failureBreakdown,
     );
   }
@@ -475,6 +531,7 @@ class _ModelRow {
   final double score;
   final int passCount;
   final int sampleCount;
+  final _PassSplit passSplit;
   final double confidenceLower;
   final double confidenceUpper;
   final bool lowSample;
@@ -482,7 +539,11 @@ class _ModelRow {
   final int? medianPromptTokens;
   final int? medianCompletionTokens;
   final int? medianEstimatedCostMicros;
+  final int knownEstimatedCostCount;
+  final int unknownEstimatedCostCount;
+  final int? totalEstimatedCostMicros;
   final int? costPerSolvedTaskMicros;
+  final int? cheapestPassingEstimatedCostMicros;
   final Map<String, int> failureBreakdown;
 
   Map<String, Object?> toJson({required int rank}) {
@@ -497,6 +558,7 @@ class _ModelRow {
       'passRate': score,
       'passCount': passCount,
       'sampleCount': sampleCount,
+      ...passSplit.toJson(),
       'confidenceInterval': <String, Object?>{
         'lower': confidenceLower,
         'upper': confidenceUpper,
@@ -506,7 +568,11 @@ class _ModelRow {
       'medianPromptTokens': medianPromptTokens,
       'medianCompletionTokens': medianCompletionTokens,
       'medianEstimatedCostMicros': medianEstimatedCostMicros,
+      'knownEstimatedCostCount': knownEstimatedCostCount,
+      'unknownEstimatedCostCount': unknownEstimatedCostCount,
+      'totalEstimatedCostMicros': totalEstimatedCostMicros,
       'costPerSolvedTaskMicros': costPerSolvedTaskMicros,
+      'cheapestPassingEstimatedCostMicros': cheapestPassingEstimatedCostMicros,
       'failureBreakdown': sortedFailures,
     };
   }
@@ -565,6 +631,103 @@ bool _listEquals<T>(List<T> a, List<T> b) {
     if (a[i] != b[i]) return false;
   }
   return true;
+}
+
+class _PassSplit {
+  const _PassSplit({
+    required this.publicPassCount,
+    required this.publicSampleCount,
+    required this.hiddenPassCount,
+    required this.hiddenSampleCount,
+  });
+
+  factory _PassSplit.fromTaskRuns(
+    List<TaskRun> taskRuns,
+    Map<String, List<Evaluation>> evaluationsByTaskRunId,
+  ) {
+    var publicPassCount = 0;
+    var publicSampleCount = 0;
+    var hiddenPassCount = 0;
+    var hiddenSampleCount = 0;
+
+    for (final taskRun in taskRuns) {
+      final evaluations = evaluationsByTaskRunId[taskRun.id] ?? const [];
+      final publicEvaluations = evaluations
+          .where((evaluation) => _countsForPublicPassSplit(evaluation))
+          .toList(growable: false);
+      final hiddenEvaluations = evaluations
+          .where((evaluation) => _countsForHiddenPassSplit(evaluation))
+          .toList(growable: false);
+
+      if (publicEvaluations.isNotEmpty) {
+        publicSampleCount++;
+        if (publicEvaluations.every((evaluation) => evaluation.passed)) {
+          publicPassCount++;
+        }
+      }
+      if (hiddenEvaluations.isNotEmpty) {
+        hiddenSampleCount++;
+        if (hiddenEvaluations.every((evaluation) => evaluation.passed)) {
+          hiddenPassCount++;
+        }
+      }
+    }
+
+    return _PassSplit(
+      publicPassCount: publicPassCount,
+      publicSampleCount: publicSampleCount,
+      hiddenPassCount: hiddenPassCount,
+      hiddenSampleCount: hiddenSampleCount,
+    );
+  }
+
+  final int publicPassCount;
+  final int publicSampleCount;
+  final int hiddenPassCount;
+  final int hiddenSampleCount;
+
+  Map<String, Object?> toJson() => {
+    'publicPassCount': publicPassCount,
+    'publicSampleCount': publicSampleCount,
+    'publicPassRate': publicSampleCount == 0
+        ? null
+        : publicPassCount / publicSampleCount,
+    'hiddenPassCount': hiddenPassCount,
+    'hiddenSampleCount': hiddenSampleCount,
+    'hiddenPassRate': hiddenSampleCount == 0
+        ? null
+        : hiddenPassCount / hiddenSampleCount,
+  };
+}
+
+bool _countsForPublicPassSplit(Evaluation evaluation) {
+  return isPublicTestEvaluatorId(evaluation.evaluatorId) &&
+      !_isIgnoredSkippedOrBlocked(evaluation);
+}
+
+bool _countsForHiddenPassSplit(Evaluation evaluation) {
+  return isHiddenVerifierEvaluatorId(evaluation.evaluatorId) &&
+      !_isIgnoredSkippedOrBlocked(evaluation);
+}
+
+bool _isIgnoredSkippedOrBlocked(Evaluation evaluation) {
+  final details = _decodeDetails(evaluation.detailsJson);
+  return details['ignored'] == true ||
+      details['skipped'] == true ||
+      details['blocked'] == true;
+}
+
+Map<String, Object?> _decodeDetails(String detailsJson) {
+  try {
+    final decoded = jsonDecode(detailsJson);
+    if (decoded is Map<String, Object?>) return decoded;
+    if (decoded is Map) {
+      return decoded.map((key, value) => MapEntry('$key', value));
+    }
+  } on FormatException {
+    return const {};
+  }
+  return const {};
 }
 
 class _EvaluatorWeightsParse {

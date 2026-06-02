@@ -35,6 +35,10 @@ class EvaluatorCard extends StatelessWidget {
     if (details == null) return null;
     final reason = details['reason'];
     final suffix = reason == null ? '' : ': $reason';
+    if (details['blocked'] == true) {
+      final blockedBy = details['blocked_by'];
+      return blockedBy == null ? 'Blocked$suffix' : 'Blocked by $blockedBy';
+    }
     if (details['ignored'] == true) return 'Ignored$suffix';
     if (details['skipped'] == true) return 'Skipped$suffix';
     return null;

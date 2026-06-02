@@ -22,7 +22,11 @@ class ModelRanking extends Equatable {
     this.medianPromptTokens,
     this.medianCompletionTokens,
     this.medianEstimatedCostMicros,
+    this.knownEstimatedCostCount = 0,
+    this.unknownEstimatedCostCount = 0,
+    this.totalEstimatedCostMicros,
     this.costPerSolvedTaskMicros,
+    this.cheapestPassingEstimatedCostMicros,
     this.failureBreakdown = const {},
   });
 
@@ -38,7 +42,11 @@ class ModelRanking extends Equatable {
   final int? medianPromptTokens;
   final int? medianCompletionTokens;
   final int? medianEstimatedCostMicros;
+  final int knownEstimatedCostCount;
+  final int unknownEstimatedCostCount;
+  final int? totalEstimatedCostMicros;
   final int? costPerSolvedTaskMicros;
+  final int? cheapestPassingEstimatedCostMicros;
   final Map<String, int> failureBreakdown;
 
   String get key => '$providerId:$modelId';
@@ -61,7 +69,11 @@ class ModelRanking extends Equatable {
     medianPromptTokens,
     medianCompletionTokens,
     medianEstimatedCostMicros,
+    knownEstimatedCostCount,
+    unknownEstimatedCostCount,
+    totalEstimatedCostMicros,
     costPerSolvedTaskMicros,
+    cheapestPassingEstimatedCostMicros,
     failureBreakdown,
   ];
 }
@@ -230,7 +242,12 @@ class LeaderboardRepository {
       medianPromptTokens: metrics.medianPromptTokens,
       medianCompletionTokens: metrics.medianCompletionTokens,
       medianEstimatedCostMicros: metrics.medianEstimatedCostMicros,
+      knownEstimatedCostCount: metrics.knownEstimatedCostCount,
+      unknownEstimatedCostCount: metrics.unknownEstimatedCostCount,
+      totalEstimatedCostMicros: metrics.totalEstimatedCostMicros,
       costPerSolvedTaskMicros: metrics.costPerSolvedTaskMicros,
+      cheapestPassingEstimatedCostMicros:
+          metrics.cheapestPassingEstimatedCostMicros,
       failureBreakdown: metrics.failureBreakdown,
     );
   }

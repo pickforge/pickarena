@@ -29,6 +29,12 @@
       "passRate": 0.75,
       "passCount": 3,
       "sampleCount": 4,
+      "publicPassCount": 4,
+      "publicSampleCount": 4,
+      "publicPassRate": 1.0,
+      "hiddenPassCount": 3,
+      "hiddenSampleCount": 4,
+      "hiddenPassRate": 0.75,
       "confidenceInterval": {
         "lower": 0.3006,
         "upper": 0.9544
@@ -38,9 +44,13 @@
       "medianPromptTokens": 5200,
       "medianCompletionTokens": 1800,
       "medianEstimatedCostMicros": 125000,
+      "knownEstimatedCostCount": 4,
+      "unknownEstimatedCostCount": 0,
+      "totalEstimatedCostMicros": 500000,
       "costPerSolvedTaskMicros": 166667,
+      "cheapestPassingEstimatedCostMicros": 120000,
       "failureBreakdown": {
-        "hidden_test": 1
+        "hidden_verifier_failed": 1
       }
     },
     {
@@ -51,6 +61,12 @@
       "passRate": 0.5,
       "passCount": 2,
       "sampleCount": 4,
+      "publicPassCount": 3,
+      "publicSampleCount": 4,
+      "publicPassRate": 0.75,
+      "hiddenPassCount": 2,
+      "hiddenSampleCount": 4,
+      "hiddenPassRate": 0.5,
       "confidenceInterval": {
         "lower": 0.1500,
         "upper": 0.8500
@@ -60,10 +76,14 @@
       "medianPromptTokens": 5100,
       "medianCompletionTokens": 1600,
       "medianEstimatedCostMicros": 140000,
+      "knownEstimatedCostCount": 4,
+      "unknownEstimatedCostCount": 0,
+      "totalEstimatedCostMicros": 560000,
       "costPerSolvedTaskMicros": 280000,
+      "cheapestPassingEstimatedCostMicros": 135000,
       "failureBreakdown": {
-        "analyzer": 1,
-        "visible_test": 1
+        "analysis_failed": 1,
+        "public_tests_failed": 1
       }
     }
   ],
@@ -74,7 +94,13 @@
       "benchmarkTrack": "agentic",
       "sampleCount": 2,
       "modelCount": 2,
-      "passRate": 0.5
+      "passRate": 0.5,
+      "publicPassCount": 2,
+      "publicSampleCount": 2,
+      "publicPassRate": 1.0,
+      "hiddenPassCount": 1,
+      "hiddenSampleCount": 2,
+      "hiddenPassRate": 0.5
     },
     {
       "taskId": "sample.profile_card",
@@ -82,7 +108,13 @@
       "benchmarkTrack": "agentic",
       "sampleCount": 2,
       "modelCount": 2,
-      "passRate": 1.0
+      "passRate": 1.0,
+      "publicPassCount": 2,
+      "publicSampleCount": 2,
+      "publicPassRate": 1.0,
+      "hiddenPassCount": 2,
+      "hiddenSampleCount": 2,
+      "hiddenPassRate": 1.0
     }
   ]
 }

@@ -27,6 +27,7 @@ class HeadlessCliConfig {
     required this.timeout,
     this.name,
     this.judge,
+    this.taskBundleRoots = const [],
     this.maxConcurrency = 4,
     this.trialsPerTask = 1,
     this.useReferencePlan = false,
@@ -38,6 +39,7 @@ class HeadlessCliConfig {
   final List<String> tasks;
   final List<HeadlessCliProviderConfig> providers;
   final HeadlessCliJudgeConfig? judge;
+  final List<String> taskBundleRoots;
   final Map<String, double> evaluatorWeights;
   final int maxConcurrency;
   final int trialsPerTask;
@@ -152,6 +154,12 @@ HeadlessCliConfig parseHeadlessCliConfig(
     tasks: List.unmodifiable(tasks),
     providers: List.unmodifiable(providers),
     judge: judge,
+    taskBundleRoots: List.unmodifiable(
+      _optionalStringList(
+        json,
+        'taskBundleRoots',
+      ).map((path) => _resolvePath(path, configDir)),
+    ),
     evaluatorWeights: Map.unmodifiable(_parseEvaluatorWeights(json)),
     maxConcurrency: _positiveInt(json, 'maxConcurrency', defaultValue: 4),
     trialsPerTask: _positiveInt(json, 'trialsPerTask', defaultValue: 1),

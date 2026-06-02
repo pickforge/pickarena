@@ -86,6 +86,43 @@ void main() {
   });
 
   test(
+    'DroidAgentHarness scrubs denied environment keys',
+    () async {
+      final workspace = await Directory.systemTemp.createTemp(
+        'droid_agent_env_',
+      );
+      addTearDown(() async {
+        if (await workspace.exists()) await workspace.delete(recursive: true);
+      });
+
+      final script = File(p.join(workspace.path, 'fake_droid_env.sh'));
+      await script.writeAsString('''
+#!/bin/sh
+env > env.txt
+''');
+      final chmod = await Process.run('chmod', ['+x', script.path]);
+      expect(chmod.exitCode, 0);
+
+      final harness = DroidAgentHarness(droidPath: script.path);
+      final result = await harness.run(
+        workspace: workspace,
+        instruction: 'x',
+        modelId: 'm',
+        timeout: const Duration(seconds: 2),
+        deniedEnvironmentKeys: const ['HOME'],
+      );
+
+      expect(result.succeeded, isTrue);
+      final env = await File(p.join(workspace.path, 'env.txt')).readAsString();
+      expect(
+        env.split('\n').where((line) => line.startsWith('HOME=')),
+        isEmpty,
+      );
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+  );
+
+  test(
     'DroidAgentHarness timeout terminates spawned child processes',
     () async {
       final workspace = await Directory.systemTemp.createTemp(

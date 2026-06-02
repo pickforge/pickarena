@@ -132,6 +132,21 @@ void main() {
       },
     );
 
+    test('blocked evaluators have zero effective weight', () {
+      const results = [
+        EvaluationResult(evaluatorId: 'compile', passed: false, score: 0.0),
+        EvaluationResult(evaluatorId: 'analyze', passed: true, score: 1.0),
+        EvaluationResult(
+          evaluatorId: 'test',
+          passed: false,
+          score: 0.0,
+          details: {'blocked': true, 'blocked_by': 'compile'},
+        ),
+      ];
+
+      expect(aggregate(results, defaultEvaluatorWeights), 0.20);
+    });
+
     test('non-objective failures are not aggregate cap reasons', () {
       const results = [
         EvaluationResult(

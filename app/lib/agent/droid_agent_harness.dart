@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
+import 'package:dart_arena/runner/subprocess_environment.dart';
 
 typedef DroidAgentProcessRunner =
     Future<AgentRunResult> Function(
@@ -16,13 +17,16 @@ class DroidAgentHarness implements AgentHarness {
   DroidAgentHarness({
     DroidAgentProcessRunner? runner,
     String? droidPath,
+    Iterable<String> deniedEnvironmentKeys = const [],
     int maxPreviewChars = 16 * 1024,
-  }) : _runner = runner ?? _defaultRunner,
+  }) : _runner = runner,
        _exe = droidPath ?? _findDroid(),
+       _deniedEnvironmentKeys = Set.unmodifiable(deniedEnvironmentKeys),
        _maxPreviewChars = maxPreviewChars;
 
-  final DroidAgentProcessRunner _runner;
+  final DroidAgentProcessRunner? _runner;
   final String _exe;
+  final Set<String> _deniedEnvironmentKeys;
   final int _maxPreviewChars;
 
   @override
@@ -34,6 +38,7 @@ class DroidAgentHarness implements AgentHarness {
     required String instruction,
     required String modelId,
     required Duration timeout,
+    Iterable<String> deniedEnvironmentKeys = const [],
   }) async {
     final args = [
       'exec',
@@ -45,7 +50,11 @@ class DroidAgentHarness implements AgentHarness {
       modelId,
       _agentInstruction(instruction),
     ];
-    return _boundedResult(await _runner(_exe, args, workspace, timeout));
+    final deniedKeys = {..._deniedEnvironmentKeys, ...deniedEnvironmentKeys};
+    final result = _runner == null
+        ? await _defaultRunner(_exe, args, workspace, timeout, deniedKeys)
+        : await _runner(_exe, args, workspace, timeout);
+    return _boundedResult(result);
   }
 
   AgentRunResult _boundedResult(AgentRunResult result) {
@@ -95,6 +104,7 @@ $instruction
     List<String> args,
     Directory workspace,
     Duration timeout,
+    Iterable<String> deniedEnvironmentKeys,
   ) async {
     final sw = Stopwatch()..start();
     final process = await Process.start(
@@ -102,7 +112,10 @@ $instruction
       args,
       workingDirectory: workspace.path,
       runInShell: false,
-      includeParentEnvironment: true,
+      environment: benchmarkSubprocessEnvironment(
+        additionalDeniedKeys: deniedEnvironmentKeys,
+      ),
+      includeParentEnvironment: false,
     );
     final stdoutBuffer = StringBuffer();
     final stderrBuffer = StringBuffer();

@@ -335,6 +335,7 @@
               <th scope="col">Rank</th>
               <th scope="col">Model</th>
               <th scope="col">Pass rate</th>
+              <th scope="col">Public / hidden</th>
               <th scope="col">Confidence</th>
               <th scope="col">Samples</th>
               <th scope="col">Latency</th>
@@ -355,6 +356,10 @@
                 <td>
                   {formatPercent(model.passRate)}
                   <span class="sub-metric">{formatCount(model.passCount)} passed</span>
+                </td>
+                <td>
+                  {formatPercent(model.publicPassRate)} public
+                  <span class="sub-metric">{formatPercent(model.hiddenPassRate)} hidden</span>
                 </td>
                 <td>{formatConfidence(model)}</td>
                 <td>
@@ -398,6 +403,8 @@
             <ul class="task-meta">
               <li><span>Version</span><strong>{task.taskVersion ?? 'unknown'}</strong></li>
               <li><span>Pass rate</span><strong>{formatPercent(task.passRate)}</strong></li>
+              <li><span>Public</span><strong>{formatPercent(task.publicPassRate)}</strong></li>
+              <li><span>Hidden</span><strong>{formatPercent(task.hiddenPassRate)}</strong></li>
               <li><span>Models</span><strong>{formatCount(task.modelCount)}</strong></li>
               <li><span>Samples</span><strong>{formatCount(task.sampleCount)}</strong></li>
             </ul>

@@ -4,6 +4,7 @@ import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/evaluators/_test_reporter_parser.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
+import 'package:dart_arena/runner/subprocess_environment.dart';
 import 'package:path/path.dart' as p;
 
 class TestMutant {
@@ -32,7 +33,11 @@ class TestAuthorEvaluator implements Evaluator {
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
     final exe = ctx.task.isFlutter ? 'flutter' : 'dart';
-    final originalRun = await _runTests(exe, ctx.workDir.path);
+    final originalRun = await _runTests(
+      exe,
+      ctx.workDir.path,
+      deniedEnvironmentKeys: ctx.deniedEnvironmentKeys,
+    );
     final originalSummary = parseTestReporterJson(
       originalRun.stdout.toString(),
     );
@@ -76,7 +81,11 @@ class TestAuthorEvaluator implements Evaluator {
         originalSource.replaceFirst(mutant.find, mutant.replace),
       );
       try {
-        final mutantRun = await _runTests(exe, ctx.workDir.path);
+        final mutantRun = await _runTests(
+          exe,
+          ctx.workDir.path,
+          deniedEnvironmentKeys: ctx.deniedEnvironmentKeys,
+        );
         if (mutantRun.exitCode != 0) {
           killed++;
         } else {
@@ -106,11 +115,19 @@ class TestAuthorEvaluator implements Evaluator {
     );
   }
 
-  Future<ProcessResult> _runTests(String exe, String workDir) {
-    return Process.run(exe, [
-      'test',
-      testPath,
-      '--reporter=json',
-    ], workingDirectory: workDir);
+  Future<ProcessResult> _runTests(
+    String exe,
+    String workDir, {
+    required Iterable<String> deniedEnvironmentKeys,
+  }) {
+    return Process.run(
+      exe,
+      ['test', testPath, '--reporter=json'],
+      workingDirectory: workDir,
+      environment: benchmarkSubprocessEnvironment(
+        additionalDeniedKeys: deniedEnvironmentKeys,
+      ),
+      includeParentEnvironment: false,
+    );
   }
 }

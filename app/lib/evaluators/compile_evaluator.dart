@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
+import 'package:dart_arena/runner/subprocess_environment.dart';
 
 class CompileEvaluator implements Evaluator {
   @override
@@ -11,10 +12,15 @@ class CompileEvaluator implements Evaluator {
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
     final exe = ctx.task.isFlutter ? 'flutter' : 'dart';
-    final analyze = await Process.run(exe, [
-      'analyze',
-      '--fatal-infos',
-    ], workingDirectory: ctx.workDir.path);
+    final analyze = await Process.run(
+      exe,
+      ['analyze', '--fatal-infos'],
+      workingDirectory: ctx.workDir.path,
+      environment: benchmarkSubprocessEnvironment(
+        additionalDeniedKeys: ctx.deniedEnvironmentKeys,
+      ),
+      includeParentEnvironment: false,
+    );
 
     final passed = analyze.exitCode == 0;
     return EvaluationResult(

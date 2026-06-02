@@ -77,7 +77,11 @@ void main() {
     expect(metrics.medianPromptTokens, 30);
     expect(metrics.medianCompletionTokens, 40);
     expect(metrics.medianEstimatedCostMicros, 150);
+    expect(metrics.knownEstimatedCostCount, 3);
+    expect(metrics.unknownEstimatedCostCount, 0);
+    expect(metrics.totalEstimatedCostMicros, 450);
     expect(metrics.costPerSolvedTaskMicros, 225);
+    expect(metrics.cheapestPassingEstimatedCostMicros, 70);
     expect(metrics.failureBreakdown['pass'], 2);
     expect(metrics.failureBreakdown['public_tests_failed'], 1);
   });
@@ -89,7 +93,11 @@ void main() {
     ]);
 
     expect(metrics.medianEstimatedCostMicros, isNull);
+    expect(metrics.knownEstimatedCostCount, 0);
+    expect(metrics.unknownEstimatedCostCount, 2);
+    expect(metrics.totalEstimatedCostMicros, isNull);
     expect(metrics.costPerSolvedTaskMicros, isNull);
+    expect(metrics.cheapestPassingEstimatedCostMicros, isNull);
   });
 
   test('normalizes unsupported failure tags to unknown', () {

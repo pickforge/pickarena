@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
+import 'package:dart_arena/runner/subprocess_environment.dart';
 
 class AnalyzeEvaluator implements Evaluator {
   @override
@@ -12,9 +13,15 @@ class AnalyzeEvaluator implements Evaluator {
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
     final exe = ctx.task.isFlutter ? 'flutter' : 'dart';
-    final res = await Process.run(exe, [
-      'analyze',
-    ], workingDirectory: ctx.workDir.path);
+    final res = await Process.run(
+      exe,
+      ['analyze'],
+      workingDirectory: ctx.workDir.path,
+      environment: benchmarkSubprocessEnvironment(
+        additionalDeniedKeys: ctx.deniedEnvironmentKeys,
+      ),
+      includeParentEnvironment: false,
+    );
     final stdout = res.stdout.toString();
     final counts = _countSeverities(stdout);
 

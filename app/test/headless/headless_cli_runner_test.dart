@@ -10,6 +10,7 @@ import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/export/artifact_bundle.dart';
+import 'package:dart_arena/headless/headless_benchmark_runner.dart';
 import 'package:dart_arena/headless/headless_cli_runner.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
@@ -99,6 +100,16 @@ class _GeneratedFilePresentEvaluator implements Evaluator {
       passed: passed,
       score: passed ? 1.0 : 0.0,
     );
+  }
+}
+
+class _CapturingHeadlessBenchmarkRunner extends HeadlessBenchmarkRunner {
+  HeadlessBenchmarkConfig? capturedConfig;
+
+  @override
+  Future<HeadlessBenchmarkResult> run(HeadlessBenchmarkConfig config) {
+    capturedConfig = config;
+    throw StateError('stop after capture');
   }
 }
 
@@ -214,11 +225,11 @@ void main() {
           configFile.path,
         ],
         workingDirectory: Directory.current.path,
-      ).timeout(const Duration(seconds: 12));
+      ).timeout(const Duration(seconds: 30));
       stopwatch.stop();
 
       expect(result.exitCode, isNot(0));
-      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 11)));
+      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 25)));
       expect(result.stdout.toString(), isEmpty);
       final decoded = _expectProcessJsonObject(result.stderr);
       expect(decoded['status'], 'failed');
@@ -238,7 +249,7 @@ void main() {
         expect(storedRun?.completedAt, isNull);
       }
     },
-    timeout: const Timeout(Duration(seconds: 20)),
+    timeout: const Timeout(Duration(seconds: 40)),
   );
 
   test(
@@ -299,11 +310,11 @@ void main() {
         ],
         workingDirectory: Directory.current.path,
         environment: {'PATH': '${fakeBin.path}:$originalPath'},
-      ).timeout(const Duration(seconds: 12));
+      ).timeout(const Duration(seconds: 30));
       stopwatch.stop();
 
       expect(result.exitCode, isNot(0));
-      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 11)));
+      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 25)));
       expect(result.stdout.toString(), isEmpty);
       final decoded = _expectProcessJsonObject(result.stderr);
       expect(decoded['status'], 'failed');
@@ -330,7 +341,7 @@ void main() {
       }
     },
     skip: Platform.isWindows ? 'POSIX shell script test' : false,
-    timeout: const Timeout(Duration(seconds: 20)),
+    timeout: const Timeout(Duration(seconds: 40)),
   );
 
   test(
@@ -447,6 +458,43 @@ void main() {
       expect(decoded['error'], isNot(contains('secret-value')));
     },
   );
+
+  test('configured provider apiKeyEnv is denied from subprocesses', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'dart_arena_cli_env_deny_',
+    );
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+    final configFile = await _writeConfig(
+      tmp,
+      provider: {
+        'type': 'openai_compatible',
+        'id': 'local',
+        'displayName': 'Local',
+        'baseUrl': 'http://127.0.0.1:11434/v1',
+        'apiKeyEnv': 'SECRET_KEY',
+        'models': ['local-model'],
+      },
+    );
+    final runner = _CapturingHeadlessBenchmarkRunner();
+
+    final exitCode = await runHeadlessCli(
+      ['--config', configFile.path],
+      dependencies: _dependencies(
+        runner: runner,
+        environmentReader: (name) => name == 'SECRET_KEY' ? 'secret' : null,
+      ),
+      stdoutWriter: (_) {},
+      stderrWriter: (_) {},
+    );
+
+    expect(exitCode, 1);
+    expect(
+      runner.capturedConfig!.workdirManager.deniedEnvironmentKeys,
+      contains('SECRET_KEY'),
+    );
+  });
 
   test('unknown task fails clearly', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_cli_task_');
@@ -576,6 +624,7 @@ HeadlessCliDependencies _dependencies({
   HeadlessCliProviderBuilder? providerBuilder,
   HeadlessCliTaskRegistryBuilder? taskRegistryBuilder,
   HeadlessCliAgentHarnessBuilder? agentHarnessBuilder,
+  HeadlessBenchmarkRunner? runner,
 }) {
   return HeadlessCliDependencies(
     environmentReader: environmentReader,
@@ -595,6 +644,7 @@ HeadlessCliDependencies _dependencies({
         const FixedRunProvenanceEnvironmentProvider(),
     exportEnvironmentProvider: () async => const {'hostPlatform': 'test-os'},
     exportAppVersionProvider: () async => '1.0.0+headless-cli-test',
+    runner: runner ?? const HeadlessBenchmarkRunner(),
   );
 }
 

@@ -1,8 +1,13 @@
 import 'dart:io';
 
 import 'package:dart_arena/core/benchmark_task.dart';
+import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
+import 'package:dart_arena/core/reference_solution.dart';
+import 'package:dart_arena/core/task_verifier.dart';
+import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/evaluators/hidden_test_evaluator.dart';
+import 'package:dart_arena/evaluators/test_evaluator.dart';
 import 'package:dart_arena/runner/task_qa_runner.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/tasks/bug_fix/async_race_condition.dart';
@@ -115,4 +120,141 @@ void main() {
     },
     timeout: const Timeout(Duration(minutes: 6)),
   );
+
+  test(
+    'negative cases must be rejected by public or hidden verifiers',
+    () async {
+      final root = await Directory.systemTemp.createTemp('task_qa_negative_');
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      final report = await TaskQaRunner(
+        workdirManager: WorkdirManager(root: root),
+        requiredHiddenFlakeRuns: 1,
+        requireNegativeCases: true,
+      ).run(_NegativeQaTask());
+
+      final failures = report.failureMessages.join('\n');
+      expect(report.baselineHiddenFailed, isTrue, reason: failures);
+      expect(report.referencePassed, isTrue, reason: failures);
+      expect(report.negativeCasesRejected, isTrue, reason: failures);
+      expect(report.negativeCaseReports.single.id, 'noop');
+      expect(report.negativeCaseReports.single.publicPassed, isTrue);
+      expect(report.negativeCaseReports.single.hiddenPassed, isFalse);
+      expect(report.failureMessages, isEmpty);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test('empty negative case reports are not considered rejected', () {
+    const report = TaskQaReport(
+      taskId: 'task',
+      taskVersion: 1,
+      baselineHiddenFailed: true,
+      referencePublicPassed: true,
+      referenceHiddenPassed: true,
+      hiddenFlakeRuns: 1,
+      negativeCaseReports: [],
+      failureMessages: [],
+      baselineHiddenResults: [],
+      referencePublicResults: [],
+      referenceHiddenResults: [],
+    );
+
+    expect(report.negativeCasesRejected, isFalse);
+  });
+
+  test('invalid negative case reports are not considered rejected', () {
+    const report = TaskQaNegativeCaseReport(
+      id: 'bad_negative',
+      description: 'Invalid negative case.',
+      preparePassed: false,
+      publicPassed: false,
+      hiddenPassed: false,
+      publicResults: [],
+      hiddenResults: [],
+      error: 'failed to apply',
+    );
+
+    expect(report.rejected, isFalse);
+  });
+}
+
+class _NegativeQaTask extends BenchmarkTask {
+  @override
+  String get id => 'qa.negative';
+
+  @override
+  int get version => 1;
+
+  @override
+  Category get category => Category.bugFix;
+
+  @override
+  String get prompt => 'Make answer return 42.';
+
+  @override
+  Map<String, String> get fixtures => const {
+    'pubspec.yaml': '''
+name: qa_negative
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+dev_dependencies:
+  test: ^1.25.0
+''',
+    'lib/answer.dart': 'int answer() => 41;\n',
+    'test/answer_test.dart': '''
+import 'package:qa_negative/answer.dart';
+import 'package:test/test.dart';
+
+void main() {
+  test('answer returns an int', () => expect(answer(), isA<int>()));
+}
+''',
+  };
+
+  @override
+  String get generatedCodePath => 'lib/answer.dart';
+
+  @override
+  ReferenceSolution? get referenceSolution {
+    return const ReferenceFileSolution({
+      'lib/answer.dart': 'int answer() => 42;\n',
+    });
+  }
+
+  @override
+  List<TaskNegativeCase> get negativeCases => const [
+    TaskNegativeCase(
+      id: 'noop',
+      description: 'Leaves the baseline answer unchanged.',
+      solution: ReferenceFileSolution({}),
+    ),
+  ];
+
+  @override
+  List<VerifierFixture> get hiddenVerifiers => const [
+    VerifierFixture(
+      files: {
+        'test/_hidden/answer_hidden_test.dart': '''
+import 'package:qa_negative/answer.dart';
+import 'package:test/test.dart';
+
+void main() {
+  test('answer is fixed', () => expect(answer(), 42));
+}
+''',
+      },
+      testPath: 'test/_hidden/answer_hidden_test.dart',
+    ),
+  ];
+
+  @override
+  String? get judgeRubric => null;
+
+  @override
+  List<Evaluator> evaluatorsFor(EvaluatorConfig config) {
+    return [TestEvaluator(), ...hiddenVerifiers.map(HiddenTestEvaluator.new)];
+  }
 }

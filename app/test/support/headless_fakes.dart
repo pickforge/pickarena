@@ -128,6 +128,7 @@ class DeterministicFakeAgentHarness implements AgentHarness {
     required String instruction,
     required String modelId,
     required Duration timeout,
+    Iterable<String> deniedEnvironmentKeys = const [],
   }) async {
     if (modelId != this.modelId) {
       throw ArgumentError.value(modelId, 'modelId', 'unknown fake model');

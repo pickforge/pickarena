@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dart_arena/core/path_safety.dart';
 import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/core/workspace_path.dart';
+import 'package:dart_arena/runner/subprocess_environment.dart';
 import 'package:path/path.dart' as p;
 
 sealed class PrepareResult {
@@ -27,11 +28,13 @@ class WorkdirManager {
     required this.root,
     this.dartExecutable = 'dart',
     this.flutterExecutable = 'flutter',
-  });
+    Iterable<String> deniedEnvironmentKeys = const [],
+  }) : deniedEnvironmentKeys = Set.unmodifiable(deniedEnvironmentKeys);
 
   final Directory root;
   final String dartExecutable;
   final String flutterExecutable;
+  final Set<String> deniedEnvironmentKeys;
 
   String _sanitizePathSegment(String segment) =>
       safePathSegment(segment, prefix: 'segment');
@@ -46,15 +49,16 @@ class WorkdirManager {
     required String generatedCodePath,
     int trialIndex = 0,
   }) async {
+    final taskSegment = _sanitizePathSegment(taskId);
     final taskPath = trialIndex == 0
-        ? taskId
-        : p.join(taskId, 'trial_$trialIndex');
+        ? taskSegment
+        : p.join(taskSegment, 'trial_$trialIndex');
     final dir = Directory(
       p.join(
         root.path,
         'runs',
-        runId,
-        providerId,
+        _sanitizePathSegment(runId),
+        _sanitizePathSegment(providerId),
         safePathSegment(modelId, prefix: 'model'),
         taskPath,
       ),
@@ -62,13 +66,13 @@ class WorkdirManager {
     await dir.create(recursive: true);
 
     for (final entry in fixtures.entries) {
-      final f = File(p.join(dir.path, entry.key));
+      final f = resolveWorkspaceFile(dir, entry.key);
       await f.parent.create(recursive: true);
       await f.writeAsString(entry.value);
     }
 
     if (generatedCode != null) {
-      final f = File(p.join(dir.path, generatedCodePath));
+      final f = resolveWorkspaceFile(dir, generatedCodePath);
       await f.parent.create(recursive: true);
       await f.writeAsString(generatedCode);
     }
@@ -89,8 +93,8 @@ class WorkdirManager {
       p.join(
         root.path,
         'runs',
-        runId,
-        providerId,
+        _sanitizePathSegment(runId),
+        _sanitizePathSegment(providerId),
         safePathSegment(modelId, prefix: 'model'),
         taskPath,
       ),
@@ -162,6 +166,10 @@ class WorkdirManager {
       args,
       workingDirectory: workDir.path,
       runInShell: false,
+      environment: benchmarkSubprocessEnvironment(
+        additionalDeniedKeys: deniedEnvironmentKeys,
+      ),
+      includeParentEnvironment: false,
     );
     final stdoutBuffer = StringBuffer();
     final stderrBuffer = StringBuffer();
@@ -299,7 +307,10 @@ class WorkdirManager {
         'must exist',
       );
     }
-    await for (final entity in sourceRoot.list(recursive: true)) {
+    await for (final entity in sourceRoot.list(
+      recursive: true,
+      followLinks: false,
+    )) {
       if (entity is Link) continue;
       final relative = p.relative(entity.path, from: sourceRoot.path);
       if (_shouldExcludeWorkspacePath(relative)) continue;

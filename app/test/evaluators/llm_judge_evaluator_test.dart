@@ -187,9 +187,8 @@ void main() {
     expect(r.details['failed_evaluator_ids'], contains('reference_hidden'));
   });
 
-  test('non-objective agent harness failure does not gate the judge', () async {
-    const reply = '```json\n{"score": 0.6, "rationale": "ok"}\n```';
-    final judge = _ScriptedJudge(reply);
+  test('agent harness failure gates the judge', () async {
+    final judge = _ScriptedJudge('irrelevant');
     final ev = LlmJudgeEvaluator(judge: judge, judgeModel: 'j1');
 
     final r = await ev.evaluate(
@@ -205,8 +204,12 @@ void main() {
       ),
     );
 
-    expect(judge.generateCalls, 1);
-    expect(r.score, 0.6);
+    expect(judge.generateCalls, 0);
+    expect(r.passed, isFalse);
+    expect(r.score, 0.0);
+    expect(r.details['ignored'], isTrue);
+    expect(r.details['reason'], 'blocking_failure');
+    expect(r.details['failed_evaluator_ids'], contains('agent_harness'));
   });
 
   test(

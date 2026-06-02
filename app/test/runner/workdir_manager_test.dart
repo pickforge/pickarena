@@ -75,6 +75,45 @@ void main() {
   });
 
   test(
+    'rejects workspace path traversal for fixtures and generated files',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_traversal_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final mgr = WorkdirManager(root: root);
+
+      await expectLater(
+        mgr.createTaskWorkdir(
+          runId: '../run',
+          providerId: '../provider',
+          modelId: '../model',
+          taskId: '../task',
+          fixtures: const {'../secret.txt': 'secret'},
+          generatedCode: null,
+          generatedCodePath: 'lib/a.dart',
+        ),
+        throwsArgumentError,
+      );
+
+      await expectLater(
+        mgr.createTaskWorkdir(
+          runId: '../run',
+          providerId: '../provider',
+          modelId: '../model',
+          taskId: '../task',
+          fixtures: const {},
+          generatedCode: 'secret',
+          generatedCodePath: '../secret.txt',
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
+
+  test(
     'createAgenticTaskWorkdir copies visible files and excludes secrets',
     () async {
       final fixtureRoot = await Directory.systemTemp.createTemp(
@@ -213,6 +252,57 @@ environment:
       isFalse,
     );
   });
+
+  test(
+    'createAgenticTaskWorkdir does not follow fixture symlinks',
+    () async {
+      final fixtureRoot = await Directory.systemTemp.createTemp(
+        'dart_arena_fixture_symlink_',
+      );
+      final outside = await Directory.systemTemp.createTemp(
+        'dart_arena_outside_secret_',
+      );
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_agentic_symlink_',
+      );
+      addTearDown(() async {
+        if (await fixtureRoot.exists()) {
+          await fixtureRoot.delete(recursive: true);
+        }
+        if (await outside.exists()) await outside.delete(recursive: true);
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      await File(
+        p.join(fixtureRoot.path, 'lib', 'visible.dart'),
+      ).create(recursive: true);
+      await File(
+        p.join(fixtureRoot.path, 'lib', 'visible.dart'),
+      ).writeAsString('visible');
+      await File(p.join(outside.path, 'secret.dart')).writeAsString('secret');
+      await Link(
+        p.join(fixtureRoot.path, 'lib', 'secret_link.dart'),
+      ).create(p.join(outside.path, 'secret.dart'));
+
+      final dir = await WorkdirManager(root: root).createAgenticTaskWorkdir(
+        runId: 'r',
+        providerId: 'p',
+        modelId: 'm',
+        taskId: 't',
+        workspace: TaskWorkspace(fixtureRootPath: fixtureRoot.path),
+      );
+
+      expect(
+        File(p.join(dir.path, 'lib', 'visible.dart')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(dir.path, 'lib', 'secret_link.dart')).existsSync(),
+        isFalse,
+      );
+    },
+    skip: Platform.isWindows ? 'POSIX symlink test' : false,
+  );
 
   test('createAgenticTaskWorkdir recreates clean trial workspace', () async {
     final root = await Directory.systemTemp.createTemp(

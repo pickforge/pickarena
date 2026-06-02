@@ -22,6 +22,7 @@ import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
+import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
@@ -82,6 +83,7 @@ Future<int> runHeadlessCli(
 
     final cliConfig = await loadHeadlessCliConfig(File(configPath));
     final registry = dependencies.taskRegistryBuilder();
+    await _registerFileBackedTasks(registry, cliConfig.taskBundleRoots);
     final tasks = [
       for (final taskId in cliConfig.tasks) _resolveTask(registry, taskId),
     ];
@@ -115,7 +117,10 @@ Future<int> runHeadlessCli(
         agentHarnesses: dependencies.agentHarnessBuilder(cliConfig),
         evaluatorConfig: evaluatorConfig,
         evaluatorWeights: cliConfig.evaluatorWeights,
-        workdirManager: WorkdirManager(root: Directory(cliConfig.workdirRoot)),
+        workdirManager: WorkdirManager(
+          root: Directory(cliConfig.workdirRoot),
+          deniedEnvironmentKeys: _configuredApiKeyEnvNames(cliConfig),
+        ),
         runDao: RunDao(database),
         planDao: PlanDao(database),
         bundleOutputParent: Directory(cliConfig.outputDir),
@@ -166,6 +171,25 @@ Future<int> runHeadlessCli(
   }
 }
 
+Iterable<String> _configuredApiKeyEnvNames(HeadlessCliConfig config) sync* {
+  for (final provider in config.providers) {
+    final apiKeyEnv = provider.apiKeyEnv;
+    if (apiKeyEnv != null && apiKeyEnv.isNotEmpty) yield apiKeyEnv;
+  }
+}
+
+Future<void> _registerFileBackedTasks(
+  TaskRegistry registry,
+  List<String> taskBundleRoots,
+) async {
+  for (final root in taskBundleRoots) {
+    final tasks = await loadFileBackedTasks(Directory(root));
+    for (final task in tasks) {
+      registry.register(task);
+    }
+  }
+}
+
 String? _parseConfigArg(List<String> args) {
   if (args.isEmpty || args.contains('--help') || args.contains('-h')) {
     return null;
@@ -211,13 +235,27 @@ List<ModelProvider> _buildProviders(
   HeadlessCliDependencies dependencies,
   Set<String> secrets,
 ) {
+  final deniedEnvNames = _configuredApiKeyEnvNames(config).toList();
   return [
-    for (final provider in config.providers)
-      dependencies.providerBuilder(
-        provider,
-        _readApiKey(provider, dependencies.environmentReader, secrets),
+    for (final providerConfig in config.providers)
+      _withProviderDeniedEnvironmentKeys(
+        dependencies.providerBuilder(
+          providerConfig,
+          _readApiKey(providerConfig, dependencies.environmentReader, secrets),
+        ),
+        deniedEnvNames,
       ),
   ];
+}
+
+ModelProvider _withProviderDeniedEnvironmentKeys(
+  ModelProvider provider,
+  Iterable<String> deniedEnvNames,
+) {
+  if (provider is DroidExecProvider) {
+    provider.addDeniedEnvironmentKeys(deniedEnvNames);
+  }
+  return provider;
 }
 
 String? _readApiKey(
@@ -297,7 +335,13 @@ List<AgentHarness> _defaultAgentHarnessBuilder(HeadlessCliConfig config) {
   final hasDroidProvider = config.providers.any(
     (provider) => provider.id == 'droid' || provider.type == 'droid',
   );
-  return hasDroidProvider ? [DroidAgentHarness()] : const [];
+  return hasDroidProvider
+      ? [
+          DroidAgentHarness(
+            deniedEnvironmentKeys: _configuredApiKeyEnvNames(config),
+          ),
+        ]
+      : const [];
 }
 
 BenchmarkTask _resolveTask(TaskRegistry registry, String taskId) {

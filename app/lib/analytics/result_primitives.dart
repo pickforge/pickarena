@@ -54,9 +54,6 @@ bool determinePrimaryPass({
 }) {
   if (evaluations.any(_isHarnessError)) return false;
 
-  final hidden = evaluations.where(_isHiddenVerifier).toList();
-  if (hidden.isNotEmpty) return hidden.every((e) => e.passed);
-
   final correctness = evaluations.where(_isCorrectnessEvaluator).toList();
   if (correctness.isNotEmpty) return correctness.every((e) => e.passed);
 
@@ -72,9 +69,6 @@ String determineFailureTag({
   if (evaluations.any(_isHarnessTimeout)) return 'harness_timeout';
   if (evaluations.any(_isEnvironmentError)) return 'environment_error';
   if (evaluations.any(_isHarnessError)) return 'harness_error';
-  if (evaluations.any((e) => _isHiddenVerifier(e) && !e.passed)) {
-    return 'hidden_verifier_failed';
-  }
   if (evaluations.any((e) => e.evaluatorId == 'compile' && !e.passed)) {
     return 'compile_failed';
   }
@@ -83,6 +77,9 @@ String determineFailureTag({
   }
   if (evaluations.any((e) => _isPublicTestEvaluator(e) && !e.passed)) {
     return 'public_tests_failed';
+  }
+  if (evaluations.any((e) => _isHiddenVerifier(e) && !e.passed)) {
+    return 'hidden_verifier_failed';
   }
   if (response != null && response.rawText.trim().isEmpty) {
     return 'invalid_output';

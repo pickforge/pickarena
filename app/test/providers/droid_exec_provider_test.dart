@@ -107,6 +107,38 @@ void main() {
   );
 
   test(
+    'generate scrubs denied environment keys from droid exec',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_droid_env_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final fakeDroid = File(p.join(root.path, 'fake_droid_env.sh'));
+      await fakeDroid.writeAsString('''
+#!/bin/sh
+env > '${p.join(root.path, 'env.txt')}'
+''');
+      final chmod = await Process.run('chmod', ['+x', fakeDroid.path]);
+      expect(chmod.exitCode, 0);
+
+      final provider = DroidExecProvider(
+        droidPath: fakeDroid.path,
+        deniedEnvironmentKeys: const ['HOME'],
+      );
+      await provider.generate(prompt: 'Generate a function.', model: 'fake');
+
+      final env = await File(p.join(root.path, 'env.txt')).readAsString();
+      expect(
+        env.split('\n').where((line) => line.startsWith('HOME=')),
+        isEmpty,
+      );
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+  );
+
+  test(
     'listModels returns ModelInfo with curated list with real CLI models',
     () async {
       final provider = DroidExecProvider();

@@ -77,6 +77,11 @@ Map<String, Object?> _reportJson(BenchmarkTask task, TaskQaReport report) {
     'reference_public_passed': report.referencePublicPassed,
     'reference_hidden_passed': report.referenceHiddenPassed,
     'hidden_flake_runs': report.hiddenFlakeRuns,
+    'negative_cases_rejected': report.negativeCasesRejected,
+    'negative_cases': [
+      for (final negativeCase in report.negativeCaseReports)
+        negativeCase.toJson(),
+    ],
     'failure_messages': report.failureMessages,
   };
 }

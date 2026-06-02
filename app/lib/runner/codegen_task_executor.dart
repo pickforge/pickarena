@@ -5,6 +5,7 @@ import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/code_extractor.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/scoring.dart';
@@ -198,12 +199,21 @@ class CodegenTaskExecutor {
       onProgress?.call(RunComboPhase.evaluating);
       for (final evaluator in evaluators) {
         cancellationCheck?.call();
+        final blocked = blockedEvaluationFor(
+          evaluatorId: evaluator.id,
+          previousResults: evaluations,
+        );
+        if (blocked != null) {
+          evaluations.add(blocked);
+          continue;
+        }
         final result = await evaluator.evaluate(
           EvaluationContext(
             workDir: dir,
             response: responseWithCode,
             task: task,
             previousResults: evaluations,
+            deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
           ),
         );
         cancellationCheck?.call();

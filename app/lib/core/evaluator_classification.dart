@@ -31,11 +31,15 @@ bool isPublicTestEvaluatorId(String evaluatorId) {
 }
 
 bool isIgnoredOrSkipped(EvaluationResult result) {
-  return result.details['ignored'] == true || result.details['skipped'] == true;
+  return result.details['ignored'] == true ||
+      result.details['skipped'] == true ||
+      result.details['blocked'] == true;
 }
 
 bool isObjectiveFailure(EvaluationResult result) {
-  return isObjectiveEvaluatorId(result.evaluatorId) && !result.passed;
+  return isObjectiveEvaluatorId(result.evaluatorId) &&
+      !result.passed &&
+      result.details['blocked'] != true;
 }
 
 double? objectiveFailureCap(EvaluationResult result) {

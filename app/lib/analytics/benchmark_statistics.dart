@@ -15,7 +15,11 @@ class RankingMetrics extends Equatable {
     required this.medianPromptTokens,
     required this.medianCompletionTokens,
     required this.medianEstimatedCostMicros,
+    required this.knownEstimatedCostCount,
+    required this.unknownEstimatedCostCount,
+    required this.totalEstimatedCostMicros,
     required this.costPerSolvedTaskMicros,
+    required this.cheapestPassingEstimatedCostMicros,
     required this.failureBreakdown,
   });
 
@@ -28,7 +32,11 @@ class RankingMetrics extends Equatable {
   final int? medianPromptTokens;
   final int? medianCompletionTokens;
   final int? medianEstimatedCostMicros;
+  final int knownEstimatedCostCount;
+  final int unknownEstimatedCostCount;
+  final int? totalEstimatedCostMicros;
   final int? costPerSolvedTaskMicros;
+  final int? cheapestPassingEstimatedCostMicros;
   final Map<String, int> failureBreakdown;
 
   double? get primaryPassRate => primaryPassSampleCount == 0
@@ -46,7 +54,11 @@ class RankingMetrics extends Equatable {
     medianPromptTokens,
     medianCompletionTokens,
     medianEstimatedCostMicros,
+    knownEstimatedCostCount,
+    unknownEstimatedCostCount,
+    totalEstimatedCostMicros,
     costPerSolvedTaskMicros,
+    cheapestPassingEstimatedCostMicros,
     failureBreakdown,
   ];
 }
@@ -68,12 +80,17 @@ RankingMetrics buildRankingMetrics(
         completionTokens: t.completionTokens,
       ),
   ];
-  final allCostsKnown =
-      estimatedCosts.length == taskRuns.length &&
-      estimatedCosts.every((cost) => cost != null);
+  final knownEstimatedCostCount = estimatedCosts.whereType<int>().length;
+  final unknownEstimatedCostCount = taskRuns.length - knownEstimatedCostCount;
+  final allCostsKnown = taskRuns.isNotEmpty && unknownEstimatedCostCount == 0;
   final totalCostMicros = allCostsKnown
       ? estimatedCosts.cast<int>().fold<int>(0, (sum, cost) => sum + cost)
       : null;
+  final passingCosts = <int>[
+    for (var i = 0; i < taskRuns.length; i++)
+      if (taskRuns[i].primaryPass == true && estimatedCosts[i] != null)
+        estimatedCosts[i]!,
+  ]..sort();
   return RankingMetrics(
     taskRunCount: taskRuns.length,
     primaryPassCount: primaryPassCount,
@@ -87,9 +104,15 @@ RankingMetrics buildRankingMetrics(
     medianPromptTokens: medianInt(taskRuns.map((t) => t.promptTokens)),
     medianCompletionTokens: medianInt(taskRuns.map((t) => t.completionTokens)),
     medianEstimatedCostMicros: medianInt(estimatedCosts),
+    knownEstimatedCostCount: knownEstimatedCostCount,
+    unknownEstimatedCostCount: unknownEstimatedCostCount,
+    totalEstimatedCostMicros: totalCostMicros,
     costPerSolvedTaskMicros: totalCostMicros == null || primaryPassCount == 0
         ? null
         : (totalCostMicros / primaryPassCount).round(),
+    cheapestPassingEstimatedCostMicros: passingCosts.isEmpty
+        ? null
+        : passingCosts.first,
     failureBreakdown: buildFailureBreakdown(taskRuns),
   );
 }

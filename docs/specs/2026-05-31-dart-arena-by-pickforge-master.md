@@ -8,6 +8,45 @@ Updated: 2026-06-02
 
 Create a trustworthy Dart and Flutter AI coding benchmark under the Pickforge brand, with the Flutter/Dart app as the benchmark runner and source of truth, a static public web surface for leaderboard publishing, objective-first scoring, reproducible exports, cost/efficiency reporting, and DeepSWE-style task/verifier rigor.
 
+## Current status and execution posture
+
+This file is the single active master spec. It is both the product direction and the implementation roadmap.
+
+Completed foundation:
+
+- Flutter app lives under `app/` and remains the benchmark runner/source of truth.
+- Static web app lives under `web/` and consumes exported leaderboard JSON rather than the internal database.
+- Headless codegen CLI exists.
+- Headless agentic CLI parity exists for Droid-backed agentic tasks.
+- Leaderboard export CLI exists.
+- Objective scoring and LLM judge gating are in place.
+- Safe prompt API/skeleton context exists for codegen tasks.
+- Initial task QA exists for reference/baseline/hidden verifier checks.
+- File-backed task bundle loading exists for DeepSWE-style task authoring experiments.
+- Headless runs can load file-backed task bundles with `taskBundleRoots`.
+- Public-vs-hidden pass splits are exported and rendered by the static web leaderboard.
+- Generated-code evaluator subprocesses scrub unrelated environment variables by default.
+- Cost estimation has candidate-model summaries, unknown-cost counts, and cost-per-pass export fields.
+- Active specs have been consolidated into this master spec; older specs/plans are archived under `docs/**/old/`.
+
+Current recommendation:
+
+1. Treat **Phase 0** as completed foundation.
+2. Implement **Phase 1: Blocked evaluator semantics** next; it remains the largest UX/scoring gap.
+3. Promote the new file-backed loader from infrastructure to official corpus work by adding 5-10 real Flutter agentic tasks and QA reports.
+4. Finish stronger public-run sandboxing before any official public/private leaderboard release.
+5. Add judge-overhead cost tracking and pricing-registry provenance before official efficiency claims.
+
+Official benchmark status: **not release-grade yet**. The app is useful for local/internal comparison, but official public claims should wait until task admission, sandboxing, repeated trials, and release provenance are stronger.
+
+## How to use this spec
+
+- Each roadmap phase should be implemented as a focused branch/worktree.
+- Each phase should produce tests, updated exports/UI where relevant, and a short note in this spec if scope changes.
+- Do not create new active specs for sub-work unless the task is large enough to need a temporary implementation plan under `docs/plans/`.
+- Completed/superseded implementation plans go to `docs/plans/old/`; this file remains the canonical source of direction.
+- A phase is not complete until validators pass and the success criteria in this file are met.
+
 ## Product direction
 
 - Public name: **Dart Arena by Pickforge**
@@ -233,6 +272,7 @@ bun run build
 Already implemented or established:
 
 - Headless JSON CLI with reproducible bundle export.
+- Headless agentic CLI support for Droid-backed agentic tasks.
 - Primary pass/failure tags for objective reliability.
 - Safe prompt API/skeleton context for codegen tasks.
 - Objective aggregate caps:
@@ -244,6 +284,20 @@ Already implemented or established:
 - UI status for ignored/skipped evaluator results.
 - Regression coverage for the `state.counter_bloc` missing-`const` constructor case.
 - Task QA foundation that checks baseline hidden failure, reference public pass, reference hidden pass, and repeated hidden flake runs.
+- Droid agent harness failures are captured as explicit `agent_harness` evaluator failures.
+
+## Non-negotiable benchmark invariants
+
+These invariants should be preserved across all future work:
+
+1. A failed objective gate must never become a competitive result through aggregate weighting or judge scoring.
+2. Hidden verifier contents, reference implementations, and private corpus tasks must never be included in prompts, judge prompts, public exports, or public logs.
+3. Public leaderboard scores must rank by compatible aggregate samples, not cherry-picked best runs.
+4. Agent/harness failures must be distinguishable from model behavioral failures.
+5. Generated code must never receive provider API keys or unrelated host environment secrets.
+6. Official result exports must be replayable enough to explain task versions, model config, scoring schema, evaluator versions, SDK/runtime, and pricing version.
+7. Unknown cost or missing usage must be shown as unknown, not zero.
+8. Any official benchmark task must have an executable reference solution, negative-case failures, hidden verifier coverage, and flake checks.
 
 ## Benchmark tracks
 
@@ -528,12 +582,12 @@ Cost implementation phases:
 3. Judge overhead tracking.
 4. Public website efficiency views.
 
-Open cost questions:
+Cost decisions:
 
-- Which pricing source should be canonical for official releases?
-- Should user-entered provider pricing be stored in settings or only in run config?
-- Should tokenizer-estimated usage be allowed for providers that omit usage, and if yes, how prominently should it be labeled?
-- Should official benchmark results exclude runs with unknown candidate cost from cost-per-pass rankings?
+- Official releases should use a versioned pricing registry stored in source control, with source/effective date recorded per model.
+- User-entered pricing may live in UI settings for convenience, but official/headless runs must snapshot pricing into run config/provenance.
+- Tokenizer-estimated usage is allowed only as `estimated_usage`; it must be visibly labeled and excluded from official cost rankings by default.
+- Runs with unknown candidate cost remain eligible for pass-rate rankings but are marked `cost_unknown` and excluded from cost-per-pass ordering unless the user explicitly includes unknown-cost rows.
 
 ## Public data and efficiency reporting
 
@@ -642,7 +696,7 @@ These are the highest-value improvements to add beyond the current baseline:
 
 ## Unified roadmap
 
-### Phase 0: Headless CLI parity for agentic benchmarks
+### Phase 0: Headless CLI parity for agentic benchmarks — completed
 
 Problem: the app can run agentic benchmark tasks through the Droid agent harness, but the headless CLI must support the same track so official runs, CI smoke checks, and reproducible exports do not depend on the desktop UI.
 
@@ -661,6 +715,11 @@ Success criteria:
 - Agentic CLI runs persist `benchmarkTrack=agentic`, `harnessId`, `patchText`, primary pass/failure tags, and evaluator details.
 - Droid/BYOK/permission failures are visible as harness failures rather than silent model failures.
 - Focused headless/agentic tests and the full Flutter test suite pass.
+
+Completion evidence:
+
+- Implemented on 2026-06-02.
+- Validated with focused headless/agentic tests, full `flutter test`, `flutter analyze`, format check, and diff whitespace check.
 
 ### Phase 1: Blocked evaluator semantics
 
@@ -736,6 +795,13 @@ Success criteria:
 - Agentic Flutter tasks run through objective public/hidden verifiers.
 - Public docs and exports clearly separate codegen, widget/UI, and agentic tracks.
 
+Implementation progress:
+
+- File-backed task bundle loading is implemented for DeepSWE-style `task.yaml`, `instruction.md`, `environment/`, `solution/`, and `tests/` bundles.
+- File-backed tasks expose public instruction/tests to prompts while keeping hidden verifier and reference files out of prompt/judge context.
+- Headless config supports `taskBundleRoots` so official bundles can be loaded without Dart source registration.
+- Remaining work: add official long-horizon Flutter agentic task bundles and release-grade QA reports.
+
 ### Phase 5: Statistical reporting
 
 Problem: single-run results are noisy across stochastic models and providers.
@@ -752,6 +818,11 @@ Success criteria:
 - Leaderboards rank primarily by measured primary pass rate.
 - Low-sample rankings are visibly marked.
 - Exports include enough metadata to reproduce a run.
+
+Implementation progress:
+
+- Public exports and the static web leaderboard now include public-pass and hidden-pass counts/rates separately from primary pass rate.
+- Existing confidence intervals, sample counts, and low-sample indicators remain the ranking surface.
 
 ### Phase 6: Execution sandboxing
 
@@ -773,6 +844,11 @@ Success criteria:
 - Runaway processes are terminated reliably.
 - Public/untrusted benchmark mode has documented isolation guarantees.
 
+Implementation progress:
+
+- Evaluator subprocess environments now scrub unrelated host variables and provider secret-looking variables by default.
+- Remaining work: stronger container/namespace isolation, network controls, and resource limits for official public runs.
+
 ### Phase 7: Cost estimation and efficiency
 
 Problem: pass rate alone does not show how expensive a model is to use.
@@ -791,6 +867,12 @@ Success criteria:
 - Candidate model cost and judge overhead are separated.
 - Exports contain enough pricing metadata to reproduce estimates later.
 
+Implementation progress:
+
+- Candidate model cost summaries include known/unknown estimate counts, total known-all-runs cost, cheapest passing estimate, and cost per primary pass.
+- Static exports include these fields for downstream web/data consumers.
+- Remaining work: pricing-registry provenance/effective dates and separate judge-overhead usage/cost records.
+
 ### Phase 8: Public benchmark governance and data UI
 
 Problem: public leaderboards need stable versioning and reproducibility rules.
@@ -807,6 +889,72 @@ Success criteria:
 - A score can be traced to an immutable benchmark version.
 - Results from different benchmark versions are not mixed silently.
 - Official leaderboard entries have reproducible artifacts.
+
+## Official release readiness gates
+
+Dart Arena should not publish an official benchmark claim until all gates below pass for the selected release:
+
+### Corpus gates
+
+- Every official task has a task version, reference solution, public tests, hidden verifier, negative cases, and task admission report.
+- Every official task passes repeated flake checks on the release environment.
+- Public diagnostic tasks are separated from private official leaderboard tasks.
+- Any retired official task is moved to the public diagnostic corpus only after its release cycle.
+
+### Execution gates
+
+- Generated-code evaluation runs with environment scrubbing and timeout/process-tree cleanup.
+- Official runs use pinned Flutter/Dart SDK versions.
+- Official runs record dependency lockfiles or dependency hashes.
+- Network behavior is explicit per task and disabled by default for generated-code evaluation.
+- Agentic runs persist patches, harness status, trajectory metadata when available, and objective evaluator results.
+
+### Scoring gates
+
+- `primary_pass` is derived from objective gates.
+- LLM judge cannot improve a failed objective result.
+- Blocked evaluator semantics distinguish blocked checks from independent behavioral failures.
+- Infrastructure/harness failures are separated from model failures in UI/export.
+- Repeated-trial pass rates include sample count and confidence interval.
+
+### Reporting gates
+
+- Public export excludes secrets, private local paths, raw hidden verifier content, and private corpus prompts.
+- Public export includes task versions, evaluator/scoring schema, model/provider config, run metadata, cost/pricing status, and failure tags.
+- Website defaults to compatible aggregate results and labels any low-sample or unknown-cost rows.
+- Release artifacts include enough provenance to reproduce or audit the score later.
+
+## Recommended immediate implementation sequence
+
+1. **Blocked evaluator semantics**
+   - Add `blocked`/`blockedBy` details to evaluator results or a compatible representation.
+   - Update UI/export to show blocked checks separately from failed checks.
+   - Add regression tests for compile-failed and harness-failed runs.
+
+2. **Task QA admission reports**
+   - Expand task QA with no-op/API-breaking/overfit negative solutions.
+   - Write JSON admission reports for each task.
+   - Add CI/headless command to validate the active corpus.
+
+3. **Hidden verifier and failure taxonomy polish**
+   - Ensure all hidden verifier IDs classify as objective.
+   - Add clearer hidden/public pass split to exports and UI.
+   - Add blocked and infrastructure failure tags to public reports.
+
+4. **File-backed task bundle loader**
+   - Define `task.yaml` schema.
+   - Load public development bundles from disk.
+   - Keep code-defined tasks supported during migration.
+
+5. **Sandbox hardening**
+   - Scrub generated-code process environments.
+   - Add process/resource/network controls.
+   - Add adversarial harness safety tests.
+
+6. **Official release/reporting pass**
+   - Run repeated trials.
+   - Export compatible aggregate leaderboard data.
+   - Publish release provenance and verifier-audit summary.
 
 ## Definition of done for reliability work
 

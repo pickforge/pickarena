@@ -37,6 +37,20 @@ void main() {
     expect(primitives.failureTag, 'public_tests_failed');
   });
 
+  test('hidden pass does not mask public objective failure', () {
+    final primitives = determineResultPrimitives(
+      evaluations: [
+        _ev('compile', false),
+        _ev('test', false),
+        _ev('hidden_test', true),
+      ],
+      aggregateScore: 0.5,
+    );
+
+    expect(primitives.primaryPass, isFalse);
+    expect(primitives.failureTag, 'compile_failed');
+  });
+
   test('aggregate score is fallback when correctness is absent', () {
     final primitives = determineResultPrimitives(
       evaluations: [_ev('llm_judge', false)],
@@ -83,6 +97,32 @@ void main() {
 
     expect(primitives.primaryPass, isFalse);
     expect(primitives.failureTag, 'harness_error');
+  });
+
+  test('blocked runtime checks preserve root compile failure tag', () {
+    final primitives = determineResultPrimitives(
+      evaluations: const [
+        EvaluationResult(evaluatorId: 'compile', passed: false, score: 0),
+        EvaluationResult(
+          evaluatorId: 'test',
+          passed: false,
+          score: 0,
+          rationale: 'blocked by compile',
+          details: {'blocked': true, 'blocked_by': 'compile'},
+        ),
+        EvaluationResult(
+          evaluatorId: 'task_hidden',
+          passed: false,
+          score: 0,
+          rationale: 'blocked by compile',
+          details: {'blocked': true, 'blocked_by': 'compile'},
+        ),
+      ],
+      aggregateScore: 0,
+    );
+
+    expect(primitives.primaryPass, isFalse);
+    expect(primitives.failureTag, 'compile_failed');
   });
 
   test(

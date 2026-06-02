@@ -307,7 +307,11 @@ void main() {
       expect(row.medianPromptTokens, 20);
       expect(row.medianCompletionTokens, 30);
       expect(row.medianEstimatedCostMicros, 110);
+      expect(row.knownEstimatedCostCount, 3);
+      expect(row.unknownEstimatedCostCount, 0);
+      expect(row.totalEstimatedCostMicros, 330);
       expect(row.costPerSolvedTaskMicros, 165);
+      expect(row.cheapestPassingEstimatedCostMicros, 70);
       expect(row.failureBreakdown['pass'], 2);
       expect(row.failureBreakdown['compile_failed'], 1);
 

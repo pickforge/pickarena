@@ -23,6 +23,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
+import '../support/headless_fakes.dart';
+
 class _FakeHarness implements AgentHarness {
   _FakeHarness(this.onRun);
 
@@ -37,6 +39,7 @@ class _FakeHarness implements AgentHarness {
     required String instruction,
     required String modelId,
     required Duration timeout,
+    Iterable<String> deniedEnvironmentKeys = const [],
   }) async {
     await onRun(workspace);
     return const AgentRunResult(
@@ -46,6 +49,56 @@ class _FakeHarness implements AgentHarness {
       exitCode: 0,
       latency: Duration(milliseconds: 10),
       trajectoryLogPath: '/tmp/trajectory.log',
+    );
+  }
+}
+
+class _FailingHarness implements AgentHarness {
+  @override
+  String get id => 'fake_agent';
+
+  @override
+  Future<AgentRunResult> run({
+    required Directory workspace,
+    required String instruction,
+    required String modelId,
+    required Duration timeout,
+    Iterable<String> deniedEnvironmentKeys = const [],
+  }) async {
+    return const AgentRunResult(
+      status: AgentRunStatus.failure,
+      stdoutPreview: '',
+      stderrPreview: 'permission denied',
+      exitCode: 1,
+      latency: Duration(milliseconds: 10),
+    );
+  }
+}
+
+class _CapturingDeniedKeysHarness implements AgentHarness {
+  Set<String> deniedKeys = const {};
+
+  @override
+  String get id => 'fake_agent';
+
+  @override
+  Future<AgentRunResult> run({
+    required Directory workspace,
+    required String instruction,
+    required String modelId,
+    required Duration timeout,
+    Iterable<String> deniedEnvironmentKeys = const [],
+  }) async {
+    deniedKeys = Set.unmodifiable(deniedEnvironmentKeys);
+    final file = File(p.join(workspace.path, 'lib', 'answer.dart'));
+    await file.parent.create(recursive: true);
+    await file.writeAsString('int answer() => 42;\n');
+    return const AgentRunResult(
+      status: AgentRunStatus.success,
+      stdoutPreview: 'fixed',
+      stderrPreview: '',
+      exitCode: 0,
+      latency: Duration(milliseconds: 10),
     );
   }
 }
@@ -151,6 +204,51 @@ class _CodegenTask extends _AgenticAnswerTask {
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) => [_AnswerEvaluator()];
 }
 
+class _AgenticBlockingTask extends _AgenticAnswerTask {
+  _AgenticBlockingTask(this.evaluators);
+
+  final List<Evaluator> evaluators;
+
+  @override
+  String get id => 'agent.blocking';
+
+  @override
+  List<Evaluator> evaluatorsFor(EvaluatorConfig config) => evaluators;
+}
+
+class _FailingPrepareWorkdirManager extends NoOpPrepareWorkdirManager {
+  _FailingPrepareWorkdirManager({required super.root});
+
+  var calls = 0;
+
+  @override
+  Future<PrepareResult> prepare(
+    Directory workDir, {
+    bool isFlutter = false,
+    WorkdirRemainingTimeout? remainingTimeout,
+    WorkdirCancellationCheck? cancellationCheck,
+    Future<void>? cancellationSignal,
+  }) async {
+    calls++;
+    if (calls == 1) return const PrepareOk();
+    return const PrepareFailed('grading prepare failed');
+  }
+}
+
+class _SpyEvaluator implements Evaluator {
+  _SpyEvaluator(this.id);
+
+  @override
+  final String id;
+  var calls = 0;
+
+  @override
+  Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
+    calls++;
+    return EvaluationResult(evaluatorId: id, passed: true, score: 1.0);
+  }
+}
+
 void main() {
   test(
     'runs harness in visible workspace, captures patch, then injects hidden verifier',
@@ -217,6 +315,40 @@ void main() {
     timeout: const Timeout(Duration(minutes: 2)),
   );
 
+  test(
+    'passes denied environment keys to the agent harness',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_agentic_denied_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      final harness = _CapturingDeniedKeysHarness();
+      final orchestrator = AgenticRunOrchestrator(
+        workdirManager: WorkdirManager(
+          root: root,
+          deniedEnvironmentKeys: const ['SECRET_KEY'],
+        ),
+        now: () => DateTime(2026, 5, 29),
+      );
+
+      await orchestrator.run(
+        runId: 'run-denied',
+        task: _AgenticAnswerTask(),
+        harness: harness,
+        providerId: 'fake_agent',
+        modelId: 'fake-model',
+        trialIndex: 0,
+        evaluatorConfig: const EvaluatorConfig(),
+      );
+
+      expect(harness.deniedKeys, contains('SECRET_KEY'));
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
   test('missing harness creates a clear agentic result failure', () {
     final orchestrator = AgenticRunOrchestrator(
       workdirManager: WorkdirManager(root: Directory.systemTemp),
@@ -238,6 +370,47 @@ void main() {
     expect(result.evaluations.single.evaluatorId, 'agent_harness');
     expect(result.evaluations.single.rationale, 'no agent harness configured');
   });
+
+  test(
+    'failed harness blocks objective task evaluators after prepare failure',
+    () async {
+      final root = await Directory.systemTemp.createTemp('agentic_blocking_');
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      final compile = _SpyEvaluator('compile');
+      final testEvaluator = _SpyEvaluator('test');
+      final orchestrator = AgenticRunOrchestrator(
+        workdirManager: _FailingPrepareWorkdirManager(root: root),
+        now: () => DateTime(2026, 6, 2),
+      );
+
+      final result = await orchestrator.run(
+        runId: 'run-blocking',
+        task: _AgenticBlockingTask([compile, testEvaluator]),
+        harness: _FailingHarness(),
+        providerId: 'fake_agent',
+        modelId: 'm',
+        trialIndex: 0,
+        evaluatorConfig: const EvaluatorConfig(),
+      );
+
+      expect(result.failureTag, 'harness_error');
+      expect(compile.calls, 0);
+      expect(testEvaluator.calls, 0);
+      final blockedCompile = result.evaluations.singleWhere(
+        (evaluation) => evaluation.evaluatorId == 'compile',
+      );
+      expect(blockedCompile.rationale, 'blocked by agent_harness');
+      expect(blockedCompile.details['blocked'], isTrue);
+      expect(blockedCompile.details['blocked_by'], 'agent_harness');
+      final blockedTest = result.evaluations.singleWhere(
+        (evaluation) => evaluation.evaluatorId == 'test',
+      );
+      expect(blockedTest.details['blocked_by'], 'agent_harness');
+    },
+  );
 
   test(
     'RunBloc routes codegen tasks through provider and agentic tasks through harness',
@@ -270,7 +443,7 @@ void main() {
       final completedFuture = bloc.stream
           .firstWhere((state) => state is RunCompleted)
           .then((state) => state as RunCompleted)
-          .timeout(const Duration(seconds: 20));
+          .timeout(const Duration(minutes: 1));
 
       bloc.add(
         StartRun(

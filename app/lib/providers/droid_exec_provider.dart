@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/runner/subprocess_environment.dart';
 
 class DroidProcessResult {
   const DroidProcessResult({
@@ -24,9 +25,13 @@ typedef DroidProcessRunner =
     );
 
 class DroidExecProvider implements ModelProvider {
-  DroidExecProvider({DroidProcessRunner? runner, String? droidPath})
-    : _runner = runner ?? _defaultRunner,
-      _exe = droidPath ?? _findDroid();
+  DroidExecProvider({
+    DroidProcessRunner? runner,
+    String? droidPath,
+    Iterable<String> deniedEnvironmentKeys = const [],
+  }) : _runner = runner,
+       _exe = droidPath ?? _findDroid(),
+       _deniedEnvironmentKeys = {...deniedEnvironmentKeys};
 
   static String _findDroid() {
     // Desktop apps don't inherit shell PATH; try common locations.
@@ -50,12 +55,16 @@ class DroidExecProvider implements ModelProvider {
     String exe,
     List<String> args,
     Duration? timeout,
+    Iterable<String> deniedEnvironmentKeys,
   ) async {
     final process = await Process.start(
       exe,
       args,
       runInShell: false,
-      includeParentEnvironment: true,
+      environment: benchmarkSubprocessEnvironment(
+        additionalDeniedKeys: deniedEnvironmentKeys,
+      ),
+      includeParentEnvironment: false,
     );
     final stdoutBuffer = StringBuffer();
     final stderrBuffer = StringBuffer();
@@ -148,8 +157,13 @@ class DroidExecProvider implements ModelProvider {
     return '  hint       : ${hints.join(' ')}\n';
   }
 
-  final DroidProcessRunner _runner;
+  final DroidProcessRunner? _runner;
   final String _exe;
+  final Set<String> _deniedEnvironmentKeys;
+
+  void addDeniedEnvironmentKeys(Iterable<String> keys) {
+    _deniedEnvironmentKeys.addAll(keys);
+  }
 
   @override
   String get id => 'droid';
@@ -211,7 +225,9 @@ class DroidExecProvider implements ModelProvider {
       model,
       directPrompt,
     ];
-    final res = await _runner(_exe, args, timeout);
+    final res = _runner == null
+        ? await _defaultRunner(_exe, args, timeout, _deniedEnvironmentKeys)
+        : await _runner(_exe, args, timeout);
     sw.stop();
     if (res.exitCode != 0) {
       final stdoutPreview = res.stdout.substring(

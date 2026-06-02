@@ -93,4 +93,23 @@ void main() {
 
     expect(find.text('Ignored: objective_failure'), findsOneWidget);
   });
+
+  testWidgets('renders blocked evaluator status before details', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        EvaluatorCard(
+          evaluation: _eval(
+            id: 'test',
+            passed: false,
+            score: 0,
+            detailsJson: '{"blocked": true, "blocked_by": "compile"}',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Blocked by compile'), findsOneWidget);
+  });
 }

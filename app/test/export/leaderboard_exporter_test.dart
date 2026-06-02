@@ -197,6 +197,18 @@ void main() {
       promptTokens: 10,
       completionTokens: 20,
     );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-pass',
+      evaluatorId: 'test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-pass',
+      evaluatorId: 'hidden_test',
+      passed: true,
+    );
     await _seedTaskRun(
       db,
       id: 'openai-fail',
@@ -210,6 +222,19 @@ void main() {
       promptTokens: 30,
       completionTokens: 40,
     );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-fail',
+      evaluatorId: 'test',
+      passed: false,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-fail',
+      evaluatorId: 'hidden_test',
+      passed: false,
+      details: const {'blocked': true, 'blocked_by': 'test'},
+    );
     await _seedTaskRun(
       db,
       id: 'deepseek-pass-a',
@@ -222,6 +247,18 @@ void main() {
       promptTokens: 20,
       completionTokens: 20,
     );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-pass-a',
+      evaluatorId: 'test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-pass-a',
+      evaluatorId: 'hidden_test',
+      passed: true,
+    );
     await _seedTaskRun(
       db,
       id: 'deepseek-pass-b',
@@ -233,6 +270,18 @@ void main() {
       latencyMs: 2500,
       promptTokens: 20,
       completionTokens: 20,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-pass-b',
+      evaluatorId: 'test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-pass-b',
+      evaluatorId: 'hidden_test',
+      passed: true,
     );
 
     final export = await buildLeaderboardExport(
@@ -260,7 +309,17 @@ void main() {
     expect(openai['medianPromptTokens'], 20);
     expect(openai['medianCompletionTokens'], 30);
     expect(openai['medianEstimatedCostMicros'], 326);
+    expect(openai['knownEstimatedCostCount'], 2);
+    expect(openai['unknownEstimatedCostCount'], 0);
+    expect(openai['totalEstimatedCostMicros'], 651);
     expect(openai['costPerSolvedTaskMicros'], 651);
+    expect(openai['cheapestPassingEstimatedCostMicros'], 213);
+    expect(openai['publicPassCount'], 1);
+    expect(openai['publicSampleCount'], 2);
+    expect(openai['publicPassRate'], 0.5);
+    expect(openai['hiddenPassCount'], 1);
+    expect(openai['hiddenSampleCount'], 1);
+    expect(openai['hiddenPassRate'], 1.0);
     expect(openai['failureBreakdown'], {'pass': 1, 'public_tests_failed': 1});
   });
 
@@ -274,6 +333,18 @@ void main() {
         runId: 'tasks',
         taskId: 'task.a',
         primaryPass: true,
+      );
+      await _seedEvaluation(
+        db,
+        taskRunId: 'task-pass',
+        evaluatorId: 'test',
+        passed: true,
+      );
+      await _seedEvaluation(
+        db,
+        taskRunId: 'task-pass',
+        evaluatorId: 'task_hidden',
+        passed: true,
       );
       await _seedTaskRun(
         db,
@@ -309,6 +380,10 @@ void main() {
       expect(tasks.first['sampleCount'], 1);
       expect(tasks.first['modelCount'], 2);
       expect(tasks.first['passRate'], 1.0);
+      expect(tasks.first['publicPassCount'], 1);
+      expect(tasks.first['publicSampleCount'], 1);
+      expect(tasks.first['hiddenPassCount'], 1);
+      expect(tasks.first['hiddenSampleCount'], 1);
       expect(tasks.last['taskVersion'], 2);
       expect(tasks.last['passRate'], 0.0);
     },
@@ -447,6 +522,27 @@ Future<void> _seedTaskRun(
           failureTag: Value(failureTag),
           patchText: Value(patchText),
           trajectoryLogPath: Value(trajectoryLogPath),
+        ),
+      );
+}
+
+Future<void> _seedEvaluation(
+  AppDatabase db, {
+  required String taskRunId,
+  required String evaluatorId,
+  required bool passed,
+  Map<String, Object?> details = const {},
+}) async {
+  await db
+      .into(db.evaluations)
+      .insert(
+        EvaluationsCompanion.insert(
+          id: '$taskRunId-$evaluatorId',
+          taskRunId: taskRunId,
+          evaluatorId: evaluatorId,
+          passed: passed,
+          score: passed ? 1.0 : 0.0,
+          detailsJson: jsonEncode(details),
         ),
       );
 }
