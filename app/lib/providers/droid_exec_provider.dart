@@ -126,6 +126,28 @@ class DroidExecProvider implements ModelProvider {
     }
   }
 
+  static String _diagnosticHint({
+    required String model,
+    required String stderr,
+  }) {
+    final hints = <String>[];
+    if (stderr.trim() == 'Error during droid execution: Exec failed') {
+      hints.add(
+        'Droid CLI returned only its generic wrapper error; inspect the latest '
+        'Droid session log for the detailed cause.',
+      );
+    }
+    if (model.startsWith('custom:')) {
+      hints.add(
+        'The selected model is a Droid custom/BYOK model; verify its API key '
+        'and base URL in Factory settings, or use a built-in model such as '
+        'gpt-5.5 or gpt-5.3-codex.',
+      );
+    }
+    if (hints.isEmpty) return '';
+    return '  hint       : ${hints.join(' ')}\n';
+  }
+
   final DroidProcessRunner _runner;
   final String _exe;
 
@@ -179,6 +201,8 @@ class DroidExecProvider implements ModelProvider {
         'Answer directly from the prompt.\n\n$prompt';
     final args = [
       'exec',
+      '--auto',
+      'medium',
       '--enabled-tools',
       '',
       '--output-format',
@@ -210,6 +234,7 @@ class DroidExecProvider implements ModelProvider {
         '  argc       : ${args.length}\n'
         '  promptLen  : ${directPrompt.length}\n'
         '  duration   : ${sw.elapsedMilliseconds}ms\n'
+        '${_diagnosticHint(model: model, stderr: res.stderr)}'
         '  shell cmd  : $_exe ${_formatArgsForShell(args)}\n'
         '  stdout (${res.stdout.length}B):\n'
         '$stdoutPreview\n'

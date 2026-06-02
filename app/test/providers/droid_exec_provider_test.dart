@@ -27,6 +27,7 @@ void main() {
     );
     expect(response.rawText, 'hello from droid');
     expect(seenTimeout, const Duration(seconds: 3));
+    expect(seenArgs, containsAllInOrder(['--auto', 'medium']));
     expect(seenArgs, containsAllInOrder(['--enabled-tools', '']));
     expect(seenArgs, containsAllInOrder(['--model', 'gpt-5.5']));
     expect(seenArgs.last, contains('Do not use tools'));
@@ -44,6 +45,31 @@ void main() {
     expect(
       () => provider.generate(prompt: 'hi', model: 'gpt-5.5'),
       throwsA(isA<Exception>()),
+    );
+  });
+
+  test('throws actionable hint for generic custom model exec failures', () {
+    final provider = DroidExecProvider(
+      runner: (executable, args, timeout) async => const DroidProcessResult(
+        stdout: '',
+        stderr: 'Error during droid execution: Exec failed',
+        exitCode: 1,
+      ),
+    );
+    expect(
+      () => provider.generate(prompt: 'hi', model: 'custom:gpt-5.5---Codex'),
+      throwsA(
+        isA<Exception>().having(
+          (e) => e.toString(),
+          'message',
+          allOf(
+            contains('Droid session log'),
+            contains('custom/BYOK model'),
+            contains('gpt-5.5'),
+            contains('gpt-5.3-codex'),
+          ),
+        ),
+      ),
     );
   });
 

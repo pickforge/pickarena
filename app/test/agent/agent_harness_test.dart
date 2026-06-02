@@ -46,6 +46,7 @@ void main() {
       expect(seenExecutable, '/bin/droid');
       expect(seenWorkspace.path, workspace.path);
       expect(seenTimeout, const Duration(minutes: 3));
+      expect(seenArgs, containsAllInOrder(['--auto', 'high']));
       expect(seenArgs, containsAllInOrder(['exec', '--output-format', 'text']));
       expect(seenArgs, containsAllInOrder(['--model', 'gpt-5.5']));
       expect(seenArgs, isNot(contains('--enabled-tools')));

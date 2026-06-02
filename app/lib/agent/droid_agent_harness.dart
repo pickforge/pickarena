@@ -37,6 +37,8 @@ class DroidAgentHarness implements AgentHarness {
   }) async {
     final args = [
       'exec',
+      '--auto',
+      'high',
       '--output-format',
       'text',
       '--model',
