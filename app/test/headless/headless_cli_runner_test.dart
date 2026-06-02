@@ -468,40 +468,59 @@ void main() {
     expect(decoded['error'], 'unknown task id: missing.task');
   });
 
-  test('agentic task selection fails fast as unsupported', () async {
-    final tmp = await Directory.systemTemp.createTemp(
-      'dart_arena_cli_agentic_',
-    );
-    addTearDown(() async {
-      if (await tmp.exists()) await tmp.delete(recursive: true);
-    });
-    final configFile = await _writeConfig(
-      tmp,
-      tasks: ['agentic.phase7.headless_smoke'],
-    );
-    final stderrLines = <String>[];
+  test(
+    'agentic task selection runs through configured agent harness',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_cli_agentic_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+      final configFile = await _writeConfig(
+        tmp,
+        runId: 'cli-agentic-run',
+        tasks: ['agentic.phase7.headless_smoke'],
+      );
+      final stdoutLines = <String>[];
+      final stderrLines = <String>[];
+      late DeterministicFakeAgentHarness harness;
 
-    final exitCode = await runHeadlessCli(
-      ['--config', configFile.path],
-      dependencies: _dependencies(
-        taskRegistryBuilder: () => TaskRegistry()
-          ..register(_HeadlessSmokeTask())
-          ..register(_AgenticHeadlessSmokeTask()),
-        providerBuilder: (config, _) => DeterministicFakeProvider(
-          providerId: config.id,
-          providerDisplayName: config.displayName,
-          modelId: config.models.single,
+      final exitCode = await runHeadlessCli(
+        ['--config', configFile.path],
+        dependencies: _dependencies(
+          taskRegistryBuilder: () => TaskRegistry()
+            ..register(_HeadlessSmokeTask())
+            ..register(_AgenticHeadlessSmokeTask()),
+          providerBuilder: (config, _) => DeterministicFakeProvider(
+            providerId: config.id,
+            providerDisplayName: config.displayName,
+            modelId: config.models.single,
+          ),
+          agentHarnessBuilder: (config) {
+            harness = DeterministicFakeAgentHarness(
+              harnessId: config.providers.single.id,
+              modelId: config.providers.single.models.single,
+            );
+            return [harness];
+          },
         ),
-      ),
-      stdoutWriter: (_) {},
-      stderrWriter: stderrLines.add,
-    );
+        stdoutWriter: stdoutLines.add,
+        stderrWriter: stderrLines.add,
+      );
 
-    expect(exitCode, isNot(0));
-    final decoded = _expectSingleJsonObject(stderrLines.single);
-    expect(decoded['error'], contains('unsupported benchmark track'));
-    expect(decoded['error'], contains('agentic.phase7.headless_smoke'));
-  });
+      expect(exitCode, 0);
+      expect(stderrLines, isEmpty);
+      expect(stdoutLines, hasLength(1));
+      final decoded = _expectSingleJsonObject(stdoutLines.single);
+      expect(decoded['status'], 'completed');
+      expect(decoded['runId'], 'cli-agentic-run');
+      expect(decoded['taskRunCount'], 1);
+      expect(decoded['evaluationCount'], 3);
+      expect(decoded['bundleWarningCount'], 0);
+      expect(harness.runCount, 1);
+    },
+  );
 
   test('provider errors redact configured secret values', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_cli_redact_');
@@ -556,6 +575,7 @@ HeadlessCliDependencies _dependencies({
   HeadlessCliEnvironmentReader environmentReader = _emptyEnv,
   HeadlessCliProviderBuilder? providerBuilder,
   HeadlessCliTaskRegistryBuilder? taskRegistryBuilder,
+  HeadlessCliAgentHarnessBuilder? agentHarnessBuilder,
 }) {
   return HeadlessCliDependencies(
     environmentReader: environmentReader,
@@ -569,6 +589,7 @@ HeadlessCliDependencies _dependencies({
     taskRegistryBuilder:
         taskRegistryBuilder ??
         (() => TaskRegistry()..register(_HeadlessSmokeTask())),
+    agentHarnessBuilder: agentHarnessBuilder ?? (_) => const [],
     now: () => DateTime.utc(2026, 5, 30, 12),
     provenanceEnvironmentProviderBuilder: () =>
         const FixedRunProvenanceEnvironmentProvider(),

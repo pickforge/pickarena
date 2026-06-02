@@ -2,7 +2,7 @@
 
 Status: active consolidated master spec
 Created: 2026-05-31
-Updated: 2026-06-01
+Updated: 2026-06-02
 
 ## Goal
 
@@ -641,6 +641,26 @@ These are the highest-value improvements to add beyond the current baseline:
    - Treat sandbox escapes as benchmark infrastructure failures requiring immediate fix.
 
 ## Unified roadmap
+
+### Phase 0: Headless CLI parity for agentic benchmarks
+
+Problem: the app can run agentic benchmark tasks through the Droid agent harness, but the headless CLI must support the same track so official runs, CI smoke checks, and reproducible exports do not depend on the desktop UI.
+
+Design:
+
+- Route headless codegen tasks through the existing codegen executor.
+- Route headless agentic tasks through `AgenticRunOrchestrator`.
+- Wire `DroidAgentHarness` automatically for headless `droid` providers.
+- Preserve clear `agent_harness` evaluator results for missing harnesses, process failures, timeouts, and successful agent runs.
+- Keep headless timeout/cancellation behavior effective for agentic prepare, harness, patch capture, and grading phases.
+- Export agentic task runs, patches, evaluator details, provenance, and bundle artifacts with the same static CLI contract as codegen runs.
+
+Success criteria:
+
+- `dart_arena_headless` accepts `BenchmarkTrack.agentic` tasks.
+- Agentic CLI runs persist `benchmarkTrack=agentic`, `harnessId`, `patchText`, primary pass/failure tags, and evaluator details.
+- Droid/BYOK/permission failures are visible as harness failures rather than silent model failures.
+- Focused headless/agentic tests and the full Flutter test suite pass.
 
 ### Phase 1: Blocked evaluator semantics
 

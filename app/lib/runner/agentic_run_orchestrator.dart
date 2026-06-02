@@ -47,8 +47,12 @@ class AgenticRunOrchestrator {
     required EvaluatorConfig evaluatorConfig,
     String? planId,
     AgenticProgressCallback? onProgress,
+    void Function()? cancellationCheck,
+    Duration Function()? remainingTimeout,
+    Future<void>? cancellationSignal,
   }) async {
     Directory? workspace;
+    cancellationCheck?.call();
     try {
       onProgress?.call(RunComboPhase.creatingWorkdir);
       workspace = await workdirManager.createAgenticTaskWorkdir(
@@ -72,12 +76,17 @@ class AgenticRunOrchestrator {
         error: e,
       );
     }
+    cancellationCheck?.call();
 
     onProgress?.call(RunComboPhase.preparingWorkspace);
     final initialPrep = await workdirManager.prepare(
       workspace,
       isFlutter: task.isFlutter,
+      remainingTimeout: remainingTimeout,
+      cancellationCheck: cancellationCheck,
+      cancellationSignal: cancellationSignal,
     );
+    cancellationCheck?.call();
     if (initialPrep is PrepareFailed) {
       return _failureResult(
         runId: runId,
@@ -92,6 +101,7 @@ class AgenticRunOrchestrator {
       );
     }
 
+    cancellationCheck?.call();
     onProgress?.call(RunComboPhase.runningAgent);
     final harnessStopwatch = Stopwatch()..start();
     late final AgentRunResult agentResult;
@@ -100,7 +110,10 @@ class AgenticRunOrchestrator {
         workspace: workspace,
         instruction: task.workspace.instruction ?? task.prompt,
         modelId: modelId,
-        timeout: task.timeout ?? const Duration(minutes: 30),
+        timeout: _effectiveTimeout(
+          task.timeout ?? const Duration(minutes: 30),
+          remainingTimeout,
+        ),
       );
     } on Object catch (e) {
       harnessStopwatch.stop();
@@ -120,6 +133,7 @@ class AgenticRunOrchestrator {
       completionTokens: agentResult.completionTokens,
     );
 
+    cancellationCheck?.call();
     onProgress?.call(RunComboPhase.capturingPatch);
     PatchCaptureResult? capturedPatch;
     EvaluationResult? patchFailure;
@@ -150,11 +164,16 @@ class AgenticRunOrchestrator {
       if (patchFailure != null) patchFailure,
     ];
 
+    cancellationCheck?.call();
     onProgress?.call(RunComboPhase.grading);
     final gradingPrep = await workdirManager.prepare(
       workspace,
       isFlutter: task.isFlutter,
+      remainingTimeout: remainingTimeout,
+      cancellationCheck: cancellationCheck,
+      cancellationSignal: cancellationSignal,
     );
+    cancellationCheck?.call();
     final evaluators = task.evaluatorsFor(evaluatorConfig);
     if (gradingPrep is PrepareFailed) {
       for (final evaluator in evaluators) {
@@ -183,6 +202,7 @@ class AgenticRunOrchestrator {
       }
     }
 
+    cancellationCheck?.call();
     onProgress?.call(RunComboPhase.persisting);
     final aggregateScore = aggregate(evaluations, weights);
     final primitives = determineResultPrimitives(
@@ -330,5 +350,15 @@ class AgenticRunOrchestrator {
     if (patch.length <= maxPatchChars) return patch;
     return '${patch.substring(0, maxPatchChars)}'
         '\n\n[patch truncated at $maxPatchChars characters]\n';
+  }
+
+  Duration _effectiveTimeout(
+    Duration taskTimeout,
+    Duration Function()? remainingTimeout,
+  ) {
+    if (remainingTimeout == null) return taskTimeout;
+    final remaining = remainingTimeout();
+    if (remaining.compareTo(Duration.zero) <= 0) return Duration.zero;
+    return remaining.compareTo(taskTimeout) < 0 ? remaining : taskTimeout;
   }
 }

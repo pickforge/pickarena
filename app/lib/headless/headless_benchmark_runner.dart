@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
@@ -9,6 +10,7 @@ import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/analytics/result_primitives.dart';
 import 'package:dart_arena/export/artifact_bundle.dart';
 import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/runner/agentic_run_orchestrator.dart';
 import 'package:dart_arena/runner/codegen_task_executor.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
@@ -26,6 +28,7 @@ class HeadlessBenchmarkConfig {
     required this.tasks,
     required this.providers,
     required this.modelsByProvider,
+    this.agentHarnesses = const [],
     required this.evaluatorConfig,
     required this.evaluatorWeights,
     required this.workdirManager,
@@ -50,6 +53,7 @@ class HeadlessBenchmarkConfig {
   final List<BenchmarkTask> tasks;
   final List<ModelProvider> providers;
   final Map<String, List<String>> modelsByProvider;
+  final List<AgentHarness> agentHarnesses;
   final EvaluatorConfig evaluatorConfig;
   final Map<String, double> evaluatorWeights;
   final WorkdirManager workdirManager;
@@ -145,14 +149,6 @@ class HeadlessBenchmarkRunner {
   ) async {
     cancellation.throwIfCancelled();
     final normalizedModels = _normalizeModels(config);
-    for (final task in config.tasks) {
-      if (task.track == BenchmarkTrack.agentic) {
-        throw UnsupportedError(
-          'unsupported benchmark track for headless CLI MVP: '
-          '${task.id} uses agentic',
-        );
-      }
-    }
 
     final combos = _buildCombos(config, normalizedModels);
     if (combos.isEmpty) {
@@ -335,11 +331,19 @@ class HeadlessBenchmarkRunner {
     List<_HeadlessCombo> combos,
     _HeadlessRunCancellation cancellation,
   ) async {
-    final executor = CodegenTaskExecutor(
+    final codegenExecutor = CodegenTaskExecutor(
       workdirManager: config.workdirManager,
       weights: config.evaluatorWeights,
       now: config.now,
     );
+    final agenticOrchestrator = AgenticRunOrchestrator(
+      workdirManager: config.workdirManager,
+      weights: config.evaluatorWeights,
+      now: config.now,
+    );
+    final harnessesByProviderId = {
+      for (final harness in config.agentHarnesses) harness.id: harness,
+    };
     final failures = <_HeadlessComboFailure>[];
     var nextIndex = 0;
     final workerCount = config.maxConcurrency.clamp(1, 8);
@@ -352,18 +356,13 @@ class HeadlessBenchmarkRunner {
         if (index >= combos.length) return;
         final combo = combos[index];
         try {
-          final result = await executor.run(
-            runId: config.runId,
-            task: combo.task,
-            provider: combo.provider,
-            modelId: combo.modelId,
-            trialIndex: combo.trialIndex,
-            evaluatorConfig: config.evaluatorConfig,
-            planId: combo.planId,
-            planMarkdown: combo.planMarkdown,
-            cancellationCheck: cancellation.throwIfCancelled,
-            remainingTimeout: cancellation.remainingTimeout,
-            cancellationSignal: cancellation.signal,
+          final result = await _runCombo(
+            config: config,
+            combo: combo,
+            codegenExecutor: codegenExecutor,
+            agenticOrchestrator: agenticOrchestrator,
+            harnessesByProviderId: harnessesByProviderId,
+            cancellation: cancellation,
           );
           cancellation.throwIfCancelled();
           await config.runDao.persistTaskRun(result);
@@ -391,6 +390,74 @@ class HeadlessBenchmarkRunner {
       failures.sort((a, b) => a.index.compareTo(b.index));
       throw StateError(_failedComboMessage(failures));
     }
+  }
+
+  Future<TaskRunResult> _runCombo({
+    required HeadlessBenchmarkConfig config,
+    required _HeadlessCombo combo,
+    required CodegenTaskExecutor codegenExecutor,
+    required AgenticRunOrchestrator agenticOrchestrator,
+    required Map<String, AgentHarness> harnessesByProviderId,
+    required _HeadlessRunCancellation cancellation,
+  }) {
+    return switch (combo.task.track) {
+      BenchmarkTrack.codegen => codegenExecutor.run(
+        runId: config.runId,
+        task: combo.task,
+        provider: combo.provider,
+        modelId: combo.modelId,
+        trialIndex: combo.trialIndex,
+        evaluatorConfig: config.evaluatorConfig,
+        planId: combo.planId,
+        planMarkdown: combo.planMarkdown,
+        cancellationCheck: cancellation.throwIfCancelled,
+        remainingTimeout: cancellation.remainingTimeout,
+        cancellationSignal: cancellation.signal,
+      ),
+      BenchmarkTrack.agentic => _runAgenticCombo(
+        config: config,
+        combo: combo,
+        orchestrator: agenticOrchestrator,
+        harnessesByProviderId: harnessesByProviderId,
+        cancellation: cancellation,
+      ),
+    };
+  }
+
+  Future<TaskRunResult> _runAgenticCombo({
+    required HeadlessBenchmarkConfig config,
+    required _HeadlessCombo combo,
+    required AgenticRunOrchestrator orchestrator,
+    required Map<String, AgentHarness> harnessesByProviderId,
+    required _HeadlessRunCancellation cancellation,
+  }) {
+    final harness = harnessesByProviderId[combo.provider.id];
+    if (harness == null) {
+      return Future.value(
+        orchestrator.missingHarnessResult(
+          runId: config.runId,
+          task: combo.task,
+          providerId: combo.provider.id,
+          modelId: combo.modelId,
+          trialIndex: combo.trialIndex,
+          planId: combo.planId,
+        ),
+      );
+    }
+
+    return orchestrator.run(
+      runId: config.runId,
+      task: combo.task,
+      harness: harness,
+      providerId: combo.provider.id,
+      modelId: combo.modelId,
+      trialIndex: combo.trialIndex,
+      evaluatorConfig: config.evaluatorConfig,
+      planId: combo.planId,
+      cancellationCheck: cancellation.throwIfCancelled,
+      remainingTimeout: cancellation.remainingTimeout,
+      cancellationSignal: cancellation.signal,
+    );
   }
 
   Future<_HeadlessComboFailure> _persistComboFailure(

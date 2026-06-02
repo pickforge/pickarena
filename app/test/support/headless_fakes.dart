@@ -1,9 +1,12 @@
 import 'dart:io';
 
+import 'package:dart_arena/agent/agent_harness.dart';
+import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
+import 'package:path/path.dart' as p;
 
 class DeterministicFakeProvider with Disposable implements ModelProvider {
   DeterministicFakeProvider({
@@ -99,6 +102,49 @@ class FailingFakeProvider with Disposable implements ModelProvider {
   @override
   void dispose() {
     disposed = true;
+  }
+}
+
+class DeterministicFakeAgentHarness implements AgentHarness {
+  DeterministicFakeAgentHarness({
+    this.harnessId = 'fake_headless',
+    this.modelId = 'fake-headless-model',
+    this.generatedPath = 'lib/headless_answer.dart',
+    this.generatedCode = "String headlessAnswer() => 'phase7';\n",
+  });
+
+  final String harnessId;
+  final String modelId;
+  final String generatedPath;
+  final String generatedCode;
+  var runCount = 0;
+
+  @override
+  String get id => harnessId;
+
+  @override
+  Future<AgentRunResult> run({
+    required Directory workspace,
+    required String instruction,
+    required String modelId,
+    required Duration timeout,
+  }) async {
+    if (modelId != this.modelId) {
+      throw ArgumentError.value(modelId, 'modelId', 'unknown fake model');
+    }
+    runCount++;
+    final file = File(p.join(workspace.path, generatedPath));
+    await file.parent.create(recursive: true);
+    await file.writeAsString(generatedCode);
+    return const AgentRunResult(
+      status: AgentRunStatus.success,
+      stdoutPreview: 'fake agent completed',
+      stderrPreview: '',
+      exitCode: 0,
+      latency: Duration(milliseconds: 5),
+      promptTokens: 17,
+      completionTokens: 11,
+    );
   }
 }
 

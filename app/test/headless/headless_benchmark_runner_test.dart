@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
@@ -66,6 +67,14 @@ class _HeadlessSmokeTask extends BenchmarkTask {
     _GeneratedCodePresentEvaluator(),
     _GeneratedFilePresentEvaluator(),
   ];
+}
+
+class _AgenticHeadlessSmokeTask extends _HeadlessSmokeTask {
+  @override
+  String get id => 'agentic.phase7.headless_smoke';
+
+  @override
+  BenchmarkTrack get track => BenchmarkTrack.agentic;
 }
 
 class _GeneratedCodePresentEvaluator implements Evaluator {
@@ -289,6 +298,64 @@ void main() {
       expect(csv, isNot(contains(workdirRoot.path)));
       expect(markdown, isNot(contains(workdirRoot.path)));
       expect(manifestText, isNot(contains(workdirRoot.path)));
+    },
+  );
+
+  test(
+    'runs agentic headless smoke through a matching agent harness',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_headless_agentic_',
+      );
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(() async {
+        await db.close();
+        if (await tmp.exists()) {
+          await tmp.delete(recursive: true);
+        }
+      });
+
+      final runDao = RunDao(db);
+      final workdirRoot = Directory(p.join(tmp.path, 'workdirs'))
+        ..createSync(recursive: true);
+      final outputParent = Directory(p.join(tmp.path, 'bundles'))
+        ..createSync(recursive: true);
+      final provider = DeterministicFakeProvider();
+      final harness = DeterministicFakeAgentHarness(
+        harnessId: provider.id,
+        modelId: provider.modelId,
+      );
+
+      final result = await const HeadlessBenchmarkRunner().run(
+        _config(
+          runId: 'headless-agentic-run',
+          runDao: runDao,
+          workdirManager: NoOpPrepareWorkdirManager(root: workdirRoot),
+          outputParent: outputParent,
+          allowedTrajectoryRoots: [workdirRoot],
+          provider: provider,
+          modelId: provider.modelId,
+          tasks: [_AgenticHeadlessSmokeTask()],
+          agentHarnesses: [harness],
+        ),
+      );
+
+      expect(provider.disposed, isTrue);
+      expect(harness.runCount, 1);
+      expect(result.taskRunCount, 1);
+      expect(result.evaluationCount, 3);
+      final taskRun = result.finalSummary.taskRuns.single;
+      expect(taskRun.benchmarkTrack, 'agentic');
+      expect(taskRun.harnessId, provider.id);
+      expect(taskRun.primaryPass, isTrue);
+      expect(taskRun.patchText, contains('headlessAnswer'));
+      expect(taskRun.patchText, contains('phase7'));
+      final evaluations =
+          result.finalSummary.evaluationsByTaskRunId[taskRun.id]!;
+      expect(evaluations.map((e) => e.evaluatorId), contains('agent_harness'));
+      expect(evaluations.every((e) => e.passed), isTrue);
+      expect(result.bundleWarningCount, 0);
+      expect(result.exportedBundleDirectory.existsSync(), isTrue);
     },
   );
 
@@ -541,16 +608,19 @@ HeadlessBenchmarkConfig _config({
   required List<Directory> allowedTrajectoryRoots,
   required ModelProvider provider,
   required String modelId,
+  List<BenchmarkTask>? tasks,
+  List<AgentHarness> agentHarnesses = const [],
   Duration timeout = const Duration(seconds: 5),
 }) {
   return HeadlessBenchmarkConfig(
     runId: runId,
     name: 'Phase 7 headless smoke',
-    tasks: [_HeadlessSmokeTask()],
+    tasks: tasks ?? [_HeadlessSmokeTask()],
     providers: [provider],
     modelsByProvider: {
       provider.id: [modelId],
     },
+    agentHarnesses: agentHarnesses,
     evaluatorConfig: const EvaluatorConfig(),
     evaluatorWeights: _weights,
     workdirManager: workdirManager,

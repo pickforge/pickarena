@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dart_arena/agent/agent_harness.dart';
+import 'package:dart_arena/agent/droid_agent_harness.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_registry.dart';
@@ -29,12 +31,15 @@ typedef HeadlessCliEnvironmentReader = String? Function(String name);
 typedef HeadlessCliProviderBuilder =
     ModelProvider Function(HeadlessCliProviderConfig config, String? apiKey);
 typedef HeadlessCliTaskRegistryBuilder = TaskRegistry Function();
+typedef HeadlessCliAgentHarnessBuilder =
+    List<AgentHarness> Function(HeadlessCliConfig config);
 
 class HeadlessCliDependencies {
   const HeadlessCliDependencies({
     this.environmentReader = _platformEnvironmentReader,
     this.providerBuilder = _defaultProviderBuilder,
     this.taskRegistryBuilder = buildDefaultTaskRegistry,
+    this.agentHarnessBuilder = _defaultAgentHarnessBuilder,
     this.now = _now,
     this.provenanceEnvironmentProviderBuilder =
         _defaultProvenanceEnvironmentProviderBuilder,
@@ -46,6 +51,7 @@ class HeadlessCliDependencies {
   final HeadlessCliEnvironmentReader environmentReader;
   final HeadlessCliProviderBuilder providerBuilder;
   final HeadlessCliTaskRegistryBuilder taskRegistryBuilder;
+  final HeadlessCliAgentHarnessBuilder agentHarnessBuilder;
   final DateTime Function() now;
   final RunProvenanceEnvironmentProvider Function()
   provenanceEnvironmentProviderBuilder;
@@ -106,6 +112,7 @@ Future<int> runHeadlessCli(
           for (final provider in cliConfig.providers)
             provider.id: provider.models,
         },
+        agentHarnesses: dependencies.agentHarnessBuilder(cliConfig),
         evaluatorConfig: evaluatorConfig,
         evaluatorWeights: cliConfig.evaluatorWeights,
         workdirManager: WorkdirManager(root: Directory(cliConfig.workdirRoot)),
@@ -284,6 +291,13 @@ ModelProvider _defaultProviderBuilder(
         'unsupported provider type: ${config.type}',
       );
   }
+}
+
+List<AgentHarness> _defaultAgentHarnessBuilder(HeadlessCliConfig config) {
+  final hasDroidProvider = config.providers.any(
+    (provider) => provider.id == 'droid' || provider.type == 'droid',
+  );
+  return hasDroidProvider ? [DroidAgentHarness()] : const [];
 }
 
 BenchmarkTask _resolveTask(TaskRegistry registry, String taskId) {
