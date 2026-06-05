@@ -4,6 +4,7 @@
 # Miscellaneous
 *.class
 *.lock
+.factory/
 node_modules/
 .svelte-kit/
 web/build/

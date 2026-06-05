@@ -111,5 +111,7 @@ void main() {
     );
 
     expect(find.text('Blocked by compile'), findsOneWidget);
+    expect(find.text('BLOCKED'), findsOneWidget);
+    expect(find.text('FAIL'), findsNothing);
   });
 }

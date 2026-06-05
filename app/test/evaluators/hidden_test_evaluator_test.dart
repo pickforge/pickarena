@@ -10,6 +10,7 @@ import 'package:dart_arena/core/reference_solution.dart';
 import 'package:dart_arena/core/task_verifier.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/evaluators/hidden_test_evaluator.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -49,7 +50,10 @@ dev_dependencies:
   return dir;
 }
 
-EvaluationContext _ctx(Directory dir) => EvaluationContext(
+EvaluationContext _ctx(
+  Directory dir, {
+  GeneratedCodeSandbox? generatedCodeSandbox,
+}) => EvaluationContext(
   workDir: dir,
   response: const ModelResponse(
     rawText: '',
@@ -59,11 +63,12 @@ EvaluationContext _ctx(Directory dir) => EvaluationContext(
     latency: Duration.zero,
   ),
   task: _DummyTask(),
+  generatedCodeSandbox: generatedCodeSandbox,
 );
 
 void main() {
   test(
-    'injects hidden tests for evaluation and removes them afterward',
+    'stages hidden tests for evaluation and removes them afterward',
     () async {
       final root = await Directory.systemTemp.createTemp('hidden_eval_pass_');
       addTearDown(() async {
@@ -76,6 +81,10 @@ void main() {
         '_hidden',
         'answer_hidden_test.dart',
       );
+      final hiddenDir = Directory(p.join(dir.path, 'test', '_hidden'));
+      final visibleTestFile = File(p.join(dir.path, 'test', 'visible.txt'));
+      await visibleTestFile.create(recursive: true);
+      await visibleTestFile.writeAsString('visible');
       expect(File(hiddenPath).existsSync(), isFalse);
 
       final result = await HiddenTestEvaluator(
@@ -101,6 +110,8 @@ void main() {
         'test/_hidden/answer_hidden_test.dart',
       ]);
       expect(File(hiddenPath).existsSync(), isFalse);
+      expect(hiddenDir.existsSync(), isFalse);
+      expect(visibleTestFile.existsSync(), isTrue);
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );
@@ -140,6 +151,257 @@ void main() {
       expect(result.details['failures'], [
         {'index': 1, 'message': 'hidden verifier failure'},
       ]);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'fails when generated code tampers with staged hidden verifier files',
+    () async {
+      final root = await Directory.systemTemp.createTemp('hidden_eval_tamper_');
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final dir = await _scaffold(
+        root,
+        lib: '''
+import 'dart:io';
+
+int answer() => 42;
+
+void tamperHiddenVerifier(String path) {
+  File(path).writeAsStringSync('tampered');
+}
+''',
+      );
+      final hiddenPath = p.join(
+        dir.path,
+        'test',
+        '_hidden',
+        'answer_hidden_test.dart',
+      );
+
+      final result = await HiddenTestEvaluator(
+        const VerifierFixture(
+          files: {
+            'test/_hidden/answer_hidden_test.dart': '''
+import 'package:test/test.dart';
+import 'package:tmp/tmp.dart';
+
+void main() {
+  test('answer is correct', () {
+    final hiddenPath = RegExp(r'file://[^\\s)]+answer_hidden_test\\.dart')
+        .firstMatch(StackTrace.current.toString())!
+        .group(0)!;
+    tamperHiddenVerifier(Uri.parse(hiddenPath).toFilePath());
+    expect(answer(), 42);
+  });
+}
+''',
+          },
+          testPath: 'test/_hidden/answer_hidden_test.dart',
+        ),
+      ).evaluate(_ctx(dir));
+
+      expect(result.passed, isFalse);
+      expect(result.rationale, 'hidden verifier tampered');
+      expect(result.details['code'], 'infrastructure_error');
+      expect(result.details['reason'], 'hidden_verifier_tampered');
+      expect(result.details['tampered_files'], [
+        'test/_hidden/answer_hidden_test.dart',
+      ]);
+      final detailsJson = jsonEncode(result.details);
+      expect(detailsJson, isNot(contains('answer is correct')));
+      expect(detailsJson, isNot(contains('tamperHiddenVerifier(')));
+      expect(File(hiddenPath).existsSync(), isFalse);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'blocks hidden verifier tampering inside Bubblewrap and cleans up',
+    () async {
+      await _skipUnlessBubblewrapAvailable();
+      final root = await Directory.systemTemp.createTemp(
+        'hidden_eval_bwrap_tamper_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final dir = await _scaffold(
+        root,
+        lib: '''
+import 'dart:io';
+
+int answer() => 42;
+
+void tamperHiddenVerifier(String path) {
+  File(path).writeAsStringSync('tampered');
+}
+''',
+      );
+      final hiddenPath = p.join(
+        dir.path,
+        'test',
+        '_hidden',
+        'answer_hidden_test.dart',
+      );
+      final hiddenDir = Directory(p.join(dir.path, 'test', '_hidden'));
+
+      final result =
+          await HiddenTestEvaluator(
+            const VerifierFixture(
+              files: {
+                'test/_hidden/answer_hidden_test.dart': '''
+import 'package:test/test.dart';
+import 'package:tmp/tmp.dart';
+
+void main() {
+  test('answer is correct', () {
+    final hiddenPath = RegExp(r'file://[^\\s)]+answer_hidden_test\\.dart')
+        .firstMatch(StackTrace.current.toString())!
+        .group(0)!;
+    tamperHiddenVerifier(Uri.parse(hiddenPath).toFilePath());
+    expect(answer(), 42);
+  });
+}
+''',
+              },
+              testPath: 'test/_hidden/answer_hidden_test.dart',
+            ),
+          ).evaluate(
+            _ctx(
+              dir,
+              generatedCodeSandbox: const BubblewrapGeneratedCodeSandbox(),
+            ),
+          );
+
+      expect(result.passed, isFalse);
+      expect(result.rationale, '0/1 hidden tests passed');
+      expect(result.details['failures'], [
+        {'index': 1, 'message': 'hidden verifier failure'},
+      ]);
+      expect(File(hiddenPath).existsSync(), isFalse);
+      expect(hiddenDir.existsSync(), isFalse);
+    },
+    skip: Platform.isLinux ? false : 'Bubblewrap is Linux-only',
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'keeps hidden verifier source outside generated workdir inside Bubblewrap',
+    () async {
+      await _skipUnlessBubblewrapAvailable();
+      final root = await Directory.systemTemp.createTemp(
+        'hidden_eval_bwrap_read_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final dir = await _scaffold(
+        root,
+        lib: '''
+import 'dart:io';
+
+int answer() => 42;
+
+bool canReadWorkspaceHiddenVerifier() {
+  final file = File('test/_hidden/answer_hidden_test.dart');
+  return file.existsSync() &&
+      file.readAsStringSync().contains('DO_NOT_READ_HIDDEN_WORKDIR_SOURCE');
+}
+''',
+      );
+      final hiddenPath = p.join(
+        dir.path,
+        'test',
+        '_hidden',
+        'answer_hidden_test.dart',
+      );
+
+      final result =
+          await HiddenTestEvaluator(
+            const VerifierFixture(
+              files: {
+                'test/_hidden/answer_hidden_test.dart': '''
+import 'package:test/test.dart';
+import 'package:tmp/tmp.dart';
+
+void main() {
+  test('hidden source is not readable at workspace path', () {
+    const token = 'DO_NOT_READ_HIDDEN_WORKDIR_SOURCE';
+    expect(token, isNotEmpty);
+    expect(canReadWorkspaceHiddenVerifier(), isFalse);
+    expect(answer(), 42);
+  });
+}
+''',
+              },
+              testPath: 'test/_hidden/answer_hidden_test.dart',
+            ),
+          ).evaluate(
+            _ctx(
+              dir,
+              generatedCodeSandbox: const BubblewrapGeneratedCodeSandbox(),
+            ),
+          );
+
+      expect(result.passed, isTrue);
+      expect(result.details['total'], 1);
+      expect(File(hiddenPath).existsSync(), isFalse);
+      expect(jsonEncode(result.details), isNot(contains('DO_NOT_READ')));
+    },
+    skip: Platform.isLinux ? false : 'Bubblewrap is Linux-only',
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'caps hidden verifier output and removes staged files afterward',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'hidden_eval_output_limit_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final dir = await _scaffold(root);
+      final hiddenPath = p.join(
+        dir.path,
+        'test',
+        '_hidden',
+        'answer_hidden_test.dart',
+      );
+
+      final result = await HiddenTestEvaluator(
+        const VerifierFixture(
+          files: {
+            'test/_hidden/answer_hidden_test.dart': '''
+import 'package:test/test.dart';
+
+void main() {
+  test('floods output', () {
+    for (var i = 0; i < 100; i++) {
+      print('x' * 512);
+    }
+    expect(true, isTrue);
+  });
+}
+''',
+          },
+          testPath: 'test/_hidden/answer_hidden_test.dart',
+        ),
+        maxOutputChars: 1024,
+      ).evaluate(_ctx(dir));
+
+      expect(result.passed, isFalse);
+      expect(result.rationale, 'hidden verifier output limit exceeded');
+      expect(result.score, 0.0);
+      expect(result.details['output_limit_exceeded'], isTrue);
+      expect(result.details['max_output_chars'], 1024);
+      expect(result.details['injected_files'], [
+        'test/_hidden/answer_hidden_test.dart',
+      ]);
+      expect(File(hiddenPath).existsSync(), isFalse);
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );
@@ -250,4 +512,12 @@ void main() {
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );
+}
+
+Future<void> _skipUnlessBubblewrapAvailable() async {
+  try {
+    await BubblewrapGeneratedCodeSandbox.ensureAvailable();
+  } on Object catch (error) {
+    markTestSkipped(error.toString());
+  }
 }

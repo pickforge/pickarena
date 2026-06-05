@@ -25,6 +25,11 @@ abstract class ModelProvider implements Disposable {
   });
 }
 
+abstract class ModelRuntimeMetadataProvider {
+  Map<String, Object?> providerRuntimeConfig();
+  Map<String, Object?> modelRuntimeConfig(String modelId);
+}
+
 mixin Disposable {
   void dispose() {}
 }

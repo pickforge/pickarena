@@ -10,6 +10,9 @@ RunSummary _summary({
   int? completionTokens = 20,
   bool? primaryPass = true,
   String? failureTag = 'pass',
+  bool testPassed = true,
+  double testScore = 1.0,
+  String testDetailsJson = '{}',
 }) {
   final run = Run(
     id: 'r1',
@@ -42,9 +45,9 @@ RunSummary _summary({
   return RunSummary(
     run: run,
     taskRuns: [taskRun],
-    evaluationsByTaskRunId: const {
+    evaluationsByTaskRunId: {
       'tr1': [
-        Evaluation(
+        const Evaluation(
           id: 'e1',
           taskRunId: 'tr1',
           evaluatorId: 'compile',
@@ -53,7 +56,7 @@ RunSummary _summary({
           rationale: null,
           detailsJson: '{}',
         ),
-        Evaluation(
+        const Evaluation(
           id: 'e2',
           taskRunId: 'tr1',
           evaluatorId: 'analyze',
@@ -66,10 +69,10 @@ RunSummary _summary({
           id: 'e3',
           taskRunId: 'tr1',
           evaluatorId: 'test',
-          passed: true,
-          score: 1.0,
+          passed: testPassed,
+          score: testScore,
           rationale: null,
-          detailsJson: '{}',
+          detailsJson: testDetailsJson,
         ),
       ],
     },
@@ -98,6 +101,7 @@ void main() {
     final md = runSummaryToMarkdown(_summary());
     expect(md, contains('| Task | Provider | Model |'));
     expect(md, contains('| Trial | Task Version | Track | Harness |'));
+    expect(md, contains('| Public Pass | Hidden Pass |'));
     expect(
       md,
       contains(
@@ -108,6 +112,7 @@ void main() {
     expect(md, contains('|------|'));
     expect(md, contains('| bug.off_by_one | openai | gpt-5'));
     expect(md, contains('**0.85**'));
+    expect(md, contains('| **0.85** | true | unknown |'));
   });
 
   test('missing evaluator score renders as unknown', () {
@@ -118,6 +123,19 @@ void main() {
     // hidden_test, widget_tree, llm_judge, diff_size missing => unknown
     final unknownOccurrences = 'unknown'.allMatches(dataLine).length;
     expect(unknownOccurrences, greaterThanOrEqualTo(4));
+  });
+
+  test('blocked evaluator status renders in task-run table', () {
+    final md = runSummaryToMarkdown(
+      _summary(
+        testPassed: false,
+        testScore: 0,
+        testDetailsJson: '{"blocked": true, "blocked_by": "compile"}',
+      ),
+    );
+
+    expect(md, contains('0.00 (blocked by compile)'));
+    expect(md, contains('| **0.85** | unknown | unknown |'));
   });
 
   test('includes leaderboard summary with uncertainty and low-sample flag', () {

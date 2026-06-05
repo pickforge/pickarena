@@ -1,12 +1,24 @@
+import 'package:dart_arena/core/evaluation_status.dart';
 import 'package:flutter/material.dart';
 
 class ScoreChip extends StatelessWidget {
-  const ScoreChip({super.key, required this.evaluatorId, required this.score});
+  const ScoreChip({
+    super.key,
+    required this.evaluatorId,
+    required this.score,
+    this.status,
+  });
 
   final String evaluatorId;
   final double? score;
+  final EvaluationStatus? status;
 
   Color _bg() {
+    if (status == EvaluationStatus.blocked) return Colors.blueGrey.shade700;
+    if (status == EvaluationStatus.ignored ||
+        status == EvaluationStatus.skipped) {
+      return Colors.grey.shade700;
+    }
     final s = score;
     if (s == null) return Colors.grey.shade700;
     if (s >= 0.8) return Colors.green.shade700;
@@ -16,7 +28,12 @@ class ScoreChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = score == null ? '\u2014' : score!.toStringAsFixed(2);
+    final label = switch (status) {
+      EvaluationStatus.blocked => 'blocked',
+      EvaluationStatus.ignored => 'ignored',
+      EvaluationStatus.skipped => 'skipped',
+      _ => score == null ? '\u2014' : score!.toStringAsFixed(2),
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

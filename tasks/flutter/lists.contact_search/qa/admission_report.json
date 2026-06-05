@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "taskId": "lists.contact_search",
+  "taskVersion": 1,
+  "category": "bugFix",
+  "difficulty": "medium",
+  "track": "agentic",
+  "tags": [
+    "bugfix",
+    "testing",
+    "ui"
+  ],
+  "release": {
+    "corpus": "private_official",
+    "status": "active"
+  },
+  "admission": {
+    "tool": {
+      "name": "dart_arena_task_qa"
+    },
+    "evaluator": {
+      "schemaVersion": 1,
+      "version": "2026-05-31-master-spec"
+    },
+    "environment": {
+      "dartVersion": "3.11.4 (stable) (Tue Mar 24 01:02:20 2026 -0700) on \"linux_x64\"",
+      "dependencySnapshot": {
+        "status": "present",
+        "files": {
+          "pubspec.yaml": {
+            "sha256": "6bc4664b1d14a5e7e4c1a8676c48a0618875afd1c3aa9b64789b2045bf136674",
+            "bytes": 6329
+          },
+          "pubspec.lock": {
+            "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
+            "bytes": 29033
+          }
+        }
+      },
+      "flutterVersion": "3.41.6",
+      "gitCommit": "e2a1fa5066eb903b9191799758d653118ab21f3d",
+      "gitDirty": true,
+      "hostPlatform": "linux",
+      "locale": "C.UTF-8",
+      "operatingSystemVersion": "Linux 7.0.10-2-cachyos #1 SMP PREEMPT_DYNAMIC Thu, 28 May 2026 21:12:58 +0000"
+    }
+  },
+  "executionPolicy": {
+    "allowInternet": false,
+    "resources": {
+      "cpus": 2,
+      "memoryMb": 8192,
+      "maxProcesses": 64,
+      "maxOutputBytes": 1048576
+    },
+    "resourceEnforcement": {
+      "cpus": {
+        "enforced": true,
+        "mechanism": "systemdCpuQuota",
+        "kernelEnforced": true
+      },
+      "memoryMb": {
+        "enforced": true,
+        "mechanism": "rssPolling",
+        "kernelEnforced": false
+      },
+      "maxProcesses": {
+        "enforced": true,
+        "mechanism": "processTreePolling",
+        "kernelEnforced": false
+      },
+      "maxOutputBytes": {
+        "enforced": true,
+        "mechanism": "boundedOutputCapture",
+        "kernelEnforced": false
+      }
+    }
+  },
+  "status": "admitted",
+  "generatedAt": "2026-06-04T23:35:50.674543Z",
+  "checks": {
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "requiredNegativeCaseKindsCovered": true,
+    "hiddenFlakeRuns": 3,
+    "promptSafeContextLeakFree": true,
+    "noopRejected": true,
+    "apiBreakingRejected": true,
+    "overfitRejected": true
+  },
+  "hiddenVerifierDigests": {
+    "contact_search_hidden": "53a0af592f25f53e570e71da1591635368b510012f4137baa735bea83ee9a997"
+  },
+  "verifierQualityAudit": {
+    "falsePositiveCount": 0,
+    "falseNegativeCount": 0,
+    "disagreementCount": 2,
+    "infrastructureErrorCount": 0,
+    "flakeRunCount": 3,
+    "flakeFailureCount": 0,
+    "flakeRate": 0.0,
+    "negativeCaseCount": 3,
+    "acceptedNegativeCaseCount": 0,
+    "referencePublicFailureCount": 0,
+    "referenceHiddenFailureCount": 0
+  },
+  "promptSafety": {
+    "target_context_present": true,
+    "public_test_context_present": true,
+    "public_test_context_required": true,
+    "implementation_bodies_omitted": true,
+    "hidden_verifier_leak_free": true,
+    "reference_leak_free": true,
+    "required_negative_case_kinds": [
+      "api_breaking",
+      "noop",
+      "overfit"
+    ],
+    "present_negative_case_kinds": [
+      "api_breaking",
+      "noop",
+      "overfit"
+    ],
+    "missing_negative_case_kinds": [],
+    "passed": true
+  },
+  "negativeCases": [
+    {
+      "id": "noop",
+      "description": "Leaves prefix-only, case-sensitive search unchanged.",
+      "kind": "noop",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 0.8s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 0.7s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "2/2 tests passed",
+          "details": {
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 14,
+            "new_lines": 14,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "contact_search_hidden",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "0/3 hidden tests passed",
+          "details": {
+            "total": 3,
+            "passed": 0,
+            "failed": 3,
+            "errored": 0,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/contact_search_controller_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/contact_search_controller_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api_breaking",
+      "description": "Replaces the public Contact and filter API.",
+      "kind": "api_breaking",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "analysis errors present",
+          "details": {
+            "exitCode": 1,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \n\n  error • Const variables must be initialized with a constant value • test/contact_search_controller_test.dart:6:5 • const_initialized_with_non_constant_value\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:6:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:6:5 • non_constant_list_element\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:7:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:7:5 • non_constant_list_element\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:13:23 • undefined_method\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:19:31 • undefined_method\nwarning • The type of 'contact' can't be inferred; a type must be explicitly provided • test/contact_search_controller_test.dart:21:24 • inference_failure_on_untyped_parameter\n\n",
+            "stderr": "8 issues found. (ran in 0.8s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "errors=7 warnings=1 infos=0",
+          "details": {
+            "errors": 7,
+            "warnings": 1,
+            "infos": 0,
+            "exit_code": 1,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \n\n  error • Const variables must be initialized with a constant value • test/contact_search_controller_test.dart:6:5 • const_initialized_with_non_constant_value\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:6:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:6:5 • non_constant_list_element\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:7:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:7:5 • non_constant_list_element\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:13:23 • undefined_method\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:19:31 • undefined_method\nwarning • The type of 'contact' can't be inferred; a type must be explicitly provided • test/contact_search_controller_test.dart:21:24 • inference_failure_on_untyped_parameter\n\n",
+            "stderr": "8 issues found. (ran in 0.7s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "blocked by compile",
+          "details": {
+            "blocked": true,
+            "blocked_by": "compile",
+            "blocked_by_rationale": "analysis errors present",
+            "skipped": true,
+            "reason": "blocked by compile"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 0.36787944117144233,
+          "rationale": "changed_lines=20",
+          "details": {
+            "original_lines": 14,
+            "new_lines": 12,
+            "changed_lines": 20,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "overfit_visible_alice",
+      "description": "Hardcodes the visible Alice case and rejects hidden search variants.",
+      "kind": "overfit",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 0.8s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 0.7s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "2/2 tests passed",
+          "details": {
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 0.7788007830714049,
+          "rationale": "changed_lines=5",
+          "details": {
+            "original_lines": 14,
+            "new_lines": 17,
+            "changed_lines": 5,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "contact_search_hidden",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "0/3 hidden tests passed",
+          "details": {
+            "total": 3,
+            "passed": 0,
+            "failed": 3,
+            "errored": 0,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/contact_search_controller_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/contact_search_controller_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "failureMessages": []
+}

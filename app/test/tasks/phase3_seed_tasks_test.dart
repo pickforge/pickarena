@@ -17,6 +17,16 @@ void main() {
       expect(task.timeout, isNotNull, reason: id);
       expect(task.hiddenVerifiers, isNotEmpty, reason: id);
       expect(task.referenceSolution, isA<ReferenceFileSolution>(), reason: id);
+      expect(task.negativeCases.map((negative) => negative.kind), {
+        TaskNegativeCaseKind.noop,
+        TaskNegativeCaseKind.apiBreaking,
+        TaskNegativeCaseKind.overfit,
+      }, reason: id);
+      expect(task.requiredNegativeCaseKinds, {
+        TaskNegativeCaseKind.noop,
+        TaskNegativeCaseKind.apiBreaking,
+        TaskNegativeCaseKind.overfit,
+      }, reason: id);
       expect(
         task.fixtures.keys,
         isNot(contains(task.hiddenVerifiers.single.testPath)),

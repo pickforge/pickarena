@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/core/model_response.dart';
+import 'package:dart_arena/providers/factory_custom_model_environment.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 
@@ -24,14 +24,17 @@ typedef DroidProcessRunner =
       Duration? timeout,
     );
 
-class DroidExecProvider implements ModelProvider {
+class DroidExecProvider implements ModelProvider, ModelRuntimeMetadataProvider {
   DroidExecProvider({
     DroidProcessRunner? runner,
     String? droidPath,
     Iterable<String> deniedEnvironmentKeys = const [],
+    int maxProcessOutputChars = 1024 * 1024,
   }) : _runner = runner,
        _exe = droidPath ?? _findDroid(),
-       _deniedEnvironmentKeys = {...deniedEnvironmentKeys};
+       _deniedEnvironmentKeys = {...deniedEnvironmentKeys},
+       _maxProcessOutputChars = maxProcessOutputChars,
+       assert(maxProcessOutputChars > 0);
 
   static String _findDroid() {
     // Desktop apps don't inherit shell PATH; try common locations.
@@ -56,6 +59,8 @@ class DroidExecProvider implements ModelProvider {
     List<String> args,
     Duration? timeout,
     Iterable<String> deniedEnvironmentKeys,
+    Iterable<String> allowedSensitiveEnvironmentKeys,
+    int maxProcessOutputChars,
   ) async {
     final process = await Process.start(
       exe,
@@ -63,76 +68,86 @@ class DroidExecProvider implements ModelProvider {
       runInShell: false,
       environment: benchmarkSubprocessEnvironment(
         additionalDeniedKeys: deniedEnvironmentKeys,
+        allowedSensitiveKeys: allowedSensitiveEnvironmentKeys,
       ),
       includeParentEnvironment: false,
     );
-    final stdoutBuffer = StringBuffer();
-    final stderrBuffer = StringBuffer();
-    final stdoutDone = process.stdout
-        .transform(systemEncoding.decoder)
-        .listen(stdoutBuffer.write)
-        .asFuture<void>();
-    final stderrDone = process.stderr
-        .transform(systemEncoding.decoder)
-        .listen(stderrBuffer.write)
-        .asFuture<void>();
+    final stdoutBuffer = _BoundedTailTextCollector(maxProcessOutputChars);
+    final stderrBuffer = _BoundedTailTextCollector(maxProcessOutputChars);
+    final outputLimitExceeded = Completer<void>();
+    void markOutputLimitExceeded() {
+      if (!outputLimitExceeded.isCompleted) {
+        outputLimitExceeded.complete();
+      }
+    }
+
+    final stdoutDone = process.stdout.transform(systemEncoding.decoder).listen((
+      chunk,
+    ) {
+      stdoutBuffer.write(chunk);
+      if (stdoutBuffer.exceeded) markOutputLimitExceeded();
+    }).asFuture<void>();
+    final stderrDone = process.stderr.transform(systemEncoding.decoder).listen((
+      chunk,
+    ) {
+      stderrBuffer.write(chunk);
+      if (stderrBuffer.exceeded) markOutputLimitExceeded();
+    }).asFuture<void>();
 
     var timedOut = false;
-    final exitCode = timeout == null
-        ? await process.exitCode
-        : await process.exitCode.timeout(
-            timeout,
-            onTimeout: () async {
-              timedOut = true;
-              await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
-              return process.exitCode.timeout(
-                const Duration(seconds: 2),
-                onTimeout: () async {
-                  await _terminateProcessTree(
-                    process.pid,
-                    ProcessSignal.sigkill,
-                  );
-                  return -1;
-                },
-              );
-            },
-          );
+    var outputLimitHit = false;
+    int exitCode;
+    Timer? timeoutTimer;
+    final timeoutExceeded = Completer<void>();
+    if (timeout != null) {
+      timeoutTimer = Timer(timeout, () {
+        if (!timeoutExceeded.isCompleted) timeoutExceeded.complete();
+      });
+    }
+    try {
+      final signal = await Future.any<Object>([
+        process.exitCode,
+        if (timeout != null)
+          timeoutExceeded.future.then(
+            (_) => const _DroidProcessTimeoutExceeded(),
+          ),
+        outputLimitExceeded.future.then(
+          (_) => const _DroidProcessOutputLimitExceeded(),
+        ),
+      ]);
+      if (signal is int) {
+        exitCode = signal;
+      } else {
+        timedOut = signal is _DroidProcessTimeoutExceeded;
+        outputLimitHit = signal is _DroidProcessOutputLimitExceeded;
+        await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
+        exitCode = await process.exitCode.timeout(
+          const Duration(seconds: 2),
+          onTimeout: () async {
+            await _terminateProcessTree(process.pid, ProcessSignal.sigkill);
+            return -1;
+          },
+        );
+      }
+    } finally {
+      timeoutTimer?.cancel();
+    }
     await Future.wait([stdoutDone, stderrDone]);
     if (timedOut) {
       throw TimeoutException('droid exec timed out', timeout);
     }
+    final stderr = stderrBuffer.text;
+    final stderrWithLimit = outputLimitHit
+        ? [
+            'droid exec output exceeded $maxProcessOutputChars characters',
+            if (stderr.isNotEmpty) stderr,
+          ].join('\n')
+        : stderr;
     return DroidProcessResult(
-      stdout: stdoutBuffer.toString(),
-      stderr: stderrBuffer.toString(),
-      exitCode: exitCode,
+      stdout: stdoutBuffer.text,
+      stderr: stderrWithLimit,
+      exitCode: outputLimitHit && exitCode == 0 ? -1 : exitCode,
     );
-  }
-
-  static String _formatArgsForShell(List<String> args) {
-    return args
-        .map((a) {
-          if (a.isEmpty) return r"''";
-          if (RegExp(r'^[A-Za-z0-9_\-./:=,@%+]+$').hasMatch(a)) return a;
-          final escaped = a.replaceAll(r"'", r"'\''");
-          return "'$escaped'";
-        })
-        .join(' ');
-  }
-
-  static Map<String, dynamic>? _readFactorySettings() {
-    try {
-      final home =
-          Platform.environment['HOME'] ??
-          Platform.environment['USERPROFILE'] ??
-          '';
-      if (home.isEmpty) return null;
-      final file = File('$home/.factory/settings.json');
-      if (!file.existsSync()) return null;
-      final decoded = jsonDecode(file.readAsStringSync());
-      return decoded is Map<String, dynamic> ? decoded : null;
-    } catch (_) {
-      return null;
-    }
   }
 
   static String _diagnosticHint({
@@ -160,6 +175,9 @@ class DroidExecProvider implements ModelProvider {
   final DroidProcessRunner? _runner;
   final String _exe;
   final Set<String> _deniedEnvironmentKeys;
+  final int _maxProcessOutputChars;
+  static const String _directAutonomyMode = 'medium';
+  static const String _directOutputFormat = 'text';
 
   void addDeniedEnvironmentKeys(Iterable<String> keys) {
     _deniedEnvironmentKeys.addAll(keys);
@@ -171,6 +189,24 @@ class DroidExecProvider implements ModelProvider {
   String get displayName => 'Factory Droid';
   @override
   ProviderMode get mode => ProviderMode.agent;
+
+  @override
+  Map<String, Object?> providerRuntimeConfig() => {
+    'providerMode': mode.name,
+    'execution': 'droid_exec',
+    'secretsRedacted': true,
+  };
+
+  @override
+  Map<String, Object?> modelRuntimeConfig(String modelId) => {
+    ...factoryCustomModelRuntimeConfig(modelId),
+    'executionMode': 'direct_prompt',
+    'autonomyMode': _directAutonomyMode,
+    'outputFormat': _directOutputFormat,
+    'temperature': {'configured': false, 'status': 'provider_default'},
+    'toolsEnabled': false,
+    'toolPolicy': 'disabled',
+  };
 
   @override
   void dispose() {}
@@ -185,7 +221,7 @@ class DroidExecProvider implements ModelProvider {
       ModelInfo(id: 'claude-opus-4-7'),
       ModelInfo(id: 'gemini-3-flash'),
     ];
-    final settings = _readFactorySettings();
+    final settings = readFactorySettings();
     if (settings == null) return builtIn;
     final customModels = settings['customModels'];
     if (customModels is! List) return builtIn;
@@ -216,17 +252,24 @@ class DroidExecProvider implements ModelProvider {
     final args = [
       'exec',
       '--auto',
-      'medium',
+      _directAutonomyMode,
       '--enabled-tools',
       '',
       '--output-format',
-      'text',
+      _directOutputFormat,
       '--model',
       model,
       directPrompt,
     ];
     final res = _runner == null
-        ? await _defaultRunner(_exe, args, timeout, _deniedEnvironmentKeys)
+        ? await _defaultRunner(
+            _exe,
+            args,
+            timeout,
+            _deniedEnvironmentKeys,
+            factoryCustomModelEnvironmentReferences(model),
+            _maxProcessOutputChars,
+          )
         : await _runner(_exe, args, timeout);
     sw.stop();
     if (res.exitCode != 0) {
@@ -242,16 +285,11 @@ class DroidExecProvider implements ModelProvider {
         'droid exec failed\n'
         '  exit code  : ${res.exitCode}\n'
         '  model      : $model\n'
-        '  executable : $_exe\n'
-        '  cwd        : ${Directory.current.path}\n'
-        '  TMPDIR     : ${Platform.environment['TMPDIR'] ?? '<unset>'}\n'
-        '  HOME       : ${Platform.environment['HOME'] ?? '<unset>'}\n'
-        '  PATH       : ${Platform.environment['PATH'] ?? '<unset>'}\n'
+        '  executable : configured droid executable\n'
         '  argc       : ${args.length}\n'
         '  promptLen  : ${directPrompt.length}\n'
         '  duration   : ${sw.elapsedMilliseconds}ms\n'
         '${_diagnosticHint(model: model, stderr: res.stderr)}'
-        '  shell cmd  : $_exe ${_formatArgsForShell(args)}\n'
         '  stdout (${res.stdout.length}B):\n'
         '$stdoutPreview\n'
         '  stderr (${res.stderr.length}B):\n'
@@ -312,7 +350,13 @@ class DroidExecProvider implements ModelProvider {
     List<String> arguments,
   ) async {
     try {
-      return await Process.run(executable, arguments);
+      return await Process.run(
+        executable,
+        arguments,
+        runInShell: false,
+        environment: benchmarkSubprocessEnvironment(),
+        includeParentEnvironment: false,
+      );
     } on Object {
       return null;
     }
@@ -339,4 +383,34 @@ class DroidExecProvider implements ModelProvider {
       return false;
     }
   }
+}
+
+class _DroidProcessTimeoutExceeded {
+  const _DroidProcessTimeoutExceeded();
+}
+
+class _DroidProcessOutputLimitExceeded {
+  const _DroidProcessOutputLimitExceeded();
+}
+
+class _BoundedTailTextCollector {
+  _BoundedTailTextCollector(this.maxChars);
+
+  final int maxChars;
+  final _buffer = StringBuffer();
+  var exceeded = false;
+
+  void write(String chunk) {
+    if (chunk.isEmpty) return;
+    _buffer.write(chunk);
+    if (_buffer.length > maxChars) {
+      exceeded = true;
+      final value = _buffer.toString();
+      _buffer
+        ..clear()
+        ..write(value.substring(value.length - maxChars));
+    }
+  }
+
+  String get text => _buffer.toString();
 }

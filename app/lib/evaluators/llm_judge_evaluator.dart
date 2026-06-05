@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:dart_arena/analytics/cost_estimator.dart';
 import 'package:dart_arena/core/code_extractor.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
@@ -118,6 +119,12 @@ Reply with ONLY a fenced ```json block of the form:
 
     final parsed = _parse(raw);
     final score = parsed.score.clamp(0.0, 1.0);
+    final judgeCost = const CostEstimator().estimateDetailed(
+      providerId: judge.id,
+      modelId: judgeModel,
+      promptTokens: response.promptTokens,
+      completionTokens: response.completionTokens,
+    );
 
     return EvaluationResult(
       evaluatorId: id,
@@ -129,6 +136,16 @@ Reply with ONLY a fenced ```json block of the form:
         'judge_model': judgeModel,
         'judge_provider_id': judge.id,
         'parse_strategy': parsed.strategy,
+        'judge_overhead': {
+          'provider_id': judge.id,
+          'model_id': judgeModel,
+          'prompt_tokens': response.promptTokens,
+          'completion_tokens': response.completionTokens,
+          'estimated_cost_micros': judgeCost.micros,
+          'pricing_status': judgeCost.pricingStatus,
+          'pricing_registry_version': defaultPricingRegistryVersion,
+          'pricing_currency': defaultPricingRegistryCurrency,
+        },
       },
     );
   }

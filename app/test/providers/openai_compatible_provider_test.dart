@@ -41,6 +41,27 @@ void main() {
     registerFallbackValue(<String, dynamic>{});
   });
 
+  test('runtime metadata records request defaults without secrets', () {
+    final provider = _ConcreteProviderWithEfforts(_MockDio());
+
+    expect(provider.providerRuntimeConfig(), {
+      'providerMode': 'rawApi',
+      'requestProtocol': 'openai_chat_completions',
+      'streamingSupported': true,
+      'defaultEfforts': ['low', 'high'],
+    });
+    expect(provider.modelRuntimeConfig('gpt-5::high'), {
+      'maxOutputTokens': 16384,
+      'temperature': {'configured': false, 'status': 'provider_default'},
+      'toolPolicy': 'none',
+      'retryPolicy': {
+        'maxRetries': 3,
+        'retryStatusCodes': [429],
+        'backoffSeconds': [1, 2, 4],
+      },
+    });
+  });
+
   test(
     'generate posts to /chat/completions and parses content+usage',
     () async {

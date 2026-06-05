@@ -1,0 +1,65 @@
+schemaVersion: 1
+id: lists.contact_search
+version: 1
+category: bug_fix
+track: agentic
+tags:
+  - ui
+  - testing
+  - bugfix
+difficulty: medium
+platformRequirements:
+  - linux
+timeoutSeconds: 900
+release:
+  corpus: private_official
+  status: active
+network: false
+resources:
+  cpus: 2
+  memory_mb: 8192
+  max_processes: 64
+  max_output_bytes: 1048576
+generatedCodePath: lib/contact_search_controller.dart
+isFlutter: true
+instructionPath: instruction.md
+workspace:
+  root: baseline
+  files:
+    pubspec.yaml: pubspec.yaml
+    lib/contact_search_controller.dart: lib/contact_search_controller.dart
+    test/contact_search_controller_test.dart: test/contact_search_controller_test.dart
+hiddenVerifiers:
+  - id: contact_search_hidden
+    testPath: test/_hidden/contact_search_controller_hidden_test.dart
+    root: hidden_tests
+    files:
+      test/_hidden/contact_search_controller_hidden_test.dart: test/_hidden/contact_search_controller_hidden_test.dart
+reference:
+  type: files
+  root: solution
+  files:
+    lib/contact_search_controller.dart: lib/contact_search_controller.dart
+requiredNegativeCaseKinds:
+  - noop
+  - api_breaking
+  - overfit
+negativeCases:
+  - id: noop
+    kind: noop
+    description: Leaves prefix-only, case-sensitive search unchanged.
+    root: negative_cases/noop
+    files:
+      lib/contact_search_controller.dart: lib/contact_search_controller.dart
+  - id: api_breaking
+    kind: api_breaking
+    description: Replaces the public Contact and filter API.
+    root: negative_cases/api_breaking
+    files:
+      lib/contact_search_controller.dart: lib/contact_search_controller.dart
+  - id: overfit_visible_alice
+    kind: overfit
+    description: Hardcodes the visible Alice case and rejects hidden search variants.
+    root: negative_cases/overfit
+    files:
+      lib/contact_search_controller.dart: lib/contact_search_controller.dart

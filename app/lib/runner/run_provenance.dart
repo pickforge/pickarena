@@ -1,10 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
+import 'package:dart_arena/analytics/cost_estimator.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
+import 'package:dart_arena/core/model_identity.dart';
+import 'package:dart_arena/core/task_integrity.dart';
+import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/runner/resource_enforcement_policy.dart';
 import 'package:dart_arena/runner/run_event.dart';
+import 'package:dart_arena/runner/subprocess_environment.dart';
 import 'package:path/path.dart' as p;
 
 class RunProvenanceCombo {
@@ -33,9 +40,14 @@ class DefaultRunProvenanceEnvironmentProvider
     implements RunProvenanceEnvironmentProvider {
   DefaultRunProvenanceEnvironmentProvider({
     this.timeout = const Duration(milliseconds: 800),
-  });
+    Directory? dependencyRoot,
+    Map<String, String>? baseEnvironment,
+  }) : _dependencyRoot = dependencyRoot,
+       _baseEnvironment = baseEnvironment;
 
   final Duration timeout;
+  final Directory? _dependencyRoot;
+  final Map<String, String>? _baseEnvironment;
   Future<Map<String, Object?>>? _cached;
 
   @override
@@ -48,6 +60,7 @@ class DefaultRunProvenanceEnvironmentProvider
     final flutterVersion = await _flutterVersion();
     final gitCommit = await _processLine('git', ['rev-parse', 'HEAD']);
     final gitStatus = await _processLine('git', ['status', '--porcelain']);
+    final dependencySnapshot = await _dependencySnapshot();
 
     return {
       'hostPlatform': Platform.operatingSystem,
@@ -57,7 +70,66 @@ class DefaultRunProvenanceEnvironmentProvider
       'flutterVersion': flutterVersion ?? 'unknown',
       'gitCommit': gitCommit ?? 'unknown',
       'gitDirty': gitStatus?.isNotEmpty,
+      'dependencySnapshot': dependencySnapshot,
     };
+  }
+
+  Future<Map<String, Object?>> _dependencySnapshot() async {
+    final root = await _firstDependencyRoot();
+    if (root == null) {
+      return const {'status': 'missing', 'files': <String, Object?>{}};
+    }
+
+    final files = <String, Object?>{};
+    for (final name in const ['pubspec.yaml', 'pubspec.lock']) {
+      final file = File(p.join(root.path, name));
+      try {
+        if (!await file.exists()) continue;
+        final bytes = await file.readAsBytes();
+        files[name] = {
+          'sha256': sha256.convert(bytes).toString(),
+          'bytes': bytes.length,
+        };
+      } on Object {
+        continue;
+      }
+    }
+
+    return {'status': files.isEmpty ? 'missing' : 'present', 'files': files};
+  }
+
+  Future<Directory?> _firstDependencyRoot() async {
+    final roots = <String, Directory>{};
+    void addRoot(Directory? directory) {
+      if (directory == null) return;
+      roots[p.normalize(p.absolute(directory.path))] = directory;
+    }
+
+    addRoot(_dependencyRoot);
+    addRoot(await _packageRoot());
+    addRoot(Directory.current);
+    addRoot(Directory(p.join(Directory.current.path, 'app')));
+
+    for (final root in roots.values) {
+      if (await File(p.join(root.path, 'pubspec.lock')).exists() ||
+          await File(p.join(root.path, 'pubspec.yaml')).exists()) {
+        return root;
+      }
+    }
+    return null;
+  }
+
+  Future<Directory?> _packageRoot() async {
+    try {
+      final uri = await Isolate.resolvePackageUri(
+        Uri.parse('package:dart_arena/runner/run_provenance.dart'),
+      );
+      if (uri == null || !uri.isScheme('file')) return null;
+      final path = p.fromUri(uri);
+      return Directory(p.dirname(p.dirname(p.dirname(path))));
+    } on Object {
+      return null;
+    }
   }
 
   Future<String?> _flutterVersion() async {
@@ -87,6 +159,10 @@ class DefaultRunProvenanceEnvironmentProvider
         executable,
         args,
         runInShell: false,
+        environment: benchmarkSubprocessEnvironment(
+          baseEnvironment: _baseEnvironment,
+        ),
+        includeParentEnvironment: false,
       ).timeout(timeout);
     } on Object {
       return null;
@@ -111,17 +187,23 @@ Future<String> buildRunProvenanceJson({
   final providers =
       event.providers
           .where((provider) => selectedProviderIds.contains(provider.id))
-          .map(
-            (provider) => {
+          .map((provider) {
+            final runtimeConfig = _providerRuntimeConfig(provider);
+            return {
               'id': provider.id,
               'displayName': provider.displayName,
               'mode': provider.mode.name,
+              if (runtimeConfig.isNotEmpty) 'runtimeConfig': runtimeConfig,
               'selectedModels': _sortedStrings(
                 normalizedModelsByProvider[provider.id] ?? const <String>[],
               ),
+              'selectedModelConfigs': _sortedModelConfigs(
+                provider,
+                normalizedModelsByProvider[provider.id] ?? const <String>[],
+              ),
               'secretsRedacted': true,
-            },
-          )
+            };
+          })
           .toList()
         ..sort((a, b) => (a['id']! as String).compareTo(b['id']! as String));
 
@@ -130,6 +212,10 @@ Future<String> buildRunProvenanceJson({
 
   final sortedCombos = combos.toList()
     ..sort((a, b) => a.index.compareTo(b.index));
+  final selectedProvidersById = {
+    for (final provider in event.providers)
+      if (selectedProviderIds.contains(provider.id)) provider.id: provider,
+  };
 
   final json = <String, Object?>{
     'schemaVersion': 1,
@@ -141,6 +227,13 @@ Future<String> buildRunProvenanceJson({
       'trialsPerTask': event.trialsPerTask < 1 ? 1 : event.trialsPerTask,
       'useReferencePlan': event.useReferencePlan,
       'existingRunId': event.existingRunId,
+      'generatedCodeSandbox': {
+        'required': event.generatedCodeSandboxRequired,
+        'enforced': event.generatedCodeSandboxEnforced,
+        if (event.generatedCodeSandboxBackend != null)
+          'backend': event.generatedCodeSandboxBackend,
+      },
+      'pricingRegistry': pricingRegistryProvenance(),
       'modelsByProvider': _sortedModelsMap(normalizedModelsByProvider),
       'evaluatorWeights': _sortedNumberMap(evaluatorWeights),
       'judge': {
@@ -157,6 +250,14 @@ Future<String> buildRunProvenanceJson({
           'taskId': combo.task.id,
           'providerId': combo.providerId,
           'modelId': combo.modelId,
+          ...modelIdentityExportJson(
+            providerId: combo.providerId,
+            modelId: combo.modelId,
+            additionalModelConfig: _modelRuntimeConfig(
+              selectedProvidersById[combo.providerId],
+              combo.modelId,
+            ),
+          ),
           'trialIndex': combo.trialIndex,
           'planId': combo.planId,
         },
@@ -180,10 +281,16 @@ Map<String, Object?> _taskJson(BenchmarkTask task) {
     'platformRequirements': _sortedStrings(
       task.platformRequirements.map((platform) => platform.name),
     ),
+    'executionPolicy': {
+      'allowInternet': task.allowInternet,
+      'resources': task.effectiveResourceLimits.toJson(),
+      'resourceEnforcement': taskResourceEnforcementJson(),
+    },
     'generatedCodePath': task.generatedCodePath,
     'isFlutter': task.isFlutter,
     'promptSha256': _sha256(task.prompt),
     'publicFixtureDigests': _fixtureDigests(task.fixtures),
+    'hiddenVerifierDigests': hiddenVerifierDigests(task),
     'hiddenAssetsExcluded': true,
   };
 }
@@ -219,6 +326,41 @@ Map<String, List<String>> _sortedModelsMap(
 ) {
   final keys = modelsByProvider.keys.toList()..sort();
   return {for (final key in keys) key: _sortedStrings(modelsByProvider[key]!)};
+}
+
+Map<String, Object?> _providerRuntimeConfig(ModelProvider provider) {
+  if (provider is! ModelRuntimeMetadataProvider) return const {};
+  final metadataProvider = provider as ModelRuntimeMetadataProvider;
+  return normalizeModelMetadataJson(metadataProvider.providerRuntimeConfig());
+}
+
+Map<String, Object?> _modelRuntimeConfig(
+  ModelProvider? provider,
+  String modelId,
+) {
+  if (provider is! ModelRuntimeMetadataProvider) return const {};
+  final metadataProvider = provider as ModelRuntimeMetadataProvider;
+  return normalizeModelMetadataJson(
+    metadataProvider.modelRuntimeConfig(modelId),
+  );
+}
+
+List<Map<String, Object?>> _sortedModelConfigs(
+  ModelProvider provider,
+  Iterable<String> modelIds,
+) {
+  final identities = [
+    for (final modelId in modelIds)
+      ModelIdentity.from(
+        providerId: provider.id,
+        modelId: modelId,
+        additionalModelConfig: _modelRuntimeConfig(provider, modelId),
+      ),
+  ]..sort((a, b) => a.modelId.compareTo(b.modelId));
+  return [
+    for (final identity in identities)
+      {'modelId': identity.modelId, ...identity.exportJson},
+  ];
 }
 
 Map<String, num> _sortedNumberMap(Map<String, double> values) {

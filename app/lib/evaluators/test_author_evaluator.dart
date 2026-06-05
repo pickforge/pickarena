@@ -4,6 +4,8 @@ import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/evaluators/_test_reporter_parser.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
+import 'package:dart_arena/evaluators/evaluator_process.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 import 'package:path/path.dart' as p;
 
@@ -22,31 +24,63 @@ class TestMutant {
 }
 
 class TestAuthorEvaluator implements Evaluator {
-  TestAuthorEvaluator({required this.testPath, required this.mutants});
+  TestAuthorEvaluator({
+    required this.testPath,
+    required this.mutants,
+    this.timeout = defaultEvaluatorProcessTimeout,
+    this.maxOutputChars = defaultEvaluatorMaxOutputChars,
+    this.maxProcesses,
+    this.maxMemoryMb,
+    this.dartExecutable = 'dart',
+    this.flutterExecutable = 'flutter',
+  });
 
   final String testPath;
   final List<TestMutant> mutants;
+  final Duration? timeout;
+  final int maxOutputChars;
+  final int? maxProcesses;
+  final int? maxMemoryMb;
+  final String dartExecutable;
+  final String flutterExecutable;
 
   @override
   String get id => 'test_author';
 
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
-    final exe = ctx.task.isFlutter ? 'flutter' : 'dart';
+    final exe = ctx.task.isFlutter ? flutterExecutable : dartExecutable;
     final originalRun = await _runTests(
       exe,
       ctx.workDir.path,
       deniedEnvironmentKeys: ctx.deniedEnvironmentKeys,
+      allowReentrantFlutterTool:
+          ctx.allowReentrantFlutterTool && ctx.task.isFlutter,
+      homeDirectory: ctx.workDir.path,
+      generatedCodeSandbox: ctx.generatedCodeSandbox,
+      allowInternet: ctx.task.allowInternet,
+      maxCpuCores: ctx.task.effectiveResourceLimits.cpus,
     );
-    final originalSummary = parseTestReporterJson(
-      originalRun.stdout.toString(),
-    );
-    if (originalRun.exitCode != 0 || !originalSummary.allPassed) {
+    final originalSummary = parseTestReporterJson(originalRun.stdout);
+    if (originalRun.timedOut ||
+        originalRun.outputLimitExceeded ||
+        originalRun.processLimitExceeded ||
+        originalRun.memoryLimitExceeded ||
+        originalRun.exitCode != 0 ||
+        !originalSummary.allPassed) {
       return EvaluationResult(
         evaluatorId: id,
         passed: false,
         score: 0.0,
-        rationale: originalSummary.total == 0
+        rationale: originalRun.timedOut
+            ? 'generated tests timed out'
+            : originalRun.processLimitExceeded
+            ? 'generated tests process limit exceeded'
+            : originalRun.memoryLimitExceeded
+            ? 'generated tests memory limit exceeded'
+            : originalRun.outputLimitExceeded
+            ? 'generated tests output limit exceeded'
+            : originalSummary.total == 0
             ? 'generated tests did not run'
             : 'generated tests fail on the correct implementation',
         details: {
@@ -56,6 +90,23 @@ class TestAuthorEvaluator implements Evaluator {
           'original_total': originalSummary.total,
           'original_passed': originalSummary.passed,
           'original_failures': originalSummary.failures,
+          if (originalRun.stderr.isNotEmpty) 'stderr': originalRun.stderr,
+          if (originalRun.timedOut) 'timed_out': true,
+          if (originalRun.timedOut && timeout != null)
+            'timeout_ms': timeout!.inMilliseconds,
+          if (originalRun.outputLimitExceeded) 'output_limit_exceeded': true,
+          if (originalRun.outputLimitExceeded)
+            'max_output_chars': maxOutputChars,
+          if (originalRun.processLimitExceeded) 'process_limit_exceeded': true,
+          if (originalRun.processLimitExceeded && maxProcesses != null)
+            'max_processes': maxProcesses,
+          if (originalRun.observedProcessCount != null)
+            'observed_processes': originalRun.observedProcessCount,
+          if (originalRun.memoryLimitExceeded) 'memory_limit_exceeded': true,
+          if (originalRun.memoryLimitExceeded && maxMemoryMb != null)
+            'max_memory_mb': maxMemoryMb,
+          if (originalRun.observedMemoryMb != null)
+            'observed_memory_mb': originalRun.observedMemoryMb,
         },
       );
     }
@@ -85,8 +136,18 @@ class TestAuthorEvaluator implements Evaluator {
           exe,
           ctx.workDir.path,
           deniedEnvironmentKeys: ctx.deniedEnvironmentKeys,
+          allowReentrantFlutterTool:
+              ctx.allowReentrantFlutterTool && ctx.task.isFlutter,
+          homeDirectory: ctx.workDir.path,
+          generatedCodeSandbox: ctx.generatedCodeSandbox,
+          allowInternet: ctx.task.allowInternet,
+          maxCpuCores: ctx.task.effectiveResourceLimits.cpus,
         );
-        if (mutantRun.exitCode != 0) {
+        if (mutantRun.timedOut ||
+            mutantRun.outputLimitExceeded ||
+            mutantRun.processLimitExceeded ||
+            mutantRun.memoryLimitExceeded ||
+            mutantRun.exitCode != 0) {
           killed++;
         } else {
           survived.add(mutant.name);
@@ -115,19 +176,33 @@ class TestAuthorEvaluator implements Evaluator {
     );
   }
 
-  Future<ProcessResult> _runTests(
+  Future<EvaluatorProcessResult> _runTests(
     String exe,
     String workDir, {
     required Iterable<String> deniedEnvironmentKeys,
+    required bool allowReentrantFlutterTool,
+    required String homeDirectory,
+    required GeneratedCodeSandbox? generatedCodeSandbox,
+    required bool allowInternet,
+    required int? maxCpuCores,
   }) {
-    return Process.run(
+    return runEvaluatorProcess(
       exe,
       ['test', testPath, '--reporter=json'],
       workingDirectory: workDir,
       environment: benchmarkSubprocessEnvironment(
         additionalDeniedKeys: deniedEnvironmentKeys,
+        allowReentrantFlutterTool: allowReentrantFlutterTool,
+        homeDirectory: homeDirectory,
       ),
       includeParentEnvironment: false,
+      timeout: timeout,
+      maxOutputChars: maxOutputChars,
+      maxCpuCores: maxCpuCores,
+      maxProcesses: maxProcesses,
+      maxMemoryMb: maxMemoryMb,
+      generatedCodeSandbox: generatedCodeSandbox,
+      allowInternet: allowInternet,
     );
   }
 }

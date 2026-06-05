@@ -1,4 +1,5 @@
 import 'package:dart_arena/storage/database.dart';
+import 'package:dart_arena/core/evaluator_classification.dart';
 import 'package:dart_arena/core/scoring.dart';
 import 'package:equatable/equatable.dart';
 
@@ -73,15 +74,6 @@ class Dimensions extends Equatable {
   ];
 }
 
-const _correctnessEvaluatorIds = {
-  'compile',
-  'analyze',
-  'test',
-  'hidden_test',
-  'test_author',
-  'widget_tree',
-};
-
 Dimensions _computeDimensions(
   List<TaskRun> taskRuns,
   Map<String, List<Evaluation>> evalsByTaskRunId,
@@ -119,7 +111,7 @@ Dimensions _computeDimensions(
         eleganceSum += e.score;
         eleganceCount++;
       }
-      if (!_correctnessEvaluatorIds.contains(e.evaluatorId)) continue;
+      if (!isObjectiveEvaluatorId(e.evaluatorId)) continue;
       final w = defaultEvaluatorWeights[e.evaluatorId] ?? 1.0;
       intelligenceNum += e.score * w;
       intelligenceDen += w;

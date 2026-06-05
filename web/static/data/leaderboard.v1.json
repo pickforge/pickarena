@@ -5,6 +5,9 @@
     "name": "Dart Arena",
     "brand": "Pickforge",
     "title": "Dart Arena by Pickforge",
+    "version": "2026-05-31-master-spec",
+    "taskSetId": "taskset-sample",
+    "evaluatorSchemaVersion": 1,
     "track": "agentic",
     "dataPolicy": "aggregate-compatible"
   },
@@ -14,11 +17,118 @@
       "sample-run-2026-05-31"
     ],
     "taskCount": 2,
-    "taskRunCount": 4,
+    "taskRunCount": 8,
     "modelCount": 2,
+    "trialSummaryCount": 8,
+    "trialSummaryTotalCount": 8,
+    "trialSummaryTruncated": false,
+    "trialSummaryLimit": 1000,
     "warnings": [
       "Sample static data for web scaffold preview; replace with leaderboard:export output."
-    ]
+    ],
+    "judgeOverhead": {
+      "evaluationCount": 4,
+      "promptTokens": 2400,
+      "completionTokens": 400,
+      "knownEstimatedCostCount": 4,
+      "unknownEstimatedCostCount": 0,
+      "totalEstimatedCostMicros": 9500,
+      "pricingStatusCounts": {
+        "exact": 4
+      }
+    },
+    "runProvenance": {
+      "runCount": 1,
+    "embeddedRunCount": 1,
+    "sandboxEnforcedRunCount": 1,
+    "taskExecutionPolicyRunCount": 1,
+    "networkDisabledTaskPolicyRunCount": 1,
+    "taskResourceLimitRunCount": 1,
+    "sdkVersionRunCount": 1,
+      "dependencySnapshotRunCount": 1,
+      "pricingRegistryRunCount": 1,
+      "generatedCodeSandboxBackends": [
+        "sample-sandbox"
+      ],
+      "dartVersions": [
+        "3.11.4"
+      ],
+      "flutterVersions": [
+        "3.41.6"
+      ],
+      "environmentIds": [
+        "sampleenv001"
+      ],
+      "warnings": []
+    }
+  },
+  "scoring": {
+    "schemaVersion": 1,
+    "primaryMetric": "primary_pass",
+    "rankingMetric": "primary_pass_rate",
+    "confidenceInterval": "wilson_95",
+    "llmJudgePolicy": "diagnostic_only",
+    "objectiveEvaluatorIds": [
+      "analyze",
+      "compile",
+      "hidden_test",
+      "test",
+      "test_author",
+      "widget_tree"
+    ],
+    "secondaryEvaluatorIds": [
+      "diff_size",
+      "llm_judge"
+    ],
+    "hiddenVerifierPattern": "*_hidden",
+    "failureTags": [
+      "pass",
+      "hidden_verifier_failed",
+      "public_tests_failed",
+      "analysis_failed",
+      "compile_failed",
+      "harness_timeout",
+      "harness_error",
+      "no_patch",
+      "invalid_output",
+      "environment_error",
+      "unknown"
+    ],
+    "objectiveFailureCaps": {
+      "compile": 0.2,
+      "analyze": 0.35,
+      "public_test": 0.6,
+      "hidden_verifier": 0.6
+    },
+    "defaultEvaluatorWeights": {
+      "analyze": 0.5,
+      "compile": 0.5,
+      "diff_size": 0.3,
+      "hidden_test": 1.0,
+      "llm_judge": 0.7,
+      "test": 1.0,
+      "test_author": 4.0,
+      "widget_tree": 1.0
+    }
+  },
+  "pricingRegistry": {
+    "version": "2026-05-31",
+    "currency": "USD",
+    "modelCount": 2,
+    "models": {
+      "anthropic:claude-sample": {
+        "inputCostPerMToken": 3,
+        "outputCostPerMToken": 15,
+        "source": "sample",
+        "effectiveFrom": "2026-05-31"
+      },
+      "openai:gpt-5-sample": {
+        "inputCostPerMToken": 1.25,
+        "outputCostPerMToken": 10,
+        "source": "sample",
+        "effectiveFrom": "2026-05-31"
+      }
+    }
   },
   "models": [
     {
@@ -27,8 +137,25 @@
       "rank": 1,
       "score": 0.75,
       "passRate": 0.75,
+      "trialCount": 4,
       "passCount": 3,
       "sampleCount": 4,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 2,
+          "sampleCount": 2,
+          "passRate": 1.0
+        },
+        "2": {
+          "k": 2,
+          "passCount": 2,
+          "sampleCount": 2,
+          "passRate": 1.0
+        }
+      },
+      "medianStepCount": 18,
+      "medianPeakContextTokens": 14300,
       "publicPassCount": 4,
       "publicSampleCount": 4,
       "publicPassRate": 1.0,
@@ -49,6 +176,8 @@
       "totalEstimatedCostMicros": 500000,
       "costPerSolvedTaskMicros": 166667,
       "cheapestPassingEstimatedCostMicros": 120000,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0,
       "failureBreakdown": {
         "hidden_verifier_failed": 1
       }
@@ -59,8 +188,25 @@
       "rank": 2,
       "score": 0.5,
       "passRate": 0.5,
+      "trialCount": 4,
       "passCount": 2,
       "sampleCount": 4,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 2,
+          "passRate": 0.5
+        },
+        "2": {
+          "k": 2,
+          "passCount": 1,
+          "sampleCount": 2,
+          "passRate": 0.5
+        }
+      },
+      "medianStepCount": 22,
+      "medianPeakContextTokens": 15700,
       "publicPassCount": 3,
       "publicSampleCount": 4,
       "publicPassRate": 0.75,
@@ -76,11 +222,13 @@
       "medianPromptTokens": 5100,
       "medianCompletionTokens": 1600,
       "medianEstimatedCostMicros": 140000,
-      "knownEstimatedCostCount": 4,
-      "unknownEstimatedCostCount": 0,
-      "totalEstimatedCostMicros": 560000,
-      "costPerSolvedTaskMicros": 280000,
+      "knownEstimatedCostCount": 3,
+      "unknownEstimatedCostCount": 1,
+      "totalEstimatedCostMicros": null,
+      "costPerSolvedTaskMicros": null,
       "cheapestPassingEstimatedCostMicros": 135000,
+      "blockedEvaluationCount": 1,
+      "blockedTaskRunCount": 1,
       "failureBreakdown": {
         "analysis_failed": 1,
         "public_tests_failed": 1
@@ -92,29 +240,461 @@
       "taskId": "sample.counter_bloc",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
-      "sampleCount": 2,
+      "trialCount": 4,
+      "sampleCount": 4,
       "modelCount": 2,
-      "passRate": 0.5,
-      "publicPassCount": 2,
-      "publicSampleCount": 2,
-      "publicPassRate": 1.0,
+      "passRate": 0.25,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 2,
+          "passRate": 0.5
+        },
+        "2": {
+          "k": 2,
+          "passCount": 1,
+          "sampleCount": 2,
+          "passRate": 0.5
+        }
+      },
+      "confidenceInterval": {
+        "lower": 0.0456,
+        "upper": 0.6994
+      },
+      "medianStepCount": 20,
+      "medianPeakContextTokens": 15000,
+      "publicPassCount": 3,
+      "publicSampleCount": 4,
+      "publicPassRate": 0.75,
       "hiddenPassCount": 1,
-      "hiddenSampleCount": 2,
-      "hiddenPassRate": 0.5
+      "hiddenSampleCount": 3,
+      "hiddenPassRate": 0.3333,
+      "blockedEvaluationCount": 1,
+      "blockedTaskRunCount": 1
     },
     {
       "taskId": "sample.profile_card",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
-      "sampleCount": 2,
+      "trialCount": 4,
+      "sampleCount": 4,
       "modelCount": 2,
       "passRate": 1.0,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 2,
+          "sampleCount": 2,
+          "passRate": 1.0
+        },
+        "2": {
+          "k": 2,
+          "passCount": 2,
+          "sampleCount": 2,
+          "passRate": 1.0
+        }
+      },
+      "confidenceInterval": {
+        "lower": 0.5101,
+        "upper": 1.0
+      },
+      "medianStepCount": 17,
+      "medianPeakContextTokens": 14200,
+      "publicPassCount": 4,
+      "publicSampleCount": 4,
+      "publicPassRate": 1.0,
+      "hiddenPassCount": 4,
+      "hiddenSampleCount": 4,
+      "hiddenPassRate": 1.0,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0
+    }
+  ],
+  "taskModelCells": [
+    {
+      "providerId": "anthropic",
+      "modelId": "claude-sample",
+      "taskId": "sample.counter_bloc",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialCount": 2,
+      "passCount": 0,
+      "sampleCount": 2,
+      "passRate": 0.0,
+      "errorCount": 2,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 0,
+          "sampleCount": 1,
+          "passRate": 0.0
+        },
+        "2": {
+          "k": 2,
+          "passCount": 0,
+          "sampleCount": 1,
+          "passRate": 0.0
+        }
+      },
+      "confidenceInterval": {
+        "lower": 0.0,
+        "upper": 0.6576
+      },
+      "medianStepCount": 24,
+      "medianPeakContextTokens": 16000,
+      "publicPassCount": 1,
+      "publicSampleCount": 2,
+      "publicPassRate": 0.5,
+      "hiddenPassCount": 0,
+      "hiddenSampleCount": 1,
+      "hiddenPassRate": 0.0,
+      "blockedEvaluationCount": 1,
+      "blockedTaskRunCount": 1,
+      "medianLatencyMs": 39000,
+      "medianPromptTokens": 5100,
+      "medianCompletionTokens": 1600,
+      "medianEstimatedCostMicros": 140000,
+      "knownEstimatedCostCount": 1,
+      "unknownEstimatedCostCount": 1,
+      "failureBreakdown": {
+        "analysis_failed": 1,
+        "public_tests_failed": 1
+      }
+    },
+    {
+      "providerId": "anthropic",
+      "modelId": "claude-sample",
+      "taskId": "sample.profile_card",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialCount": 2,
+      "passCount": 2,
+      "sampleCount": 2,
+      "passRate": 1.0,
+      "errorCount": 0,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        },
+        "2": {
+          "k": 2,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        }
+      },
+      "confidenceInterval": {
+        "lower": 0.3424,
+        "upper": 1.0
+      },
+      "medianStepCount": 18,
+      "medianPeakContextTokens": 14800,
       "publicPassCount": 2,
       "publicSampleCount": 2,
       "publicPassRate": 1.0,
       "hiddenPassCount": 2,
       "hiddenSampleCount": 2,
-      "hiddenPassRate": 1.0
+      "hiddenPassRate": 1.0,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0,
+      "medianLatencyMs": 41000,
+      "medianPromptTokens": 5000,
+      "medianCompletionTokens": 1500,
+      "medianEstimatedCostMicros": 135000,
+      "knownEstimatedCostCount": 2,
+      "unknownEstimatedCostCount": 0,
+      "failureBreakdown": {
+        "pass": 2
+      }
+    },
+    {
+      "providerId": "openai",
+      "modelId": "gpt-5-sample",
+      "taskId": "sample.counter_bloc",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialCount": 2,
+      "passCount": 1,
+      "sampleCount": 2,
+      "passRate": 0.5,
+      "errorCount": 1,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        },
+        "2": {
+          "k": 2,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        }
+      },
+      "confidenceInterval": {
+        "lower": 0.0945,
+        "upper": 0.9055
+      },
+      "medianStepCount": 18,
+      "medianPeakContextTokens": 14300,
+      "publicPassCount": 2,
+      "publicSampleCount": 2,
+      "publicPassRate": 1.0,
+      "hiddenPassCount": 1,
+      "hiddenSampleCount": 2,
+      "hiddenPassRate": 0.5,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0,
+      "medianLatencyMs": 42000,
+      "medianPromptTokens": 5200,
+      "medianCompletionTokens": 1800,
+      "medianEstimatedCostMicros": 125000,
+      "knownEstimatedCostCount": 2,
+      "unknownEstimatedCostCount": 0,
+      "failureBreakdown": {
+        "hidden_verifier_failed": 1,
+        "pass": 1
+      }
+    },
+    {
+      "providerId": "openai",
+      "modelId": "gpt-5-sample",
+      "taskId": "sample.profile_card",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialCount": 2,
+      "passCount": 2,
+      "sampleCount": 2,
+      "passRate": 1.0,
+      "errorCount": 0,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        },
+        "2": {
+          "k": 2,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        }
+      },
+      "confidenceInterval": {
+        "lower": 0.3424,
+        "upper": 1.0
+      },
+      "medianStepCount": 15,
+      "medianPeakContextTokens": 13500,
+      "publicPassCount": 2,
+      "publicSampleCount": 2,
+      "publicPassRate": 1.0,
+      "hiddenPassCount": 2,
+      "hiddenSampleCount": 2,
+      "hiddenPassRate": 1.0,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0,
+      "medianLatencyMs": 44000,
+      "medianPromptTokens": 5300,
+      "medianCompletionTokens": 1700,
+      "medianEstimatedCostMicros": 120000,
+      "knownEstimatedCostCount": 2,
+      "unknownEstimatedCostCount": 0,
+      "failureBreakdown": {
+        "pass": 2
+      }
+    }
+  ],
+  "trialSummaries": [
+    {
+      "trialId": "anth-counter-1",
+      "runId": "sample-run-2026-05-31",
+      "providerId": "anthropic",
+      "modelId": "claude-sample",
+      "taskId": "sample.counter_bloc",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 0,
+      "completedAt": "2026-05-31T12:00:00.000Z",
+      "primaryPass": false,
+      "failureTag": "analysis_failed",
+      "aggregateScore": 0.2,
+      "publicPassed": false,
+      "hiddenPassed": null,
+      "blockedEvaluationCount": 1,
+      "stepCount": 25,
+      "peakContextTokens": 16200,
+      "latencyMs": 38000,
+      "promptTokens": 5000,
+      "completionTokens": 1500,
+      "estimatedCostMicros": 135000
+    },
+    {
+      "trialId": "anth-counter-2",
+      "runId": "sample-run-2026-05-31",
+      "providerId": "anthropic",
+      "modelId": "claude-sample",
+      "taskId": "sample.counter_bloc",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 1,
+      "completedAt": "2026-05-31T12:02:00.000Z",
+      "primaryPass": false,
+      "failureTag": "public_tests_failed",
+      "aggregateScore": 0.35,
+      "publicPassed": false,
+      "hiddenPassed": false,
+      "blockedEvaluationCount": 0,
+      "stepCount": 23,
+      "peakContextTokens": 15800,
+      "latencyMs": 40000,
+      "promptTokens": 5200,
+      "completionTokens": 1700,
+      "estimatedCostMicros": null
+    },
+    {
+      "trialId": "anth-profile-1",
+      "runId": "sample-run-2026-05-31",
+      "providerId": "anthropic",
+      "modelId": "claude-sample",
+      "taskId": "sample.profile_card",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 0,
+      "completedAt": "2026-05-31T12:04:00.000Z",
+      "primaryPass": true,
+      "failureTag": "pass",
+      "aggregateScore": 1.0,
+      "publicPassed": true,
+      "hiddenPassed": true,
+      "blockedEvaluationCount": 0,
+      "stepCount": 18,
+      "peakContextTokens": 14800,
+      "latencyMs": 41000,
+      "promptTokens": 5000,
+      "completionTokens": 1500,
+      "estimatedCostMicros": 135000
+    },
+    {
+      "trialId": "anth-profile-2",
+      "runId": "sample-run-2026-05-31",
+      "providerId": "anthropic",
+      "modelId": "claude-sample",
+      "taskId": "sample.profile_card",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 1,
+      "completedAt": "2026-05-31T12:06:00.000Z",
+      "primaryPass": true,
+      "failureTag": "pass",
+      "aggregateScore": 1.0,
+      "publicPassed": true,
+      "hiddenPassed": true,
+      "blockedEvaluationCount": 0,
+      "stepCount": 18,
+      "peakContextTokens": 14800,
+      "latencyMs": 41000,
+      "promptTokens": 5000,
+      "completionTokens": 1500,
+      "estimatedCostMicros": 135000
+    },
+    {
+      "trialId": "openai-counter-1",
+      "runId": "sample-run-2026-05-31",
+      "providerId": "openai",
+      "modelId": "gpt-5-sample",
+      "taskId": "sample.counter_bloc",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 0,
+      "completedAt": "2026-05-31T12:08:00.000Z",
+      "primaryPass": true,
+      "failureTag": "pass",
+      "aggregateScore": 1.0,
+      "publicPassed": true,
+      "hiddenPassed": true,
+      "blockedEvaluationCount": 0,
+      "stepCount": 17,
+      "peakContextTokens": 14200,
+      "latencyMs": 41000,
+      "promptTokens": 5100,
+      "completionTokens": 1700,
+      "estimatedCostMicros": 120000
+    },
+    {
+      "trialId": "openai-counter-2",
+      "runId": "sample-run-2026-05-31",
+      "providerId": "openai",
+      "modelId": "gpt-5-sample",
+      "taskId": "sample.counter_bloc",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 1,
+      "completedAt": "2026-05-31T12:10:00.000Z",
+      "primaryPass": false,
+      "failureTag": "hidden_verifier_failed",
+      "aggregateScore": 0.75,
+      "publicPassed": true,
+      "hiddenPassed": false,
+      "blockedEvaluationCount": 0,
+      "stepCount": 19,
+      "peakContextTokens": 14600,
+      "latencyMs": 43000,
+      "promptTokens": 5300,
+      "completionTokens": 1900,
+      "estimatedCostMicros": 130000
+    },
+    {
+      "trialId": "openai-profile-1",
+      "runId": "sample-run-2026-05-31",
+      "providerId": "openai",
+      "modelId": "gpt-5-sample",
+      "taskId": "sample.profile_card",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 0,
+      "completedAt": "2026-05-31T12:12:00.000Z",
+      "primaryPass": true,
+      "failureTag": "pass",
+      "aggregateScore": 1.0,
+      "publicPassed": true,
+      "hiddenPassed": true,
+      "blockedEvaluationCount": 0,
+      "stepCount": 15,
+      "peakContextTokens": 13500,
+      "latencyMs": 44000,
+      "promptTokens": 5300,
+      "completionTokens": 1700,
+      "estimatedCostMicros": 120000
+    },
+    {
+      "trialId": "openai-profile-2",
+      "runId": "sample-run-2026-05-31",
+      "providerId": "openai",
+      "modelId": "gpt-5-sample",
+      "taskId": "sample.profile_card",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 1,
+      "completedAt": "2026-05-31T12:14:00.000Z",
+      "primaryPass": true,
+      "failureTag": "pass",
+      "aggregateScore": 1.0,
+      "publicPassed": true,
+      "hiddenPassed": true,
+      "blockedEvaluationCount": 0,
+      "stepCount": 15,
+      "peakContextTokens": 13500,
+      "latencyMs": 44000,
+      "promptTokens": 5300,
+      "completionTokens": 1700,
+      "estimatedCostMicros": 120000
     }
   ]
 }

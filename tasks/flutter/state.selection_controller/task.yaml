@@ -1,0 +1,65 @@
+schemaVersion: 1
+id: state.selection_controller
+version: 1
+category: bug_fix
+track: agentic
+tags:
+  - state_bloc
+  - ui
+  - bugfix
+difficulty: medium
+platformRequirements:
+  - linux
+timeoutSeconds: 900
+release:
+  corpus: private_official
+  status: active
+network: false
+resources:
+  cpus: 2
+  memory_mb: 8192
+  max_processes: 64
+  max_output_bytes: 1048576
+generatedCodePath: lib/selection_controller.dart
+isFlutter: true
+instructionPath: instruction.md
+workspace:
+  root: baseline
+  files:
+    pubspec.yaml: pubspec.yaml
+    lib/selection_controller.dart: lib/selection_controller.dart
+    test/selection_controller_test.dart: test/selection_controller_test.dart
+hiddenVerifiers:
+  - id: selection_controller_hidden
+    testPath: test/_hidden/selection_controller_hidden_test.dart
+    root: hidden_tests
+    files:
+      test/_hidden/selection_controller_hidden_test.dart: test/_hidden/selection_controller_hidden_test.dart
+reference:
+  type: files
+  root: solution
+  files:
+    lib/selection_controller.dart: lib/selection_controller.dart
+requiredNegativeCaseKinds:
+  - noop
+  - api_breaking
+  - overfit
+negativeCases:
+  - id: noop
+    kind: noop
+    description: Leaves single-selection toggle behavior unchanged.
+    root: negative_cases/noop
+    files:
+      lib/selection_controller.dart: lib/selection_controller.dart
+  - id: api_breaking
+    kind: api_breaking
+    description: Replaces the public SelectionController API.
+    root: negative_cases/api_breaking
+    files:
+      lib/selection_controller.dart: lib/selection_controller.dart
+  - id: overfit_inbox_only
+    kind: overfit
+    description: Hardcodes the public inbox case and ignores hidden ids.
+    root: negative_cases/overfit
+    files:
+      lib/selection_controller.dart: lib/selection_controller.dart

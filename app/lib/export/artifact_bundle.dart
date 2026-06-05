@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:dart_arena/core/model_identity.dart';
 import 'package:dart_arena/export/csv_exporter.dart';
 import 'package:dart_arena/export/json_exporter.dart';
 import 'package:dart_arena/export/md_exporter.dart';
 import 'package:dart_arena/export/artifact_bundle_defaults.dart';
 import 'package:dart_arena/export/run_manifest.dart';
+import 'package:dart_arena/runner/subprocess_environment.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
 import 'package:path/path.dart' as p;
@@ -59,6 +61,9 @@ Future<ExportBundleResult> exportRunBundle({
   await trajectoryDir.create(recursive: true);
 
   final taskRuns = _sortedTaskRuns(summary.taskRuns);
+  final modelConfigIndex = ModelConfigIndex.fromRunProvenanceJson(
+    summary.run.provenanceJson,
+  );
   final warnings = <BundleWarning>[];
   final artifacts = <ArtifactDescriptor>[];
   final responsePaths = <String, String>{};
@@ -171,6 +176,7 @@ Future<ExportBundleResult> exportRunBundle({
       responseArtifactsByTaskRunId: responsePaths,
       patchArtifactsByTaskRunId: patchPaths,
       trajectoryArtifactsByTaskRunId: trajectoryPaths,
+      artifactMetadataByTaskRunId: _artifactMetadataByTaskRunId(artifacts),
     ),
   );
 
@@ -187,7 +193,7 @@ Future<ExportBundleResult> exportRunBundle({
     driftSchemaVersion: appDatabaseSchemaVersion,
     exportTool: const {'name': 'dart_arena_export_bundle', 'version': '1'},
     environment: await (environmentProvider ?? _defaultExportEnvironment)(),
-    taskRuns: _manifestTaskRuns(taskRuns),
+    taskRuns: _manifestTaskRuns(taskRuns, modelConfigIndex),
     counts: _counts(summary, taskRuns, artifacts, warnings),
     evaluatorIds: _evaluatorIds(summary),
     passSummary: _passSummary(summary),
@@ -222,12 +228,21 @@ Future<ArtifactDescriptor> _writeTextArtifact({
 }) async {
   final name = _artifactFileName(taskRunId, extension, usedNames);
   final file = File(p.join(directory.path, name));
-  await _writeString(file, text);
+  final bytes = utf8.encode(text);
+  final digest = sha256.convert(bytes).toString();
+  await file.parent.create(recursive: true);
+  await file.writeAsBytes(bytes);
   return ArtifactDescriptor(
+    artifactId: _artifactId(
+      taskRunId: taskRunId,
+      kind: kind,
+      sha256Digest: digest,
+    ),
     kind: kind,
     taskRunId: taskRunId,
     path: _relativePath(targetDirectory, file),
-    bytes: await file.length(),
+    bytes: bytes.length,
+    sha256: digest,
   );
 }
 
@@ -294,11 +309,18 @@ Future<ArtifactDescriptor?> _copyTrajectoryArtifact({
     );
     return null;
   }
+  final digest = (await sha256.bind(target.openRead()).first).toString();
   return ArtifactDescriptor(
+    artifactId: _artifactId(
+      taskRunId: taskRunId,
+      kind: 'trajectory',
+      sha256Digest: digest,
+    ),
     kind: 'trajectory',
     taskRunId: taskRunId,
     path: _relativePath(targetDirectory, target),
     bytes: await target.length(),
+    sha256: digest,
   );
 }
 
@@ -445,7 +467,10 @@ List<TaskRun> _sortedTaskRuns(List<TaskRun> taskRuns) {
   return taskRuns.toList()..sort((a, b) => a.id.compareTo(b.id));
 }
 
-List<Map<String, Object?>> _manifestTaskRuns(List<TaskRun> taskRuns) {
+List<Map<String, Object?>> _manifestTaskRuns(
+  List<TaskRun> taskRuns,
+  ModelConfigIndex modelConfigIndex,
+) {
   return [
     for (final taskRun in taskRuns)
       {
@@ -457,6 +482,10 @@ List<Map<String, Object?>> _manifestTaskRuns(List<TaskRun> taskRuns) {
         'trialIndex': taskRun.trialIndex,
         'providerId': taskRun.providerId,
         'modelId': taskRun.modelId,
+        ...modelConfigIndex.exportJsonFor(
+          providerId: taskRun.providerId,
+          modelId: taskRun.modelId,
+        ),
       },
   ];
 }
@@ -494,6 +523,21 @@ List<String> _evaluatorIds(RunSummary summary) {
       .toSet()
       .toList()
     ..sort();
+}
+
+Map<String, Map<String, Map<String, Object?>>> _artifactMetadataByTaskRunId(
+  List<ArtifactDescriptor> artifacts,
+) {
+  final metadata = <String, Map<String, Map<String, Object?>>>{};
+  for (final artifact in artifacts) {
+    (metadata[artifact.taskRunId] ??= {})[artifact.kind] = {
+      'artifactId': artifact.artifactId,
+      'path': artifact.path,
+      'bytes': artifact.bytes,
+      'sha256': artifact.sha256,
+    };
+  }
+  return metadata;
 }
 
 Map<String, Object?> _passSummary(RunSummary summary) {
@@ -604,6 +648,8 @@ Future<ProcessResult?> _runProcess(String executable, List<String> args) async {
       executable,
       args,
       runInShell: false,
+      environment: benchmarkSubprocessEnvironment(),
+      includeParentEnvironment: false,
     ).timeout(const Duration(milliseconds: 800));
   } on Object {
     return null;
@@ -643,6 +689,16 @@ String _sanitizePathSegment(String value) {
 
 String _shortDigest(String value) {
   return sha256.convert(utf8.encode(value)).toString().substring(0, 8);
+}
+
+String _artifactId({
+  required String taskRunId,
+  required String kind,
+  required String sha256Digest,
+}) {
+  final source = '$taskRunId\n$kind\n$sha256Digest';
+  final digest = sha256.convert(utf8.encode(source)).toString();
+  return 'artifact_${digest.substring(0, 16)}';
 }
 
 String _relativePath(Directory root, File file) {

@@ -3,12 +3,22 @@ import 'dart:io';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/reference_solution.dart';
+import 'package:dart_arena/core/task_integrity.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/evaluators/hidden_test_evaluator.dart';
+import 'package:dart_arena/evaluators/test_evaluator.dart';
+import 'package:dart_arena/runner/evaluator_resource_limits.dart';
+import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
+import 'package:dart_arena/runner/resource_enforcement_policy.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
+
+const taskQaAdmissionToolName = 'dart_arena_task_qa';
+const taskQaAdmissionEvaluatorSchemaVersion = 1;
+const taskQaAdmissionEvaluatorVersion = '2026-05-31-master-spec';
 
 class TaskQaReport {
   const TaskQaReport({
@@ -18,7 +28,9 @@ class TaskQaReport {
     required this.referencePublicPassed,
     required this.referenceHiddenPassed,
     required this.hiddenFlakeRuns,
+    required this.hiddenVerifierDigests,
     required this.negativeCaseReports,
+    required this.promptSafety,
     required this.failureMessages,
     required this.baselineHiddenResults,
     required this.referencePublicResults,
@@ -31,7 +43,9 @@ class TaskQaReport {
   final bool referencePublicPassed;
   final bool referenceHiddenPassed;
   final int hiddenFlakeRuns;
+  final Map<String, String> hiddenVerifierDigests;
   final List<TaskQaNegativeCaseReport> negativeCaseReports;
+  final TaskQaPromptSafetyReport promptSafety;
   final List<String> failureMessages;
   final List<EvaluationResult> baselineHiddenResults;
   final List<EvaluationResult> referencePublicResults;
@@ -42,12 +56,118 @@ class TaskQaReport {
   bool get negativeCasesRejected =>
       negativeCaseReports.isNotEmpty &&
       negativeCaseReports.every((report) => report.rejected);
+
+  bool get requiredNegativeCaseKindsCovered =>
+      promptSafety.requiredNegativeCaseKinds.isEmpty ||
+      promptSafety.missingNegativeCaseKinds.isEmpty;
+
+  TaskQaVerifierQualityAudit get verifierQualityAudit =>
+      TaskQaVerifierQualityAudit.fromReport(this);
+}
+
+class TaskQaVerifierQualityAudit {
+  const TaskQaVerifierQualityAudit({
+    required this.falsePositiveCount,
+    required this.falseNegativeCount,
+    required this.disagreementCount,
+    required this.infrastructureErrorCount,
+    required this.flakeRunCount,
+    required this.flakeFailureCount,
+    required this.negativeCaseCount,
+    required this.acceptedNegativeCaseCount,
+    required this.referencePublicFailureCount,
+    required this.referenceHiddenFailureCount,
+  });
+
+  factory TaskQaVerifierQualityAudit.fromReport(TaskQaReport report) {
+    var falsePositiveCount = 0;
+    var falseNegativeCount = 0;
+    var disagreementCount = 0;
+    var infrastructureErrorCount = 0;
+    var acceptedNegativeCaseCount = 0;
+
+    if (!report.referencePublicPassed) {
+      falseNegativeCount++;
+    }
+    if (!report.referenceHiddenPassed) {
+      falseNegativeCount++;
+    }
+    if (report.referencePublicPassed != report.referenceHiddenPassed) {
+      disagreementCount++;
+    }
+
+    infrastructureErrorCount += _infrastructureErrorCount(
+      report.baselineHiddenResults,
+    );
+    infrastructureErrorCount += _infrastructureErrorCount(
+      report.referencePublicResults,
+    );
+    infrastructureErrorCount += _infrastructureErrorCount(
+      report.referenceHiddenResults,
+    );
+
+    for (final negativeCase in report.negativeCaseReports) {
+      if (negativeCase.preparePassed && !negativeCase.rejected) {
+        falsePositiveCount++;
+        acceptedNegativeCaseCount++;
+      }
+      if (negativeCase.preparePassed &&
+          negativeCase.publicPassed != negativeCase.hiddenPassed) {
+        disagreementCount++;
+      }
+      infrastructureErrorCount += _infrastructureErrorCount(
+        negativeCase.publicResults,
+      );
+      infrastructureErrorCount += _infrastructureErrorCount(
+        negativeCase.hiddenResults,
+      );
+    }
+
+    return TaskQaVerifierQualityAudit(
+      falsePositiveCount: falsePositiveCount,
+      falseNegativeCount: falseNegativeCount,
+      disagreementCount: disagreementCount,
+      infrastructureErrorCount: infrastructureErrorCount,
+      flakeRunCount: report.hiddenFlakeRuns,
+      flakeFailureCount: report.referenceHiddenPassed ? 0 : 1,
+      negativeCaseCount: report.negativeCaseReports.length,
+      acceptedNegativeCaseCount: acceptedNegativeCaseCount,
+      referencePublicFailureCount: report.referencePublicPassed ? 0 : 1,
+      referenceHiddenFailureCount: report.referenceHiddenPassed ? 0 : 1,
+    );
+  }
+
+  final int falsePositiveCount;
+  final int falseNegativeCount;
+  final int disagreementCount;
+  final int infrastructureErrorCount;
+  final int flakeRunCount;
+  final int flakeFailureCount;
+  final int negativeCaseCount;
+  final int acceptedNegativeCaseCount;
+  final int referencePublicFailureCount;
+  final int referenceHiddenFailureCount;
+
+  Map<String, Object?> toJson() => {
+    'falsePositiveCount': falsePositiveCount,
+    'falseNegativeCount': falseNegativeCount,
+    'disagreementCount': disagreementCount,
+    'infrastructureErrorCount': infrastructureErrorCount,
+    'flakeRunCount': flakeRunCount,
+    'flakeFailureCount': flakeFailureCount,
+    'flakeRate': flakeRunCount == 0 ? null : flakeFailureCount / flakeRunCount,
+    'negativeCaseCount': negativeCaseCount,
+    'acceptedNegativeCaseCount': acceptedNegativeCaseCount,
+    'referencePublicFailureCount': referencePublicFailureCount,
+    'referenceHiddenFailureCount': referenceHiddenFailureCount,
+  };
 }
 
 class TaskQaNegativeCaseReport {
   const TaskQaNegativeCaseReport({
     required this.id,
     required this.description,
+    required this.kind,
     required this.preparePassed,
     required this.publicPassed,
     required this.hiddenPassed,
@@ -58,6 +178,7 @@ class TaskQaNegativeCaseReport {
 
   final String id;
   final String description;
+  final TaskNegativeCaseKind kind;
   final bool preparePassed;
   final bool publicPassed;
   final bool hiddenPassed;
@@ -70,6 +191,7 @@ class TaskQaNegativeCaseReport {
   Map<String, Object?> toJson() => {
     'id': id,
     'description': description,
+    'kind': kind.wireName,
     'prepare_passed': preparePassed,
     'public_passed': publicPassed,
     'hidden_passed': hiddenPassed,
@@ -80,18 +202,70 @@ class TaskQaNegativeCaseReport {
   };
 }
 
+class TaskQaPromptSafetyReport {
+  const TaskQaPromptSafetyReport({
+    required this.targetContextPresent,
+    required this.publicTestContextPresent,
+    required this.publicTestContextRequired,
+    required this.implementationBodiesOmitted,
+    required this.hiddenVerifierLeakFree,
+    required this.referenceLeakFree,
+    required this.requiredNegativeCaseKinds,
+    required this.presentNegativeCaseKinds,
+    required this.missingNegativeCaseKinds,
+  });
+
+  final bool targetContextPresent;
+  final bool publicTestContextPresent;
+  final bool publicTestContextRequired;
+  final bool implementationBodiesOmitted;
+  final bool hiddenVerifierLeakFree;
+  final bool referenceLeakFree;
+  final Set<TaskNegativeCaseKind> requiredNegativeCaseKinds;
+  final Set<TaskNegativeCaseKind> presentNegativeCaseKinds;
+  final Set<TaskNegativeCaseKind> missingNegativeCaseKinds;
+
+  bool get passed =>
+      targetContextPresent &&
+      (!publicTestContextRequired || publicTestContextPresent) &&
+      implementationBodiesOmitted &&
+      hiddenVerifierLeakFree &&
+      referenceLeakFree &&
+      missingNegativeCaseKinds.isEmpty;
+
+  Map<String, Object?> toJson() => {
+    'target_context_present': targetContextPresent,
+    'public_test_context_present': publicTestContextPresent,
+    'public_test_context_required': publicTestContextRequired,
+    'implementation_bodies_omitted': implementationBodiesOmitted,
+    'hidden_verifier_leak_free': hiddenVerifierLeakFree,
+    'reference_leak_free': referenceLeakFree,
+    'required_negative_case_kinds':
+        requiredNegativeCaseKinds.map((kind) => kind.wireName).toList()..sort(),
+    'present_negative_case_kinds':
+        presentNegativeCaseKinds.map((kind) => kind.wireName).toList()..sort(),
+    'missing_negative_case_kinds':
+        missingNegativeCaseKinds.map((kind) => kind.wireName).toList()..sort(),
+    'passed': passed,
+  };
+}
+
 class TaskQaRunner {
   TaskQaRunner({
     required this.workdirManager,
     this.evaluatorConfig = const EvaluatorConfig(),
     this.requiredHiddenFlakeRuns = 3,
     this.requireNegativeCases = false,
+    this.evaluatorTimeout = const Duration(minutes: 2),
+    this.allowReentrantFlutterTool = false,
   });
 
   final WorkdirManager workdirManager;
   final EvaluatorConfig evaluatorConfig;
   final int requiredHiddenFlakeRuns;
   final bool requireNegativeCases;
+  final Duration? evaluatorTimeout;
+  final bool allowReentrantFlutterTool;
 
   Future<TaskQaReport> run(BenchmarkTask task) async {
     await task.ensureLoaded();
@@ -104,8 +278,38 @@ class TaskQaRunner {
     if (referenceSolution == null) {
       failureMessages.add('Task has no executable reference solution.');
     }
-    if (requireNegativeCases && task.negativeCases.isEmpty) {
-      failureMessages.add('Task has no verifier negative cases.');
+
+    final promptSafety = _checkPromptSafety(task);
+    if (!promptSafety.targetContextPresent) {
+      failureMessages.add(
+        'Prompt-safe target API/skeleton context is missing.',
+      );
+    }
+    if (promptSafety.publicTestContextRequired &&
+        !promptSafety.publicTestContextPresent) {
+      failureMessages.add('Prompt-safe public test context is missing.');
+    }
+    if (!promptSafety.implementationBodiesOmitted) {
+      failureMessages.add('Prompt-safe context leaks implementation bodies.');
+    }
+    if (!promptSafety.hiddenVerifierLeakFree) {
+      failureMessages.add('Prompt-safe context leaks hidden verifier content.');
+    }
+    if (!promptSafety.referenceLeakFree) {
+      failureMessages.add(
+        'Prompt-safe context leaks reference solution content.',
+      );
+    }
+
+    if (requireNegativeCases) {
+      if (task.negativeCases.isEmpty) {
+        failureMessages.add('Task has no verifier negative cases.');
+      }
+      for (final missingKind in promptSafety.missingNegativeCaseKinds) {
+        failureMessages.add(
+          'Task has no ${missingKind.wireName} verifier negative case.',
+        );
+      }
     }
 
     final baselineHiddenResults = <EvaluationResult>[];
@@ -123,6 +327,7 @@ class TaskQaRunner {
       final prep = await workdirManager.prepare(
         baselineDir,
         isFlutter: task.isFlutter,
+        allowInternet: task.allowInternet,
       );
       if (prep is PrepareFailed) {
         failureMessages.add('Baseline prepare failed: ${prep.stderr}');
@@ -162,6 +367,7 @@ class TaskQaRunner {
       final prep = await workdirManager.prepare(
         referenceDir,
         isFlutter: task.isFlutter,
+        allowInternet: task.allowInternet,
       );
       if (prep is PrepareFailed) {
         failureMessages.add('Reference prepare failed: ${prep.stderr}');
@@ -225,7 +431,9 @@ class TaskQaRunner {
       referencePublicPassed: referencePublicPassed,
       referenceHiddenPassed: referenceHiddenPassed,
       hiddenFlakeRuns: hiddenFlakeRuns,
+      hiddenVerifierDigests: Map.unmodifiable(hiddenVerifierDigests(task)),
       negativeCaseReports: List.unmodifiable(negativeCaseReports),
+      promptSafety: promptSafety,
       failureMessages: List.unmodifiable(failureMessages),
       baselineHiddenResults: List.unmodifiable(baselineHiddenResults),
       referencePublicResults: List.unmodifiable(referencePublicResults),
@@ -252,6 +460,7 @@ class TaskQaRunner {
       return TaskQaNegativeCaseReport(
         id: negativeCase.id,
         description: negativeCase.description,
+        kind: negativeCase.kind,
         preparePassed: false,
         publicPassed: false,
         hiddenPassed: false,
@@ -261,11 +470,16 @@ class TaskQaRunner {
       );
     }
 
-    final prep = await workdirManager.prepare(dir, isFlutter: task.isFlutter);
+    final prep = await workdirManager.prepare(
+      dir,
+      isFlutter: task.isFlutter,
+      allowInternet: task.allowInternet,
+    );
     if (prep is PrepareFailed) {
       return TaskQaNegativeCaseReport(
         id: negativeCase.id,
         description: negativeCase.description,
+        kind: negativeCase.kind,
         preparePassed: false,
         publicPassed: false,
         hiddenPassed: false,
@@ -276,10 +490,24 @@ class TaskQaRunner {
     }
 
     final publicResults = await _runPublicEvaluators(task, dir);
+    if (publicResults.any((result) => !result.passed)) {
+      return TaskQaNegativeCaseReport(
+        id: negativeCase.id,
+        description: negativeCase.description,
+        kind: negativeCase.kind,
+        preparePassed: true,
+        publicPassed: false,
+        hiddenPassed: false,
+        publicResults: List.unmodifiable(publicResults),
+        hiddenResults: const [],
+      );
+    }
+
     final hiddenResults = await _runHiddenVerifiers(task, dir);
     return TaskQaNegativeCaseReport(
       id: negativeCase.id,
       description: negativeCase.description,
+      kind: negativeCase.kind,
       preparePassed: true,
       publicPassed: publicResults.every((r) => r.passed),
       hiddenPassed: hiddenResults.every((r) => r.passed),
@@ -303,7 +531,9 @@ class TaskQaRunner {
     BenchmarkTask task,
     Directory workDir,
   ) {
-    final evaluators = task.hiddenVerifiers.map(HiddenTestEvaluator.new);
+    final evaluators = task.hiddenVerifiers.map(
+      (verifier) => HiddenTestEvaluator(verifier, timeout: evaluatorTimeout),
+    );
     return _runEvaluators(task, workDir, evaluators);
   }
 
@@ -313,7 +543,15 @@ class TaskQaRunner {
     Iterable<Evaluator> evaluators,
   ) async {
     final results = <EvaluationResult>[];
-    for (final evaluator in evaluators) {
+    for (final evaluator in evaluators.map((e) => _qaEvaluator(task, e))) {
+      final blocked = blockedEvaluationFor(
+        evaluatorId: evaluator.id,
+        previousResults: results,
+      );
+      if (blocked != null) {
+        results.add(blocked);
+        continue;
+      }
       results.add(
         await evaluator.evaluate(
           EvaluationContext(
@@ -326,13 +564,155 @@ class TaskQaRunner {
               latency: Duration.zero,
             ),
             task: task,
+            previousResults: results,
             deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
+            allowReentrantFlutterTool: allowReentrantFlutterTool,
           ),
         ),
       );
     }
     return results;
   }
+
+  Evaluator _qaEvaluator(BenchmarkTask task, Evaluator evaluator) {
+    final qaEvaluator = switch (evaluator) {
+      TestEvaluator(
+        :final testPath,
+        :final maxOutputChars,
+        :final maxProcesses,
+        :final maxMemoryMb,
+        :final dartExecutable,
+        :final flutterExecutable,
+      ) =>
+        TestEvaluator(
+          testPath: testPath,
+          timeout: evaluatorTimeout,
+          maxOutputChars: maxOutputChars,
+          maxProcesses: maxProcesses,
+          maxMemoryMb: maxMemoryMb,
+          dartExecutable: dartExecutable,
+          flutterExecutable: flutterExecutable,
+        ),
+      HiddenTestEvaluator(
+        :final verifier,
+        :final maxOutputChars,
+        :final maxProcesses,
+        :final maxMemoryMb,
+      ) =>
+        HiddenTestEvaluator(
+          verifier,
+          timeout: evaluatorTimeout,
+          maxOutputChars: maxOutputChars,
+          maxProcesses: maxProcesses,
+          maxMemoryMb: maxMemoryMb,
+        ),
+      _ => evaluator,
+    };
+    return applyResourceLimitsToEvaluator(
+      qaEvaluator,
+      task.effectiveResourceLimits,
+    );
+  }
+
+  TaskQaPromptSafetyReport _checkPromptSafety(BenchmarkTask task) {
+    final targetContext = buildPromptSafeTargetContext(
+      targetPath: task.generatedCodePath,
+      fixtures: task.fixtures,
+    );
+    final publicTestContext = buildPublicTestFixtureContext(
+      fixtures: task.fixtures,
+    );
+    final combinedContext = [
+      targetContext,
+      publicTestContext,
+    ].whereType<String>().join('\n');
+    final targetSource = task.fixtures[task.generatedCodePath]?.trim();
+    final publicTestContextRequired = _hasPublicTestFixtures(task.fixtures);
+    final requiredKinds = task.requiredNegativeCaseKinds;
+    final presentKinds = task.negativeCases
+        .map((negative) => negative.kind)
+        .toSet();
+
+    return TaskQaPromptSafetyReport(
+      targetContextPresent: targetContext != null && targetContext.isNotEmpty,
+      publicTestContextPresent:
+          publicTestContext != null && publicTestContext.isNotEmpty,
+      publicTestContextRequired: publicTestContextRequired,
+      implementationBodiesOmitted:
+          targetSource != null &&
+          targetSource.isNotEmpty &&
+          targetContext != null &&
+          !targetContext.contains(targetSource),
+      hiddenVerifierLeakFree: !_containsAny(
+        combinedContext,
+        task.hiddenVerifiers.expand((verifier) => verifier.files.values),
+      ),
+      referenceLeakFree: switch (task.referenceSolution) {
+        ReferenceFileSolution(:final files) => !_containsAny(
+          combinedContext,
+          files.values,
+        ),
+        ReferencePatchSolution(:final patch) => !combinedContext.contains(
+          patch,
+        ),
+        null => true,
+      },
+      requiredNegativeCaseKinds: Set.unmodifiable(requiredKinds),
+      presentNegativeCaseKinds: Set.unmodifiable(presentKinds),
+      missingNegativeCaseKinds: Set.unmodifiable(
+        requiredKinds.difference(presentKinds),
+      ),
+    );
+  }
+}
+
+bool _hasPublicTestFixtures(Map<String, String> fixtures) {
+  return fixtures.keys.any((path) {
+    final normalized = path.replaceAll('\\', '/');
+    if (!normalized.startsWith('test/') || !normalized.endsWith('.dart')) {
+      return false;
+    }
+    final segments = normalized.split('/');
+    return !segments.any(
+      (segment) =>
+          segment == '_hidden' ||
+          segment == 'hidden' ||
+          segment == '_reference' ||
+          segment == 'reference',
+    );
+  });
+}
+
+bool _containsAny(String haystack, Iterable<String> needles) {
+  for (final needle in needles) {
+    final trimmed = needle.trim();
+    if (trimmed.isNotEmpty && haystack.contains(trimmed)) return true;
+  }
+  return false;
+}
+
+int _infrastructureErrorCount(Iterable<EvaluationResult> results) {
+  return results.where(_isInfrastructureError).length;
+}
+
+bool _isInfrastructureError(EvaluationResult result) {
+  if (result.passed) return false;
+  final evaluatorId = result.evaluatorId.toLowerCase();
+  if (evaluatorId == 'environment' ||
+      evaluatorId == 'environment_error' ||
+      evaluatorId == 'infrastructure' ||
+      evaluatorId == 'infrastructure_error') {
+    return true;
+  }
+  final detailValues = result.details.entries
+      .map((entry) => '${entry.key} ${entry.value}'.toLowerCase())
+      .join(' ');
+  final evidence = '${result.rationale ?? ''} $detailValues'.toLowerCase();
+  return evidence.contains('environment_error') ||
+      evidence.contains('infrastructure_error') ||
+      evidence.contains('prepare failed') ||
+      evidence.contains('tool unavailable') ||
+      evidence.contains('process failed');
 }
 
 Map<String, Object?> _evaluationJson(EvaluationResult result) => {
@@ -342,3 +722,96 @@ Map<String, Object?> _evaluationJson(EvaluationResult result) => {
   if (result.rationale != null) 'rationale': result.rationale,
   if (result.details.isNotEmpty) 'details': result.details,
 };
+
+bool taskQaAdmissionPassed(TaskQaReport report) =>
+    report.failureMessages.isEmpty;
+
+Map<String, Object?> taskQaAdmissionReportJson({
+  required BenchmarkTask task,
+  required TaskQaReport report,
+  DateTime? generatedAt,
+  Map<String, Object?>? environment,
+}) {
+  final checks = <String, Object?>{
+    'baselineHiddenFailed': report.baselineHiddenFailed,
+    'referencePublicPassed': report.referencePublicPassed,
+    'referenceHiddenPassed': report.referenceHiddenPassed,
+    'negativeCasesRejected': report.negativeCasesRejected,
+    'requiredNegativeCaseKindsCovered': report.requiredNegativeCaseKindsCovered,
+    'hiddenFlakeRuns': report.hiddenFlakeRuns,
+    'promptSafeContextLeakFree': report.promptSafety.passed,
+  };
+  _addNegativeKindCheck(
+    checks,
+    label: 'noopRejected',
+    kind: TaskNegativeCaseKind.noop,
+    report: report,
+  );
+  _addNegativeKindCheck(
+    checks,
+    label: 'apiBreakingRejected',
+    kind: TaskNegativeCaseKind.apiBreaking,
+    report: report,
+  );
+  _addNegativeKindCheck(
+    checks,
+    label: 'overfitRejected',
+    kind: TaskNegativeCaseKind.overfit,
+    report: report,
+  );
+
+  return {
+    'schemaVersion': 1,
+    'taskId': report.taskId,
+    'taskVersion': report.taskVersion,
+    'category': task.category.name,
+    'difficulty': task.difficulty.name,
+    'track': task.track.name,
+    'tags': task.tags.map((tag) => tag.slug).toList()..sort(),
+    'release': task.releaseMetadata.toJson(),
+    'admission': {
+      'tool': {'name': taskQaAdmissionToolName},
+      'evaluator': {
+        'schemaVersion': taskQaAdmissionEvaluatorSchemaVersion,
+        'version': taskQaAdmissionEvaluatorVersion,
+      },
+      if (environment != null) 'environment': _sortedObjectMap(environment),
+    },
+    'executionPolicy': {
+      'allowInternet': task.allowInternet,
+      'resources': task.effectiveResourceLimits.toJson(),
+      'resourceEnforcement': taskResourceEnforcementJson(),
+    },
+    'status': taskQaAdmissionPassed(report) ? 'admitted' : 'rejected',
+    if (generatedAt != null) 'generatedAt': generatedAt.toIso8601String(),
+    'checks': checks,
+    'hiddenVerifierDigests': report.hiddenVerifierDigests,
+    'verifierQualityAudit': report.verifierQualityAudit.toJson(),
+    'promptSafety': report.promptSafety.toJson(),
+    'negativeCases': [
+      for (final negativeCase in report.negativeCaseReports)
+        negativeCase.toJson(),
+    ],
+    'failureMessages': report.failureMessages,
+  };
+}
+
+Map<String, Object?> _sortedObjectMap(Map<String, Object?> value) {
+  final keys = value.keys.toList()..sort();
+  return {for (final key in keys) key: value[key]};
+}
+
+void _addNegativeKindCheck(
+  Map<String, Object?> checks, {
+  required String label,
+  required TaskNegativeCaseKind kind,
+  required TaskQaReport report,
+}) {
+  final required = report.promptSafety.requiredNegativeCaseKinds.contains(kind);
+  final cases = report.negativeCaseReports
+      .where((negativeCase) => negativeCase.kind == kind)
+      .toList(growable: false);
+  if (!required && cases.isEmpty) return;
+  checks[label] =
+      cases.isNotEmpty && cases.every((negative) => negative.rejected);
+}

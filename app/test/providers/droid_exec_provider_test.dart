@@ -6,6 +6,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
+  test('runtime metadata records direct exec defaults without secrets', () {
+    final provider = DroidExecProvider();
+
+    expect(provider.providerRuntimeConfig(), {
+      'providerMode': 'agent',
+      'execution': 'droid_exec',
+      'secretsRedacted': true,
+    });
+    expect(provider.modelRuntimeConfig('builtin-test-model'), {
+      'executionMode': 'direct_prompt',
+      'autonomyMode': 'medium',
+      'outputFormat': 'text',
+      'temperature': {'configured': false, 'status': 'provider_default'},
+      'toolsEnabled': false,
+      'toolPolicy': 'disabled',
+    });
+  });
+
   test('generate parses stdout into ModelResponse', () async {
     late List<String> seenArgs;
     Duration? seenTimeout;
@@ -74,6 +92,39 @@ void main() {
   });
 
   test(
+    'failure diagnostics omit prompt text and local environment paths',
+    () async {
+      final provider = DroidExecProvider(
+        droidPath: '/home/dev/private/bin/droid',
+        runner: (executable, args, timeout) async => const DroidProcessResult(
+          stdout: '',
+          stderr: 'something went wrong',
+          exitCode: 1,
+        ),
+      );
+
+      try {
+        await provider.generate(
+          prompt: 'prompt-secret-content',
+          model: 'gpt-5.5',
+        );
+        fail('Expected provider.generate to throw.');
+      } on Object catch (error) {
+        final message = error.toString();
+        expect(message, contains('droid exec failed'));
+        expect(message, contains('configured droid executable'));
+        expect(message, contains('promptLen'));
+        expect(message, isNot(contains('prompt-secret-content')));
+        expect(message, isNot(contains('/home/dev/private')));
+        expect(message, isNot(contains('shell cmd')));
+        expect(message, isNot(contains('TMPDIR')));
+        expect(message, isNot(contains('HOME')));
+        expect(message, isNot(contains('PATH')));
+      }
+    },
+  );
+
+  test(
     'generate kills droid exec process when timeout expires',
     () async {
       final root = await Directory.systemTemp.createTemp(
@@ -139,6 +190,52 @@ env > '${p.join(root.path, 'env.txt')}'
   );
 
   test(
+    'generate kills output-flooding droid exec process',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_droid_output_flood_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final fakeDroid = File(p.join(root.path, 'fake_droid_flood.sh'));
+      await fakeDroid.writeAsString('''
+#!/bin/sh
+while :; do
+  printf '0123456789abcdef0123456789abcdef\\n'
+done
+''');
+      final chmod = await Process.run('chmod', ['+x', fakeDroid.path]);
+      expect(chmod.exitCode, 0, reason: chmod.stderr.toString());
+
+      final provider = DroidExecProvider(
+        droidPath: fakeDroid.path,
+        maxProcessOutputChars: 128,
+      );
+
+      await expectLater(
+        provider.generate(
+          prompt: 'Generate a function.',
+          model: 'fake',
+          timeout: const Duration(seconds: 5),
+        ),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            allOf(
+              contains('droid exec output exceeded 128 characters'),
+              contains('stdout (128B)'),
+            ),
+          ),
+        ),
+      );
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    timeout: const Timeout(Duration(seconds: 8)),
+  );
+
+  test(
     'listModels returns ModelInfo with curated list with real CLI models',
     () async {
       final provider = DroidExecProvider();
@@ -189,8 +286,7 @@ Future<File> _writeHangingExecutable(Directory root, File marker) async {
   await script.writeAsString('''
 #!/bin/sh
 echo started >> '${marker.path}'
-sleep 20
-echo done >> '${marker.path}'
+sleep 20 && echo done >> '${marker.path}'
 ''');
   final chmod = await Process.run('chmod', ['+x', script.path]);
   expect(chmod.exitCode, 0, reason: chmod.stderr.toString());

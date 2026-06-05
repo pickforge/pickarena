@@ -1,0 +1,65 @@
+schemaVersion: 1
+id: platform.channel_mock
+version: 1
+category: bug_fix
+track: agentic
+tags:
+  - platform
+  - testing
+  - bugfix
+difficulty: medium
+platformRequirements:
+  - linux
+timeoutSeconds: 900
+release:
+  corpus: private_official
+  status: active
+network: false
+resources:
+  cpus: 2
+  memory_mb: 8192
+  max_processes: 64
+  max_output_bytes: 1048576
+generatedCodePath: lib/battery_service.dart
+isFlutter: true
+instructionPath: instruction.md
+workspace:
+  root: baseline
+  files:
+    pubspec.yaml: pubspec.yaml
+    lib/battery_service.dart: lib/battery_service.dart
+    test/battery_service_test.dart: test/battery_service_test.dart
+hiddenVerifiers:
+  - id: battery_service_hidden
+    testPath: test/_hidden/battery_service_hidden_test.dart
+    root: hidden_tests
+    files:
+      test/_hidden/battery_service_hidden_test.dart: test/_hidden/battery_service_hidden_test.dart
+reference:
+  type: files
+  root: solution
+  files:
+    lib/battery_service.dart: lib/battery_service.dart
+requiredNegativeCaseKinds:
+  - noop
+  - api_breaking
+  - overfit
+negativeCases:
+  - id: noop
+    kind: noop
+    description: Leaves null and platform errors mishandled.
+    root: negative_cases/noop
+    files:
+      lib/battery_service.dart: lib/battery_service.dart
+  - id: api_breaking
+    kind: api_breaking
+    description: Removes the public BatteryService.label API.
+    root: negative_cases/api_breaking
+    files:
+      lib/battery_service.dart: lib/battery_service.dart
+  - id: overfit_success_only
+    kind: overfit
+    description: Handles successful platform replies but ignores null and errors.
+    root: negative_cases/overfit
+    files:
+      lib/battery_service.dart: lib/battery_service.dart

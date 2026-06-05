@@ -59,6 +59,9 @@ Future<void> main(List<String> args) async {
     errorPort.close();
     exitPort.close();
   }
+  await stdout.flush();
+  await stderr.flush();
+  exit(exitCode);
 }
 
 Future<_WorkerSignal> _parentTimeoutFuture(Duration configuredTimeout) {

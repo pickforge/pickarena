@@ -41,6 +41,7 @@ void main() {
       expect(config.taskBundleRoots, isEmpty);
       expect(config.maxConcurrency, 2);
       expect(config.trialsPerTask, 1);
+      expect(config.requireGeneratedCodeSandbox, isFalse);
       expect(config.timeout, const Duration(seconds: 600));
       expect(
         config.workdirRoot,
@@ -77,6 +78,15 @@ void main() {
         p.normalize(p.join(Directory.current.path, 'configs', 'tasks/flutter')),
         p.normalize('/abs/tasks'),
       ]);
+    });
+
+    test('parses generated-code sandbox requirement flag', () {
+      final config = parseHeadlessCliConfig({
+        ..._validConfig(),
+        'requireGeneratedCodeSandbox': true,
+      }, configPath: p.join(Directory.current.path, 'run.json'));
+
+      expect(config.requireGeneratedCodeSandbox, isTrue);
     });
 
     test('rejects malformed required fields and types', () {
@@ -116,6 +126,19 @@ void main() {
             (e) => e.message,
             'message',
             contains('timeoutSeconds must be a positive integer'),
+          ),
+        ),
+      );
+      expect(
+        () => parseHeadlessCliConfig({
+          ..._validConfig(),
+          'requireGeneratedCodeSandbox': 'yes',
+        }, configPath: p.join(Directory.current.path, 'run.json')),
+        throwsA(
+          isA<HeadlessCliConfigException>().having(
+            (e) => e.message,
+            'message',
+            contains('requireGeneratedCodeSandbox must be a boolean'),
           ),
         ),
       );

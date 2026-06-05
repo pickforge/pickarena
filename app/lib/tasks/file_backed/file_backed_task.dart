@@ -26,6 +26,9 @@ class FileBackedTask extends BenchmarkTask {
     required this.difficulty,
     required this.timeout,
     required this.platformRequirements,
+    required this.releaseMetadata,
+    required this.allowInternet,
+    required this.resourceLimits,
     required this.generatedCodePath,
     required this.isFlutter,
     required this.judgeRubric,
@@ -34,11 +37,13 @@ class FileBackedTask extends BenchmarkTask {
     required List<_HiddenVerifierSpec> hiddenVerifierSpecs,
     required _ReferenceSpec? referenceSpec,
     required List<_NegativeCaseSpec> negativeCaseSpecs,
+    required Set<TaskNegativeCaseKind> requiredNegativeCaseKinds,
   }) : _instructionPath = instructionPath,
        _workspaceSpec = workspace,
        _hiddenVerifierSpecs = hiddenVerifierSpecs,
        _referenceSpec = referenceSpec,
-       _negativeCaseSpecs = negativeCaseSpecs;
+       _negativeCaseSpecs = negativeCaseSpecs,
+       _requiredNegativeCaseKinds = requiredNegativeCaseKinds;
 
   final Directory bundleDirectory;
   final String _instructionPath;
@@ -46,6 +51,7 @@ class FileBackedTask extends BenchmarkTask {
   final List<_HiddenVerifierSpec> _hiddenVerifierSpecs;
   final _ReferenceSpec? _referenceSpec;
   final List<_NegativeCaseSpec> _negativeCaseSpecs;
+  final Set<TaskNegativeCaseKind> _requiredNegativeCaseKinds;
 
   Map<String, String>? _fixtures;
   String? _prompt;
@@ -82,6 +88,9 @@ class FileBackedTask extends BenchmarkTask {
         ))
           _parseTaskPlatform(platform),
       },
+      releaseMetadata: _parseReleaseMetadata(_optionalMap(manifest, 'release')),
+      allowInternet: _parseAllowInternet(manifest),
+      resourceLimits: _parseResourceLimits(_optionalMap(manifest, 'resources')),
       generatedCodePath: _requiredPathString(
         manifest['generatedCodePath'],
         'generatedCodePath',
@@ -104,6 +113,13 @@ class FileBackedTask extends BenchmarkTask {
         for (final item in _optionalMapList(manifest, 'negativeCases'))
           _NegativeCaseSpec.fromYaml(item),
       ],
+      requiredNegativeCaseKinds: {
+        for (final kind in _optionalStringList(
+          manifest,
+          'requiredNegativeCaseKinds',
+        ))
+          TaskNegativeCaseKindLabel.fromWireName(kind),
+      },
     );
   }
 
@@ -132,6 +148,15 @@ class FileBackedTask extends BenchmarkTask {
   final Set<TaskPlatform> platformRequirements;
 
   @override
+  final TaskReleaseMetadata releaseMetadata;
+
+  @override
+  final bool allowInternet;
+
+  @override
+  final TaskResourceLimits resourceLimits;
+
+  @override
   final String generatedCodePath;
 
   @override
@@ -154,6 +179,12 @@ class FileBackedTask extends BenchmarkTask {
 
   @override
   List<TaskNegativeCase> get negativeCases => _loadedNegativeCases ?? const [];
+
+  @override
+  Set<TaskNegativeCaseKind> get requiredNegativeCaseKinds =>
+      _requiredNegativeCaseKinds.isEmpty
+      ? super.requiredNegativeCaseKinds
+      : _requiredNegativeCaseKinds;
 
   @override
   Future<void> ensureLoaded() async {
@@ -187,6 +218,7 @@ class FileBackedTask extends BenchmarkTask {
         TaskNegativeCase(
           id: spec.id,
           description: spec.description,
+          kind: spec.kind,
           solution: ReferenceFileSolution(
             await _readFiles(bundleDirectory, spec.root, spec.files),
           ),
@@ -291,12 +323,14 @@ class _NegativeCaseSpec {
   const _NegativeCaseSpec({
     required this.id,
     required this.description,
+    required this.kind,
     required this.root,
     required this.files,
   });
 
   final String id;
   final String description;
+  final TaskNegativeCaseKind kind;
   final String root;
   final Map<String, String> files;
 
@@ -304,6 +338,9 @@ class _NegativeCaseSpec {
     return _NegativeCaseSpec(
       id: _requiredString(yaml, 'id'),
       description: _requiredString(yaml, 'description'),
+      kind: TaskNegativeCaseKindLabel.fromWireName(
+        _optionalString(yaml, 'kind') ?? 'custom',
+      ),
       root: _requiredString(yaml, 'root'),
       files: _parseFileMap(yaml['files'], field: 'negativeCases.files'),
     );
@@ -494,6 +531,68 @@ bool? _optionalBool(YamlMap yaml, String field) {
   final value = yaml[field];
   if (value == null || value is bool) return value as bool?;
   throw FormatException('$field must be a boolean');
+}
+
+bool _parseAllowInternet(YamlMap yaml) {
+  final explicitAllowInternet = _optionalBool(yaml, 'allowInternet');
+  if (explicitAllowInternet != null) return explicitAllowInternet;
+
+  final network = yaml['network'];
+  if (network == null) return false;
+  if (network is bool) return network;
+  if (network is YamlMap) {
+    final allowInternet = _optionalBool(network, 'allowInternet');
+    if (allowInternet != null) return allowInternet;
+  }
+  throw const FormatException('network must be a boolean or YAML map');
+}
+
+TaskReleaseMetadata _parseReleaseMetadata(YamlMap? yaml) {
+  if (yaml == null) return const TaskReleaseMetadata();
+  return TaskReleaseMetadata(
+    corpus: TaskCorpusLabel.fromWireName(
+      _optionalString(yaml, 'corpus') ?? TaskCorpus.publicDiagnostic.wireName,
+    ),
+    status: TaskReleaseStatusLabel.fromWireName(
+      _optionalString(yaml, 'status') ?? TaskReleaseStatus.active.wireName,
+    ),
+    releaseCycle:
+        _optionalString(yaml, 'releaseCycle') ??
+        _optionalString(yaml, 'release_cycle'),
+  );
+}
+
+TaskResourceLimits _parseResourceLimits(YamlMap? yaml) {
+  if (yaml == null) return const TaskResourceLimits();
+  return TaskResourceLimits(
+    cpus: _optionalPositiveInt(yaml, const ['cpus'], 'resources.cpus'),
+    memoryMb: _optionalPositiveInt(yaml, const [
+      'memoryMb',
+      'memory_mb',
+    ], 'resources.memoryMb'),
+    maxProcesses: _optionalPositiveInt(yaml, const [
+      'maxProcesses',
+      'max_processes',
+    ], 'resources.maxProcesses'),
+    maxOutputBytes: _optionalPositiveInt(yaml, const [
+      'maxOutputBytes',
+      'max_output_bytes',
+    ], 'resources.maxOutputBytes'),
+  );
+}
+
+int? _optionalPositiveInt(YamlMap yaml, List<String> keys, String field) {
+  Object? value;
+  for (final key in keys) {
+    if (yaml.containsKey(key)) {
+      value = yaml[key];
+      break;
+    }
+  }
+  if (value == null) return null;
+  if (value is! int) throw FormatException('$field must be an integer');
+  if (value <= 0) throw FormatException('$field must be positive');
+  return value;
 }
 
 Category _parseCategory(String value) {

@@ -178,6 +178,24 @@ void main() {
       expect(d.intelligence, 0.5);
     });
 
+    test('includes custom hidden verifier IDs as correctness evaluators', () {
+      final tr = _tr(id: '1', aggregate: 1.0);
+      final d = Dimensions.fromTaskRuns(
+        [tr],
+        {
+          '1': [
+            _ev(taskRunId: '1', evaluatorId: 'test', score: 1.0),
+            _ev(
+              taskRunId: '1',
+              evaluatorId: 'task_specific_hidden',
+              score: 0.0,
+            ),
+          ],
+        },
+      );
+      expect(d.intelligence, 0.5);
+    });
+
     test('no correctness evaluators present yields 0.0', () {
       final tr = _tr(id: '1', aggregate: 0.0);
       final d = Dimensions.fromTaskRuns(

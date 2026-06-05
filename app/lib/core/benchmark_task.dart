@@ -17,11 +17,42 @@ class TaskNegativeCase {
     required this.id,
     required this.description,
     required this.solution,
+    this.kind = TaskNegativeCaseKind.custom,
   });
 
   final String id;
   final String description;
   final ReferenceSolution solution;
+  final TaskNegativeCaseKind kind;
+}
+
+enum TaskNegativeCaseKind { noop, apiBreaking, overfit, minimalBad, custom }
+
+extension TaskNegativeCaseKindLabel on TaskNegativeCaseKind {
+  String get wireName => switch (this) {
+    TaskNegativeCaseKind.noop => 'noop',
+    TaskNegativeCaseKind.apiBreaking => 'api_breaking',
+    TaskNegativeCaseKind.overfit => 'overfit',
+    TaskNegativeCaseKind.minimalBad => 'minimal_bad',
+    TaskNegativeCaseKind.custom => 'custom',
+  };
+
+  static TaskNegativeCaseKind fromWireName(String value) {
+    return switch (value.trim()) {
+      'noop' => TaskNegativeCaseKind.noop,
+      'api_breaking' ||
+      'api-breaking' ||
+      'apiBreaking' => TaskNegativeCaseKind.apiBreaking,
+      'overfit' => TaskNegativeCaseKind.overfit,
+      'minimal_bad' ||
+      'minimal-bad' ||
+      'minimalBad' => TaskNegativeCaseKind.minimalBad,
+      'custom' => TaskNegativeCaseKind.custom,
+      final unknown => throw FormatException(
+        'Unsupported negative case kind: $unknown',
+      ),
+    };
+  }
 }
 
 enum BenchmarkTrack { codegen, agentic }
@@ -113,6 +144,103 @@ extension TaskPlatformLabel on TaskPlatform {
   };
 }
 
+enum TaskCorpus { publicDiagnostic, privateOfficial }
+
+extension TaskCorpusLabel on TaskCorpus {
+  String get wireName => switch (this) {
+    TaskCorpus.publicDiagnostic => 'public_diagnostic',
+    TaskCorpus.privateOfficial => 'private_official',
+  };
+
+  static TaskCorpus fromWireName(String value) {
+    return switch (value.trim()) {
+      'public_diagnostic' ||
+      'public-diagnostic' ||
+      'publicDiagnostic' => TaskCorpus.publicDiagnostic,
+      'private_official' ||
+      'private-official' ||
+      'privateOfficial' => TaskCorpus.privateOfficial,
+      final unknown => throw FormatException(
+        'Unsupported task corpus: $unknown',
+      ),
+    };
+  }
+}
+
+enum TaskReleaseStatus { active, retired }
+
+extension TaskReleaseStatusLabel on TaskReleaseStatus {
+  String get wireName => switch (this) {
+    TaskReleaseStatus.active => 'active',
+    TaskReleaseStatus.retired => 'retired',
+  };
+
+  static TaskReleaseStatus fromWireName(String value) {
+    return switch (value.trim()) {
+      'active' => TaskReleaseStatus.active,
+      'retired' => TaskReleaseStatus.retired,
+      final unknown => throw FormatException(
+        'Unsupported task release status: $unknown',
+      ),
+    };
+  }
+}
+
+class TaskReleaseMetadata {
+  const TaskReleaseMetadata({
+    this.corpus = TaskCorpus.publicDiagnostic,
+    this.status = TaskReleaseStatus.active,
+    this.releaseCycle,
+  });
+
+  final TaskCorpus corpus;
+  final TaskReleaseStatus status;
+  final String? releaseCycle;
+
+  Map<String, Object?> toJson() => {
+    'corpus': corpus.wireName,
+    'status': status.wireName,
+    if (releaseCycle != null) 'releaseCycle': releaseCycle,
+  };
+}
+
+class TaskResourceLimits {
+  const TaskResourceLimits({
+    this.cpus,
+    this.memoryMb,
+    this.maxProcesses,
+    this.maxOutputBytes,
+  });
+
+  final int? cpus;
+  final int? memoryMb;
+  final int? maxProcesses;
+  final int? maxOutputBytes;
+
+  TaskResourceLimits withDefaults(TaskResourceLimits defaults) {
+    return TaskResourceLimits(
+      cpus: cpus ?? defaults.cpus,
+      memoryMb: memoryMb ?? defaults.memoryMb,
+      maxProcesses: maxProcesses ?? defaults.maxProcesses,
+      maxOutputBytes: maxOutputBytes ?? defaults.maxOutputBytes,
+    );
+  }
+
+  Map<String, Object?> toJson() => {
+    if (cpus != null) 'cpus': cpus,
+    if (memoryMb != null) 'memoryMb': memoryMb,
+    if (maxProcesses != null) 'maxProcesses': maxProcesses,
+    if (maxOutputBytes != null) 'maxOutputBytes': maxOutputBytes,
+  };
+}
+
+const defaultTaskResourceLimits = TaskResourceLimits(
+  cpus: 2,
+  memoryMb: 8192,
+  maxProcesses: 64,
+  maxOutputBytes: 1024 * 1024,
+);
+
 abstract class BenchmarkTask {
   String get id;
   int get version => 1;
@@ -122,6 +250,11 @@ abstract class BenchmarkTask {
   TaskDifficulty get difficulty => TaskDifficulty.unspecified;
   Duration? get timeout => null;
   Set<TaskPlatform> get platformRequirements => const {};
+  TaskReleaseMetadata get releaseMetadata => const TaskReleaseMetadata();
+  bool get allowInternet => false;
+  TaskResourceLimits get resourceLimits => const TaskResourceLimits();
+  TaskResourceLimits get effectiveResourceLimits =>
+      resourceLimits.withDefaults(defaultTaskResourceLimits);
   String get prompt;
   Map<String, String> get fixtures;
   TaskWorkspace get workspace =>
@@ -129,6 +262,10 @@ abstract class BenchmarkTask {
   List<VerifierFixture> get hiddenVerifiers => const [];
   ReferenceSolution? get referenceSolution => null;
   List<TaskNegativeCase> get negativeCases => const [];
+  Set<TaskNegativeCaseKind> get requiredNegativeCaseKinds => const {
+    TaskNegativeCaseKind.noop,
+    TaskNegativeCaseKind.apiBreaking,
+  };
   String? get judgeRubric;
   String get generatedCodePath;
   bool get isFlutter => false;

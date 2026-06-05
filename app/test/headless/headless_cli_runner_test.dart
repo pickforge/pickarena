@@ -12,6 +12,7 @@ import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/export/artifact_bundle.dart';
 import 'package:dart_arena/headless/headless_benchmark_runner.dart';
 import 'package:dart_arena/headless/headless_cli_runner.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:drift/native.dart';
@@ -184,6 +185,65 @@ void main() {
       expect(decoded['error'], 'unknown task id: missing.task');
     },
     timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'dart run headless provider failure exits promptly with one failure JSON',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_cli_provider_process_fail_',
+      );
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      unawaited(_serveUnauthorizedChat(server));
+      addTearDown(() async {
+        await server.close(force: true);
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+
+      const runId = 'cli-provider-process-fail-run';
+      final configFile = await _writeConfig(
+        tmp,
+        runId: runId,
+        tasks: ['bug.off_by_one_pagination'],
+        provider: {
+          'type': 'openai_compatible',
+          'id': 'local_provider_fail',
+          'displayName': 'Local Provider Fail',
+          'baseUrl': 'http://127.0.0.1:${server.port}/v1',
+          'models': ['provider-fail-model'],
+        },
+        timeoutSeconds: 30,
+      );
+
+      final stopwatch = Stopwatch()..start();
+      final result = await Process.run(
+        'dart',
+        [
+          'run',
+          '--verbosity=error',
+          'dart_arena:dart_arena_headless',
+          '--config',
+          configFile.path,
+        ],
+        workingDirectory: Directory.current.path,
+      ).timeout(const Duration(seconds: 30));
+      stopwatch.stop();
+
+      expect(result.exitCode, isNot(0));
+      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 25)));
+      expect(result.stdout.toString(), isEmpty);
+      final decoded = _expectProcessJsonObject(result.stderr);
+      expect(decoded['status'], 'failed');
+      expect(decoded['error'].toString(), contains('Headless run failed'));
+      expect(decoded['error'].toString(), contains('unauthorized'));
+      expect(
+        Directory(
+          p.join(tmp.path, 'bundles', runBundleDirectoryName(runId)),
+        ).existsSync(),
+        isFalse,
+      );
+    },
+    timeout: const Timeout(Duration(seconds: 40)),
   );
 
   test(
@@ -496,6 +556,43 @@ void main() {
     );
   });
 
+  test('required generated-code sandbox enables Bubblewrap backend', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'dart_arena_cli_sandbox_required_',
+    );
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+    final configFile = await _writeConfig(
+      tmp,
+      requireGeneratedCodeSandbox: true,
+    );
+    final runner = _CapturingHeadlessBenchmarkRunner();
+    final stderrLines = <String>[];
+
+    final exitCode = await runHeadlessCli(
+      ['--config', configFile.path],
+      dependencies: _dependencies(
+        runner: runner,
+        generatedCodeSandboxBuilder: (_) async =>
+            const BubblewrapGeneratedCodeSandbox(),
+      ),
+      stdoutWriter: (_) {},
+      stderrWriter: stderrLines.add,
+    );
+
+    expect(exitCode, isNot(0));
+    expect(stderrLines.single, contains('stop after capture'));
+    final captured = runner.capturedConfig!;
+    expect(captured.generatedCodeSandboxRequired, isTrue);
+    expect(captured.generatedCodeSandboxEnforced, isTrue);
+    expect(captured.generatedCodeSandboxBackend, 'bubblewrap');
+    expect(
+      captured.generatedCodeSandbox,
+      isA<BubblewrapGeneratedCodeSandbox>(),
+    );
+  });
+
   test('unknown task fails clearly', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_cli_task_');
     addTearDown(() async {
@@ -624,6 +721,7 @@ HeadlessCliDependencies _dependencies({
   HeadlessCliProviderBuilder? providerBuilder,
   HeadlessCliTaskRegistryBuilder? taskRegistryBuilder,
   HeadlessCliAgentHarnessBuilder? agentHarnessBuilder,
+  HeadlessCliGeneratedCodeSandboxBuilder? generatedCodeSandboxBuilder,
   HeadlessBenchmarkRunner? runner,
 }) {
   return HeadlessCliDependencies(
@@ -644,6 +742,11 @@ HeadlessCliDependencies _dependencies({
         const FixedRunProvenanceEnvironmentProvider(),
     exportEnvironmentProvider: () async => const {'hostPlatform': 'test-os'},
     exportAppVersionProvider: () async => '1.0.0+headless-cli-test',
+    generatedCodeSandboxBuilder:
+        generatedCodeSandboxBuilder ??
+        (config) async => config.requireGeneratedCodeSandbox
+            ? const BubblewrapGeneratedCodeSandbox()
+            : null,
     runner: runner ?? const HeadlessBenchmarkRunner(),
   );
 }
@@ -659,6 +762,7 @@ Future<File> _writeConfig(
     'models': ['fake-headless-model'],
   },
   int timeoutSeconds = 30,
+  bool requireGeneratedCodeSandbox = false,
 }) async {
   final file = File(p.join(tmp.path, 'run.json'));
   await file.writeAsString(
@@ -671,6 +775,7 @@ Future<File> _writeConfig(
       'maxConcurrency': 1,
       'trialsPerTask': 1,
       'useReferencePlan': false,
+      'requireGeneratedCodeSandbox': requireGeneratedCodeSandbox,
       'workdirRoot': 'workdirs',
       'outputDir': 'bundles',
       'databasePath': 'dart_arena.sqlite',
@@ -718,6 +823,15 @@ Future<void> _serveSuccessfulStreamingChat(HttpServer server) async {
     response.write('data: $data\n\n');
     response.write('data: [DONE]\n\n');
     await response.close();
+  }
+}
+
+Future<void> _serveUnauthorizedChat(HttpServer server) async {
+  await for (final request in server) {
+    request.response.statusCode = HttpStatus.unauthorized;
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode({'error': 'unauthorized'}));
+    await request.response.close();
   }
 }
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/agent/agent_harness.dart';
+import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
@@ -163,6 +164,71 @@ class _SlowFakeProvider with Disposable implements ModelProvider {
   @override
   void dispose() {
     disposed = true;
+  }
+}
+
+class _NoPreviewTimeoutAgentHarness implements AgentHarness {
+  const _NoPreviewTimeoutAgentHarness({
+    required this.harnessId,
+    required this.modelId,
+  });
+
+  final String harnessId;
+  final String modelId;
+
+  @override
+  String get id => harnessId;
+
+  @override
+  Future<AgentRunResult> run({
+    required Directory workspace,
+    required String instruction,
+    required String modelId,
+    required Duration timeout,
+    Iterable<String> deniedEnvironmentKeys = const [],
+  }) async {
+    expect(modelId, this.modelId);
+    final file = File(p.join(workspace.path, 'lib', 'headless_answer.dart'));
+    await file.parent.create(recursive: true);
+    await file.writeAsString("String headlessAnswer() => 'phase7';\n");
+    return const AgentRunResult(
+      status: AgentRunStatus.timeout,
+      stdoutPreview: '',
+      stderrPreview: '',
+      exitCode: null,
+      latency: Duration(milliseconds: 25),
+    );
+  }
+}
+
+class _NoPreviewFailureAgentHarness implements AgentHarness {
+  const _NoPreviewFailureAgentHarness({
+    required this.harnessId,
+    required this.modelId,
+  });
+
+  final String harnessId;
+  final String modelId;
+
+  @override
+  String get id => harnessId;
+
+  @override
+  Future<AgentRunResult> run({
+    required Directory workspace,
+    required String instruction,
+    required String modelId,
+    required Duration timeout,
+    Iterable<String> deniedEnvironmentKeys = const [],
+  }) async {
+    expect(modelId, this.modelId);
+    return const AgentRunResult(
+      status: AgentRunStatus.failure,
+      stdoutPreview: '',
+      stderrPreview: '',
+      exitCode: 1,
+      latency: Duration(milliseconds: 25),
+    );
   }
 }
 
@@ -356,6 +422,190 @@ void main() {
       expect(evaluations.every((e) => e.passed), isTrue);
       expect(result.bundleWarningCount, 0);
       expect(result.exportedBundleDirectory.existsSync(), isTrue);
+    },
+  );
+
+  test(
+    'agentic timeout without previews still exports response artifact',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_headless_agentic_timeout_artifact_',
+      );
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(() async {
+        await db.close();
+        if (await tmp.exists()) {
+          await tmp.delete(recursive: true);
+        }
+      });
+
+      final runDao = RunDao(db);
+      final workdirRoot = Directory(p.join(tmp.path, 'workdirs'))
+        ..createSync(recursive: true);
+      final outputParent = Directory(p.join(tmp.path, 'bundles'))
+        ..createSync(recursive: true);
+      final provider = DeterministicFakeProvider();
+      final harness = _NoPreviewTimeoutAgentHarness(
+        harnessId: provider.id,
+        modelId: provider.modelId,
+      );
+
+      final result = await const HeadlessBenchmarkRunner().run(
+        _config(
+          runId: 'headless-agentic-timeout-artifact',
+          runDao: runDao,
+          workdirManager: NoOpPrepareWorkdirManager(root: workdirRoot),
+          outputParent: outputParent,
+          allowedTrajectoryRoots: [workdirRoot],
+          provider: provider,
+          modelId: provider.modelId,
+          tasks: [_AgenticHeadlessSmokeTask()],
+          agentHarnesses: [harness],
+        ),
+      );
+
+      expect(result.taskRunCount, 1);
+      expect(result.bundleWarningCount, 0);
+      final taskRun = result.finalSummary.taskRuns.single;
+      expect(taskRun.failureTag, 'harness_timeout');
+      expect(taskRun.responseText, contains('no stdout/stderr preview'));
+      expect(taskRun.patchText, contains('headlessAnswer'));
+
+      final manifestPath = p.join(
+        result.exportedBundleDirectory.path,
+        'manifest.json',
+      );
+      final manifest =
+          jsonDecode(File(manifestPath).readAsStringSync())
+              as Map<String, Object?>;
+      final warningCodes = (manifest['warnings'] as List<Object?>).map(
+        (warning) => (warning as Map<String, Object?>)['code'],
+      );
+      expect(warningCodes, isNot(contains('missing_response_text')));
+      expect(warningCodes, isNot(contains('missing_patch_text')));
+
+      final artifacts = (manifest['artifacts'] as List<Object?>)
+          .cast<Map<String, Object?>>();
+      final responseArtifact = artifacts.singleWhere(
+        (artifact) => artifact['kind'] == 'response',
+      );
+      final patchArtifact = artifacts.singleWhere(
+        (artifact) => artifact['kind'] == 'patch',
+      );
+      final responseText = File(
+        p.join(
+          result.exportedBundleDirectory.path,
+          responseArtifact['path']! as String,
+        ),
+      ).readAsStringSync();
+      expect(responseText, contains('status: timeout'));
+      expect(patchArtifact['path'], contains('artifacts/patches/'));
+    },
+  );
+
+  test(
+    'agentic failure without previews exports response artifact and patch warning',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_headless_agentic_failure_artifact_',
+      );
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(() async {
+        await db.close();
+        if (await tmp.exists()) {
+          await tmp.delete(recursive: true);
+        }
+      });
+
+      final runDao = RunDao(db);
+      final workdirRoot = Directory(p.join(tmp.path, 'workdirs'))
+        ..createSync(recursive: true);
+      final outputParent = Directory(p.join(tmp.path, 'bundles'))
+        ..createSync(recursive: true);
+      final provider = DeterministicFakeProvider();
+      final harness = _NoPreviewFailureAgentHarness(
+        harnessId: provider.id,
+        modelId: provider.modelId,
+      );
+
+      final result = await const HeadlessBenchmarkRunner().run(
+        _config(
+          runId: 'headless-agentic-failure-artifact',
+          runDao: runDao,
+          workdirManager: NoOpPrepareWorkdirManager(root: workdirRoot),
+          outputParent: outputParent,
+          allowedTrajectoryRoots: [workdirRoot],
+          provider: provider,
+          modelId: provider.modelId,
+          tasks: [_AgenticHeadlessSmokeTask()],
+          agentHarnesses: [harness],
+        ),
+      );
+
+      expect(result.taskRunCount, 1);
+      expect(result.bundleWarningCount, 1);
+      final taskRun = result.finalSummary.taskRuns.single;
+      expect(taskRun.failureTag, 'harness_error');
+      expect(taskRun.responseText, contains('no stdout/stderr preview'));
+      expect(taskRun.responseText, contains('status: failure'));
+      expect(taskRun.responseText, contains('exitCode: 1'));
+      expect(taskRun.patchText, isEmpty);
+
+      final manifestPath = p.join(
+        result.exportedBundleDirectory.path,
+        'manifest.json',
+      );
+      final manifest =
+          jsonDecode(File(manifestPath).readAsStringSync())
+              as Map<String, Object?>;
+      final warningCodes = (manifest['warnings'] as List<Object?>).map(
+        (warning) => (warning as Map<String, Object?>)['code'],
+      );
+      expect(warningCodes, isNot(contains('missing_response_text')));
+      expect(warningCodes, contains('missing_patch_text'));
+
+      final artifacts = (manifest['artifacts'] as List<Object?>)
+          .cast<Map<String, Object?>>();
+      final responseArtifact = artifacts.singleWhere(
+        (artifact) => artifact['kind'] == 'response',
+      );
+      expect(
+        artifacts.where((artifact) => artifact['kind'] == 'patch'),
+        isEmpty,
+      );
+      final responseText = File(
+        p.join(
+          result.exportedBundleDirectory.path,
+          responseArtifact['path']! as String,
+        ),
+      ).readAsStringSync();
+      expect(responseText, contains('status: failure'));
+
+      final runResultsPath = p.join(
+        result.exportedBundleDirectory.path,
+        'run_results.v1.json',
+      );
+      final runResults =
+          jsonDecode(File(runResultsPath).readAsStringSync())
+              as Map<String, Object?>;
+      final runResultsTaskRun =
+          (runResults['taskRuns'] as List<Object?>).single
+              as Map<String, Object?>;
+      final harnessEvaluation =
+          (runResultsTaskRun['evaluations']! as List<Object?>)
+              .cast<Map<String, Object?>>()
+              .singleWhere(
+                (evaluation) => evaluation['evaluatorId'] == 'agent_harness',
+              );
+      expect(harnessEvaluation['agentHarness'], {
+        'status': 'failure',
+        'exitCode': 1,
+        'stdoutPreviewPresent': false,
+        'stderrPreviewPresent': false,
+        'trajectoryLogPresent': false,
+      });
+      expect(jsonEncode(runResults), isNot(contains('stdout_preview')));
+      expect(jsonEncode(runResults), isNot(contains('stderr_preview')));
     },
   );
 

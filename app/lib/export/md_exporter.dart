@@ -1,4 +1,7 @@
 import 'package:dart_arena/analytics/benchmark_statistics.dart';
+import 'package:dart_arena/core/evaluation_status.dart';
+import 'package:dart_arena/core/evaluator_blocking.dart';
+import 'package:dart_arena/core/evaluator_classification.dart';
 import 'package:dart_arena/export/run_summary_leaderboard_summary.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
@@ -52,20 +55,30 @@ String runSummaryToMarkdown(
   buf.writeln('## Task runs');
   buf.writeln(
     '| Task | Provider | Model | Trial | Task Version | Track | Harness | Primary Pass | Failure | Patch Chars | Trajectory | Aggregate '
+    '| Public Pass | Hidden Pass '
     '| compile | analyze | test | hidden_test | widget_tree | llm_judge | diff_size '
     '| Latency |',
   );
   buf.writeln(
     '|------|----------|-------|-------|--------------|-------|---------|--------------|---------|-------------|------------|-----------'
+    '|-------------|-------------'
     '|---------|---------|------|-------------|-------------|-----------|-----------'
     '|---------|',
   );
   for (final tr in taskRunRows) {
-    final evals = <String, double>{};
-    for (final e in s.evaluationsByTaskRunId[tr.id] ?? const <Evaluation>[]) {
-      evals[e.evaluatorId] = e.score;
+    final evals = <String, _EvaluationMarkdownCell>{};
+    final taskRunEvaluations =
+        s.evaluationsByTaskRunId[tr.id] ?? const <Evaluation>[];
+    for (final e in taskRunEvaluations) {
+      final details = decodeEvaluationDetailsJson(e.detailsJson);
+      final status = evaluationStatus(passed: e.passed, details: details);
+      evals[e.evaluatorId] = _EvaluationMarkdownCell(
+        score: e.score,
+        status: status,
+        blockedBy: details[blockedByDetailKey]?.toString(),
+      );
     }
-    String fmt(String id) => evals[id]?.toStringAsFixed(2) ?? 'unknown';
+    String fmt(String id) => evals[id]?.format() ?? 'unknown';
     buf.writeln(
       '| ${tr.taskId} | ${tr.providerId} | ${tr.modelId} '
       '| ${tr.trialIndex} | ${tr.taskVersion} | ${tr.benchmarkTrack} '
@@ -74,6 +87,8 @@ String runSummaryToMarkdown(
       '| ${tr.patchText?.length ?? 0} '
       '| ${trajectoryPathFor?.call(tr) ?? tr.trajectoryLogPath ?? ''} '
       '| **${tr.aggregateScore.toStringAsFixed(2)}** '
+      '| ${_mdAggregatePass(taskRunEvaluations, isPublicTestEvaluatorId)} '
+      '| ${_mdAggregatePass(taskRunEvaluations, isHiddenVerifierEvaluatorId)} '
       '| ${fmt('compile')} | ${fmt('analyze')} | ${fmt('test')} '
       '| ${fmt('hidden_test')} | ${fmt('widget_tree')} '
       '| ${fmt('llm_judge')} | ${fmt('diff_size')} '
@@ -82,6 +97,27 @@ String runSummaryToMarkdown(
   }
 
   return buf.toString();
+}
+
+String _mdAggregatePass(
+  List<Evaluation> evaluations,
+  bool Function(String evaluatorId) matches,
+) {
+  final matched = evaluations
+      .where((evaluation) {
+        if (!matches(evaluation.evaluatorId)) return false;
+        final details = decodeEvaluationDetailsJson(evaluation.detailsJson);
+        final status = evaluationStatus(
+          passed: evaluation.passed,
+          details: details,
+        );
+        return status != EvaluationStatus.blocked &&
+            status != EvaluationStatus.ignored &&
+            status != EvaluationStatus.skipped;
+      })
+      .toList(growable: false);
+  if (matched.isEmpty) return 'unknown';
+  return matched.every((evaluation) => evaluation.passed).toString();
 }
 
 String _mdRate(double? value) {
@@ -117,4 +153,29 @@ String _mdFailures(Map<String, int> breakdown) {
     ..sort((a, b) => a.key.compareTo(b.key));
   if (entries.isEmpty) return 'unknown';
   return entries.map((entry) => '${entry.key}: ${entry.value}').join('<br>');
+}
+
+class _EvaluationMarkdownCell {
+  const _EvaluationMarkdownCell({
+    required this.score,
+    required this.status,
+    this.blockedBy,
+  });
+
+  final double score;
+  final EvaluationStatus status;
+  final String? blockedBy;
+
+  String format() {
+    final scoreText = score.toStringAsFixed(2);
+    return switch (status) {
+      EvaluationStatus.passed || EvaluationStatus.failed => scoreText,
+      EvaluationStatus.blocked =>
+        blockedBy == null
+            ? '$scoreText (blocked)'
+            : '$scoreText (blocked by $blockedBy)',
+      EvaluationStatus.ignored => '$scoreText (ignored)',
+      EvaluationStatus.skipped => '$scoreText (skipped)',
+    };
+  }
 }

@@ -4,6 +4,7 @@ import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:path/path.dart' as p;
@@ -156,9 +157,12 @@ class NoOpPrepareWorkdirManager extends WorkdirManager {
   Future<PrepareResult> prepare(
     Directory workDir, {
     bool isFlutter = false,
+    bool allowInternet = true,
     WorkdirRemainingTimeout? remainingTimeout,
     WorkdirCancellationCheck? cancellationCheck,
     Future<void>? cancellationSignal,
+    GeneratedCodeSandbox? generatedCodeSandbox,
+    int? maxCpuCores,
   }) async {
     return const PrepareOk();
   }

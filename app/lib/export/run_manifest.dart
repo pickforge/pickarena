@@ -21,22 +21,28 @@ class BundleWarning {
 
 class ArtifactDescriptor {
   const ArtifactDescriptor({
+    required this.artifactId,
     required this.kind,
     required this.taskRunId,
     required this.path,
     required this.bytes,
+    required this.sha256,
   });
 
+  final String artifactId;
   final String kind;
   final String taskRunId;
   final String path;
   final int bytes;
+  final String sha256;
 
   Map<String, Object?> toJson() => {
+    'artifactId': artifactId,
     'kind': kind,
     'taskRunId': taskRunId,
     'path': path,
     'bytes': bytes,
+    'sha256': sha256,
   };
 }
 

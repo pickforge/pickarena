@@ -21,6 +21,8 @@ version: 1.0.0+1
 executables:
   dart_arena_headless: dart_arena_headless
   dart_arena_export_leaderboard: dart_arena_export_leaderboard
+  dart_arena_task_qa: dart_arena_task_qa
+  dart_arena_release_report: dart_arena_release_report
 
 environment:
   sdk: ^3.11.4

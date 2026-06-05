@@ -55,7 +55,7 @@ environment:
     ).writeAsStringSync('int answer() => 42;\n');
 
     expect(await WorkdirManager(root: root).prepare(dir), isA<PrepareOk>());
-    final result = await CompileEvaluator().evaluate(_ctx(dir));
+    final result = await const CompileEvaluator().evaluate(_ctx(dir));
     expect(result.passed, isTrue);
     expect(result.score, 1.0);
 
@@ -80,7 +80,7 @@ environment:
       ).writeAsStringSync('int answer( => 42;');
 
       expect(await WorkdirManager(root: root).prepare(dir), isA<PrepareOk>());
-      final result = await CompileEvaluator().evaluate(_ctx(dir));
+      final result = await const CompileEvaluator().evaluate(_ctx(dir));
       expect(result.passed, isFalse);
       expect(result.score, 0.0);
 
@@ -88,4 +88,50 @@ environment:
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );
+
+  test(
+    'terminates analysis when output exceeds the compile evaluator limit',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_compile_output_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final dir = Directory(p.join(root.path, 'pkg'))..createSync();
+      final fakeDart = await _writeChattyExecutable(root);
+
+      final result = await CompileEvaluator(
+        dartExecutable: fakeDart.path,
+        timeout: const Duration(seconds: 5),
+        maxOutputChars: 32,
+      ).evaluate(_ctx(dir));
+
+      expect(result.passed, isFalse);
+      expect(result.score, 0.0);
+      expect(result.rationale, 'analysis output limit exceeded');
+      expect(result.details['output_limit_exceeded'], isTrue);
+      expect(result.details['max_output_chars'], 32);
+      expect(result.details['exitCode'], -1);
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    timeout: const Timeout(Duration(seconds: 10)),
+  );
+}
+
+Future<File> _writeChattyExecutable(Directory root) async {
+  final script = File(p.join(root.path, 'fake_dart_compile_chatty.sh'));
+  await script.writeAsString('''
+#!/bin/sh
+i=0
+while [ "\$i" -lt 100 ]; do
+  printf '0123456789'
+  i=\$((i + 1))
+done
+sleep 20
+exit 0
+''');
+  final chmod = await Process.run('chmod', ['+x', script.path]);
+  expect(chmod.exitCode, 0, reason: chmod.stderr.toString());
+  return script;
 }

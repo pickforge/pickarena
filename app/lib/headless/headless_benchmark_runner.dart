@@ -12,6 +12,7 @@ import 'package:dart_arena/export/artifact_bundle.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/agentic_run_orchestrator.dart';
 import 'package:dart_arena/runner/codegen_task_executor.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
@@ -45,6 +46,10 @@ class HeadlessBenchmarkConfig {
     this.maxConcurrency = 4,
     this.trialsPerTask = 1,
     this.useReferencePlan = false,
+    this.generatedCodeSandboxRequired = false,
+    this.generatedCodeSandboxEnforced = false,
+    this.generatedCodeSandboxBackend,
+    this.generatedCodeSandbox,
     this.timeout = const Duration(minutes: 10),
   }) : allowedTrajectoryRoots = List.unmodifiable(allowedTrajectoryRoots);
 
@@ -69,6 +74,10 @@ class HeadlessBenchmarkConfig {
   final int maxConcurrency;
   final int trialsPerTask;
   final bool useReferencePlan;
+  final bool generatedCodeSandboxRequired;
+  final bool generatedCodeSandboxEnforced;
+  final String? generatedCodeSandboxBackend;
+  final GeneratedCodeSandbox? generatedCodeSandbox;
   final Duration timeout;
 }
 
@@ -148,6 +157,13 @@ class HeadlessBenchmarkRunner {
     _HeadlessRunCancellation cancellation,
   ) async {
     cancellation.throwIfCancelled();
+    if (config.generatedCodeSandboxRequired &&
+        config.generatedCodeSandbox == null) {
+      throw StateError(
+        'Generated-code sandbox is required, but no sandbox backend was '
+        'configured.',
+      );
+    }
     final normalizedModels = _normalizeModels(config);
 
     final combos = _buildCombos(config, normalizedModels);
@@ -203,6 +219,9 @@ class HeadlessBenchmarkRunner {
       name: config.name,
       maxConcurrency: config.maxConcurrency,
       trialsPerTask: config.trialsPerTask,
+      generatedCodeSandboxRequired: config.generatedCodeSandboxRequired,
+      generatedCodeSandboxEnforced: config.generatedCodeSandboxEnforced,
+      generatedCodeSandboxBackend: config.generatedCodeSandboxBackend,
     );
     final provenanceJson = await buildRunProvenanceJson(
       runId: config.runId,
@@ -335,11 +354,13 @@ class HeadlessBenchmarkRunner {
       workdirManager: config.workdirManager,
       weights: config.evaluatorWeights,
       now: config.now,
+      generatedCodeSandbox: config.generatedCodeSandbox,
     );
     final agenticOrchestrator = AgenticRunOrchestrator(
       workdirManager: config.workdirManager,
       weights: config.evaluatorWeights,
       now: config.now,
+      generatedCodeSandbox: config.generatedCodeSandbox,
     );
     final harnessesByProviderId = {
       for (final harness in config.agentHarnesses) harness.id: harness,

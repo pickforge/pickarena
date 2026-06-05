@@ -1,0 +1,64 @@
+schemaVersion: 1
+id: navigation.auth_redirect_race
+version: 1
+category: bug_fix
+track: agentic
+tags:
+  - navigation
+  - bugfix
+difficulty: medium
+platformRequirements:
+  - linux
+timeoutSeconds: 900
+release:
+  corpus: private_official
+  status: active
+network: false
+resources:
+  cpus: 2
+  memory_mb: 8192
+  max_processes: 64
+  max_output_bytes: 1048576
+generatedCodePath: lib/auth_router.dart
+isFlutter: true
+instructionPath: instruction.md
+workspace:
+  root: baseline
+  files:
+    pubspec.yaml: pubspec.yaml
+    lib/auth_router.dart: lib/auth_router.dart
+    test/auth_router_test.dart: test/auth_router_test.dart
+hiddenVerifiers:
+  - id: auth_redirect_hidden
+    testPath: test/_hidden/auth_router_hidden_test.dart
+    root: hidden_tests
+    files:
+      test/_hidden/auth_router_hidden_test.dart: test/_hidden/auth_router_hidden_test.dart
+reference:
+  type: files
+  root: solution
+  files:
+    lib/auth_router.dart: lib/auth_router.dart
+requiredNegativeCaseKinds:
+  - noop
+  - api_breaking
+  - overfit
+negativeCases:
+  - id: noop
+    kind: noop
+    description: Leaves the stale redirect behavior unchanged.
+    root: negative_cases/noop
+    files:
+      lib/auth_router.dart: lib/auth_router.dart
+  - id: api_breaking
+    kind: api_breaking
+    description: Removes the public AuthRedirectController API.
+    root: negative_cases/api_breaking
+    files:
+      lib/auth_router.dart: lib/auth_router.dart
+  - id: overfit_public_routes
+    kind: overfit
+    description: Handles visible protected routes but drops the queued deep link.
+    root: negative_cases/overfit
+    files:
+      lib/auth_router.dart: lib/auth_router.dart

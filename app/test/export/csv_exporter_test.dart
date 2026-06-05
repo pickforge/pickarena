@@ -10,6 +10,9 @@ RunSummary _summary({
   int? completionTokens = 20,
   bool? primaryPass = true,
   String? failureTag = 'pass',
+  bool testPassed = true,
+  double testScore = 1.0,
+  String testDetailsJson = '{}',
 }) {
   final run = Run(
     id: 'r1',
@@ -42,9 +45,9 @@ RunSummary _summary({
   return RunSummary(
     run: run,
     taskRuns: [taskRun],
-    evaluationsByTaskRunId: const {
+    evaluationsByTaskRunId: {
       'tr1': [
-        Evaluation(
+        const Evaluation(
           id: 'e1',
           taskRunId: 'tr1',
           evaluatorId: 'compile',
@@ -53,7 +56,7 @@ RunSummary _summary({
           rationale: null,
           detailsJson: '{}',
         ),
-        Evaluation(
+        const Evaluation(
           id: 'e2',
           taskRunId: 'tr1',
           evaluatorId: 'analyze',
@@ -66,10 +69,10 @@ RunSummary _summary({
           id: 'e3',
           taskRunId: 'tr1',
           evaluatorId: 'test',
-          passed: true,
-          score: 1.0,
+          passed: testPassed,
+          score: testScore,
           rationale: null,
-          detailsJson: '{}',
+          detailsJson: testDetailsJson,
         ),
       ],
     },
@@ -86,6 +89,8 @@ void main() {
     expect(firstLine, contains('patch_chars,trajectory_log_path'));
     expect(firstLine, contains('score_compile,score_analyze,score_test'));
     expect(firstLine, contains('score_hidden_test'));
+    expect(firstLine, contains('status_compile,status_analyze,status_test'));
+    expect(firstLine, contains('public_pass,hidden_pass'));
     expect(firstLine, endsWith('latency_ms,prompt_tokens,completion_tokens'));
   });
 
@@ -111,6 +116,11 @@ void main() {
     expect(values[15], '1.0000'); // compile
     expect(values[16], '0.9000'); // analyze
     expect(values[17], '1.0000'); // test
+    expect(values[22], 'passed'); // compile status
+    expect(values[23], 'passed'); // analyze status
+    expect(values[24], 'passed'); // test status
+    expect(values[29], 'true'); // aggregate public pass
+    expect(values[30], ''); // no hidden sample
   });
 
   test('null run name renders as empty cell', () {
@@ -128,6 +138,21 @@ void main() {
     expect(values[19], '');
     expect(values[20], '');
     expect(values[21], '');
+  });
+
+  test('blocked evaluator status renders separately from score', () {
+    final csv = runSummaryToCsv(
+      _summary(
+        testPassed: false,
+        testScore: 0,
+        testDetailsJson: '{"blocked": true, "blocked_by": "compile"}',
+      ),
+    );
+    final values = csv.split('\n')[1].split(',');
+
+    expect(values[17], '0.0000');
+    expect(values[24], 'blocked');
+    expect(values[29], '');
   });
 
   test('includes aggregate leaderboard summary fields', () {

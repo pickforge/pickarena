@@ -69,16 +69,22 @@ String determineFailureTag({
   if (evaluations.any(_isHarnessTimeout)) return 'harness_timeout';
   if (evaluations.any(_isEnvironmentError)) return 'environment_error';
   if (evaluations.any(_isHarnessError)) return 'harness_error';
-  if (evaluations.any((e) => e.evaluatorId == 'compile' && !e.passed)) {
+  if (evaluations.any(
+    (e) => e.evaluatorId == 'compile' && _isUnblockedFailure(e),
+  )) {
     return 'compile_failed';
   }
-  if (evaluations.any((e) => e.evaluatorId == 'analyze' && !e.passed)) {
+  if (evaluations.any(
+    (e) => e.evaluatorId == 'analyze' && _isUnblockedFailure(e),
+  )) {
     return 'analysis_failed';
   }
-  if (evaluations.any((e) => _isPublicTestEvaluator(e) && !e.passed)) {
+  if (evaluations.any(
+    (e) => _isPublicTestEvaluator(e) && _isUnblockedFailure(e),
+  )) {
     return 'public_tests_failed';
   }
-  if (evaluations.any((e) => _isHiddenVerifier(e) && !e.passed)) {
+  if (evaluations.any((e) => _isHiddenVerifier(e) && _isUnblockedFailure(e))) {
     return 'hidden_verifier_failed';
   }
   if (response != null && response.rawText.trim().isEmpty) {
@@ -100,6 +106,10 @@ bool _isCorrectnessEvaluator(EvaluationResult e) {
 
 bool _isPublicTestEvaluator(EvaluationResult e) {
   return isPublicTestEvaluatorId(e.evaluatorId);
+}
+
+bool _isUnblockedFailure(EvaluationResult e) {
+  return !e.passed && e.details['blocked'] != true;
 }
 
 bool _isHarnessTimeout(EvaluationResult e) {

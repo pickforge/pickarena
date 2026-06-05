@@ -3,7 +3,7 @@ import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
-class AnthropicProvider implements ModelProvider {
+class AnthropicProvider implements ModelProvider, ModelRuntimeMetadataProvider {
   AnthropicProvider({required this.apiKey, Dio? dio})
     : _dio = dio ?? (Dio()..interceptors.add(PrettyDioLogger()));
 
@@ -15,15 +15,31 @@ class AnthropicProvider implements ModelProvider {
   ProviderMode get mode => ProviderMode.rawApi;
 
   static const String baseUrl = 'https://api.anthropic.com/v1';
+  static const int _maxOutputTokens = 4096;
+  static const String _anthropicVersion = '2023-06-01';
   final String apiKey;
   final Dio _dio;
+
+  @override
+  Map<String, Object?> providerRuntimeConfig() => {
+    'providerMode': mode.name,
+    'requestProtocol': 'anthropic_messages',
+    'anthropicVersion': _anthropicVersion,
+  };
+
+  @override
+  Map<String, Object?> modelRuntimeConfig(String modelId) => const {
+    'maxOutputTokens': _maxOutputTokens,
+    'temperature': {'configured': false, 'status': 'provider_default'},
+    'toolPolicy': 'none',
+  };
 
   @override
   void dispose() => _dio.close(force: true);
 
   Map<String, String> _headers() => <String, String>{
     'x-api-key': apiKey,
-    'anthropic-version': '2023-06-01',
+    'anthropic-version': _anthropicVersion,
     'Content-Type': 'application/json',
   };
 
@@ -46,7 +62,7 @@ class AnthropicProvider implements ModelProvider {
       '$baseUrl/messages',
       data: <String, dynamic>{
         'model': model,
-        'max_tokens': 4096,
+        'max_tokens': _maxOutputTokens,
         'messages': [
           {'role': 'user', 'content': prompt},
         ],

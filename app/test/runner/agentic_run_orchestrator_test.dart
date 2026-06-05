@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/agent/agent_harness.dart';
@@ -6,6 +7,7 @@ import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/task_verifier.dart';
@@ -13,6 +15,7 @@ import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/evaluators/hidden_test_evaluator.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/agentic_run_orchestrator.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/run_bloc.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_state.dart';
@@ -53,6 +56,36 @@ class _FakeHarness implements AgentHarness {
   }
 }
 
+class _MetadataHarness implements AgentHarness {
+  const _MetadataHarness(this.metadata);
+
+  final Map<String, Object?> metadata;
+
+  @override
+  String get id => 'fake_agent';
+
+  @override
+  Future<AgentRunResult> run({
+    required Directory workspace,
+    required String instruction,
+    required String modelId,
+    required Duration timeout,
+    Iterable<String> deniedEnvironmentKeys = const [],
+  }) async {
+    await File(
+      p.join(workspace.path, 'lib', 'answer.dart'),
+    ).writeAsString('int answer() => 42;\n');
+    return AgentRunResult(
+      status: AgentRunStatus.success,
+      stdoutPreview: 'fixed',
+      stderrPreview: '',
+      exitCode: 0,
+      latency: const Duration(milliseconds: 10),
+      metadata: metadata,
+    );
+  }
+}
+
 class _FailingHarness implements AgentHarness {
   @override
   String get id => 'fake_agent';
@@ -71,6 +104,31 @@ class _FailingHarness implements AgentHarness {
       stderrPreview: 'permission denied',
       exitCode: 1,
       latency: Duration(milliseconds: 10),
+    );
+  }
+}
+
+class _NoPreviewTimeoutHarness implements AgentHarness {
+  @override
+  String get id => 'fake_agent';
+
+  @override
+  Future<AgentRunResult> run({
+    required Directory workspace,
+    required String instruction,
+    required String modelId,
+    required Duration timeout,
+    Iterable<String> deniedEnvironmentKeys = const [],
+  }) async {
+    await File(
+      p.join(workspace.path, 'lib', 'answer.dart'),
+    ).writeAsString('int answer() => 42;\n');
+    return const AgentRunResult(
+      status: AgentRunStatus.timeout,
+      stdoutPreview: '',
+      stderrPreview: '',
+      exitCode: null,
+      latency: Duration(milliseconds: 123),
     );
   }
 }
@@ -225,13 +283,42 @@ class _FailingPrepareWorkdirManager extends NoOpPrepareWorkdirManager {
   Future<PrepareResult> prepare(
     Directory workDir, {
     bool isFlutter = false,
+    bool allowInternet = true,
     WorkdirRemainingTimeout? remainingTimeout,
     WorkdirCancellationCheck? cancellationCheck,
     Future<void>? cancellationSignal,
+    GeneratedCodeSandbox? generatedCodeSandbox,
+    int? maxCpuCores,
   }) async {
     calls++;
     if (calls == 1) return const PrepareOk();
     return const PrepareFailed('grading prepare failed');
+  }
+}
+
+class _ArtifactPrepareWorkdirManager extends NoOpPrepareWorkdirManager {
+  _ArtifactPrepareWorkdirManager({required super.root});
+
+  @override
+  Future<PrepareResult> prepare(
+    Directory workDir, {
+    bool isFlutter = false,
+    bool allowInternet = true,
+    WorkdirRemainingTimeout? remainingTimeout,
+    WorkdirCancellationCheck? cancellationCheck,
+    Future<void>? cancellationSignal,
+    GeneratedCodeSandbox? generatedCodeSandbox,
+    int? maxCpuCores,
+  }) async {
+    await File(p.join(workDir.path, 'prepared.txt')).writeAsString('prepared');
+    await File(
+      p.join(workDir.path, '.dart_arena', 'flutter-cache-files', 'lockfile'),
+    ).create(recursive: true);
+    await File(p.join(workDir.path, '.flutter')).writeAsString('');
+    await File(
+      p.join(workDir.path, '.config', 'tool_state'),
+    ).create(recursive: true);
+    return const PrepareOk();
   }
 }
 
@@ -316,6 +403,44 @@ void main() {
   );
 
   test(
+    'captures only harness changes after resetting the prepared baseline',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'agentic_orch_prepared_baseline_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      final orchestrator = AgenticRunOrchestrator(
+        workdirManager: _ArtifactPrepareWorkdirManager(root: root),
+        now: () => DateTime(2026, 6, 5),
+      );
+      final result = await orchestrator.run(
+        runId: 'run-prepared-baseline',
+        task: _AgenticAnswerTask(),
+        harness: _FakeHarness((workspace) async {
+          await File(
+            p.join(workspace.path, 'lib', 'answer.dart'),
+          ).writeAsString('int answer() => 42;\n');
+        }),
+        providerId: 'fake_agent',
+        modelId: 'm',
+        trialIndex: 0,
+        evaluatorConfig: const EvaluatorConfig(),
+      );
+
+      expect(result.patchText, contains('-int answer() => 41;'));
+      expect(result.patchText, contains('+int answer() => 42;'));
+      expect(result.patchText, isNot(contains('prepared.txt')));
+      expect(result.patchText, isNot(contains('.dart_arena')));
+      expect(result.patchText, isNot(contains('.flutter')));
+      expect(result.patchText, isNot(contains('tool_state')));
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
     'passes denied environment keys to the agent harness',
     () async {
       final root = await Directory.systemTemp.createTemp(
@@ -347,6 +472,104 @@ void main() {
       expect(harness.deniedKeys, contains('SECRET_KEY'));
     },
     timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'sanitizes raw harness metadata before storing evaluator details',
+    () async {
+      final root = await Directory.systemTemp.createTemp('agentic_metadata_');
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      final privateWorkspace = p.join(root.path, 'private', 'workspace');
+      final orchestrator = AgenticRunOrchestrator(
+        workdirManager: WorkdirManager(root: root),
+        now: () => DateTime(2026, 5, 29),
+      );
+      final result = await orchestrator.run(
+        runId: 'run-metadata',
+        task: _AgenticAnswerTask(),
+        harness: _MetadataHarness({
+          'workspace': privateWorkspace,
+          'executable': '/home/dev/.local/bin/droid',
+          'command': 'droid exec secret prompt',
+          'api_key': 'secret-token-value',
+          'argc': 8,
+          'stepCount': 6,
+          'peakContextTokens': 12000,
+          'output_limit_exceeded': true,
+          'max_output_chars': 128,
+          'metadata': {'workspacePath': privateWorkspace, 'stepCount': 7},
+          'exception': 'StateError',
+        }),
+        providerId: 'fake_agent',
+        modelId: 'm',
+        trialIndex: 0,
+        evaluatorConfig: const EvaluatorConfig(),
+      );
+
+      final details = result.evaluations
+          .singleWhere(
+            (evaluation) => evaluation.evaluatorId == 'agent_harness',
+          )
+          .details;
+      final encoded = jsonEncode(details);
+
+      expect(details, containsPair('argc', 8));
+      expect(details, containsPair('stepCount', 6));
+      expect(details, containsPair('peakContextTokens', 12000));
+      expect(details, containsPair('output_limit_exceeded', true));
+      expect(details, containsPair('max_output_chars', 128));
+      expect(details, containsPair('exception', 'StateError'));
+      expect(details, containsPair('metadata_redacted_count', 4));
+      expect(details['metadata'], {
+        'stepCount': 7,
+        'metadata_redacted_count': 1,
+      });
+      expect(encoded, isNot(contains(privateWorkspace)));
+      expect(encoded, isNot(contains('/home/dev/.local/bin/droid')));
+      expect(encoded, isNot(contains('droid exec secret prompt')));
+      expect(encoded, isNot(contains('secret-token-value')));
+      expect(details.containsKey('workspace'), isFalse);
+      expect(details.containsKey('executable'), isFalse);
+      expect(details.containsKey('command'), isFalse);
+      expect(details.containsKey('api_key'), isFalse);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'no-preview harness timeout stores fallback response evidence',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_agentic_timeout_response_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      final orchestrator = AgenticRunOrchestrator(
+        workdirManager: WorkdirManager(root: root),
+        now: () => DateTime(2026, 6, 4),
+      );
+
+      final result = await orchestrator.run(
+        runId: 'run-timeout-response',
+        task: _AgenticAnswerTask(),
+        harness: _NoPreviewTimeoutHarness(),
+        providerId: 'fake_agent',
+        modelId: 'm',
+        trialIndex: 0,
+        evaluatorConfig: const EvaluatorConfig(),
+      );
+
+      expect(result.failureTag, 'harness_timeout');
+      expect(result.response.rawText, contains('no stdout/stderr preview'));
+      expect(result.response.rawText, contains('status: timeout'));
+      expect(result.response.rawText, contains('latencyMs: 123'));
+      expect(result.patchText, contains('+int answer() => 42;'));
+    },
   );
 
   test('missing harness creates a clear agentic result failure', () {
@@ -409,6 +632,53 @@ void main() {
         (evaluation) => evaluation.evaluatorId == 'test',
       );
       expect(blockedTest.details['blocked_by'], 'agent_harness');
+    },
+  );
+
+  test(
+    'grading prepare failure records environment root and blocked evaluators',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'agentic_prepare_blocking_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      final compile = _SpyEvaluator('compile');
+      final custom = _SpyEvaluator('custom_check');
+      final orchestrator = AgenticRunOrchestrator(
+        workdirManager: _FailingPrepareWorkdirManager(root: root),
+        now: () => DateTime(2026, 6, 2),
+      );
+
+      final result = await orchestrator.run(
+        runId: 'run-prepare-blocking',
+        task: _AgenticBlockingTask([compile, custom]),
+        harness: _FakeHarness((workspace) async {}),
+        providerId: 'fake_agent',
+        modelId: 'm',
+        trialIndex: 0,
+        evaluatorConfig: const EvaluatorConfig(),
+      );
+
+      expect(result.failureTag, 'environment_error');
+      expect(compile.calls, 0);
+      expect(custom.calls, 0);
+      final environment = result.evaluations.singleWhere(
+        (evaluation) => evaluation.evaluatorId == 'environment',
+      );
+      expect(environment.rationale, 'prepare failed');
+      expect(environment.details['phase'], 'grading_prepare');
+
+      for (final evaluatorId in ['compile', 'custom_check']) {
+        final blocked = result.evaluations.singleWhere(
+          (evaluation) => evaluation.evaluatorId == evaluatorId,
+        );
+        expect(blocked.rationale, 'blocked by environment');
+        expect(blocked.details[blockedDetailKey], isTrue);
+        expect(blocked.details[blockedByDetailKey], 'environment');
+      }
     },
   );
 

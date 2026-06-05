@@ -9,7 +9,14 @@
     formatPercent,
     formatTokens
   } from '$lib/data/format';
-  import type { LeaderboardModel, LeaderboardTask } from '$lib/data/leaderboard';
+  import type {
+    LeaderboardConfidenceInterval,
+    LeaderboardModel,
+    LeaderboardPassAtK,
+    LeaderboardTask,
+    LeaderboardTaskModelCell,
+    LeaderboardTrialSummary
+  } from '$lib/data/leaderboard';
   import type { PageData } from './$types';
 
   type ChartMode = 'cost' | 'latency';
@@ -30,6 +37,10 @@
   let leaderboard = $derived(data.leaderboard);
   let rankedModels = $derived(sortModels(leaderboard.models));
   let taskExamples = $derived(sortTasks(leaderboard.tasks).slice(0, 6));
+  let heatmapModels = $derived(rankedModels.slice(0, 8));
+  let heatmapTasks = $derived(sortTasks(leaderboard.tasks).slice(0, 8));
+  let heatmapCells = $derived(buildHeatmapCellMap(leaderboard.taskModelCells));
+  let trialSummaries = $derived(leaderboard.trialSummaries.slice(0, 16));
   let topModel = $derived(rankedModels[0] ?? null);
   let bestCost = $derived(lowestKnownCost(rankedModels));
   let chartMode = $derived(selectChartMode(rankedModels));
@@ -40,7 +51,12 @@
       ...leaderboard.source.warnings
     ])
   );
-  let provenanceWarnings = $derived(uniqueWarnings(leaderboard.source.warnings));
+  let provenanceWarnings = $derived(
+    uniqueWarnings([
+      ...leaderboard.source.warnings,
+      ...leaderboard.source.runProvenance.warnings
+    ])
+  );
 
   function sortModels(models: LeaderboardModel[]): LeaderboardModel[] {
     return [...models].sort((left, right) => {
@@ -58,6 +74,57 @@
 
       return (right.passRate ?? -1) - (left.passRate ?? -1);
     });
+  }
+
+  function buildHeatmapCellMap(
+    cells: LeaderboardTaskModelCell[]
+  ): Map<string, LeaderboardTaskModelCell> {
+    return new Map(
+      cells.map((cell) => [
+        heatmapKey(
+          cell.providerId,
+          cell.modelId,
+          cell.taskId,
+          cell.taskVersion,
+          cell.benchmarkTrack
+        ),
+        cell
+      ])
+    );
+  }
+
+  function heatmapKey(
+    providerId: string,
+    modelId: string,
+    taskId: string,
+    taskVersion: number | string | null,
+    benchmarkTrack: string | null
+  ): string {
+    return [
+      providerId,
+      modelId,
+      taskId,
+      taskVersion ?? 'unknown-version',
+      benchmarkTrack ?? 'unknown-track'
+    ].join('\u001f');
+  }
+
+  function taskCell(
+    model: LeaderboardModel,
+    task: LeaderboardTask,
+    cells: Map<string, LeaderboardTaskModelCell>
+  ): LeaderboardTaskModelCell | null {
+    return (
+      cells.get(
+        heatmapKey(
+          model.providerId,
+          model.modelId,
+          task.taskId,
+          task.taskVersion,
+          task.benchmarkTrack
+        )
+      ) ?? null
+    );
   }
 
   function uniqueWarnings(warnings: string[]): string[] {
@@ -119,8 +186,8 @@
     });
   }
 
-  function formatConfidence(model: LeaderboardModel): string {
-    const { lower, upper } = model.confidenceInterval;
+  function formatConfidence(interval: LeaderboardConfidenceInterval): string {
+    const { lower, upper } = interval;
     if (lower === null || upper === null) return 'unknown';
 
     return `${formatPercent(lower)}–${formatPercent(upper)}`;
@@ -133,6 +200,73 @@
   function formatChartMetric(value: number, mode: ChartMode): string {
     return mode === 'cost' ? formatCost(value) : formatDuration(value);
   }
+
+  function heatmapTone(cell: LeaderboardTaskModelCell | null): string {
+    if (!cell || cell.sampleCount === 0 || cell.passRate === null) return 'unknown';
+    if (cell.blockedTaskRunCount > 0) return 'blocked';
+    if (cell.passRate >= 0.85) return 'strong';
+    if (cell.passRate >= 0.5) return 'mixed';
+    return 'weak';
+  }
+
+  function taskShortLabel(taskId: string): string {
+    const segments = taskId.split('.');
+    return segments.length > 1 ? segments.slice(-2).join('.') : taskId;
+  }
+
+  function formatCoverage(count: number, total: number): string {
+    return `${formatCount(count)}/${formatCount(total)}`;
+  }
+
+  function formatEnvironmentIds(ids: string[]): string {
+    if (ids.length === 0) return 'unknown';
+    if (ids.length === 1) return ids[0];
+    return `${formatCount(ids.length)} ids`;
+  }
+
+  function formatIdCount(ids: string[]): string {
+    if (ids.length === 0) return 'unknown';
+    return `${formatCount(ids.length)} ids`;
+  }
+
+  function formatPassAtK(passAtK: LeaderboardPassAtK, preferredK = 2): string {
+    const preferred = passAtK[String(preferredK)];
+    const fallback = passAtK['1'] ?? Object.values(passAtK)[0] ?? null;
+    const entry = preferred ?? fallback;
+    if (!entry) return 'unknown';
+
+    return `P@${entry.k} ${formatPercent(entry.passRate)}`;
+  }
+
+  function formatUnknownCost(count: number): string | null {
+    if (count <= 0) return null;
+    return `${formatCount(count)} unknown cost`;
+  }
+
+  function formatContext(value: number | null): string {
+    return `${formatTokens(value)} ctx`;
+  }
+
+  function formatOutcome(value: boolean | null): string {
+    if (value === true) return 'pass';
+    if (value === false) return 'fail';
+    return 'unknown';
+  }
+
+  function outcomeTone(trial: LeaderboardTrialSummary): string {
+    if (trial.blockedEvaluationCount > 0) return 'blocked';
+    if (trial.primaryPass === true) return 'pass';
+    if (trial.primaryPass === false) return 'fail';
+    return 'unknown';
+  }
+
+  function shortTrialId(id: string): string {
+    return id.length > 12 ? id.slice(0, 12) : id;
+  }
+
+  function formatScore(value: number | null): string {
+    return value === null ? 'unknown' : value.toFixed(2);
+  }
 </script>
 
 <main class="shell">
@@ -143,6 +277,8 @@
     </a>
     <nav class="nav-links" aria-label="Page sections">
       <a href="#leaderboard">Leaderboard</a>
+      <a href="#matrix">Matrix</a>
+      <a href="#trials">Trials</a>
       <a href="#tasks">Tasks</a>
       <a href="#methodology">Methodology</a>
     </nav>
@@ -202,6 +338,11 @@
         <span>Task runs</span>
         <strong>{formatCount(leaderboard.source.taskRunCount)}</strong>
         <p>Compatible scored attempts.</p>
+      </article>
+      <article class="metric-card">
+        <span>Trials shown</span>
+        <strong>{formatCount(leaderboard.source.trialSummaryCount)}</strong>
+        <p>{leaderboard.source.trialSummaryTruncated ? 'Truncated public summary.' : 'Sanitized public attempts.'}</p>
       </article>
       <article class="metric-card">
         <span>Generated</span>
@@ -335,7 +476,9 @@
               <th scope="col">Rank</th>
               <th scope="col">Model</th>
               <th scope="col">Pass rate</th>
+              <th scope="col">Pass@k</th>
               <th scope="col">Public / hidden</th>
+              <th scope="col">Blocked</th>
               <th scope="col">Confidence</th>
               <th scope="col">Samples</th>
               <th scope="col">Latency</th>
@@ -352,16 +495,29 @@
                   {#if model.lowSample}
                     <span class="flag">low sample</span>
                   {/if}
+                  {#if model.unknownEstimatedCostCount > 0}
+                    <span class="flag">unknown cost</span>
+                  {/if}
                 </td>
                 <td>
                   {formatPercent(model.passRate)}
                   <span class="sub-metric">{formatCount(model.passCount)} passed</span>
                 </td>
                 <td>
+                  {formatPassAtK(model.passAtK)}
+                  <span class="sub-metric">
+                    {formatCount(model.medianStepCount)} steps · {formatContext(model.medianPeakContextTokens)}
+                  </span>
+                </td>
+                <td>
                   {formatPercent(model.publicPassRate)} public
                   <span class="sub-metric">{formatPercent(model.hiddenPassRate)} hidden</span>
                 </td>
-                <td>{formatConfidence(model)}</td>
+                <td>
+                  {formatCount(model.blockedTaskRunCount)} runs
+                  <span class="sub-metric">{formatCount(model.blockedEvaluationCount)} checks</span>
+                </td>
+                <td>{formatConfidence(model.confidenceInterval)}</td>
                 <td>
                   {formatCount(model.sampleCount)}
                   <span class="sub-metric">
@@ -369,8 +525,18 @@
                   </span>
                 </td>
                 <td>{formatDuration(model.medianLatencyMs)}</td>
-                <td>{formatCost(model.medianEstimatedCostMicros)}</td>
-                <td>{formatCost(model.costPerSolvedTaskMicros)}</td>
+                <td>
+                  {formatCost(model.medianEstimatedCostMicros)}
+                  {#if formatUnknownCost(model.unknownEstimatedCostCount)}
+                    <span class="sub-metric">{formatUnknownCost(model.unknownEstimatedCostCount)}</span>
+                  {/if}
+                </td>
+                <td>
+                  {formatCost(model.costPerSolvedTaskMicros)}
+                  {#if model.unknownEstimatedCostCount > 0}
+                    <span class="sub-metric">excluded from cost ranking</span>
+                  {/if}
+                </td>
               </tr>
             {/each}
           </tbody>
@@ -378,6 +544,153 @@
       </div>
     {:else}
       <p class="empty">No model rows are available yet.</p>
+    {/if}
+  </section>
+
+  <section class="section" id="matrix" aria-labelledby="heatmap-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Task matrix</p>
+        <h2 id="heatmap-title">Model performance by task</h2>
+      </div>
+      <p>
+        Aggregate cells keep per-task outcomes visible without publishing prompts,
+        raw responses, hidden verifier output, or machine-local paths.
+      </p>
+    </div>
+
+    {#if heatmapModels.length > 0 && heatmapTasks.length > 0 && leaderboard.taskModelCells.length > 0}
+      <div class="heatmap-wrap">
+        <div
+          class="heatmap-grid"
+          style={`grid-template-columns: minmax(180px, 1.3fr) repeat(${heatmapTasks.length}, minmax(118px, 1fr));`}
+        >
+          <div class="heatmap-corner">Model</div>
+          {#each heatmapTasks as task}
+            <div class="heatmap-task">
+              <strong>{taskShortLabel(task.taskId)}</strong>
+              <span>v{task.taskVersion ?? 'unknown'}</span>
+            </div>
+          {/each}
+
+          {#each heatmapModels as model}
+            <div class="heatmap-model">
+              <strong>{formatModelName(model.providerId, model.modelId)}</strong>
+              <span>{formatCount(model.sampleCount)} samples</span>
+            </div>
+            {#each heatmapTasks as task}
+              {@const cell = taskCell(model, task, heatmapCells)}
+              <div class={`heatmap-cell ${heatmapTone(cell)}`}>
+                {#if cell}
+                  <strong>{formatPercent(cell.passRate)}</strong>
+                  <span>{formatCount(cell.passCount)}/{formatCount(cell.sampleCount)}</span>
+                  <small>
+                    CI {formatConfidence(cell.confidenceInterval)} ·
+                    {formatCount(cell.errorCount)} errors ·
+                    {formatCount(cell.medianStepCount)} steps ·
+                    {formatContext(cell.medianPeakContextTokens)}
+                    {#if formatUnknownCost(cell.unknownEstimatedCostCount)}
+                      · {formatUnknownCost(cell.unknownEstimatedCostCount)}
+                    {:else}
+                      · {formatCost(cell.medianEstimatedCostMicros)}
+                    {/if}
+                  </small>
+                {:else}
+                  <strong>—</strong>
+                  <span>no sample</span>
+                  <small>not exported</small>
+                {/if}
+              </div>
+            {/each}
+          {/each}
+        </div>
+      </div>
+    {:else}
+      <p class="empty">No task-model cells are available yet.</p>
+    {/if}
+  </section>
+
+  <section class="section" id="trials" aria-labelledby="trials-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Trial browser</p>
+        <h2 id="trials-title">Public attempts</h2>
+      </div>
+      <p>
+        Trial rows expose outcome, task, model, latency, tokens, and cost while
+        omitting raw responses, patches, verifier logs, and local paths.
+      </p>
+    </div>
+
+    {#if leaderboard.source.trialSummaryTruncated}
+      <p class="warning" role="alert">
+        Trial summaries are truncated at {formatCount(leaderboard.source.trialSummaryLimit)} rows.
+      </p>
+    {/if}
+
+    {#if trialSummaries.length > 0}
+      <div class="table-wrap">
+        <table class="trial-table">
+          <caption>
+            Sanitized per-trial data from leaderboard.v{leaderboard.schemaVersion}.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Trial</th>
+              <th scope="col">Model</th>
+              <th scope="col">Task</th>
+              <th scope="col">Outcome</th>
+              <th scope="col">Public / hidden</th>
+              <th scope="col">Steps / context</th>
+              <th scope="col">Duration</th>
+              <th scope="col">Tokens</th>
+              <th scope="col">Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each trialSummaries as trial}
+              <tr>
+                <td>
+                  <span class="model-name">{shortTrialId(trial.trialId)}</span>
+                  <span class="sub-metric">trial {formatCount(trial.trialIndex + 1)} · score {formatScore(trial.aggregateScore)}</span>
+                </td>
+                <td>{formatModelName(trial.providerId, trial.modelId)}</td>
+                <td>
+                  {trial.taskId}
+                  <span class="sub-metric">v{trial.taskVersion ?? 'unknown'} · {trial.benchmarkTrack ?? leaderboard.benchmark.track}</span>
+                </td>
+                <td>
+                  <span class={`result-pill ${outcomeTone(trial)}`}>{formatOutcome(trial.primaryPass)}</span>
+                  <span class="sub-metric">{trial.failureTag}</span>
+                </td>
+                <td>
+                  {formatOutcome(trial.publicPassed)} public
+                  <span class="sub-metric">
+                    {formatOutcome(trial.hiddenPassed)} hidden · {formatCount(trial.blockedEvaluationCount)} blocked
+                  </span>
+                </td>
+                <td>
+                  {formatCount(trial.stepCount)} steps
+                  <span class="sub-metric">{formatContext(trial.peakContextTokens)}</span>
+                </td>
+                <td>{formatDuration(trial.latencyMs)}</td>
+                <td>
+                  {formatTokens(trial.promptTokens)} in
+                  <span class="sub-metric">{formatTokens(trial.completionTokens)} out</span>
+                </td>
+                <td>
+                  {formatCost(trial.estimatedCostMicros)}
+                  {#if trial.estimatedCostMicros === null}
+                    <span class="sub-metric">unknown cost</span>
+                  {/if}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {:else}
+      <p class="empty">No trial summaries are available yet.</p>
     {/if}
   </section>
 
@@ -403,8 +716,12 @@
             <ul class="task-meta">
               <li><span>Version</span><strong>{task.taskVersion ?? 'unknown'}</strong></li>
               <li><span>Pass rate</span><strong>{formatPercent(task.passRate)}</strong></li>
+              <li><span>Confidence</span><strong>{formatConfidence(task.confidenceInterval)}</strong></li>
               <li><span>Public</span><strong>{formatPercent(task.publicPassRate)}</strong></li>
               <li><span>Hidden</span><strong>{formatPercent(task.hiddenPassRate)}</strong></li>
+              <li><span>Steps</span><strong>{formatCount(task.medianStepCount)}</strong></li>
+              <li><span>Context</span><strong>{formatContext(task.medianPeakContextTokens)}</strong></li>
+              <li><span>Blocked</span><strong>{formatCount(task.blockedTaskRunCount)}</strong></li>
               <li><span>Models</span><strong>{formatCount(task.modelCount)}</strong></li>
               <li><span>Samples</span><strong>{formatCount(task.sampleCount)}</strong></li>
             </ul>
@@ -447,6 +764,24 @@
           <li><span>Run count</span><strong>{formatCount(leaderboard.source.runIds.length)}</strong></li>
           <li><span>Anchor run</span><strong>{leaderboard.source.anchorRunId ?? 'unknown'}</strong></li>
           <li><span>Task runs</span><strong>{formatCount(leaderboard.source.taskRunCount)}</strong></li>
+          <li><span>Run provenance</span><strong>{formatCoverage(leaderboard.source.runProvenance.embeddedRunCount, leaderboard.source.runProvenance.runCount)}</strong></li>
+          <li><span>Sandbox</span><strong>{formatCoverage(leaderboard.source.runProvenance.sandboxEnforcedRunCount, leaderboard.source.runProvenance.runCount)}</strong></li>
+          <li><span>Network policy</span><strong>{formatCoverage(leaderboard.source.runProvenance.networkDisabledTaskPolicyRunCount, leaderboard.source.runProvenance.runCount)}</strong></li>
+          <li><span>Task resources</span><strong>{formatCoverage(leaderboard.source.runProvenance.taskResourceLimitRunCount, leaderboard.source.runProvenance.runCount)}</strong></li>
+          <li><span>SDK</span><strong>{formatCoverage(leaderboard.source.runProvenance.sdkVersionRunCount, leaderboard.source.runProvenance.runCount)}</strong></li>
+          <li><span>Dependencies</span><strong>{formatCoverage(leaderboard.source.runProvenance.dependencySnapshotRunCount, leaderboard.source.runProvenance.runCount)}</strong></li>
+          <li><span>Environment</span><strong>{formatEnvironmentIds(leaderboard.source.runProvenance.environmentIds)}</strong></li>
+          <li><span>Judge cost</span><strong>{formatCost(leaderboard.source.judgeOverhead.totalEstimatedCostMicros)}</strong></li>
+          <li><span>Primary metric</span><strong>{leaderboard.scoring.primaryMetric ?? 'unknown'}</strong></li>
+          <li><span>Ranking</span><strong>{leaderboard.scoring.rankingMetric ?? 'unknown'}</strong></li>
+          <li><span>CI method</span><strong>{leaderboard.scoring.confidenceInterval ?? 'unknown'}</strong></li>
+          <li><span>Benchmark</span><strong>{leaderboard.benchmark.version ?? 'unknown'}</strong></li>
+          <li><span>Task set</span><strong>{leaderboard.benchmark.taskSetId ?? 'unknown'}</strong></li>
+          <li><span>Evaluators</span><strong>v{leaderboard.benchmark.evaluatorSchemaVersion || 'unknown'}</strong></li>
+          <li><span>Objective gates</span><strong>{formatIdCount(leaderboard.scoring.objectiveEvaluatorIds)}</strong></li>
+          <li><span>LLM judge</span><strong>{leaderboard.scoring.llmJudgePolicy ?? 'unknown'}</strong></li>
+          <li><span>Pricing</span><strong>{leaderboard.pricingRegistry.version ?? 'unknown'}</strong></li>
+          <li><span>Currency</span><strong>{leaderboard.pricingRegistry.currency ?? 'unknown'}</strong></li>
           <li><span>Schema</span><strong>leaderboard.v{leaderboard.schemaVersion}</strong></li>
         </ul>
 

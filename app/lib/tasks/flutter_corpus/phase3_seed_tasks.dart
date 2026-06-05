@@ -92,6 +92,37 @@ abstract class _Phase3SeedTask extends BenchmarkTask {
       ReferenceFileSolution(_taskSpec.referenceFiles);
 
   @override
+  List<TaskNegativeCase> get negativeCases => [
+    const TaskNegativeCase(
+      id: 'noop',
+      description: 'Leaves the baseline implementation unchanged.',
+      kind: TaskNegativeCaseKind.noop,
+      solution: ReferenceFileSolution({}),
+    ),
+    TaskNegativeCase(
+      id: 'api_breaking',
+      description: 'Replaces the target file with invalid Dart code.',
+      kind: TaskNegativeCaseKind.apiBreaking,
+      solution: ReferenceFileSolution({
+        generatedCodePath: 'void apiBreakingSolution() {\n',
+      }),
+    ),
+    TaskNegativeCase(
+      id: 'overfit_public_surface',
+      description: 'Satisfies visible coverage while missing hidden behavior.',
+      kind: TaskNegativeCaseKind.overfit,
+      solution: ReferenceFileSolution(_taskSpec.overfitFiles ?? const {}),
+    ),
+  ];
+
+  @override
+  Set<TaskNegativeCaseKind> get requiredNegativeCaseKinds => const {
+    TaskNegativeCaseKind.noop,
+    TaskNegativeCaseKind.apiBreaking,
+    TaskNegativeCaseKind.overfit,
+  };
+
+  @override
   String? get judgeRubric => null;
 
   @override
@@ -119,6 +150,7 @@ class _Phase3TaskSpec {
     required this.hiddenTestPath,
     required this.hiddenTest,
     required this.referenceFiles,
+    this.overfitFiles,
   });
 
   final String id;
@@ -135,6 +167,7 @@ class _Phase3TaskSpec {
   final String hiddenTestPath;
   final String hiddenTest;
   final Map<String, String> referenceFiles;
+  final Map<String, String>? overfitFiles;
 }
 
 class BlocDebounceCancellationTask extends _Phase3SeedTask {
@@ -305,6 +338,7 @@ Return ONLY the corrected contents of `test/countdown_banner_test.dart` inside a
     referenceFiles: {
       'test/countdown_banner_test.dart': _countdownReferenceTest,
     },
+    overfitFiles: {'test/countdown_banner_test.dart': _countdownOverfitTest},
   );
 }
 
@@ -1329,6 +1363,20 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.text('Done'), findsOneWidget);
+  });
+}
+''';
+
+const _countdownOverfitTest = r'''
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:phase3_flaky_widget_test/countdown_banner.dart';
+
+void main() {
+  testWidgets('shows countdown text initially', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: CountdownBanner(seconds: 1)));
+
+    expect(find.text('1 seconds'), findsOneWidget);
   });
 }
 ''';

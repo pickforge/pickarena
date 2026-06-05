@@ -28,6 +28,17 @@ void main() {
     expect(task.platformRequirements.map((platform) => platform.name), [
       'linux',
     ]);
+    expect(task.releaseMetadata.toJson(), {
+      'corpus': 'public_diagnostic',
+      'status': 'active',
+    });
+    expect(task.allowInternet, isFalse);
+    expect(task.resourceLimits.toJson(), {
+      'cpus': 2,
+      'memoryMb': 8192,
+      'maxProcesses': 64,
+      'maxOutputBytes': 1048576,
+    });
 
     await task.ensureLoaded();
     expect(task.prompt, contains('return 42'));
@@ -49,7 +60,10 @@ void main() {
     );
     expect(task.hiddenVerifiers.single.id, 'answer_hidden');
     expect(task.referenceSolution, isNotNull);
-    expect(task.negativeCases.single.id, 'noop');
+    expect(task.negativeCases.map((negative) => negative.kind), {
+      TaskNegativeCaseKind.noop,
+      TaskNegativeCaseKind.apiBreaking,
+    });
   });
 
   test('normalizes custom hidden verifier IDs for classification', () async {
@@ -81,6 +95,48 @@ void main() {
       generatedCodePath: '../lib/answer.dart',
     );
     await expectLater(FileBackedTask.load(badPath), throwsArgumentError);
+  });
+
+  test('rejects invalid network and resource policy fields', () async {
+    final root = await Directory.systemTemp.createTemp('file_backed_policy_');
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final badNetwork = await _writeBundle(
+      root,
+      directoryName: 'bad_network',
+      policyYaml: 'network: sometimes\n',
+    );
+    await expectLater(FileBackedTask.load(badNetwork), throwsFormatException);
+
+    final badResources = await _writeBundle(
+      root,
+      directoryName: 'bad_resources',
+      policyYaml: '''
+network: false
+resources:
+  cpus: 0
+''',
+    );
+    await expectLater(FileBackedTask.load(badResources), throwsFormatException);
+  });
+
+  test('rejects invalid release metadata fields', () async {
+    final root = await Directory.systemTemp.createTemp('file_backed_release_');
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final badRelease = await _writeBundle(
+      root,
+      directoryName: 'bad_release',
+      releaseYaml: '''
+release:
+  corpus: maybe_official
+  status: active
+''',
+    );
+
+    await expectLater(FileBackedTask.load(badRelease), throwsFormatException);
   });
 
   test(
@@ -184,6 +240,8 @@ void main() {
       expect(report.baselineHiddenFailed, isTrue, reason: failures);
       expect(report.referencePassed, isTrue, reason: failures);
       expect(report.negativeCasesRejected, isTrue, reason: failures);
+      expect(report.requiredNegativeCaseKindsCovered, isTrue, reason: failures);
+      expect(report.promptSafety.passed, isTrue, reason: failures);
       expect(report.failureMessages, isEmpty);
     },
     timeout: const Timeout(Duration(minutes: 2)),
@@ -196,6 +254,15 @@ Future<Directory> _writeBundle(
   String id = 'file.answer_fix',
   String generatedCodePath = 'lib/answer.dart',
   String hiddenVerifierId = 'answer_hidden',
+  String releaseYaml = '',
+  String policyYaml = '''
+network: false
+resources:
+  cpus: 2
+  memory_mb: 8192
+  max_processes: 64
+  max_output_bytes: 1048576
+''',
 }) async {
   final bundle = Directory(p.join(root.path, directoryName));
   await _writeFile(bundle, 'task.yaml', '''
@@ -210,6 +277,8 @@ difficulty: easy
 platformRequirements:
   - linux
 timeoutSeconds: 60
+$releaseYaml
+$policyYaml
 generatedCodePath: $generatedCodePath
 isFlutter: false
 instructionPath: instruction.md
@@ -232,8 +301,15 @@ reference:
     lib/answer.dart: lib/answer.dart
 negativeCases:
   - id: noop
+    kind: noop
     description: Leaves the original answer unchanged.
     root: negative_cases/noop
+    files:
+      lib/answer.dart: lib/answer.dart
+  - id: api_breaking
+    kind: api_breaking
+    description: Breaks the answer API.
+    root: negative_cases/api_breaking
     files:
       lib/answer.dart: lib/answer.dart
 ''');
@@ -267,6 +343,11 @@ void main() {
     bundle,
     'negative_cases/noop/lib/answer.dart',
     'int answer() => 41;\n',
+  );
+  await _writeFile(
+    bundle,
+    'negative_cases/api_breaking/lib/answer.dart',
+    'void answer() {}\n',
   );
   return bundle;
 }

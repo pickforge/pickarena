@@ -1,4 +1,5 @@
 import 'package:dart_arena/core/benchmark_task.dart';
+import 'package:dart_arena/core/evaluation_status.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/core/unified_diff.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
@@ -175,9 +176,14 @@ class _ScoreStrip extends StatelessWidget {
       child: Wrap(
         spacing: 6,
         runSpacing: 6,
-        children: evaluations
-            .map((e) => ScoreChip(evaluatorId: e.evaluatorId, score: e.score))
-            .toList(),
+        children: evaluations.map((e) {
+          final details = decodeEvaluationDetailsJson(e.detailsJson);
+          return ScoreChip(
+            evaluatorId: e.evaluatorId,
+            score: e.score,
+            status: evaluationStatus(passed: e.passed, details: details),
+          );
+        }).toList(),
       ),
     );
   }

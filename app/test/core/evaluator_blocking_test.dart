@@ -23,6 +23,7 @@ void main() {
     expect(testBlocked.rationale, 'blocked by compile');
     expect(testBlocked.details[blockedDetailKey], isTrue);
     expect(testBlocked.details[blockedByDetailKey], 'compile');
+    expect(testBlocked.details[blockedByRationaleDetailKey], isNull);
 
     final hiddenBlocked = blockedEvaluationFor(
       evaluatorId: 'task_hidden',
@@ -46,6 +47,32 @@ void main() {
       expect(blocked!.details[blockedByDetailKey], 'agent_harness');
     }
   });
+
+  test(
+    'environment failure blocks all downstream evaluators with rationale',
+    () {
+      const previous = [
+        EvaluationResult(
+          evaluatorId: 'environment',
+          passed: false,
+          score: 0.0,
+          rationale: 'prepare failed',
+          details: {'code': 'environment_error'},
+        ),
+      ];
+
+      for (final evaluatorId in ['compile', 'analyze', 'test', 'llm_judge']) {
+        final blocked = blockedEvaluationFor(
+          evaluatorId: evaluatorId,
+          previousResults: previous,
+          blockAllDownstream: true,
+        );
+        expect(blocked, isNotNull);
+        expect(blocked!.details[blockedByDetailKey], 'environment');
+        expect(blocked.details[blockedByRationaleDetailKey], 'prepare failed');
+      }
+    },
+  );
 
   test('secondary evaluators are not blocked by objective failures', () {
     const previous = [

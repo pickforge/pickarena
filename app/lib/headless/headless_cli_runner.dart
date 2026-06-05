@@ -17,6 +17,7 @@ import 'package:dart_arena/providers/openai_compatible_provider.dart';
 import 'package:dart_arena/providers/openai_provider.dart';
 import 'package:dart_arena/providers/opencode_go_provider.dart';
 import 'package:dart_arena/providers/openrouter_provider.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/dao/plan_dao.dart';
@@ -34,6 +35,8 @@ typedef HeadlessCliProviderBuilder =
 typedef HeadlessCliTaskRegistryBuilder = TaskRegistry Function();
 typedef HeadlessCliAgentHarnessBuilder =
     List<AgentHarness> Function(HeadlessCliConfig config);
+typedef HeadlessCliGeneratedCodeSandboxBuilder =
+    Future<GeneratedCodeSandbox?> Function(HeadlessCliConfig config);
 
 class HeadlessCliDependencies {
   const HeadlessCliDependencies({
@@ -46,6 +49,7 @@ class HeadlessCliDependencies {
         _defaultProvenanceEnvironmentProviderBuilder,
     this.exportEnvironmentProvider = _defaultExportEnvironmentProvider,
     this.exportAppVersionProvider = _defaultExportAppVersionProvider,
+    this.generatedCodeSandboxBuilder = _defaultGeneratedCodeSandboxBuilder,
     this.runner = const HeadlessBenchmarkRunner(),
   });
 
@@ -58,6 +62,7 @@ class HeadlessCliDependencies {
   provenanceEnvironmentProviderBuilder;
   final Future<Map<String, Object?>> Function() exportEnvironmentProvider;
   final Future<String> Function() exportAppVersionProvider;
+  final HeadlessCliGeneratedCodeSandboxBuilder generatedCodeSandboxBuilder;
   final HeadlessBenchmarkRunner runner;
 }
 
@@ -82,6 +87,9 @@ Future<int> runHeadlessCli(
     }
 
     final cliConfig = await loadHeadlessCliConfig(File(configPath));
+    final generatedCodeSandbox = await dependencies.generatedCodeSandboxBuilder(
+      cliConfig,
+    );
     final registry = dependencies.taskRegistryBuilder();
     await _registerFileBackedTasks(registry, cliConfig.taskBundleRoots);
     final tasks = [
@@ -136,6 +144,10 @@ Future<int> runHeadlessCli(
         maxConcurrency: cliConfig.maxConcurrency,
         trialsPerTask: cliConfig.trialsPerTask,
         useReferencePlan: cliConfig.useReferencePlan,
+        generatedCodeSandboxRequired: cliConfig.requireGeneratedCodeSandbox,
+        generatedCodeSandboxEnforced: generatedCodeSandbox != null,
+        generatedCodeSandboxBackend: generatedCodeSandbox?.backend,
+        generatedCodeSandbox: generatedCodeSandbox,
         timeout: cliConfig.timeout,
       ),
     );
@@ -169,6 +181,14 @@ Future<int> runHeadlessCli(
   } finally {
     await database?.close();
   }
+}
+
+Future<GeneratedCodeSandbox?> _defaultGeneratedCodeSandboxBuilder(
+  HeadlessCliConfig config,
+) async {
+  if (!config.requireGeneratedCodeSandbox) return null;
+  await BubblewrapGeneratedCodeSandbox.ensureAvailable();
+  return const BubblewrapGeneratedCodeSandbox();
 }
 
 Iterable<String> _configuredApiKeyEnvNames(HeadlessCliConfig config) sync* {

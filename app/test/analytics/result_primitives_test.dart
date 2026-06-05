@@ -186,6 +186,27 @@ void main() {
     expect(primitives.failureTag, 'environment_error');
   });
 
+  test('hidden verifier tamper is classified as environment error', () {
+    final primitives = determineResultPrimitives(
+      evaluations: const [
+        EvaluationResult(
+          evaluatorId: 'hidden_test',
+          passed: false,
+          score: 0,
+          rationale: 'hidden verifier tampered',
+          details: {
+            'code': 'infrastructure_error',
+            'reason': 'hidden_verifier_tampered',
+          },
+        ),
+      ],
+      aggregateScore: 0,
+    );
+
+    expect(primitives.primaryPass, isFalse);
+    expect(primitives.failureTag, 'environment_error');
+  });
+
   test('non-empty output without extracted patch is no_patch', () {
     final primitives = determineResultPrimitives(
       evaluations: const [],

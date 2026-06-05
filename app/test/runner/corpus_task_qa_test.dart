@@ -30,7 +30,13 @@ void main() {
         await workdirRoot.delete(recursive: true);
       }
       final runner = TaskQaRunner(
-        workdirManager: WorkdirManager(root: workdirRoot),
+        workdirManager: WorkdirManager(
+          root: workdirRoot,
+          allowReentrantFlutterTool: true,
+        ),
+        requiredHiddenFlakeRuns: 1,
+        requireNegativeCases: true,
+        allowReentrantFlutterTool: true,
       );
       final reports = <TaskQaReport>[];
 
@@ -54,6 +60,13 @@ void main() {
         expect(report.baselineHiddenFailed, isTrue, reason: report.taskId);
         expect(report.referencePublicPassed, isTrue, reason: report.taskId);
         expect(report.referenceHiddenPassed, isTrue, reason: report.taskId);
+        expect(report.negativeCasesRejected, isTrue, reason: report.taskId);
+        expect(
+          report.requiredNegativeCaseKindsCovered,
+          isTrue,
+          reason: report.taskId,
+        );
+        expect(report.promptSafety.passed, isTrue, reason: report.taskId);
         expect(report.failureMessages, isEmpty, reason: report.taskId);
       }
     },
@@ -73,11 +86,19 @@ Map<String, Object?> _reportJson(BenchmarkTask task, TaskQaReport report) {
     'platform_requirements': task.platformRequirements
         .map((platform) => platform.name)
         .toList(),
+    'execution_policy': {
+      'allow_internet': task.allowInternet,
+      'resources': task.resourceLimits.toJson(),
+    },
     'baseline_hidden_failed': report.baselineHiddenFailed,
     'reference_public_passed': report.referencePublicPassed,
     'reference_hidden_passed': report.referenceHiddenPassed,
     'hidden_flake_runs': report.hiddenFlakeRuns,
+    'hidden_verifier_digests': report.hiddenVerifierDigests,
     'negative_cases_rejected': report.negativeCasesRejected,
+    'required_negative_case_kinds_covered':
+        report.requiredNegativeCaseKindsCovered,
+    'prompt_safety': report.promptSafety.toJson(),
     'negative_cases': [
       for (final negativeCase in report.negativeCaseReports)
         negativeCase.toJson(),

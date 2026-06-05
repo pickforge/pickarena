@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dart_arena/core/path_safety.dart';
@@ -36,6 +37,62 @@ void main() {
     },
   );
 
+  test('createTaskWorkdir recreates clean generated-code workspace', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'dart_arena_codegen_clean_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final mgr = WorkdirManager(root: root);
+
+    final first = await mgr.createTaskWorkdir(
+      runId: 'r1',
+      providerId: 'provider',
+      modelId: 'model',
+      taskId: 'task',
+      fixtures: const {
+        'pubspec.yaml': 'name: tmp\n',
+        'lib/answer.dart': 'String answer() => "fixture";\n',
+      },
+      generatedCode: 'String answer() => "one";\n',
+      generatedCodePath: 'lib/answer.dart',
+    );
+    await File(p.join(first.path, 'lib', 'stale.dart')).writeAsString('stale');
+    await File(
+      p.join(first.path, 'test', '_hidden', 'leaked_test.dart'),
+    ).create(recursive: true);
+
+    final second = await mgr.createTaskWorkdir(
+      runId: 'r1',
+      providerId: 'provider',
+      modelId: 'model',
+      taskId: 'task',
+      fixtures: const {
+        'pubspec.yaml': 'name: tmp\n',
+        'lib/answer.dart': 'String answer() => "fixture";\n',
+      },
+      generatedCode: 'String answer() => "two";\n',
+      generatedCodePath: 'lib/answer.dart',
+    );
+
+    expect(second.path, first.path);
+    expect(
+      File(p.join(second.path, 'lib', 'answer.dart')).readAsStringSync(),
+      'String answer() => "two";\n',
+    );
+    expect(
+      File(p.join(second.path, 'lib', 'stale.dart')).existsSync(),
+      isFalse,
+    );
+    expect(
+      File(
+        p.join(second.path, 'test', '_hidden', 'leaked_test.dart'),
+      ).existsSync(),
+      isFalse,
+    );
+  });
+
   test('uses safe modelId path segments', () async {
     final root = await Directory.systemTemp.createTemp('dart_arena_sanitize_');
     final mgr = WorkdirManager(root: root);
@@ -53,7 +110,13 @@ void main() {
     final partsA = p.split(dirA.path);
     expect(
       partsA,
-      contains(safePathSegment('deepseek-v4-pro::high', prefix: 'model')),
+      contains(
+        safePathSegment(
+          'deepseek-v4-pro::high',
+          prefix: 'model',
+          maxStemChars: 8,
+        ),
+      ),
     );
     expect(partsA, isNot(contains('deepseek-v4-pro::high')));
 
@@ -68,10 +131,38 @@ void main() {
     );
     expect(dirB.existsSync(), isTrue);
     final partsB = p.split(dirB.path);
-    expect(partsB, contains(safePathSegment('openai/gpt-4o', prefix: 'model')));
+    expect(
+      partsB,
+      contains(
+        safePathSegment('openai/gpt-4o', prefix: 'model', maxStemChars: 8),
+      ),
+    );
     expect(partsB, isNot(contains('openai/gpt-4o')));
 
     root.deleteSync(recursive: true);
+  });
+
+  test('keeps long agentic workdir segments compact', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'dart_arena_agentic_long_path_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+
+    final dir = await WorkdirManager(root: root).createAgenticTaskWorkdir(
+      runId: 'spark-official-smoke-20260604-with-extra-release-context',
+      providerId: 'droid',
+      modelId: 'custom:gpt-5.3-codex-spark---Codex',
+      taskId: 'navigation.auth_redirect_race',
+      workspace: const TaskWorkspace(files: {'lib/answer.dart': 'answer'}),
+    );
+
+    final relative = p.relative(dir.path, from: root.path);
+    for (final segment in p.split(relative)) {
+      expect(segment.length, lessThanOrEqualTo(32));
+    }
+    expect(relative.length, lessThan(130));
   });
 
   test(
@@ -304,6 +395,131 @@ environment:
     skip: Platform.isWindows ? 'POSIX symlink test' : false,
   );
 
+  test(
+    'createAgenticTaskWorkdir scrubs baseline git process environment',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_agentic_git_env_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final gitLog = File(p.join(root.path, 'git_env.log'));
+      final fakeGit = await _writeFakeGitExecutable(root, gitLog);
+
+      final dir =
+          await WorkdirManager(
+            root: root,
+            gitExecutable: fakeGit.path,
+            deniedEnvironmentKeys: const ['HOME'],
+          ).createAgenticTaskWorkdir(
+            runId: 'r',
+            providerId: 'p',
+            modelId: 'm',
+            taskId: 't',
+            workspace: const TaskWorkspace(
+              files: {'lib/answer.dart': 'answer'},
+            ),
+          );
+
+      expect(Directory(p.join(dir.path, '.git')).existsSync(), isTrue);
+      final log = await gitLog.readAsString();
+      expect(log, contains('ARGS:init'));
+      expect(
+        log,
+        contains('ARGS:config user.email dart-arena@example.invalid'),
+      );
+      expect(log, contains('ARGS:add .'));
+      expect(log, isNot(contains('\nHOME=')));
+      expect(log, isNot(contains('\nXDG_CONFIG_HOME=')));
+      expect(log, isNot(contains('\nXDG_CONFIG_DIRS=')));
+      expect(log, contains('\nGIT_CONFIG_NOSYSTEM=1'));
+      expect(log, contains('\nGIT_TERMINAL_PROMPT=0'));
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+  );
+
+  test(
+    'createAgenticTaskWorkdir kills hanging baseline git process',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_agentic_git_timeout_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final marker = File(p.join(root.path, 'git_marker.log'));
+      final fakeGit = await _writeHangingGitExecutable(root, marker);
+
+      final manager = WorkdirManager(
+        root: root,
+        gitExecutable: fakeGit.path,
+        gitTimeout: const Duration(milliseconds: 120),
+      );
+      final stopwatch = Stopwatch()..start();
+
+      await expectLater(
+        manager.createAgenticTaskWorkdir(
+          runId: 'r',
+          providerId: 'p',
+          modelId: 'm',
+          taskId: 't',
+          workspace: const TaskWorkspace(files: {'lib/answer.dart': 'answer'}),
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+      stopwatch.stop();
+
+      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 2)));
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      final log = await marker.readAsString();
+      expect(log, contains('ARGS:init'));
+      expect(log, contains('started'));
+      expect(log, isNot(contains('done')));
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    timeout: const Timeout(Duration(seconds: 5)),
+  );
+
+  test(
+    'createAgenticTaskWorkdir fails fast when baseline git output floods',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_agentic_git_output_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final fakeGit = await _writeChattyGitExecutable(root);
+
+      final manager = WorkdirManager(
+        root: root,
+        gitExecutable: fakeGit.path,
+        gitTimeout: const Duration(seconds: 5),
+        gitMaxOutputChars: 32,
+      );
+
+      await expectLater(
+        manager.createAgenticTaskWorkdir(
+          runId: 'r',
+          providerId: 'p',
+          modelId: 'm',
+          taskId: 't',
+          workspace: const TaskWorkspace(files: {'lib/answer.dart': 'answer'}),
+        ),
+        throwsA(
+          isA<ProcessException>().having(
+            (e) => e.message,
+            'message',
+            contains('baseline git output exceeded 32 characters'),
+          ),
+        ),
+      );
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    timeout: const Timeout(Duration(seconds: 5)),
+  );
+
   test('createAgenticTaskWorkdir recreates clean trial workspace', () async {
     final root = await Directory.systemTemp.createTemp(
       'dart_arena_agentic_clean_',
@@ -395,4 +611,58 @@ environment:
       isTrue,
     );
   });
+}
+
+Future<File> _writeFakeGitExecutable(Directory root, File log) async {
+  final script = File(p.join(root.path, 'fake_git.sh'));
+  await script.writeAsString('''
+#!/bin/sh
+printf 'ARGS:%s\\n' "\$*" >> '${log.path}'
+/usr/bin/env >> '${log.path}'
+printf '%s\\n' '---' >> '${log.path}'
+if [ "\$1" = "init" ]; then
+  /bin/mkdir -p .git
+fi
+exit 0
+''');
+  final chmod = await Process.run('chmod', ['+x', script.path]);
+  expect(chmod.exitCode, 0, reason: chmod.stderr.toString());
+  return script;
+}
+
+Future<File> _writeHangingGitExecutable(Directory root, File marker) async {
+  final script = File(p.join(root.path, 'fake_git_hang.sh'));
+  await script.writeAsString('''
+#!/bin/sh
+printf 'ARGS:%s\\n' "\$*" >> '${marker.path}'
+if [ "\$1" = "init" ]; then
+  /bin/mkdir -p .git
+fi
+echo started >> '${marker.path}'
+sleep 20 && echo done >> '${marker.path}'
+exit 0
+''');
+  final chmod = await Process.run('chmod', ['+x', script.path]);
+  expect(chmod.exitCode, 0, reason: chmod.stderr.toString());
+  return script;
+}
+
+Future<File> _writeChattyGitExecutable(Directory root) async {
+  final script = File(p.join(root.path, 'fake_git_chatty.sh'));
+  await script.writeAsString('''
+#!/bin/sh
+if [ "\$1" = "init" ]; then
+  /bin/mkdir -p .git
+fi
+i=0
+while [ "\$i" -lt 100 ]; do
+  printf '0123456789'
+  i=\$((i + 1))
+done
+sleep 20
+exit 0
+''');
+  final chmod = await Process.run('chmod', ['+x', script.path]);
+  expect(chmod.exitCode, 0, reason: chmod.stderr.toString());
+  return script;
 }

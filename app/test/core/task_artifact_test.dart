@@ -31,6 +31,12 @@ void main() {
       expect(manifest.environment.timeoutSeconds, 120);
       expect(manifest.environment.platformRequirements, ['linux']);
       expect(manifest.environment.allowInternet, isFalse);
+      expect(manifest.environment.resourceLimits.toJson(), {
+        'cpus': 2,
+        'memoryMb': 8192,
+        'maxProcesses': 64,
+        'maxOutputBytes': 1048576,
+      });
 
       expect(manifest.workspace.files.map((file) => file.path), [
         'lib/widget.dart',
@@ -130,6 +136,14 @@ class _ArtifactTask extends BenchmarkTask {
 
   @override
   Set<TaskPlatform> get platformRequirements => const {TaskPlatform.linux};
+
+  @override
+  TaskResourceLimits get resourceLimits => const TaskResourceLimits(
+    cpus: 2,
+    memoryMb: 8192,
+    maxProcesses: 64,
+    maxOutputBytes: 1024 * 1024,
+  );
 
   @override
   String get prompt => 'Fix the widget.';

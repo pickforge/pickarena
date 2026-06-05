@@ -31,6 +31,7 @@ class HeadlessCliConfig {
     this.maxConcurrency = 4,
     this.trialsPerTask = 1,
     this.useReferencePlan = false,
+    this.requireGeneratedCodeSandbox = false,
   });
 
   final String configPath;
@@ -44,6 +45,7 @@ class HeadlessCliConfig {
   final int maxConcurrency;
   final int trialsPerTask;
   final bool useReferencePlan;
+  final bool requireGeneratedCodeSandbox;
   final String workdirRoot;
   final String outputDir;
   final String databasePath;
@@ -166,6 +168,11 @@ HeadlessCliConfig parseHeadlessCliConfig(
     useReferencePlan: _optionalBool(
       json,
       'useReferencePlan',
+      defaultValue: false,
+    ),
+    requireGeneratedCodeSandbox: _optionalBool(
+      json,
+      'requireGeneratedCodeSandbox',
       defaultValue: false,
     ),
     workdirRoot: workdirRoot,

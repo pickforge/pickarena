@@ -12,13 +12,21 @@ import 'package:dart_arena/providers/model_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _ScriptedJudge with Disposable implements ModelProvider {
-  _ScriptedJudge(this._reply);
+  _ScriptedJudge(
+    this._reply, {
+    this.providerId = 'fake_judge',
+    this.promptTokens,
+    this.completionTokens,
+  });
   final String _reply;
+  final String providerId;
+  final int? promptTokens;
+  final int? completionTokens;
   var generateCalls = 0;
   String? lastPrompt;
 
   @override
-  String get id => 'fake_judge';
+  String get id => providerId;
   @override
   String get displayName => 'Fake Judge';
   @override
@@ -38,8 +46,8 @@ class _ScriptedJudge with Disposable implements ModelProvider {
     return ModelResponse(
       rawText: _reply,
       extractedCode: null,
-      promptTokens: null,
-      completionTokens: null,
+      promptTokens: promptTokens,
+      completionTokens: completionTokens,
       latency: const Duration(milliseconds: 1),
     );
   }
@@ -101,13 +109,30 @@ void main() {
 ```
 ''';
     final ev = LlmJudgeEvaluator(
-      judge: _ScriptedJudge(reply),
-      judgeModel: 'j1',
+      judge: _ScriptedJudge(
+        reply,
+        providerId: 'openai',
+        promptTokens: 100,
+        completionTokens: 20,
+      ),
+      judgeModel: 'gpt-5.3-codex',
     );
     final r = await ev.evaluate(_ctx(_Task(rubric: 'be strict')));
     expect(r.score, closeTo(0.85, 1e-9));
     expect(r.passed, isTrue);
     expect(r.rationale, contains('good fix'));
+    expect(r.details['judge_provider_id'], 'openai');
+    expect(r.details['judge_model'], 'gpt-5.3-codex');
+    expect(r.details['judge_overhead'], {
+      'provider_id': 'openai',
+      'model_id': 'gpt-5.3-codex',
+      'prompt_tokens': 100,
+      'completion_tokens': 20,
+      'estimated_cost_micros': 325,
+      'pricing_status': 'exact',
+      'pricing_registry_version': '2026-05-31',
+      'pricing_currency': 'USD',
+    });
   });
 
   test('regex fallback recovers a score from unfenced text', () async {

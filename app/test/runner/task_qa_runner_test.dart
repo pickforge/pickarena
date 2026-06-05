@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
+import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/reference_solution.dart';
 import 'package:dart_arena/core/task_verifier.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
@@ -139,9 +140,48 @@ void main() {
       expect(report.baselineHiddenFailed, isTrue, reason: failures);
       expect(report.referencePassed, isTrue, reason: failures);
       expect(report.negativeCasesRejected, isTrue, reason: failures);
-      expect(report.negativeCaseReports.single.id, 'noop');
-      expect(report.negativeCaseReports.single.publicPassed, isTrue);
-      expect(report.negativeCaseReports.single.hiddenPassed, isFalse);
+      expect(report.requiredNegativeCaseKindsCovered, isTrue, reason: failures);
+      expect(report.promptSafety.passed, isTrue, reason: failures);
+      final noop = report.negativeCaseReports.singleWhere(
+        (negative) => negative.kind == TaskNegativeCaseKind.noop,
+      );
+      expect(noop.id, 'noop');
+      expect(noop.publicPassed, isTrue);
+      expect(noop.hiddenPassed, isFalse);
+      final apiBreaking = report.negativeCaseReports.singleWhere(
+        (negative) => negative.kind == TaskNegativeCaseKind.apiBreaking,
+      );
+      expect(apiBreaking.rejected, isTrue);
+      final audit = report.verifierQualityAudit;
+      expect(audit.falsePositiveCount, 0);
+      expect(audit.falseNegativeCount, 0);
+      expect(audit.disagreementCount, 1);
+      expect(audit.infrastructureErrorCount, 0);
+      expect(audit.flakeRunCount, 1);
+      expect(audit.flakeFailureCount, 0);
+      expect(audit.negativeCaseCount, 2);
+      expect(audit.acceptedNegativeCaseCount, 0);
+      final admission = taskQaAdmissionReportJson(
+        task: _NegativeQaTask(),
+        report: report,
+      );
+      expect(admission['release'], {
+        'corpus': 'public_diagnostic',
+        'status': 'active',
+      });
+      expect(admission['verifierQualityAudit'], {
+        'falsePositiveCount': 0,
+        'falseNegativeCount': 0,
+        'disagreementCount': 1,
+        'infrastructureErrorCount': 0,
+        'flakeRunCount': 1,
+        'flakeFailureCount': 0,
+        'flakeRate': 0.0,
+        'negativeCaseCount': 2,
+        'acceptedNegativeCaseCount': 0,
+        'referencePublicFailureCount': 0,
+        'referenceHiddenFailureCount': 0,
+      });
       expect(report.failureMessages, isEmpty);
     },
     timeout: const Timeout(Duration(minutes: 2)),
@@ -155,7 +195,25 @@ void main() {
       referencePublicPassed: true,
       referenceHiddenPassed: true,
       hiddenFlakeRuns: 1,
+      hiddenVerifierDigests: {},
       negativeCaseReports: [],
+      promptSafety: TaskQaPromptSafetyReport(
+        targetContextPresent: true,
+        publicTestContextPresent: true,
+        publicTestContextRequired: true,
+        implementationBodiesOmitted: true,
+        hiddenVerifierLeakFree: true,
+        referenceLeakFree: true,
+        requiredNegativeCaseKinds: {
+          TaskNegativeCaseKind.noop,
+          TaskNegativeCaseKind.apiBreaking,
+        },
+        presentNegativeCaseKinds: {},
+        missingNegativeCaseKinds: {
+          TaskNegativeCaseKind.noop,
+          TaskNegativeCaseKind.apiBreaking,
+        },
+      ),
       failureMessages: [],
       baselineHiddenResults: [],
       referencePublicResults: [],
@@ -169,6 +227,7 @@ void main() {
     const report = TaskQaNegativeCaseReport(
       id: 'bad_negative',
       description: 'Invalid negative case.',
+      kind: TaskNegativeCaseKind.noop,
       preparePassed: false,
       publicPassed: false,
       hiddenPassed: false,
@@ -179,6 +238,68 @@ void main() {
 
     expect(report.rejected, isFalse);
   });
+
+  test('verifier quality audit counts rationale infrastructure errors', () {
+    const report = TaskQaReport(
+      taskId: 'task',
+      taskVersion: 1,
+      baselineHiddenFailed: true,
+      referencePublicPassed: true,
+      referenceHiddenPassed: true,
+      hiddenFlakeRuns: 1,
+      hiddenVerifierDigests: {},
+      negativeCaseReports: [],
+      promptSafety: TaskQaPromptSafetyReport(
+        targetContextPresent: true,
+        publicTestContextPresent: false,
+        publicTestContextRequired: false,
+        implementationBodiesOmitted: true,
+        hiddenVerifierLeakFree: true,
+        referenceLeakFree: true,
+        requiredNegativeCaseKinds: {},
+        presentNegativeCaseKinds: {},
+        missingNegativeCaseKinds: {},
+      ),
+      failureMessages: [],
+      baselineHiddenResults: [
+        EvaluationResult(
+          evaluatorId: 'test',
+          passed: false,
+          score: 0,
+          rationale: 'prepare failed before verifier execution',
+        ),
+      ],
+      referencePublicResults: [],
+      referenceHiddenResults: [],
+    );
+
+    expect(report.verifierQualityAudit.infrastructureErrorCount, 1);
+  });
+
+  test(
+    'required negative case kinds are flagged when missing',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'task_qa_missing_negative_kind_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      final report = await TaskQaRunner(
+        workdirManager: WorkdirManager(root: root),
+        requiredHiddenFlakeRuns: 1,
+        requireNegativeCases: true,
+      ).run(_MissingApiBreakingNegativeQaTask());
+
+      expect(report.requiredNegativeCaseKindsCovered, isFalse);
+      expect(
+        report.failureMessages,
+        contains('Task has no api_breaking verifier negative case.'),
+      );
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 }
 
 class _NegativeQaTask extends BenchmarkTask {
@@ -229,7 +350,16 @@ void main() {
     TaskNegativeCase(
       id: 'noop',
       description: 'Leaves the baseline answer unchanged.',
+      kind: TaskNegativeCaseKind.noop,
       solution: ReferenceFileSolution({}),
+    ),
+    TaskNegativeCase(
+      id: 'api_breaking',
+      description: 'Breaks the public answer API.',
+      kind: TaskNegativeCaseKind.apiBreaking,
+      solution: ReferenceFileSolution({
+        'lib/answer.dart': 'void answer() {}\n',
+      }),
     ),
   ];
 
@@ -257,4 +387,19 @@ void main() {
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) {
     return [TestEvaluator(), ...hiddenVerifiers.map(HiddenTestEvaluator.new)];
   }
+}
+
+class _MissingApiBreakingNegativeQaTask extends _NegativeQaTask {
+  @override
+  String get id => 'qa.missing_api_breaking_negative';
+
+  @override
+  List<TaskNegativeCase> get negativeCases => const [
+    TaskNegativeCase(
+      id: 'noop',
+      description: 'Leaves the baseline answer unchanged.',
+      kind: TaskNegativeCaseKind.noop,
+      solution: ReferenceFileSolution({}),
+    ),
+  ];
 }

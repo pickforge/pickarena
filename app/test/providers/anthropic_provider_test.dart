@@ -11,6 +11,21 @@ void main() {
     registerFallbackValue(<String, dynamic>{});
   });
 
+  test('runtime metadata records request defaults without secrets', () {
+    final provider = AnthropicProvider(apiKey: 'sk');
+
+    expect(provider.providerRuntimeConfig(), {
+      'providerMode': 'rawApi',
+      'requestProtocol': 'anthropic_messages',
+      'anthropicVersion': '2023-06-01',
+    });
+    expect(provider.modelRuntimeConfig('claude-sonnet-4-5'), {
+      'maxOutputTokens': 4096,
+      'temperature': {'configured': false, 'status': 'provider_default'},
+      'toolPolicy': 'none',
+    });
+  });
+
   test('generate parses Messages API response shape', () async {
     final dio = _MockDio();
     when(

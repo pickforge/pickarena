@@ -107,7 +107,8 @@ class TaskArtifactManifest {
             task.platformRequirements.map((platform) => platform.name).toList()
               ..sort(),
         setupCommands: workspace.setupCommands,
-        allowInternet: false,
+        allowInternet: task.allowInternet,
+        resourceLimits: task.effectiveResourceLimits,
       ),
     );
   }
@@ -333,14 +334,17 @@ class TaskArtifactEnvironment {
     required this.platformRequirements,
     required this.setupCommands,
     required this.allowInternet,
+    required this.resourceLimits,
   });
 
   final int? timeoutSeconds;
   final List<String> platformRequirements;
   final List<List<String>> setupCommands;
   final bool allowInternet;
+  final TaskResourceLimits resourceLimits;
 
   factory TaskArtifactEnvironment.fromJson(Map<String, Object?> json) {
+    final resources = _optionalMap(json['resources'], 'resources') ?? const {};
     return TaskArtifactEnvironment(
       timeoutSeconds: _nullableInt(json['timeoutSeconds'], 'timeoutSeconds'),
       platformRequirements: _stringList(
@@ -349,6 +353,18 @@ class TaskArtifactEnvironment {
       ),
       setupCommands: _nestedStringList(json['setupCommands'], 'setupCommands'),
       allowInternet: _bool(json['allowInternet'], 'allowInternet'),
+      resourceLimits: TaskResourceLimits(
+        cpus: _nullableInt(resources['cpus'], 'resources.cpus'),
+        memoryMb: _nullableInt(resources['memoryMb'], 'resources.memoryMb'),
+        maxProcesses: _nullableInt(
+          resources['maxProcesses'],
+          'resources.maxProcesses',
+        ),
+        maxOutputBytes: _nullableInt(
+          resources['maxOutputBytes'],
+          'resources.maxOutputBytes',
+        ),
+      ),
     );
   }
 
@@ -357,6 +373,7 @@ class TaskArtifactEnvironment {
     'platformRequirements': platformRequirements,
     'setupCommands': setupCommands,
     'allowInternet': allowInternet,
+    'resources': resourceLimits.toJson(),
   };
 }
 
@@ -519,6 +536,11 @@ Map<String, Object?> _map(Object? value, String field) {
     return value.map((key, item) => MapEntry('$key', item));
   }
   throw FormatException('Expected object field "$field".');
+}
+
+Map<String, Object?>? _optionalMap(Object? value, String field) {
+  if (value == null) return null;
+  return _map(value, field);
 }
 
 List<Map<String, Object?>> _mapList(Object? value, String field) {

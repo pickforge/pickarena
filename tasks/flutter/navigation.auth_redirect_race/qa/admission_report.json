@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "taskId": "navigation.auth_redirect_race",
+  "taskVersion": 1,
+  "category": "bugFix",
+  "difficulty": "medium",
+  "track": "agentic",
+  "tags": [
+    "bugfix",
+    "navigation"
+  ],
+  "release": {
+    "corpus": "private_official",
+    "status": "active"
+  },
+  "admission": {
+    "tool": {
+      "name": "dart_arena_task_qa"
+    },
+    "evaluator": {
+      "schemaVersion": 1,
+      "version": "2026-05-31-master-spec"
+    },
+    "environment": {
+      "dartVersion": "3.11.4 (stable) (Tue Mar 24 01:02:20 2026 -0700) on \"linux_x64\"",
+      "flutterVersion": "3.41.6",
+      "dependencySnapshot": {
+        "status": "present",
+        "files": {
+          "pubspec.yaml": {
+            "sha256": "6bc4664b1d14a5e7e4c1a8676c48a0618875afd1c3aa9b64789b2045bf136674",
+            "bytes": 6329
+          },
+          "pubspec.lock": {
+            "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
+            "bytes": 29033
+          }
+        }
+      }
+    }
+  },
+  "executionPolicy": {
+    "allowInternet": false,
+    "resources": {
+      "cpus": 2,
+      "memoryMb": 8192,
+      "maxProcesses": 64,
+      "maxOutputBytes": 1048576
+    },
+    "resourceEnforcement": {
+      "cpus": {
+        "enforced": true,
+        "mechanism": "systemdCpuQuota",
+        "kernelEnforced": true
+      },
+      "memoryMb": {
+        "enforced": true,
+        "mechanism": "rssPolling",
+        "kernelEnforced": false
+      },
+      "maxProcesses": {
+        "enforced": true,
+        "mechanism": "processTreePolling",
+        "kernelEnforced": false
+      },
+      "maxOutputBytes": {
+        "enforced": true,
+        "mechanism": "boundedOutputCapture",
+        "kernelEnforced": false
+      }
+    }
+  },
+  "status": "admitted",
+  "generatedAt": "2026-06-04T20:53:27.807169Z",
+  "checks": {
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "requiredNegativeCaseKindsCovered": true,
+    "hiddenFlakeRuns": 3,
+    "promptSafeContextLeakFree": true,
+    "noopRejected": true,
+    "apiBreakingRejected": true,
+    "overfitRejected": true
+  },
+  "hiddenVerifierDigests": {
+    "auth_redirect_hidden": "7cc827ee3bc2d5b0f61f1b56c649cb856540d88da2ba610a95115c4be40e8935"
+  },
+  "verifierQualityAudit": {
+    "falsePositiveCount": 0,
+    "falseNegativeCount": 0,
+    "disagreementCount": 2,
+    "infrastructureErrorCount": 0,
+    "flakeRunCount": 3,
+    "flakeFailureCount": 0,
+    "flakeRate": 0.0,
+    "negativeCaseCount": 3,
+    "acceptedNegativeCaseCount": 0,
+    "referencePublicFailureCount": 0,
+    "referenceHiddenFailureCount": 0
+  },
+  "promptSafety": {
+    "target_context_present": true,
+    "public_test_context_present": true,
+    "public_test_context_required": true,
+    "implementation_bodies_omitted": true,
+    "hidden_verifier_leak_free": true,
+    "reference_leak_free": true,
+    "required_negative_case_kinds": [
+      "api_breaking",
+      "noop",
+      "overfit"
+    ],
+    "present_negative_case_kinds": [
+      "api_breaking",
+      "noop",
+      "overfit"
+    ],
+    "missing_negative_case_kinds": [],
+    "passed": true
+  },
+  "negativeCases": [
+    {
+      "id": "noop",
+      "description": "Leaves the stale redirect behavior unchanged.",
+      "kind": "noop",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true
+    },
+    {
+      "id": "api_breaking",
+      "description": "Removes the public AuthRedirectController API.",
+      "kind": "api_breaking",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true
+    },
+    {
+      "id": "overfit_public_routes",
+      "description": "Handles visible protected routes but drops the queued deep link.",
+      "kind": "overfit",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true
+    }
+  ],
+  "failureMessages": []
+}

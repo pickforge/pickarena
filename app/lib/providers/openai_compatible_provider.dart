@@ -7,7 +7,8 @@ import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
-class OpenAiCompatibleProvider implements StreamingModelProvider {
+class OpenAiCompatibleProvider
+    implements StreamingModelProvider, ModelRuntimeMetadataProvider {
   OpenAiCompatibleProvider(
     Dio? dio, {
     required this.id,
@@ -38,9 +39,32 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
   final Map<String, String> extraHeaders;
   final List<String> defaultEfforts;
   final Dio _dio;
+  static const int _maxOutputTokens = 16384;
+  static const int _rateLimitMaxRetries = 3;
+  static const List<int> _rateLimitBackoffSeconds = [1, 2, 4];
 
   @override
   ProviderMode get mode => ProviderMode.rawApi;
+
+  @override
+  Map<String, Object?> providerRuntimeConfig() => {
+    'providerMode': mode.name,
+    'requestProtocol': 'openai_chat_completions',
+    'streamingSupported': true,
+    if (defaultEfforts.isNotEmpty) 'defaultEfforts': defaultEfforts,
+  };
+
+  @override
+  Map<String, Object?> modelRuntimeConfig(String modelId) => const {
+    'maxOutputTokens': _maxOutputTokens,
+    'temperature': {'configured': false, 'status': 'provider_default'},
+    'toolPolicy': 'none',
+    'retryPolicy': {
+      'maxRetries': _rateLimitMaxRetries,
+      'retryStatusCodes': [429],
+      'backoffSeconds': _rateLimitBackoffSeconds,
+    },
+  };
 
   @override
   void dispose() => _dio.close(force: true);
@@ -87,14 +111,13 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
   }
 
   Future<T> _withRateLimitRetry<T>(Future<T> Function() fn) async {
-    const maxRetries = 3;
     var delay = Duration.zero;
-    for (var attempt = 0; attempt <= maxRetries; attempt++) {
+    for (var attempt = 0; attempt <= _rateLimitMaxRetries; attempt++) {
       if (delay > Duration.zero) await Future<void>.delayed(delay);
       try {
         return await fn();
       } on DioException catch (e) {
-        if (e.response?.statusCode == 429 && attempt < maxRetries) {
+        if (e.response?.statusCode == 429 && attempt < _rateLimitMaxRetries) {
           delay = Duration(seconds: 1 << attempt); // 1s, 2s, 4s
           continue;
         }
@@ -131,7 +154,7 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
         {'role': 'user', 'content': prompt},
       ],
       'stream': false,
-      'max_tokens': 16384,
+      'max_tokens': _maxOutputTokens,
     };
     if (effort != null) {
       body['reasoning_effort'] = effort;
@@ -195,7 +218,7 @@ class OpenAiCompatibleProvider implements StreamingModelProvider {
         {'role': 'user', 'content': prompt},
       ],
       'stream': true,
-      'max_tokens': 16384,
+      'max_tokens': _maxOutputTokens,
     };
     if (effort != null) {
       body['reasoning_effort'] = effort;

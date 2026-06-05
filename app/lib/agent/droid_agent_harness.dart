@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
+import 'package:dart_arena/providers/factory_custom_model_environment.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
+import 'package:path/path.dart' as p;
 
 typedef DroidAgentProcessRunner =
     Future<AgentRunResult> Function(
@@ -19,15 +21,21 @@ class DroidAgentHarness implements AgentHarness {
     String? droidPath,
     Iterable<String> deniedEnvironmentKeys = const [],
     int maxPreviewChars = 16 * 1024,
+    int maxProcessOutputChars = 1024 * 1024,
   }) : _runner = runner,
        _exe = droidPath ?? _findDroid(),
        _deniedEnvironmentKeys = Set.unmodifiable(deniedEnvironmentKeys),
-       _maxPreviewChars = maxPreviewChars;
+       _maxPreviewChars = maxPreviewChars,
+       _maxProcessOutputChars = maxProcessOutputChars,
+       assert(maxPreviewChars > 0),
+       assert(maxProcessOutputChars > 0);
 
   final DroidAgentProcessRunner? _runner;
   final String _exe;
   final Set<String> _deniedEnvironmentKeys;
   final int _maxPreviewChars;
+  final int _maxProcessOutputChars;
+  static const int _maxDirectWorkingDirectoryPathChars = 160;
 
   @override
   String get id => 'droid';
@@ -52,7 +60,15 @@ class DroidAgentHarness implements AgentHarness {
     ];
     final deniedKeys = {..._deniedEnvironmentKeys, ...deniedEnvironmentKeys};
     final result = _runner == null
-        ? await _defaultRunner(_exe, args, workspace, timeout, deniedKeys)
+        ? await _defaultRunner(
+            _exe,
+            args,
+            workspace,
+            timeout,
+            deniedKeys,
+            factoryCustomModelEnvironmentReferences(modelId),
+            _maxProcessOutputChars,
+          )
         : await _runner(_exe, args, workspace, timeout);
     return _boundedResult(result);
   }
@@ -105,63 +121,180 @@ $instruction
     Directory workspace,
     Duration timeout,
     Iterable<String> deniedEnvironmentKeys,
+    Iterable<String> allowedSensitiveEnvironmentKeys,
+    int maxProcessOutputChars,
   ) async {
     final sw = Stopwatch()..start();
-    final process = await Process.start(
-      exe,
-      args,
-      workingDirectory: workspace.path,
-      runInShell: false,
-      environment: benchmarkSubprocessEnvironment(
-        additionalDeniedKeys: deniedEnvironmentKeys,
-      ),
-      includeParentEnvironment: false,
+    final cwdProxy = await _createWorkingDirectoryProxy(workspace);
+    final workingDirectory = cwdProxy?.directory ?? workspace;
+    final environment = benchmarkSubprocessEnvironment(
+      additionalDeniedKeys: deniedEnvironmentKeys,
+      allowedSensitiveKeys: allowedSensitiveEnvironmentKeys,
     );
-    final stdoutBuffer = StringBuffer();
-    final stderrBuffer = StringBuffer();
-    final stdoutDone = process.stdout
-        .transform(systemEncoding.decoder)
-        .listen(stdoutBuffer.write)
-        .asFuture<void>();
-    final stderrDone = process.stderr
-        .transform(systemEncoding.decoder)
-        .listen(stderrBuffer.write)
-        .asFuture<void>();
-
-    var timedOut = false;
-    int exitCode;
+    if (!Platform.isWindows) {
+      environment['PWD'] = workingDirectory.path;
+    }
+    late final Process process;
     try {
-      exitCode = await process.exitCode.timeout(timeout);
-    } on TimeoutException {
-      timedOut = true;
-      await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
-      exitCode = await process.exitCode.timeout(
-        const Duration(seconds: 2),
-        onTimeout: () async {
-          await _terminateProcessTree(process.pid, ProcessSignal.sigkill);
-          return -1;
+      process = await Process.start(
+        exe,
+        args,
+        workingDirectory: workingDirectory.path,
+        runInShell: false,
+        environment: environment,
+        includeParentEnvironment: false,
+      );
+    } on Object {
+      await cwdProxy?.dispose();
+      rethrow;
+    }
+    try {
+      final stdoutBuffer = _BoundedTailTextCollector(maxProcessOutputChars);
+      final stderrBuffer = _BoundedTailTextCollector(maxProcessOutputChars);
+      final outputLimitExceeded = Completer<void>();
+      void markOutputLimitExceeded() {
+        if (!outputLimitExceeded.isCompleted) {
+          outputLimitExceeded.complete();
+        }
+      }
+
+      final stdoutDone = process.stdout
+          .transform(systemEncoding.decoder)
+          .listen((chunk) {
+            stdoutBuffer.write(chunk);
+            if (stdoutBuffer.exceeded) markOutputLimitExceeded();
+          })
+          .asFuture<void>();
+      final stderrDone = process.stderr
+          .transform(systemEncoding.decoder)
+          .listen((chunk) {
+            stderrBuffer.write(chunk);
+            if (stderrBuffer.exceeded) markOutputLimitExceeded();
+          })
+          .asFuture<void>();
+
+      var timedOut = false;
+      var outputLimitHit = false;
+      int exitCode;
+      final timeoutExceeded = Completer<void>();
+      final timeoutTimer = Timer(timeout, () {
+        if (!timeoutExceeded.isCompleted) timeoutExceeded.complete();
+      });
+      try {
+        final signal = await Future.any<Object>([
+          process.exitCode,
+          timeoutExceeded.future.then(
+            (_) => const _AgentProcessTimeoutExceeded(),
+          ),
+          outputLimitExceeded.future.then(
+            (_) => const _AgentProcessOutputLimitExceeded(),
+          ),
+        ]);
+        if (signal is int) {
+          exitCode = signal;
+        } else {
+          timedOut = signal is _AgentProcessTimeoutExceeded;
+          outputLimitHit = signal is _AgentProcessOutputLimitExceeded;
+          await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
+          exitCode = await process.exitCode.timeout(
+            const Duration(seconds: 2),
+            onTimeout: () async {
+              await _terminateProcessTree(process.pid, ProcessSignal.sigkill);
+              return -1;
+            },
+          );
+        }
+      } finally {
+        timeoutTimer.cancel();
+      }
+      await Future.wait([stdoutDone, stderrDone]);
+      await cwdProxy?.syncBack();
+      sw.stop();
+      final stdoutPreview = _trimPreview(stdoutBuffer.text, 16 * 1024);
+      final rawStderrPreview = _trimPreview(stderrBuffer.text, 16 * 1024);
+      final stderrPreview = outputLimitHit && rawStderrPreview.isEmpty
+          ? 'agent harness output exceeded $maxProcessOutputChars characters'
+          : rawStderrPreview;
+
+      return AgentRunResult(
+        status: timedOut
+            ? AgentRunStatus.timeout
+            : exitCode == 0 && !outputLimitHit
+            ? AgentRunStatus.success
+            : AgentRunStatus.failure,
+        stdoutPreview: stdoutPreview,
+        stderrPreview: stderrPreview,
+        exitCode: timedOut && exitCode == -1 ? null : exitCode,
+        latency: sw.elapsed,
+        metadata: {
+          'executable': exe,
+          'argc': args.length,
+          'workspace': workspace.path,
+          if (cwdProxy != null) 'cwd_proxy_used': true,
+          if (outputLimitHit) 'output_limit_exceeded': true,
+          if (outputLimitHit) 'max_output_chars': maxProcessOutputChars,
         },
       );
+    } finally {
+      await cwdProxy?.dispose();
     }
-    await Future.wait([stdoutDone, stderrDone]);
-    sw.stop();
+  }
 
-    return AgentRunResult(
-      status: timedOut
-          ? AgentRunStatus.timeout
-          : exitCode == 0
-          ? AgentRunStatus.success
-          : AgentRunStatus.failure,
-      stdoutPreview: _trimPreview(stdoutBuffer.toString(), 16 * 1024),
-      stderrPreview: _trimPreview(stderrBuffer.toString(), 16 * 1024),
-      exitCode: timedOut && exitCode == -1 ? null : exitCode,
-      latency: sw.elapsed,
-      metadata: {
-        'executable': exe,
-        'argc': args.length,
-        'workspace': workspace.path,
-      },
+  static Future<_WorkingDirectoryProxy?> _createWorkingDirectoryProxy(
+    Directory workspace,
+  ) async {
+    if (Platform.isWindows ||
+        workspace.path.length <= _maxDirectWorkingDirectoryPathChars) {
+      return null;
+    }
+    final root = await Directory.systemTemp.createTemp(
+      'dart_arena_droid_workspace_',
     );
+    try {
+      final directory = Directory(p.join(root.path, 'workspace'));
+      await directory.create();
+      await _copyDirectoryContents(workspace, directory);
+      return _WorkingDirectoryProxy(
+        root: root,
+        directory: directory,
+        original: workspace,
+      );
+    } on Object {
+      if (await root.exists()) await root.delete(recursive: true);
+      return null;
+    }
+  }
+
+  static Future<void> _replaceDirectoryContents(
+    Directory source,
+    Directory target,
+  ) async {
+    await target.create(recursive: true);
+    await for (final entity in target.list(followLinks: false)) {
+      await entity.delete(recursive: true);
+    }
+    await _copyDirectoryContents(source, target);
+  }
+
+  static Future<void> _copyDirectoryContents(
+    Directory source,
+    Directory target,
+  ) async {
+    await target.create(recursive: true);
+    await for (final entity in source.list(followLinks: false)) {
+      final destination = p.join(target.path, p.basename(entity.path));
+      final type = await FileSystemEntity.type(entity.path, followLinks: false);
+      if (type == FileSystemEntityType.directory) {
+        await _copyDirectoryContents(
+          Directory(entity.path),
+          Directory(destination),
+        );
+      } else if (type == FileSystemEntityType.file) {
+        await File(entity.path).copy(destination);
+      } else if (type == FileSystemEntityType.link) {
+        await Link(destination).create(await Link(entity.path).target());
+      }
+    }
   }
 
   static String _trimPreview(String value, int maxChars) {
@@ -176,7 +309,7 @@ $instruction
     if (Platform.isWindows) {
       final args = ['/PID', '$pid', '/T'];
       if (signal == ProcessSignal.sigkill) args.add('/F');
-      await Process.run('taskkill', args);
+      await _tryRunProcess('taskkill', args);
       return;
     }
 
@@ -214,7 +347,13 @@ $instruction
     List<String> arguments,
   ) async {
     try {
-      return await Process.run(executable, arguments);
+      return await Process.run(
+        executable,
+        arguments,
+        runInShell: false,
+        environment: benchmarkSubprocessEnvironment(),
+        includeParentEnvironment: false,
+      );
     } on Object {
       return null;
     }
@@ -241,4 +380,54 @@ $instruction
       return false;
     }
   }
+}
+
+class _WorkingDirectoryProxy {
+  const _WorkingDirectoryProxy({
+    required this.root,
+    required this.directory,
+    required this.original,
+  });
+
+  final Directory root;
+  final Directory directory;
+  final Directory original;
+
+  Future<void> syncBack() {
+    return DroidAgentHarness._replaceDirectoryContents(directory, original);
+  }
+
+  Future<void> dispose() async {
+    if (await root.exists()) await root.delete(recursive: true);
+  }
+}
+
+class _AgentProcessTimeoutExceeded {
+  const _AgentProcessTimeoutExceeded();
+}
+
+class _AgentProcessOutputLimitExceeded {
+  const _AgentProcessOutputLimitExceeded();
+}
+
+class _BoundedTailTextCollector {
+  _BoundedTailTextCollector(this.maxChars);
+
+  final int maxChars;
+  final _buffer = StringBuffer();
+  var exceeded = false;
+
+  void write(String chunk) {
+    if (chunk.isEmpty) return;
+    _buffer.write(chunk);
+    if (_buffer.length > maxChars) {
+      exceeded = true;
+      final value = _buffer.toString();
+      _buffer
+        ..clear()
+        ..write(value.substring(value.length - maxChars));
+    }
+  }
+
+  String get text => _buffer.toString();
 }

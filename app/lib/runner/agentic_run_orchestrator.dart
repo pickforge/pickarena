@@ -12,6 +12,9 @@ import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/patch_capture.dart';
 import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_run_result.dart';
+import 'package:dart_arena/evaluators/evaluator.dart';
+import 'package:dart_arena/runner/evaluator_resource_limits.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/run_progress_snapshot.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 
@@ -30,6 +33,7 @@ class AgenticRunOrchestrator {
     this.weights = defaultEvaluatorWeights,
     DateTime Function()? now,
     this.maxPatchChars = 256 * 1024,
+    this.generatedCodeSandbox,
   }) : now = now ?? DateTime.now;
 
   final WorkdirManager workdirManager;
@@ -37,6 +41,7 @@ class AgenticRunOrchestrator {
   final Map<String, double> weights;
   final DateTime Function() now;
   final int maxPatchChars;
+  final GeneratedCodeSandbox? generatedCodeSandbox;
 
   Future<TaskRunResult> run({
     required String runId,
@@ -65,7 +70,7 @@ class AgenticRunOrchestrator {
         trialIndex: trialIndex,
       );
     } on Object catch (e) {
-      return _failureResult(
+      return _environmentFailureResult(
         runId: runId,
         providerId: providerId,
         modelId: modelId,
@@ -73,6 +78,8 @@ class AgenticRunOrchestrator {
         trialIndex: trialIndex,
         planId: planId,
         harnessId: harness.id,
+        evaluatorConfig: evaluatorConfig,
+        phase: 'workspace',
         rationale: 'workspace preparation failed',
         error: e,
       );
@@ -83,13 +90,16 @@ class AgenticRunOrchestrator {
     final initialPrep = await workdirManager.prepare(
       workspace,
       isFlutter: task.isFlutter,
+      allowInternet: task.allowInternet,
       remainingTimeout: remainingTimeout,
       cancellationCheck: cancellationCheck,
       cancellationSignal: cancellationSignal,
+      generatedCodeSandbox: generatedCodeSandbox,
+      maxCpuCores: task.effectiveResourceLimits.cpus,
     );
     cancellationCheck?.call();
     if (initialPrep is PrepareFailed) {
-      return _failureResult(
+      return _environmentFailureResult(
         runId: runId,
         providerId: providerId,
         modelId: modelId,
@@ -97,8 +107,27 @@ class AgenticRunOrchestrator {
         trialIndex: trialIndex,
         planId: planId,
         harnessId: harness.id,
+        evaluatorConfig: evaluatorConfig,
+        phase: 'initial_prepare',
         rationale: 'prepare failed',
         error: initialPrep.stderr,
+      );
+    }
+    try {
+      await workdirManager.resetPatchBaseline(workspace);
+    } on Object catch (e) {
+      return _environmentFailureResult(
+        runId: runId,
+        providerId: providerId,
+        modelId: modelId,
+        task: task,
+        trialIndex: trialIndex,
+        planId: planId,
+        harnessId: harness.id,
+        evaluatorConfig: evaluatorConfig,
+        phase: 'patch_baseline',
+        rationale: 'patch baseline failed',
+        error: e,
       );
     }
 
@@ -130,7 +159,7 @@ class AgenticRunOrchestrator {
     }
     onProgress?.call(
       RunComboPhase.runningAgent,
-      answerPreview: _combinedPreview(agentResult),
+      answerPreview: _agentResponseText(agentResult),
       promptTokens: agentResult.promptTokens,
       completionTokens: agentResult.completionTokens,
     );
@@ -155,7 +184,7 @@ class AgenticRunOrchestrator {
         ? null
         : _boundedPatch(capturedPatch.patch);
     final response = ModelResponse(
-      rawText: _combinedPreview(agentResult),
+      rawText: _agentResponseText(agentResult),
       extractedCode: patchText,
       promptTokens: agentResult.promptTokens,
       completionTokens: agentResult.completionTokens,
@@ -171,32 +200,25 @@ class AgenticRunOrchestrator {
     final gradingPrep = await workdirManager.prepare(
       workspace,
       isFlutter: task.isFlutter,
+      allowInternet: task.allowInternet,
       remainingTimeout: remainingTimeout,
       cancellationCheck: cancellationCheck,
       cancellationSignal: cancellationSignal,
+      generatedCodeSandbox: generatedCodeSandbox,
+      maxCpuCores: task.effectiveResourceLimits.cpus,
     );
     cancellationCheck?.call();
-    final evaluators = task.evaluatorsFor(evaluatorConfig);
+    final evaluators = applyTaskResourceLimitsToEvaluators(
+      task.evaluatorsFor(evaluatorConfig),
+      task,
+    );
     if (gradingPrep is PrepareFailed) {
-      for (final evaluator in evaluators) {
-        final blocked = blockedEvaluationFor(
-          evaluatorId: evaluator.id,
-          previousResults: evaluations,
-        );
-        if (blocked != null) {
-          evaluations.add(blocked);
-          continue;
-        }
-        evaluations.add(
-          EvaluationResult(
-            evaluatorId: evaluator.id,
-            passed: false,
-            score: 0.0,
-            rationale: 'prepare failed',
-            details: {'stderr': gradingPrep.stderr},
-          ),
-        );
-      }
+      _addPrepareFailureEvaluations(
+        evaluations: evaluations,
+        evaluators: evaluators,
+        failure: gradingPrep,
+        phase: 'grading_prepare',
+      );
     } else {
       for (final evaluator in evaluators) {
         final blocked = blockedEvaluationFor(
@@ -215,6 +237,7 @@ class AgenticRunOrchestrator {
               task: task,
               previousResults: evaluations,
               deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
+              generatedCodeSandbox: generatedCodeSandbox,
             ),
           ),
         );
@@ -322,6 +345,96 @@ class AgenticRunOrchestrator {
     );
   }
 
+  TaskRunResult _environmentFailureResult({
+    required String runId,
+    required String providerId,
+    required String modelId,
+    required BenchmarkTask task,
+    required int trialIndex,
+    required String? planId,
+    required String? harnessId,
+    required EvaluatorConfig evaluatorConfig,
+    required String phase,
+    required String rationale,
+    required Object error,
+  }) {
+    final response = ModelResponse(
+      rawText: error.toString(),
+      extractedCode: null,
+      promptTokens: null,
+      completionTokens: null,
+      latency: Duration.zero,
+    );
+    final evaluations = <EvaluationResult>[
+      environmentFailureEvaluation(
+        rationale: rationale,
+        stderr: error.toString(),
+        phase: phase,
+      ),
+    ];
+    for (final evaluator in applyTaskResourceLimitsToEvaluators(
+      task.evaluatorsFor(evaluatorConfig),
+      task,
+    )) {
+      evaluations.add(
+        blockedEvaluationFor(
+          evaluatorId: evaluator.id,
+          previousResults: evaluations,
+          blockAllDownstream: true,
+        )!,
+      );
+    }
+    final aggregateScore = aggregate(evaluations, weights);
+    final primitives = determineResultPrimitives(
+      evaluations: evaluations,
+      aggregateScore: aggregateScore,
+      response: response,
+    );
+    return TaskRunResult(
+      runId: runId,
+      providerId: providerId,
+      modelId: modelId,
+      taskId: task.id,
+      response: response,
+      evaluations: evaluations,
+      aggregateScore: aggregateScore,
+      completedAt: now(),
+      trialIndex: trialIndex,
+      taskVersion: task.version,
+      benchmarkTrack: task.track.name,
+      harnessId: harnessId,
+      primaryPass: primitives.primaryPass,
+      failureTag: primitives.failureTag,
+      planId: planId,
+    );
+  }
+
+  void _addPrepareFailureEvaluations({
+    required List<EvaluationResult> evaluations,
+    required List<Evaluator> evaluators,
+    required PrepareFailed failure,
+    required String phase,
+  }) {
+    if (!hasHardDownstreamBlocker(evaluations)) {
+      evaluations.add(
+        environmentFailureEvaluation(
+          rationale: 'prepare failed',
+          stderr: failure.stderr,
+          phase: phase,
+        ),
+      );
+    }
+    for (final evaluator in evaluators) {
+      evaluations.add(
+        blockedEvaluationFor(
+          evaluatorId: evaluator.id,
+          previousResults: evaluations,
+          blockAllDownstream: true,
+        )!,
+      );
+    }
+  }
+
   EvaluationResult _harnessEvaluation(AgentRunResult result) {
     final passed = result.succeeded;
     return EvaluationResult(
@@ -347,9 +460,115 @@ class AgenticRunOrchestrator {
               : 'exit code ${result.exitCode}',
         if (result.trajectoryLogPath != null)
           'trajectory_log_path': result.trajectoryLogPath,
-        ...result.metadata,
+        ..._sanitizedHarnessMetadata(result.metadata),
       },
     );
+  }
+
+  Map<String, Object?> _sanitizedHarnessMetadata(
+    Map<String, Object?> metadata,
+  ) {
+    final sanitized = <String, Object?>{};
+    var redactedCount = 0;
+    for (final entry in metadata.entries) {
+      if (_unsafeHarnessMetadataKey(entry.key)) {
+        redactedCount++;
+        continue;
+      }
+      final value = _sanitizedHarnessMetadataValue(entry.value);
+      if (value == null && entry.value != null) {
+        redactedCount++;
+        continue;
+      }
+      sanitized[entry.key] = value;
+    }
+    if (redactedCount > 0) {
+      sanitized['metadata_redacted_count'] = redactedCount;
+    }
+    return sanitized;
+  }
+
+  Object? _sanitizedHarnessMetadataValue(Object? value) {
+    if (value == null || value is bool || value is num) return value;
+    if (value is String) {
+      return _unsafeHarnessMetadataString(value) ? null : value;
+    }
+    if (value is Map) {
+      final sanitized = <String, Object?>{};
+      var redactedCount = 0;
+      for (final entry in value.entries) {
+        final key = entry.key?.toString();
+        if (key == null || _unsafeHarnessMetadataKey(key)) {
+          redactedCount++;
+          continue;
+        }
+        final childValue = _sanitizedHarnessMetadataValue(entry.value);
+        if (childValue == null && entry.value != null) {
+          redactedCount++;
+          continue;
+        }
+        sanitized[key] = childValue;
+      }
+      if (redactedCount > 0) {
+        sanitized['metadata_redacted_count'] = redactedCount;
+      }
+      return sanitized.isEmpty ? null : sanitized;
+    }
+    return null;
+  }
+
+  bool _unsafeHarnessMetadataKey(String key) {
+    final normalized = key.toLowerCase();
+    const allowed = {
+      'argc',
+      'exception',
+      'metadata',
+      'metadata_redacted_count',
+      'output_limit_exceeded',
+      'max_output_chars',
+      'stepcount',
+      'peakcontext',
+      'peakcontexttokens',
+    };
+    if (allowed.contains(normalized)) return false;
+    const reserved = {
+      'status',
+      'exit_code',
+      'stdout_preview',
+      'stderr_preview',
+      'error',
+      'trajectory_log_path',
+    };
+    if (reserved.contains(normalized)) return true;
+    return normalized.contains('path') ||
+        normalized.contains('workspace') ||
+        normalized.contains('executable') ||
+        normalized.contains('command') ||
+        normalized.contains('prompt') ||
+        normalized.contains('secret') ||
+        normalized.contains('token') ||
+        normalized.contains('password') ||
+        normalized.contains('cookie') ||
+        normalized.contains('authorization') ||
+        normalized.contains('api_key');
+  }
+
+  bool _unsafeHarnessMetadataString(String value) {
+    if (value.length > 128 || value.contains('\n') || value.contains('\r')) {
+      return true;
+    }
+    final normalized = value.toLowerCase();
+    if (value.startsWith('/') ||
+        value.startsWith('~') ||
+        value.contains(r'\') ||
+        value.contains('/')) {
+      return true;
+    }
+    if (RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(value)) return true;
+    return normalized.contains('secret') ||
+        normalized.contains('token') ||
+        normalized.contains('password') ||
+        normalized.contains('api_key');
   }
 
   String _combinedPreview(AgentRunResult result) {
@@ -363,6 +582,16 @@ class AgenticRunOrchestrator {
       buffer.writeln(result.stderrPreview);
     }
     return buffer.toString();
+  }
+
+  String _agentResponseText(AgentRunResult result) {
+    final preview = _combinedPreview(result);
+    if (preview.trim().isNotEmpty) return preview;
+    final exitCode = result.exitCode ?? 'null';
+    return 'Agent harness produced no stdout/stderr preview.\n'
+        'status: ${result.status.name}\n'
+        'exitCode: $exitCode\n'
+        'latencyMs: ${result.latency.inMilliseconds}\n';
   }
 
   String _boundedPatch(String patch) {

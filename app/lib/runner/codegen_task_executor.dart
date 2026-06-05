@@ -12,6 +12,8 @@ import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/model_stream_event.dart';
+import 'package:dart_arena/runner/evaluator_resource_limits.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
 import 'package:dart_arena/runner/run_progress_snapshot.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
@@ -32,11 +34,13 @@ class CodegenTaskExecutor {
     required this.workdirManager,
     required this.weights,
     required this.now,
+    this.generatedCodeSandbox,
   });
 
   final WorkdirManager workdirManager;
   final Map<String, double> weights;
   final DateTime Function() now;
+  final GeneratedCodeSandbox? generatedCodeSandbox;
 
   static const _maxPreviewChars = 16 * 1024;
 
@@ -171,28 +175,38 @@ class CodegenTaskExecutor {
     cancellationCheck?.call();
 
     onProgress?.call(RunComboPhase.preparing);
-    final evaluators = task.evaluatorsFor(evaluatorConfig);
+    final evaluators = applyTaskResourceLimitsToEvaluators(
+      task.evaluatorsFor(evaluatorConfig),
+      task,
+    );
     cancellationCheck?.call();
     final prepResult = await workdirManager.prepare(
       dir,
       isFlutter: task.isFlutter,
+      allowInternet: task.allowInternet,
       remainingTimeout: remainingTimeout,
       cancellationCheck: cancellationCheck,
       cancellationSignal: cancellationSignal,
+      generatedCodeSandbox: generatedCodeSandbox,
+      maxCpuCores: task.effectiveResourceLimits.cpus,
     );
     cancellationCheck?.call();
     final evaluations = <EvaluationResult>[];
 
     if (prepResult is PrepareFailed) {
+      evaluations.add(
+        environmentFailureEvaluation(
+          rationale: 'prepare failed',
+          stderr: prepResult.stderr,
+        ),
+      );
       for (final evaluator in evaluators) {
         evaluations.add(
-          EvaluationResult(
+          blockedEvaluationFor(
             evaluatorId: evaluator.id,
-            passed: false,
-            score: 0.0,
-            rationale: 'prepare failed',
-            details: {'stderr': prepResult.stderr},
-          ),
+            previousResults: evaluations,
+            blockAllDownstream: true,
+          )!,
         );
       }
     } else {
@@ -214,6 +228,7 @@ class CodegenTaskExecutor {
             task: task,
             previousResults: evaluations,
             deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
+            generatedCodeSandbox: generatedCodeSandbox,
           ),
         );
         cancellationCheck?.call();

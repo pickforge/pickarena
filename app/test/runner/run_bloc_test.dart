@@ -6,6 +6,7 @@ import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
@@ -315,7 +316,7 @@ void main() {
   });
 
   test(
-    'prepare failure produces synthetic per-evaluator results',
+    'prepare failure produces environment root and blocked evaluator result',
     () async {
       final tmp = await Directory.systemTemp.createTemp(
         'dart_arena_bloc_prep_',
@@ -346,9 +347,18 @@ void main() {
       expect(states.last, isA<RunCompleted>());
       final completed = states.last as RunCompleted;
       final r = completed.results.single;
-      expect(r.evaluations, hasLength(1));
-      expect(r.evaluations.single.passed, isFalse);
-      expect(r.evaluations.single.rationale, 'prepare failed');
+      expect(r.failureTag, 'environment_error');
+      expect(r.evaluations, hasLength(2));
+      final environment = r.evaluations.singleWhere(
+        (evaluation) => evaluation.evaluatorId == 'environment',
+      );
+      expect(environment.passed, isFalse);
+      expect(environment.rationale, 'prepare failed');
+      final blocked = r.evaluations.singleWhere(
+        (evaluation) => evaluation.evaluatorId == 'pass',
+      );
+      expect(blocked.details[blockedDetailKey], isTrue);
+      expect(blocked.details[blockedByDetailKey], 'environment');
       expect(r.aggregateScore, 0.0);
 
       await sub.cancel();

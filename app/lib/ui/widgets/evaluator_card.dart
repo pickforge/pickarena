@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:dart_arena/core/evaluation_status.dart';
+import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:flutter/material.dart';
 
@@ -8,17 +10,8 @@ class EvaluatorCard extends StatelessWidget {
 
   final Evaluation evaluation;
 
-  Map<String, dynamic>? _decodedDetails() {
-    try {
-      final decoded = jsonDecode(evaluation.detailsJson);
-      if (decoded is Map<String, dynamic>) return decoded;
-      if (decoded is Map) {
-        return decoded.map((key, value) => MapEntry('$key', value));
-      }
-    } on FormatException {
-      return null;
-    }
-    return null;
+  Map<String, Object?> _decodedDetails() {
+    return decodeEvaluationDetailsJson(evaluation.detailsJson);
   }
 
   String _prettyJson() {
@@ -32,11 +25,10 @@ class EvaluatorCard extends StatelessWidget {
 
   String? _statusLine() {
     final details = _decodedDetails();
-    if (details == null) return null;
     final reason = details['reason'];
     final suffix = reason == null ? '' : ': $reason';
-    if (details['blocked'] == true) {
-      final blockedBy = details['blocked_by'];
+    if (details[blockedDetailKey] == true) {
+      final blockedBy = details[blockedByDetailKey];
       return blockedBy == null ? 'Blocked$suffix' : 'Blocked by $blockedBy';
     }
     if (details['ignored'] == true) return 'Ignored$suffix';
@@ -46,6 +38,11 @@ class EvaluatorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final details = _decodedDetails();
+    final status = evaluationStatus(
+      passed: evaluation.passed,
+      details: details,
+    );
     final statusLine = _statusLine();
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -61,7 +58,7 @@ class EvaluatorCard extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 8),
-                _PassBadge(passed: evaluation.passed),
+                _StatusBadge(status: status),
                 const Spacer(),
                 Text(evaluation.score.toStringAsFixed(2)),
               ],
@@ -106,20 +103,27 @@ class EvaluatorCard extends StatelessWidget {
   }
 }
 
-class _PassBadge extends StatelessWidget {
-  const _PassBadge({required this.passed});
-  final bool passed;
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.status});
+  final EvaluationStatus status;
 
   @override
   Widget build(BuildContext context) {
+    final color = switch (status) {
+      EvaluationStatus.passed => Colors.green.shade700,
+      EvaluationStatus.failed => Colors.red.shade700,
+      EvaluationStatus.blocked => Colors.blueGrey.shade700,
+      EvaluationStatus.ignored ||
+      EvaluationStatus.skipped => Colors.grey.shade700,
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: passed ? Colors.green.shade700 : Colors.red.shade700,
+        color: color,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        passed ? 'PASS' : 'FAIL',
+        evaluationStatusLabel(status),
         style: const TextStyle(
           color: Colors.white,
           fontSize: 10,

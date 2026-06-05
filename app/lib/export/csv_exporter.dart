@@ -1,4 +1,6 @@
 import 'package:dart_arena/analytics/result_primitives.dart';
+import 'package:dart_arena/core/evaluation_status.dart';
+import 'package:dart_arena/core/evaluator_classification.dart';
 import 'package:dart_arena/export/run_summary_leaderboard_summary.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
@@ -35,6 +37,9 @@ String runSummaryToCsv(
     'trajectory_log_path',
     'aggregate_score',
     ..._evaluatorIds.map((e) => 'score_$e'),
+    ..._evaluatorIds.map((e) => 'status_$e'),
+    'public_pass',
+    'hidden_pass',
     'latency_ms',
     'prompt_tokens',
     'completion_tokens',
@@ -43,8 +48,14 @@ String runSummaryToCsv(
   final rows = <List<String>>[headers];
   for (final tr in taskRuns ?? s.taskRuns) {
     final evals = <String, double>{};
-    for (final e in s.evaluationsByTaskRunId[tr.id] ?? const <Evaluation>[]) {
+    final statuses = <String, String>{};
+    final taskRunEvaluations =
+        s.evaluationsByTaskRunId[tr.id] ?? const <Evaluation>[];
+    for (final e in taskRunEvaluations) {
       evals[e.evaluatorId] = e.score;
+      final details = decodeEvaluationDetailsJson(e.detailsJson);
+      final status = evaluationStatus(passed: e.passed, details: details);
+      statuses[e.evaluatorId] = evaluationStatusName(status);
     }
     rows.add([
       tr.runId,
@@ -63,6 +74,9 @@ String runSummaryToCsv(
       trajectoryPathFor?.call(tr) ?? tr.trajectoryLogPath ?? '',
       tr.aggregateScore.toStringAsFixed(4),
       ..._evaluatorIds.map((id) => evals[id]?.toStringAsFixed(4) ?? ''),
+      ..._evaluatorIds.map((id) => statuses[id] ?? ''),
+      _aggregatePassCell(taskRunEvaluations, isPublicTestEvaluatorId),
+      _aggregatePassCell(taskRunEvaluations, isHiddenVerifierEvaluatorId),
       tr.latencyMs.toString(),
       (tr.promptTokens ?? '').toString(),
       (tr.completionTokens ?? '').toString(),
@@ -117,6 +131,27 @@ String runSummaryToCsv(
   }
 
   return rows.map(_csvLine).join('\n');
+}
+
+String _aggregatePassCell(
+  List<Evaluation> evaluations,
+  bool Function(String evaluatorId) matches,
+) {
+  final matched = evaluations
+      .where((evaluation) {
+        if (!matches(evaluation.evaluatorId)) return false;
+        final details = decodeEvaluationDetailsJson(evaluation.detailsJson);
+        final status = evaluationStatus(
+          passed: evaluation.passed,
+          details: details,
+        );
+        return status != EvaluationStatus.blocked &&
+            status != EvaluationStatus.ignored &&
+            status != EvaluationStatus.skipped;
+      })
+      .toList(growable: false);
+  if (matched.isEmpty) return '';
+  return matched.every((evaluation) => evaluation.passed).toString();
 }
 
 String _csvLine(List<String> cells) => cells.map(_csvCell).join(',');

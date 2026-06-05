@@ -42,7 +42,13 @@ void main() {
         timeout: const Duration(minutes: 3),
       );
 
-      expect(result.succeeded, isTrue);
+      expect(
+        result.succeeded,
+        isTrue,
+        reason:
+            'stdout=${result.stdoutPreview} stderr=${result.stderrPreview} '
+            'metadata=${result.metadata}',
+      );
       expect(seenExecutable, '/bin/droid');
       expect(seenWorkspace.path, workspace.path);
       expect(seenTimeout, const Duration(minutes: 3));
@@ -123,6 +129,59 @@ env > env.txt
   );
 
   test(
+    'DroidAgentHarness launches long workspaces through a short cwd proxy',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'droid_agent_long_root_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      var workspace = root;
+      for (var i = 0; i < 6; i++) {
+        workspace = Directory(
+          p.join(
+            workspace.path,
+            'very_long_workspace_segment_for_droid_proxy_$i',
+          ),
+        );
+      }
+      await workspace.create(recursive: true);
+
+      final script = File(p.join(workspace.path, 'fake_droid_cwd.sh'));
+      await script.writeAsString(r'''
+#!/bin/sh
+if [ ${#PWD} -gt 160 ]; then
+  exit 1
+fi
+printf '%s\n' "$PWD" > pwd.txt
+printf changed > marker.txt
+''');
+      final chmod = await Process.run('chmod', ['+x', script.path]);
+      expect(chmod.exitCode, 0);
+
+      final harness = DroidAgentHarness(droidPath: script.path);
+      final result = await harness.run(
+        workspace: workspace,
+        instruction: 'x',
+        modelId: 'm',
+        timeout: const Duration(seconds: 2),
+      );
+
+      expect(result.succeeded, isTrue);
+      expect(result.metadata['cwd_proxy_used'], isTrue);
+      expect(
+        await File(p.join(workspace.path, 'marker.txt')).readAsString(),
+        {'changed'}.single,
+      );
+      final pwd = await File(p.join(workspace.path, 'pwd.txt')).readAsString();
+      expect(pwd.trim().length, lessThanOrEqualTo(160));
+      expect(pwd.trim(), isNot(workspace.path));
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+  );
+
+  test(
     'DroidAgentHarness timeout terminates spawned child processes',
     () async {
       final workspace = await Directory.systemTemp.createTemp(
@@ -162,6 +221,51 @@ wait
       expect(await _pidIsRunning(childPid), isFalse);
     },
     skip: Platform.isWindows ? 'POSIX process-tree assertion' : false,
+  );
+
+  test(
+    'DroidAgentHarness terminates output-flooding process',
+    () async {
+      final workspace = await Directory.systemTemp.createTemp(
+        'droid_agent_output_flood_',
+      );
+      addTearDown(() async {
+        if (await workspace.exists()) await workspace.delete(recursive: true);
+      });
+
+      final script = File(p.join(workspace.path, 'fake_droid_flood.sh'));
+      await script.writeAsString('''
+#!/bin/sh
+while :; do
+  printf '0123456789abcdef0123456789abcdef\\n'
+done
+''');
+      final chmod = await Process.run('chmod', ['+x', script.path]);
+      expect(chmod.exitCode, 0);
+
+      final harness = DroidAgentHarness(
+        droidPath: script.path,
+        maxPreviewChars: 128,
+        maxProcessOutputChars: 128,
+      );
+      final result = await harness.run(
+        workspace: workspace,
+        instruction: 'x',
+        modelId: 'm',
+        timeout: const Duration(seconds: 5),
+      );
+
+      expect(result.status, AgentRunStatus.failure);
+      expect(result.stdoutPreview.length, lessThanOrEqualTo(128));
+      expect(
+        result.stderrPreview,
+        contains('agent harness output exceeded 128 characters'),
+      );
+      expect(result.metadata, containsPair('output_limit_exceeded', true));
+      expect(result.metadata, containsPair('max_output_chars', 128));
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    timeout: const Timeout(Duration(seconds: 8)),
   );
 }
 

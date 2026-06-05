@@ -25,11 +25,12 @@ TaskRun _taskRun({
   String? trajectoryLogPath,
   String benchmarkTrack = 'codegen',
   String? harnessId,
+  String modelId = 'model',
 }) => TaskRun(
   id: id,
   runId: 'r1',
   providerId: 'provider',
-  modelId: 'model',
+  modelId: modelId,
   taskId: taskId,
   responseText: responseText,
   promptTokens: 10,
@@ -80,14 +81,40 @@ void main() {
         ..writeAsStringSync('trajectory text');
       final target = Directory(p.join(tmp.path, 'bundle'));
 
+      final provenanceJson = jsonEncode({
+        'schemaVersion': 1,
+        'runId': 'r1',
+        'providers': [
+          {
+            'id': 'provider',
+            'selectedModelConfigs': [
+              {
+                'modelId': 'model::high',
+                'baseModelId': 'model',
+                'modelConfig': {
+                  'effort': 'high',
+                  'maxOutputTokens': 4096,
+                  'temperature': {
+                    'configured': false,
+                    'status': 'provider_default',
+                  },
+                  'toolPolicy': 'none',
+                },
+              },
+            ],
+          },
+        ],
+      });
+
       final result = await exportRunBundle(
         summary: _summary(
-          run: _run(provenanceJson: '{"schemaVersion":1,"runId":"r1"}'),
+          run: _run(provenanceJson: provenanceJson),
           taskRuns: [
             _taskRun(id: 'tr-b', taskId: 'task-b'),
             _taskRun(
               id: 'tr-a',
               taskId: 'task-a',
+              modelId: 'model::high',
               benchmarkTrack: 'agentic',
               harnessId: 'droid',
               patchText: 'diff --git a/lib/a.dart b/lib/a.dart\n',
@@ -138,16 +165,65 @@ void main() {
       expect(manifest['schemaVersion'], 1);
       expect(manifest['appVersion'], '1.0.0+test');
       expect(manifest['driftSchemaVersion'], 7);
-      expect(manifest['provenance'], {'schemaVersion': 1, 'runId': 'r1'});
+      expect((manifest['provenance'] as Map<String, Object?>)['runId'], 'r1');
+      expect((manifest['run'] as Map<String, Object?>)['id'], 'r1');
       final manifestTaskRuns = manifest['taskRuns'] as List;
       expect(
         (manifestTaskRuns.first as Map<String, Object?>)['taskRunId'],
         'tr-a',
       );
       expect(
+        (manifestTaskRuns.first as Map<String, Object?>)['modelId'],
+        'model::high',
+      );
+      expect(
+        (manifestTaskRuns.first as Map<String, Object?>)['baseModelId'],
+        'model',
+      );
+      expect((manifestTaskRuns.first as Map<String, Object?>)['modelConfig'], {
+        'effort': 'high',
+        'maxOutputTokens': 4096,
+        'temperature': {'configured': false, 'status': 'provider_default'},
+        'toolPolicy': 'none',
+      });
+      expect(
         ((manifest['artifacts'] as List).first as Map<String, Object?>)['path'],
         startsWith('artifacts/'),
       );
+      for (final artifact
+          in (manifest['artifacts'] as List).cast<Map<String, Object?>>()) {
+        expect(
+          artifact['artifactId'],
+          matches(RegExp(r'^artifact_[0-9a-f]{16}$')),
+        );
+        expect(artifact['sha256'], matches(RegExp(r'^[0-9a-f]{64}$')));
+        final path = artifact['path']! as String;
+        final digest = sha256
+            .convert(File(p.join(target.path, path)).readAsBytesSync())
+            .toString();
+        expect(artifact['sha256'], digest);
+      }
+      final artifactIds = [
+        for (final artifact
+            in (manifest['artifacts'] as List).cast<Map<String, Object?>>())
+          artifact['artifactId'],
+      ];
+      expect(artifactIds.toSet(), hasLength(artifactIds.length));
+      final manifestArtifactsByTaskRunAndKind = {
+        for (final artifact
+            in (manifest['artifacts'] as List).cast<Map<String, Object?>>())
+          '${artifact['taskRunId']}/${artifact['kind']}': artifact['path'],
+      };
+      final manifestArtifactMetadataByTaskRunAndKind = {
+        for (final artifact
+            in (manifest['artifacts'] as List).cast<Map<String, Object?>>())
+          '${artifact['taskRunId']}/${artifact['kind']}': {
+            'artifactId': artifact['artifactId'],
+            'path': artifact['path'],
+            'bytes': artifact['bytes'],
+            'sha256': artifact['sha256'],
+          },
+      };
 
       final csv = File(p.join(target.path, 'results.csv')).readAsStringSync();
       final markdown = File(
@@ -156,6 +232,19 @@ void main() {
       final runResults = File(
         p.join(target.path, 'run_results.v1.json'),
       ).readAsStringSync();
+      final runResultsJson = jsonDecode(runResults) as Map<String, Object?>;
+      expect((runResultsJson['run'] as Map<String, Object?>)['id'], 'r1');
+      final firstRunResultTaskRun =
+          (runResultsJson['taskRuns'] as List<Object?>).first!
+              as Map<String, Object?>;
+      expect(firstRunResultTaskRun['modelId'], 'model::high');
+      expect(firstRunResultTaskRun['baseModelId'], 'model');
+      expect(firstRunResultTaskRun['modelConfig'], {
+        'effort': 'high',
+        'maxOutputTokens': 4096,
+        'temperature': {'configured': false, 'status': 'provider_default'},
+        'toolPolicy': 'none',
+      });
       expect(csv.indexOf('task-a'), lessThan(csv.indexOf('task-b')));
       expect(markdown.indexOf('task-a'), lessThan(markdown.indexOf('task-b')));
       expect(csv, contains('artifacts/trajectories/tr-a.log'));
@@ -165,6 +254,28 @@ void main() {
       expect(markdown, isNot(contains(trajectory.path)));
       expect(runResults, isNot(contains(trajectory.path)));
       expect(runResults, isNot(contains('/tmp/should-not-export')));
+      final runResultArtifactPaths = <String, Object?>{};
+      final runResultArtifactMetadata = <String, Object?>{};
+      for (final taskRun
+          in (runResultsJson['taskRuns'] as List<Object?>)
+              .cast<Map<String, Object?>>()) {
+        final taskRunId = taskRun['id'];
+        final artifactMap = taskRun['artifacts'] as Map<String, Object?>;
+        for (final entry in artifactMap.entries) {
+          runResultArtifactPaths['$taskRunId/${entry.key}'] = entry.value;
+        }
+        final metadataMap =
+            taskRun['artifactMetadata'] as Map<String, Object?>? ??
+            const <String, Object?>{};
+        for (final entry in metadataMap.entries) {
+          runResultArtifactMetadata['$taskRunId/${entry.key}'] = entry.value;
+        }
+      }
+      expect(runResultArtifactPaths, manifestArtifactsByTaskRunAndKind);
+      expect(
+        runResultArtifactMetadata,
+        manifestArtifactMetadataByTaskRunAndKind,
+      );
 
       final checksums =
           jsonDecode(
@@ -178,6 +289,7 @@ void main() {
       ];
       expect(paths, orderedEquals(paths.toList()..sort()));
       expect(paths, contains('manifest.json'));
+      expect(paths, unorderedEquals(_bundleFilePaths(target.path)));
       final manifestEntry = files.cast<Map<String, Object?>>().firstWhere(
         (file) => file['path'] == 'manifest.json',
       );
@@ -340,4 +452,16 @@ void main() {
 
     tmp.deleteSync(recursive: true);
   });
+}
+
+List<String> _bundleFilePaths(String targetPath) {
+  final paths = <String>[];
+  for (final entity in Directory(targetPath).listSync(recursive: true)) {
+    if (entity is! File) continue;
+    final relativePath = p.relative(entity.path, from: targetPath);
+    if (relativePath == 'checksums.json') continue;
+    paths.add(relativePath);
+  }
+  paths.sort();
+  return paths;
 }
