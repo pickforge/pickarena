@@ -1,0 +1,1938 @@
+{
+  "schemaVersion": 1,
+  "releaseId": "spark-sandboxed-official-repeated-clean-20260605",
+  "generatedAt": "2026-06-06T11:43:48.640329Z",
+  "status": "ready",
+  "blockers": [],
+  "warnings": [
+    "Leaderboard task-model cells include 5 cell(s) with unknown agent trace metrics.",
+    "Leaderboard task-model cells include 5 cell(s) with unknown candidate cost.",
+    "Leaderboard task-model cells include 5 cell(s) with unknown token usage.",
+    "Leaderboard trial summaries include 10 trial(s) with unknown agent trace metrics.",
+    "Leaderboard trial summaries include 10 trial(s) with unknown candidate cost.",
+    "Leaderboard trial summaries include 10 trial(s) with unknown token usage.",
+    "Model droid:custom:gpt-5.3-codex-spark---Codex has 10 sample(s) without known cost."
+  ],
+  "readinessGates": {
+    "corpus": {
+      "status": "passed",
+      "taskQaStatus": "completed",
+      "taskCount": 5,
+      "leaderboardTaskCount": 5,
+      "coveredLeaderboardTaskCount": 5,
+      "missingLeaderboardTaskQaCount": 0,
+      "extraTaskQaReportCount": 0,
+      "invalidLeaderboardTaskRowCount": 0,
+      "invalidTaskQaReportRowCount": 0,
+      "summaryIntegrityStatus": "valid",
+      "summarySchemaVersion": 1,
+      "summaryGeneratedAtStatus": "present",
+      "summaryReportListStatus": "present",
+      "summaryReportEntryCount": 5,
+      "invalidSummaryReportEntryCount": 0,
+      "summaryReportCountMatchesTaskCount": true,
+      "summaryAdmissionCountsMatchTaskCount": true,
+      "summaryAdmissionCountsMatchReportStatuses": true,
+      "matchedSummaryReportCount": 5,
+      "missingLoadedReportForSummaryCount": 0,
+      "unreferencedLoadedReportCount": 0,
+      "duplicateSummaryReportKeyCount": 0,
+      "duplicateLoadedReportKeyCount": 0,
+      "invalidSummaryFailureCountCount": 0,
+      "summaryReportStatusMismatchCount": 0,
+      "summaryReportFailureCountMismatchCount": 0,
+      "summaryReportGeneratedAfterSummaryCount": 0,
+      "missingReportPathCount": 0,
+      "absoluteReportPathCount": 0,
+      "parentReportPathCount": 0,
+      "malformedReportPathCount": 0,
+      "outsideTaskQaRootReportPathCount": 0,
+      "unsafeReportPathCount": 0,
+      "loadedReportCount": 5,
+      "rejectedTaskCount": 0,
+      "reportReadErrorCount": 0,
+      "hiddenVerifierDigestCount": 5,
+      "missingHiddenVerifierDigestCount": 0,
+      "invalidHiddenVerifierDigestCount": 0,
+      "negativeCaseCount": 15,
+      "acceptedNegativeCaseCount": 0,
+      "invalidNegativeCaseCount": 0,
+      "malformedNegativeCaseEvidenceCount": 0,
+      "unsupportedNegativeCaseKindCount": 0,
+      "negativeCaseOutcomeMismatchCount": 0,
+      "tasksMissingNegativeCaseCount": 0,
+      "privateOfficialTaskCount": 5,
+      "activeTaskCount": 5,
+      "tasksMissingReleaseMetadataCount": 0,
+      "tasksOutsidePrivateOfficialCorpusCount": 0,
+      "retiredTaskCount": 0,
+      "falsePositiveCount": 0,
+      "falseNegativeCount": 0,
+      "disagreementCount": 10,
+      "infrastructureErrorCount": 0,
+      "flakeRunCount": 15,
+      "minHiddenFlakeRunsPerTask": 3,
+      "tasksBelowHiddenFlakeRunMinimumCount": 0,
+      "flakeFailureCount": 0,
+      "qualityAcceptedNegativeCaseCount": 0,
+      "missingVerifierQualityAuditCount": 0,
+      "invalidVerifierQualityFieldCount": 0,
+      "verifierQualityMismatchCount": 0,
+      "requiredAdmissionCheckCount": 30,
+      "passedRequiredAdmissionCheckCount": 30,
+      "missingRequiredAdmissionCheckCount": 0,
+      "failedRequiredAdmissionCheckCount": 0,
+      "invalidRequiredAdmissionCheckCount": 0,
+      "failedOptionalAdmissionCheckCount": 0,
+      "invalidOptionalAdmissionCheckCount": 0,
+      "admittedReportWithFailureMessagesCount": 0,
+      "promptSafetyPresentCount": 5,
+      "missingPromptSafetyCount": 0,
+      "failedPromptSafetyCount": 0,
+      "invalidPromptSafetyPassedFlagCount": 0,
+      "missingPromptSafetyRequiredNegativeKindCount": 0,
+      "promptSafeCheckMismatchCount": 0,
+      "requiredKindCoverageMismatchCount": 0,
+      "promptSafetyInvalidKindCount": 0,
+      "promptSafetyPresentKindMismatchCount": 0,
+      "promptSafetyMissingKindMismatchCount": 0,
+      "promptSafetyInvalidComponentFieldCount": 0,
+      "promptSafetyPassedComputationMismatchCount": 0,
+      "admissionProvenancePresentCount": 5,
+      "missingAdmissionProvenanceCount": 0,
+      "invalidAdmissionToolCount": 0,
+      "invalidAdmissionEvaluatorCount": 0,
+      "admissionEnvironmentPresentCount": 5,
+      "admissionEnvironmentMissingCount": 0,
+      "admissionEnvironmentSdkVersionPresentCount": 5,
+      "admissionEnvironmentSdkVersionIncompleteCount": 0,
+      "admissionEnvironmentDependencySnapshotPresentCount": 5,
+      "admissionEnvironmentDependencySnapshotIncompleteCount": 0,
+      "taskExecutionPolicyPresentCount": 5,
+      "taskExecutionPolicyMissingCount": 0,
+      "taskExecutionPolicyIncompleteCount": 0,
+      "taskExecutionPolicyNetworkDisabledCount": 5,
+      "taskExecutionPolicyNetworkEnabledCount": 0,
+      "taskResourceLimitPresentCount": 5,
+      "taskResourceLimitIncompleteCount": 0,
+      "taskReportSupportedSchemaVersionCount": 5,
+      "taskReportMissingSchemaVersionCount": 0,
+      "taskReportUnsupportedSchemaVersionCount": 0,
+      "taskReportAdmittedStatusCount": 5,
+      "taskReportRejectedStatusCount": 0,
+      "taskReportUnknownStatusCount": 0,
+      "taskReportGeneratedAtPresentCount": 5,
+      "taskReportGeneratedAtMissingCount": 0,
+      "taskReportGeneratedAtInvalidCount": 0,
+      "taskReportGeneratedAtFutureCount": 0
+    },
+    "execution": {
+      "status": "passed",
+      "runCount": 1,
+      "requiredRunCount": 1,
+      "sourceEmbeddedRunCount": 1,
+      "storedEmbeddedRunCount": 1,
+      "sourceSandboxEnforcedRunCount": 1,
+      "storedSandboxEnforcedRunCount": 1,
+      "sourceTaskExecutionPolicyRunCount": 1,
+      "storedTaskExecutionPolicyRunCount": 1,
+      "sourceNetworkDisabledTaskPolicyRunCount": 1,
+      "storedNetworkDisabledTaskPolicyRunCount": 1,
+      "sourceTaskResourceLimitRunCount": 1,
+      "storedTaskResourceLimitRunCount": 1,
+      "sourceSdkVersionRunCount": 1,
+      "storedSdkVersionRunCount": 1,
+      "sourceDependencySnapshotRunCount": 1,
+      "storedDependencySnapshotRunCount": 1,
+      "sourcePricingRegistryRunCount": 1,
+      "storedPricingRegistryRunCount": 1,
+      "sandboxBackendCount": 1,
+      "sourceWarningCount": 0
+    },
+    "scoring": {
+      "status": "passed",
+      "primaryMetric": "primary_pass",
+      "rankingMetric": "primary_pass_rate",
+      "confidenceInterval": "wilson_95",
+      "llmJudgePolicy": "diagnostic_only",
+      "objectiveEvaluatorCount": 6,
+      "secondaryEvaluatorCount": 2,
+      "failureTagCount": 11,
+      "requiredFailureTagsPresent": true,
+      "objectiveFailureCapCount": 4,
+      "defaultEvaluatorWeightCount": 8,
+      "lowSampleModelCount": 0
+    },
+    "reporting": {
+      "status": "passed",
+      "judgeOverheadStatus": "present",
+      "judgeOverheadEvaluationCount": 0,
+      "judgeOverheadUnknownCostCount": 0,
+      "artifactBundleStatus": "present",
+      "artifactBundleRunIdStatus": "present",
+      "artifactBundleRunIdInLeaderboardSource": true,
+      "artifactCount": 20,
+      "artifactBundleEvaluationCount": 60,
+      "manifestPopulationSummaryStatus": "present",
+      "manifestTaskCountStatus": "present",
+      "manifestProviderCountStatus": "present",
+      "manifestModelCountStatus": "present",
+      "manifestTaskCount": 5,
+      "manifestProviderCount": 1,
+      "manifestModelCount": 1,
+      "manifestDistinctTaskCount": 5,
+      "manifestDistinctProviderCount": 1,
+      "manifestDistinctModelCount": 1,
+      "manifestPopulationCountMismatchCount": 0,
+      "manifestEvaluatorIdCount": 10,
+      "invalidManifestEvaluatorIdCount": 0,
+      "duplicateManifestEvaluatorIdCount": 0,
+      "artifactBundleWarningCount": 0,
+      "artifactBundleWarningCodeCounts": {},
+      "unsafeArtifactPathCount": 0,
+      "absoluteArtifactPathCount": 0,
+      "parentArtifactPathCount": 0,
+      "privateArtifactPathCount": 0,
+      "outsideArtifactRootPathCount": 0,
+      "artifactChecksumsStatus": "present",
+      "artifactChecksumSchemaVersion": 1,
+      "artifactChecksumFileCount": 24,
+      "manifestChecksumStatus": "present",
+      "manifestChecksumDigestStatus": "matched",
+      "checksumsPathMatchesInput": true,
+      "coveredArtifactChecksumCount": 20,
+      "missingArtifactChecksumCount": 0,
+      "coveredStandardChecksumCount": 4,
+      "missingStandardChecksumCount": 0,
+      "verifiedStandardChecksumCount": 3,
+      "missingStandardInputCount": 0,
+      "mismatchedStandardChecksumCount": 0,
+      "standardInputPathMismatchCount": 0,
+      "verifiedArtifactFileCount": 20,
+      "missingArtifactFileCount": 0,
+      "mismatchedArtifactFileByteCount": 0,
+      "mismatchedArtifactFileDigestCount": 0,
+      "invalidManifestArtifactDigestCount": 0,
+      "invalidManifestArtifactIdCount": 0,
+      "duplicateManifestArtifactIdCount": 0,
+      "mismatchedManifestArtifactDigestCount": 0,
+      "unexpectedChecksumPathCount": 0,
+      "unsafeChecksumPathCount": 0,
+      "absoluteChecksumPathCount": 0,
+      "parentChecksumPathCount": 0,
+      "privateChecksumPathCount": 0,
+      "outsideArtifactRootChecksumPathCount": 0,
+      "artifactManifestMetadataStatus": "present",
+      "manifestRunMetadataStatus": "present",
+      "manifestRunNameStatus": "present",
+      "manifestRunStartedAtStatus": "present",
+      "manifestRunCompletedAtStatus": "present",
+      "manifestRunDurationStatus": "valid",
+      "manifestRunCompletedBeforeGeneratedAtStatus": "valid",
+      "manifestOutcomeSummaryStatus": "present",
+      "manifestPassSummaryStatus": "present",
+      "manifestFailureSummaryStatus": "present",
+      "manifestPassSummaryMismatchCount": 0,
+      "manifestFailureSummaryMismatchCount": 0,
+      "manifestGeneratedAtStatus": "present",
+      "manifestAppVersionStatus": "present",
+      "manifestDriftSchemaVersionStatus": "present",
+      "manifestExportToolStatus": "present",
+      "manifestExportEnvironmentStatus": "present",
+      "manifestExportEnvironmentGitStatus": "clean",
+      "artifactManifestProvenanceStatus": "present",
+      "manifestProvenanceRunIdMatchesManifest": true,
+      "manifestProvenanceSandboxStatus": "enforced",
+      "manifestProvenanceSandboxBackend": "bubblewrap",
+      "manifestProvenanceTaskExecutionPolicyStatus": "present",
+      "manifestProvenanceNetworkDisabledTaskPolicyStatus": "disabled",
+      "manifestProvenanceTaskResourceLimitStatus": "present",
+      "manifestProvenanceSdkVersionStatus": "present",
+      "manifestProvenanceDependencySnapshotStatus": "present",
+      "manifestProvenancePricingRegistryStatus": "present",
+      "artifactResultsCsvStatus": "present",
+      "resultsCsvTaskRunCount": 10,
+      "missingResultsCsvHeaderCount": 0,
+      "invalidResultsCsvTaskRunCount": 0,
+      "duplicateResultsCsvTaskRunCount": 0,
+      "missingResultsCsvTaskRunCount": 0,
+      "extraResultsCsvTaskRunCount": 0,
+      "mismatchedResultsCsvRunResultsCount": 0,
+      "invalidResultsCsvOutcomeCount": 0,
+      "artifactReportMarkdownStatus": "present",
+      "reportMarkdownDeclaredTaskRunCount": 10,
+      "reportMarkdownTaskRunCount": 10,
+      "missingReportMarkdownSectionCount": 0,
+      "missingReportMarkdownColumnCount": 0,
+      "invalidReportMarkdownTaskRunCount": 0,
+      "duplicateReportMarkdownTaskRunCount": 0,
+      "missingReportMarkdownTaskRunCount": 0,
+      "extraReportMarkdownTaskRunCount": 0,
+      "mismatchedReportMarkdownRunResultsCount": 0,
+      "invalidReportMarkdownOutcomeCount": 0,
+      "runResultsStatus": "present",
+      "runResultsSchemaVersion": 1,
+      "runResultsRunIdMatchesManifest": true,
+      "runResultsRunMetadataStatus": "present",
+      "runResultsRunNameMatchesManifest": true,
+      "runResultsRunStartedAtMatchesManifest": true,
+      "runResultsRunCompletedAtMatchesManifest": true,
+      "mismatchedRunResultsRunMetadataFieldCount": 0,
+      "runResultsTaskRunCount": 10,
+      "runResultsEvaluationCount": 60,
+      "runResultsEvaluationCountMatchesManifest": true,
+      "runResultsEvaluatorIdCount": 10,
+      "runResultsEvaluatorIdsMatchManifest": true,
+      "missingRunResultsEvaluatorIdCount": 0,
+      "extraRunResultsEvaluatorIdCount": 0,
+      "missingRunResultsTaskRunCount": 0,
+      "extraRunResultsTaskRunCount": 0,
+      "mismatchedRunResultsTaskRunCount": 0,
+      "mismatchedRunResultsTaskRunRunIdCount": 0,
+      "mismatchedRunResultsTrialOutcomeCount": 0,
+      "invalidRunResultsTrialOutcomeCount": 0,
+      "invalidRunResultsTimingTaskRunCount": 0,
+      "invalidRunResultsTokenUsageTaskRunCount": 0,
+      "missingRunResultsEvaluationTaskRunCount": 0,
+      "invalidRunResultsEvaluationCount": 0,
+      "invalidRunResultsEvaluationRationaleCount": 0,
+      "invalidRunResultsEvaluationDetailsMetadataCount": 0,
+      "invalidRunResultsBlockedEvaluationMetadataCount": 0,
+      "invalidRunResultsJudgeOverheadMetadataCount": 0,
+      "missingRunResultsAgentHarnessStatusMetadataCount": 0,
+      "invalidRunResultsAgentHarnessStatusMetadataCount": 0,
+      "duplicateRunResultsEvaluationIdCount": 0,
+      "duplicateRunResultsTaskEvaluatorCount": 0,
+      "invalidRunResultsTaskRunCount": 0,
+      "invalidRunResultsTaskRunModelIdentityCount": 0,
+      "duplicateRunResultsTaskRunCount": 0,
+      "missingRunResultsArtifactCount": 0,
+      "extraRunResultsArtifactCount": 0,
+      "mismatchedRunResultsArtifactCount": 0,
+      "missingRunResultsArtifactMetadataCount": 0,
+      "invalidRunResultsArtifactMetadataEntryCount": 0,
+      "mismatchedRunResultsArtifactMetadataCount": 0,
+      "invalidRunResultsArtifactIdCount": 0,
+      "mismatchedRunResultsArtifactIdCount": 0,
+      "invalidRunResultsArtifactMetadataCount": 0,
+      "mismatchedRunResultsArtifactByteCount": 0,
+      "mismatchedRunResultsArtifactDigestCount": 0,
+      "missingResponseArtifactCount": 0,
+      "missingAgenticPatchArtifactCount": 0,
+      "missingAgenticHarnessMetadataCount": 0,
+      "missingRunResultsAgenticHarnessMetadataCount": 0,
+      "mismatchedRunResultsAgenticHarnessMetadataCount": 0,
+      "missingLeaderboardTrialSummaryTaskRunCount": 0,
+      "extraLeaderboardTrialSummaryTaskRunCount": 0,
+      "invalidArtifactBundleTaskRunCount": 0,
+      "invalidArtifactBundleTaskRunModelIdentityCount": 0,
+      "duplicateArtifactBundleTaskRunCount": 0,
+      "unknownArtifactKindCount": 0,
+      "duplicateArtifactReferenceCount": 0,
+      "privacyStatus": "passed",
+      "privacyIssueCount": 0,
+      "modelIdentityStatus": "present",
+      "invalidModelIdentityCount": 0,
+      "invalidModelIdentityModelRowCount": 0,
+      "invalidModelIdentityTaskModelCellCount": 0,
+      "invalidModelIdentityTrialSummaryCount": 0,
+      "taskModelCellCount": 5,
+      "expectedTaskModelCellCount": 5,
+      "missingTaskModelCellCount": 0,
+      "missingTaskModelCellMetricCount": 0,
+      "unknownTaskModelCellTraceMetricCount": 5,
+      "unknownTaskModelCellTokenUsageCount": 5,
+      "trialSummaryCount": 10,
+      "trialSummaryTotalCount": 10,
+      "trialSummaryTruncated": false,
+      "missingTrialMetricCount": 0,
+      "unknownTrialTraceMetricCount": 10,
+      "unknownTrialTokenUsageCount": 10,
+      "missingPassAtKCount": 0,
+      "missingConfidenceIntervalCount": 0,
+      "inputFingerprintCount": 32
+    }
+  },
+  "inputs": {
+    "leaderboard": {
+      "path": "leaderboard.v1.json",
+      "bytes": 42687,
+      "sha256": "329c82ad882d29c34bab5776e261e055eeaa0b3f7db458058da5761e6216dc87"
+    },
+    "taskQaReports": [
+      {
+        "path": "tasks/flutter/forms.email_validation/qa/admission_report.json",
+        "bytes": 12334,
+        "sha256": "a8de58ef2de6d1feb430d8fd814d502f9af9a8644073fb27c419dfc160a587f9"
+      },
+      {
+        "path": "tasks/flutter/lists.contact_search/qa/admission_report.json",
+        "bytes": 14825,
+        "sha256": "f1d9b993aeee0b4636bc7b08e3fc77ce8611aa43f631025165734670edf5cb12"
+      },
+      {
+        "path": "tasks/flutter/navigation.auth_redirect_race/qa/admission_report.json",
+        "bytes": 4003,
+        "sha256": "0d999bfc804530d06112280eff0ce4f437c51ac3d76388c1e655c8338b45e8a3"
+      },
+      {
+        "path": "tasks/flutter/platform.channel_mock/qa/admission_report.json",
+        "bytes": 4005,
+        "sha256": "b39dc9db3ff2a11e1113bdaa5982dcea0254de84f086aa381a277311f4146a83"
+      },
+      {
+        "path": "tasks/flutter/state.selection_controller/qa/admission_report.json",
+        "bytes": 13529,
+        "sha256": "4069c06e232027d7ce8002aa3f0f9bfc42070fdf1c4c4e955fad41458877bfee"
+      }
+    ],
+    "artifactBundles": [
+      {
+        "root": {
+          "path": "dart_arena_run_spark-sandboxed-official-repeated-clean-20260605"
+        },
+        "artifactManifest": {
+          "path": "manifest.json",
+          "bytes": 47460,
+          "sha256": "a558cea695640e1a0747e256e74c62831b51e46f225e57501f4a4c5b9a504f99"
+        },
+        "artifactChecksums": {
+          "path": "checksums.json",
+          "bytes": 6196,
+          "sha256": "cd6b90a24bb570bd4e74d75fb668e82b297890ad481169c4850012cfe4660a33"
+        },
+        "artifactRunResults": {
+          "path": "run_results.v1.json",
+          "bytes": 60914,
+          "sha256": "a0d18cf531742a4f2d3061f99c4ad4f1f608ceaf90bf309ac1a462f7f3375595"
+        },
+        "artifactResultsCsv": {
+          "path": "results.csv",
+          "bytes": 4354,
+          "sha256": "abe235bf6640b0886a01195c13e8a4d50890af6ea4a1eb6719ef4a9d62d37947"
+        },
+        "artifactReport": {
+          "path": "report.md",
+          "bytes": 3424,
+          "sha256": "19e02557e73ef133aeb9b7ab11cb807d24d294523f5f079e7087cdf7db50ca2e"
+        },
+        "artifactFiles": [
+          {
+            "path": "artifacts/patches/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-forms.email_validation-1780676469152642-674f76c7.patch",
+            "bytes": 2659,
+            "sha256": "b1197b1d7133752b02c287fcf55a74c58ee5bfbeb14a9053fbcd9b43171fc2c2"
+          },
+          {
+            "path": "artifacts/patches/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-forms.email_validation-trial1-1780676628270330-ca3f602e.patch",
+            "bytes": 2637,
+            "sha256": "e7e2b38966c0f98fee9d02aa062a1cd3ebf1cc0bd2cf33e6b647dfc6229718ec"
+          },
+          {
+            "path": "artifacts/patches/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-lists.contact_search-1780676800057565-84384792.patch",
+            "bytes": 3880,
+            "sha256": "3e76d85dd19d9f1ab7c8dd1b75675fbac984055dd911f81992b622ca28027a0a"
+          },
+          {
+            "path": "artifacts/patches/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-lists.contact_search-trial1-1780676974882046-63243656.patch",
+            "bytes": 3647,
+            "sha256": "6c436b5bb97f6c23111b30f8d3d2511e354a497839c49dd4fb69c73c43c72af2"
+          },
+          {
+            "path": "artifacts/patches/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-navigation.auth_redirect_race-1780677215428477-a7e514c0.patch",
+            "bytes": 2854,
+            "sha256": "f4caa873cb278becb146107919360426eda3df25860583a8d90c7c888eda6ae1"
+          },
+          {
+            "path": "artifacts/patches/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-navigation.auth_redirect_race-trial1-1780677414745946-310853d0.patch",
+            "bytes": 1929,
+            "sha256": "52fe37f6e0e5947cbe17fd7b81573331d7ec7392b262784051f6e36c9533afa5"
+          },
+          {
+            "path": "artifacts/patches/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-platform.channel_mock-1780677527004423-7ec73f66.patch",
+            "bytes": 2149,
+            "sha256": "e43d8dbbc798ea91489051e61f31100945d23dfbd693c8fac6f4799b56543509"
+          },
+          {
+            "path": "artifacts/patches/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-platform.channel_mock-trial1-1780677665463155-8fab04fc.patch",
+            "bytes": 2702,
+            "sha256": "17408dde231f6fa3f4ee2394e112deea0f961dc0a5d2ac9e252ac4ce62ea259b"
+          },
+          {
+            "path": "artifacts/patches/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-state.selection_controller-1780677812420790-9b4538f7.patch",
+            "bytes": 2818,
+            "sha256": "f6b0b7d1ded15b839705a0882b35506781abc62c0e4c4d639ec6915cb433eede"
+          },
+          {
+            "path": "artifacts/patches/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-state.selection_controller-trial1-1780678145911397-6ee6a03e.patch",
+            "bytes": 2416,
+            "sha256": "f66aa11ced0312dfd75b2226f87fcee3a1f538630ac6d0a6d2339b1ba0f0bda4"
+          },
+          {
+            "path": "artifacts/responses/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-forms.email_validation-1780676469152642-674f76c7.txt",
+            "bytes": 956,
+            "sha256": "4018f18c2ff55e1288ea8208c1436989acb9453dbf9069641a79d41355ce60c6"
+          },
+          {
+            "path": "artifacts/responses/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-forms.email_validation-trial1-1780676628270330-ca3f602e.txt",
+            "bytes": 1088,
+            "sha256": "45d9f8e92bdf7f1946552947151f9ce701d18d01ae79f33fd1bf76c41a660dee"
+          },
+          {
+            "path": "artifacts/responses/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-lists.contact_search-1780676800057565-84384792.txt",
+            "bytes": 978,
+            "sha256": "ecc020bb9cfa8e5657c659b958d4d75193174c3e72c105a05a8f1d72b350ad81"
+          },
+          {
+            "path": "artifacts/responses/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-lists.contact_search-trial1-1780676974882046-63243656.txt",
+            "bytes": 1151,
+            "sha256": "6fb6b6a0772885b97e564911734d61e7aaac714265db2d03848c888e45b121e6"
+          },
+          {
+            "path": "artifacts/responses/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-navigation.auth_redirect_race-1780677215428477-a7e514c0.txt",
+            "bytes": 1014,
+            "sha256": "1423e0eadaf0eefe74ad743ec01025f9039426c9f4af43db12a3c860f74d55e3"
+          },
+          {
+            "path": "artifacts/responses/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-navigation.auth_redirect_race-trial1-1780677414745946-310853d0.txt",
+            "bytes": 1002,
+            "sha256": "9ad86f4185eaff59b74a200c2ff6e062dbc15c15471aa8fb67551cfbece6e801"
+          },
+          {
+            "path": "artifacts/responses/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-platform.channel_mock-1780677527004423-7ec73f66.txt",
+            "bytes": 1017,
+            "sha256": "f9d7770f33692e5b92ef910274bac51b06adaa37f365e73cab167199757af821"
+          },
+          {
+            "path": "artifacts/responses/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-platform.channel_mock-trial1-1780677665463155-8fab04fc.txt",
+            "bytes": 848,
+            "sha256": "9b9825f2f3e3c7a088b3cd47948f94fd683ef087d91ca419f767706249f3ec9d"
+          },
+          {
+            "path": "artifacts/responses/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-state.selection_controller-1780677812420790-9b4538f7.txt",
+            "bytes": 1002,
+            "sha256": "130bc8db684f55be67107df1e6cffab3a6c39b353ed6acba9460591c9eb89f38"
+          },
+          {
+            "path": "artifacts/responses/spark-sandboxed-official-repeated-clean-20260605-droid-custom_gpt-5.3-codex-spark---Codex-state.selection_controller-trial1-1780678145911397-6ee6a03e.txt",
+            "bytes": 872,
+            "sha256": "c73c9f801d170228ce8de8f765c769faf29b7f48e08f1bf006dfbb56aa18f038"
+          }
+        ]
+      }
+    ],
+    "database": {
+      "path": "dart_arena.sqlite",
+      "bytes": 204800,
+      "sha256": "f9ce69659b3a8b4a0f0024ef02fa6c6cd4ea40b15d1521b0626956baf8c6e318"
+    }
+  },
+  "leaderboard": {
+    "benchmark": {
+      "name": "Dart Arena",
+      "brand": "Pickforge",
+      "title": "Dart Arena by Pickforge",
+      "version": "2026-05-31-master-spec",
+      "taskSetId": "taskset-f8b9c2a68ba9ca9b",
+      "evaluatorSchemaVersion": 1,
+      "track": "agentic",
+      "dataPolicy": "aggregate-compatible"
+    },
+    "source": {
+      "anchorRunId": "spark-sandboxed-official-repeated-clean-20260605",
+      "runIds": [
+        "spark-sandboxed-official-repeated-clean-20260605"
+      ],
+      "taskCount": 5,
+      "taskRunCount": 10,
+      "modelCount": 1,
+      "warningCount": 0,
+      "judgeOverhead": {
+        "status": "present",
+        "evaluationCount": 0,
+        "promptTokens": 0,
+        "completionTokens": 0,
+        "knownEstimatedCostCount": 0,
+        "unknownEstimatedCostCount": 0,
+        "totalEstimatedCostMicros": 0,
+        "pricingStatusCounts": {}
+      },
+      "runProvenance": {
+        "runCount": 1,
+        "embeddedRunCount": 1,
+        "sandboxEnforcedRunCount": 1,
+        "taskExecutionPolicyRunCount": 1,
+        "networkDisabledTaskPolicyRunCount": 1,
+        "taskResourceLimitRunCount": 1,
+        "sdkVersionRunCount": 1,
+        "dependencySnapshotRunCount": 1,
+        "pricingRegistryRunCount": 1,
+        "generatedCodeSandboxBackends": [
+          "bubblewrap"
+        ],
+        "dartVersions": [
+          "3.11.4"
+        ],
+        "flutterVersions": [
+          "3.41.6"
+        ],
+        "environmentIds": [
+          "23c9cd1e0d63"
+        ],
+        "warnings": []
+      }
+    },
+    "scoring": {
+      "schemaVersion": 1,
+      "primaryMetric": "primary_pass",
+      "rankingMetric": "primary_pass_rate",
+      "confidenceInterval": "wilson_95",
+      "llmJudgePolicy": "diagnostic_only",
+      "objectiveEvaluatorIds": [
+        "analyze",
+        "compile",
+        "hidden_test",
+        "test",
+        "test_author",
+        "widget_tree"
+      ],
+      "secondaryEvaluatorIds": [
+        "diff_size",
+        "llm_judge"
+      ],
+      "hiddenVerifierPattern": "*_hidden",
+      "failureTags": [
+        "pass",
+        "hidden_verifier_failed",
+        "public_tests_failed",
+        "analysis_failed",
+        "compile_failed",
+        "harness_timeout",
+        "harness_error",
+        "no_patch",
+        "invalid_output",
+        "environment_error",
+        "unknown"
+      ],
+      "objectiveFailureCaps": {
+        "compile": 0.2,
+        "analyze": 0.35,
+        "public_test": 0.6,
+        "hidden_verifier": 0.6
+      },
+      "defaultEvaluatorWeights": {
+        "analyze": 0.5,
+        "compile": 0.5,
+        "diff_size": 0.3,
+        "hidden_test": 1.0,
+        "llm_judge": 0.7,
+        "test": 1.0,
+        "test_author": 4.0,
+        "widget_tree": 1.0
+      }
+    },
+    "modelCount": 1,
+    "taskCount": 5,
+    "taskModelCells": {
+      "cellCount": 5,
+      "expectedCellCount": 5,
+      "missingCellCount": 0,
+      "sampleCount": 10,
+      "errorCount": 3,
+      "unknownCostCellCount": 5,
+      "unknownTraceMetricCellCount": 5,
+      "unknownTokenUsageCellCount": 5,
+      "missingMetricCellCount": 0
+    },
+    "modelIdentity": {
+      "status": "present",
+      "invalidModelRowCount": 0,
+      "invalidTaskModelCellCount": 0,
+      "invalidTrialSummaryCount": 0,
+      "invalidModelIdentityCount": 0
+    },
+    "trialTransparency": {
+      "trialSummaryCount": 10,
+      "trialSummaryTotalCount": 10,
+      "trialSummaryLimit": 1000,
+      "trialSummaryTruncated": false,
+      "missingMetricTrialCount": 0,
+      "unknownCostTrialCount": 10,
+      "unknownTraceMetricTrialCount": 10,
+      "unknownTokenUsageTrialCount": 10,
+      "missingModelPassAtKCount": 0,
+      "missingTaskPassAtKCount": 0,
+      "missingCellPassAtKCount": 0,
+      "missingModelConfidenceIntervalCount": 0,
+      "missingTaskConfidenceIntervalCount": 0,
+      "missingCellConfidenceIntervalCount": 0
+    },
+    "privacy": {
+      "status": "passed",
+      "issueCount": 0,
+      "secretKeyCount": 0,
+      "secretValueCount": 0,
+      "absolutePathCount": 0,
+      "hiddenVerifierMarkerCount": 0,
+      "privatePromptFieldCount": 0,
+      "sensitiveModelOutputFieldCount": 0
+    },
+    "lowSampleModels": [],
+    "unknownCostModels": [
+      {
+        "providerId": "droid",
+        "modelId": "custom:gpt-5.3-codex-spark---Codex",
+        "unknownEstimatedCostCount": 10
+      }
+    ]
+  },
+  "taskQa": {
+    "schemaVersion": 1,
+    "status": "completed",
+    "generatedAt": "2026-06-05T00:51:51.967786Z",
+    "taskCount": 5,
+    "admittedTaskCount": 5,
+    "rejectedTaskCount": 0,
+    "leaderboardTaskCount": 5,
+    "loadedReportCount": 5,
+    "coveredLeaderboardTaskCount": 5,
+    "missingLeaderboardTaskQaCount": 0,
+    "extraTaskQaReportCount": 0,
+    "invalidLeaderboardTaskRowCount": 0,
+    "invalidTaskQaReportRowCount": 0,
+    "leaderboardTasksMissingTaskQa": [],
+    "taskQaReportsOutsideLeaderboard": [],
+    "invalidLeaderboardTaskRows": [],
+    "invalidTaskQaReportRows": [],
+    "reportReadErrors": [],
+    "summaryIntegrity": {
+      "status": "valid",
+      "schemaVersion": 1,
+      "schemaVersionStatus": "supported",
+      "generatedAtStatus": "present",
+      "reportListStatus": "present",
+      "rawReportEntryCount": 5,
+      "reportEntryCount": 5,
+      "invalidReportEntryCount": 0,
+      "taskCount": 5,
+      "admittedTaskCount": 5,
+      "rejectedTaskCount": 0,
+      "taskCountPresent": true,
+      "admittedCountPresent": true,
+      "rejectedCountPresent": true,
+      "reportCountMatchesTaskCount": true,
+      "admissionCountsMatchTaskCount": true,
+      "admittedReportStatusCount": 5,
+      "rejectedReportStatusCount": 0,
+      "unknownReportStatusCount": 0,
+      "admissionCountsMatchReportStatuses": true
+    },
+    "reportPathAudit": {
+      "reportPathCount": 5,
+      "missingReportPathCount": 0,
+      "absoluteReportPathCount": 0,
+      "parentReportPathCount": 0,
+      "malformedReportPathCount": 0,
+      "outsideTaskQaRootReportPathCount": 0,
+      "unsafeReportPathCount": 0,
+      "unsafeReportPaths": []
+    },
+    "summaryReportConsistency": {
+      "summaryReportCount": 5,
+      "loadedReportCount": 5,
+      "matchedReportCount": 5,
+      "missingLoadedReportCount": 0,
+      "unreferencedLoadedReportCount": 0,
+      "duplicateSummaryReportKeyCount": 0,
+      "duplicateLoadedReportKeyCount": 0,
+      "invalidFailureCountCount": 0,
+      "statusMismatchCount": 0,
+      "failureCountMismatchCount": 0,
+      "reportGeneratedAfterSummaryCount": 0,
+      "tasksMissingLoadedReports": [],
+      "unreferencedLoadedReports": [],
+      "duplicateSummaryReportKeys": [],
+      "duplicateLoadedReportKeys": [],
+      "tasksWithInvalidFailureCounts": [],
+      "tasksWithStatusMismatches": [],
+      "tasksWithFailureCountMismatches": [],
+      "tasksWithReportGeneratedAfterSummary": []
+    },
+    "tasks": [
+      {
+        "taskId": "forms.email_validation",
+        "taskVersion": 1,
+        "track": "agentic",
+        "status": "admitted",
+        "failureCount": 0
+      },
+      {
+        "taskId": "lists.contact_search",
+        "taskVersion": 1,
+        "track": "agentic",
+        "status": "admitted",
+        "failureCount": 0
+      },
+      {
+        "taskId": "navigation.auth_redirect_race",
+        "taskVersion": 1,
+        "track": "agentic",
+        "status": "admitted",
+        "failureCount": 0
+      },
+      {
+        "taskId": "platform.channel_mock",
+        "taskVersion": 1,
+        "track": "agentic",
+        "status": "admitted",
+        "failureCount": 0
+      },
+      {
+        "taskId": "state.selection_controller",
+        "taskVersion": 1,
+        "track": "agentic",
+        "status": "admitted",
+        "failureCount": 0
+      }
+    ]
+  },
+  "verifierAudit": {
+    "taskCount": 5,
+    "hiddenVerifierDigestCount": 5,
+    "hiddenFlakeRuns": {
+      "minimumPerTask": 3,
+      "min": 3,
+      "max": 3,
+      "total": 15,
+      "tasksBelowMinimum": []
+    },
+    "checkCounts": {
+      "apiBreakingRejected": {
+        "passed": 5,
+        "failed": 0,
+        "other": 0
+      },
+      "baselineHiddenFailed": {
+        "passed": 5,
+        "failed": 0,
+        "other": 0
+      },
+      "hiddenFlakeRuns": {
+        "passed": 0,
+        "failed": 0,
+        "other": 5
+      },
+      "negativeCasesRejected": {
+        "passed": 5,
+        "failed": 0,
+        "other": 0
+      },
+      "noopRejected": {
+        "passed": 5,
+        "failed": 0,
+        "other": 0
+      },
+      "overfitRejected": {
+        "passed": 5,
+        "failed": 0,
+        "other": 0
+      },
+      "promptSafeContextLeakFree": {
+        "passed": 5,
+        "failed": 0,
+        "other": 0
+      },
+      "referenceHiddenPassed": {
+        "passed": 5,
+        "failed": 0,
+        "other": 0
+      },
+      "referencePublicPassed": {
+        "passed": 5,
+        "failed": 0,
+        "other": 0
+      },
+      "requiredNegativeCaseKindsCovered": {
+        "passed": 5,
+        "failed": 0,
+        "other": 0
+      }
+    },
+    "negativeCases": {
+      "total": 15,
+      "rejected": 15,
+      "accepted": 0,
+      "invalid": 0,
+      "malformedEvidenceCount": 0,
+      "unsupportedKindCount": 0,
+      "outcomeMismatchCount": 0,
+      "byKind": {
+        "api_breaking": {
+          "total": 5,
+          "rejected": 5,
+          "accepted": 0,
+          "invalid": 0,
+          "publicRejected": 5,
+          "hiddenRejected": 0
+        },
+        "noop": {
+          "total": 5,
+          "rejected": 5,
+          "accepted": 0,
+          "invalid": 0,
+          "publicRejected": 0,
+          "hiddenRejected": 5
+        },
+        "overfit": {
+          "total": 5,
+          "rejected": 5,
+          "accepted": 0,
+          "invalid": 0,
+          "publicRejected": 0,
+          "hiddenRejected": 5
+        }
+      },
+      "tasksMissingNegativeCases": [],
+      "tasksWithNegativeCaseEvidenceIssues": []
+    },
+    "releaseMetadata": {
+      "privateOfficialTaskCount": 5,
+      "activeTaskCount": 5,
+      "tasksMissingReleaseMetadata": [],
+      "tasksOutsidePrivateOfficialCorpus": [],
+      "retiredTasks": []
+    },
+    "quality": {
+      "falsePositiveCount": 0,
+      "falseNegativeCount": 0,
+      "disagreementCount": 10,
+      "infrastructureErrorCount": 0,
+      "flakeRunCount": 15,
+      "flakeFailureCount": 0,
+      "flakeRate": 0.0,
+      "acceptedNegativeCaseCount": 0,
+      "tasksMissingVerifierQualityAuditCount": 0,
+      "tasksMissingVerifierQualityAudit": []
+    },
+    "qualityConsistency": {
+      "requiredFieldIds": [
+        "falsePositiveCount",
+        "falseNegativeCount",
+        "disagreementCount",
+        "infrastructureErrorCount",
+        "flakeRunCount",
+        "flakeFailureCount",
+        "negativeCaseCount",
+        "acceptedNegativeCaseCount",
+        "referencePublicFailureCount",
+        "referenceHiddenFailureCount"
+      ],
+      "invalidFieldCount": 0,
+      "mismatchCount": 0,
+      "tasksWithVerifierQualityIssues": []
+    },
+    "admissionChecks": {
+      "requiredCheckIds": [
+        "baselineHiddenFailed",
+        "referencePublicPassed",
+        "referenceHiddenPassed",
+        "negativeCasesRejected",
+        "requiredNegativeCaseKindsCovered",
+        "promptSafeContextLeakFree"
+      ],
+      "optionalCheckIds": [
+        "noopRejected",
+        "apiBreakingRejected",
+        "overfitRejected"
+      ],
+      "requiredCheckCount": 30,
+      "passedRequiredCheckCount": 30,
+      "missingRequiredCheckCount": 0,
+      "failedRequiredCheckCount": 0,
+      "invalidRequiredCheckCount": 0,
+      "failedOptionalCheckCount": 0,
+      "invalidOptionalCheckCount": 0,
+      "admittedReportWithFailureMessagesCount": 0,
+      "tasksWithAdmissionCheckIssues": [],
+      "tasksWithAdmissionFailureMessages": []
+    },
+    "promptSafety": {
+      "presentCount": 5,
+      "missingCount": 0,
+      "failedCount": 0,
+      "invalidPassedFlagCount": 0,
+      "missingRequiredNegativeKindCount": 0,
+      "promptSafeCheckMismatchCount": 0,
+      "requiredKindCoverageMismatchCount": 0,
+      "invalidKindCount": 0,
+      "presentKindMismatchCount": 0,
+      "missingKindMismatchCount": 0,
+      "invalidComponentFieldCount": 0,
+      "passedComputationMismatchCount": 0,
+      "tasksMissingPromptSafety": [],
+      "tasksWithPromptSafetyIssues": []
+    },
+    "admissionProvenance": {
+      "presentCount": 5,
+      "missingCount": 0,
+      "invalidToolCount": 0,
+      "invalidEvaluatorCount": 0,
+      "environmentPresentCount": 5,
+      "environmentMissingCount": 0,
+      "sdkVersionPresentCount": 5,
+      "sdkVersionIncompleteCount": 0,
+      "dependencySnapshotPresentCount": 5,
+      "dependencySnapshotIncompleteCount": 0,
+      "tasksWithAdmissionProvenanceIssues": []
+    },
+    "taskExecutionPolicy": {
+      "presentCount": 5,
+      "missingCount": 0,
+      "incompleteCount": 0,
+      "networkDisabledCount": 5,
+      "networkEnabledCount": 0,
+      "resourceLimitPresentCount": 5,
+      "resourceLimitIncompleteCount": 0,
+      "tasksWithExecutionPolicyIssues": []
+    },
+    "taskReportIntegrity": {
+      "totalCount": 5,
+      "supportedSchemaVersionCount": 5,
+      "missingSchemaVersionCount": 0,
+      "unsupportedSchemaVersionCount": 0,
+      "admittedStatusCount": 5,
+      "rejectedStatusCount": 0,
+      "unknownStatusCount": 0,
+      "tasksWithSchemaVersionIssues": [],
+      "tasksWithStatusIssues": []
+    },
+    "taskReportTimestamps": {
+      "totalCount": 5,
+      "presentCount": 5,
+      "missingCount": 0,
+      "invalidCount": 0,
+      "futureCount": 0,
+      "tasksWithInvalidGeneratedAt": []
+    },
+    "tasksMissingHiddenVerifierDigests": [],
+    "invalidHiddenVerifierDigestCount": 0,
+    "tasksWithInvalidHiddenVerifierDigests": [],
+    "rejectedTasks": []
+  },
+  "provenance": {
+    "requiredRunIds": [
+      "spark-sandboxed-official-repeated-clean-20260605"
+    ],
+    "embeddedRunCount": 1,
+    "sandboxEnforcedRunCount": 1,
+    "taskExecutionPolicyRunCount": 1,
+    "networkDisabledTaskPolicyRunCount": 1,
+    "taskResourceLimitRunCount": 1,
+    "sdkVersionRunCount": 1,
+    "dependencySnapshotRunCount": 1,
+    "pricingRegistryRunCount": 1,
+    "runs": [
+      {
+        "runId": "spark-sandboxed-official-repeated-clean-20260605",
+        "status": "present",
+        "generatedCodeSandbox": {
+          "status": "enforced",
+          "required": true,
+          "enforced": true,
+          "backend": "bubblewrap"
+        },
+        "taskExecutionPolicyStatus": "present",
+        "networkDisabledTaskPolicyStatus": "disabled",
+        "taskResourceLimitStatus": "present",
+        "sdkVersionStatus": "present",
+        "dependencySnapshotStatus": "present",
+        "pricingRegistryStatus": "present",
+        "provenance": {
+          "capturedAt": "2026-06-05T16:16:03.902104Z",
+          "combos": [
+            {
+              "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+              "index": 0,
+              "modelConfig": {
+                "autonomyMode": "medium",
+                "configuredModelSnapshot": "gpt-5.3-codex-spark",
+                "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+                "customModelProvider": "openai",
+                "executionMode": "direct_prompt",
+                "factoryCustomModel": true,
+                "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+                "imageInputSupported": true,
+                "outputFormat": "text",
+                "temperature": {
+                  "configured": false,
+                  "status": "provider_default"
+                },
+                "toolPolicy": "disabled",
+                "toolsEnabled": false
+              },
+              "modelId": "custom:gpt-5.3-codex-spark---Codex",
+              "planId": null,
+              "providerId": "droid",
+              "taskId": "forms.email_validation",
+              "trialIndex": 0
+            },
+            {
+              "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+              "index": 1,
+              "modelConfig": {
+                "autonomyMode": "medium",
+                "configuredModelSnapshot": "gpt-5.3-codex-spark",
+                "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+                "customModelProvider": "openai",
+                "executionMode": "direct_prompt",
+                "factoryCustomModel": true,
+                "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+                "imageInputSupported": true,
+                "outputFormat": "text",
+                "temperature": {
+                  "configured": false,
+                  "status": "provider_default"
+                },
+                "toolPolicy": "disabled",
+                "toolsEnabled": false
+              },
+              "modelId": "custom:gpt-5.3-codex-spark---Codex",
+              "planId": null,
+              "providerId": "droid",
+              "taskId": "forms.email_validation",
+              "trialIndex": 1
+            },
+            {
+              "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+              "index": 2,
+              "modelConfig": {
+                "autonomyMode": "medium",
+                "configuredModelSnapshot": "gpt-5.3-codex-spark",
+                "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+                "customModelProvider": "openai",
+                "executionMode": "direct_prompt",
+                "factoryCustomModel": true,
+                "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+                "imageInputSupported": true,
+                "outputFormat": "text",
+                "temperature": {
+                  "configured": false,
+                  "status": "provider_default"
+                },
+                "toolPolicy": "disabled",
+                "toolsEnabled": false
+              },
+              "modelId": "custom:gpt-5.3-codex-spark---Codex",
+              "planId": null,
+              "providerId": "droid",
+              "taskId": "lists.contact_search",
+              "trialIndex": 0
+            },
+            {
+              "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+              "index": 3,
+              "modelConfig": {
+                "autonomyMode": "medium",
+                "configuredModelSnapshot": "gpt-5.3-codex-spark",
+                "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+                "customModelProvider": "openai",
+                "executionMode": "direct_prompt",
+                "factoryCustomModel": true,
+                "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+                "imageInputSupported": true,
+                "outputFormat": "text",
+                "temperature": {
+                  "configured": false,
+                  "status": "provider_default"
+                },
+                "toolPolicy": "disabled",
+                "toolsEnabled": false
+              },
+              "modelId": "custom:gpt-5.3-codex-spark---Codex",
+              "planId": null,
+              "providerId": "droid",
+              "taskId": "lists.contact_search",
+              "trialIndex": 1
+            },
+            {
+              "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+              "index": 4,
+              "modelConfig": {
+                "autonomyMode": "medium",
+                "configuredModelSnapshot": "gpt-5.3-codex-spark",
+                "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+                "customModelProvider": "openai",
+                "executionMode": "direct_prompt",
+                "factoryCustomModel": true,
+                "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+                "imageInputSupported": true,
+                "outputFormat": "text",
+                "temperature": {
+                  "configured": false,
+                  "status": "provider_default"
+                },
+                "toolPolicy": "disabled",
+                "toolsEnabled": false
+              },
+              "modelId": "custom:gpt-5.3-codex-spark---Codex",
+              "planId": null,
+              "providerId": "droid",
+              "taskId": "navigation.auth_redirect_race",
+              "trialIndex": 0
+            },
+            {
+              "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+              "index": 5,
+              "modelConfig": {
+                "autonomyMode": "medium",
+                "configuredModelSnapshot": "gpt-5.3-codex-spark",
+                "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+                "customModelProvider": "openai",
+                "executionMode": "direct_prompt",
+                "factoryCustomModel": true,
+                "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+                "imageInputSupported": true,
+                "outputFormat": "text",
+                "temperature": {
+                  "configured": false,
+                  "status": "provider_default"
+                },
+                "toolPolicy": "disabled",
+                "toolsEnabled": false
+              },
+              "modelId": "custom:gpt-5.3-codex-spark---Codex",
+              "planId": null,
+              "providerId": "droid",
+              "taskId": "navigation.auth_redirect_race",
+              "trialIndex": 1
+            },
+            {
+              "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+              "index": 6,
+              "modelConfig": {
+                "autonomyMode": "medium",
+                "configuredModelSnapshot": "gpt-5.3-codex-spark",
+                "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+                "customModelProvider": "openai",
+                "executionMode": "direct_prompt",
+                "factoryCustomModel": true,
+                "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+                "imageInputSupported": true,
+                "outputFormat": "text",
+                "temperature": {
+                  "configured": false,
+                  "status": "provider_default"
+                },
+                "toolPolicy": "disabled",
+                "toolsEnabled": false
+              },
+              "modelId": "custom:gpt-5.3-codex-spark---Codex",
+              "planId": null,
+              "providerId": "droid",
+              "taskId": "platform.channel_mock",
+              "trialIndex": 0
+            },
+            {
+              "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+              "index": 7,
+              "modelConfig": {
+                "autonomyMode": "medium",
+                "configuredModelSnapshot": "gpt-5.3-codex-spark",
+                "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+                "customModelProvider": "openai",
+                "executionMode": "direct_prompt",
+                "factoryCustomModel": true,
+                "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+                "imageInputSupported": true,
+                "outputFormat": "text",
+                "temperature": {
+                  "configured": false,
+                  "status": "provider_default"
+                },
+                "toolPolicy": "disabled",
+                "toolsEnabled": false
+              },
+              "modelId": "custom:gpt-5.3-codex-spark---Codex",
+              "planId": null,
+              "providerId": "droid",
+              "taskId": "platform.channel_mock",
+              "trialIndex": 1
+            },
+            {
+              "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+              "index": 8,
+              "modelConfig": {
+                "autonomyMode": "medium",
+                "configuredModelSnapshot": "gpt-5.3-codex-spark",
+                "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+                "customModelProvider": "openai",
+                "executionMode": "direct_prompt",
+                "factoryCustomModel": true,
+                "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+                "imageInputSupported": true,
+                "outputFormat": "text",
+                "temperature": {
+                  "configured": false,
+                  "status": "provider_default"
+                },
+                "toolPolicy": "disabled",
+                "toolsEnabled": false
+              },
+              "modelId": "custom:gpt-5.3-codex-spark---Codex",
+              "planId": null,
+              "providerId": "droid",
+              "taskId": "state.selection_controller",
+              "trialIndex": 0
+            },
+            {
+              "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+              "index": 9,
+              "modelConfig": {
+                "autonomyMode": "medium",
+                "configuredModelSnapshot": "gpt-5.3-codex-spark",
+                "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+                "customModelProvider": "openai",
+                "executionMode": "direct_prompt",
+                "factoryCustomModel": true,
+                "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+                "imageInputSupported": true,
+                "outputFormat": "text",
+                "temperature": {
+                  "configured": false,
+                  "status": "provider_default"
+                },
+                "toolPolicy": "disabled",
+                "toolsEnabled": false
+              },
+              "modelId": "custom:gpt-5.3-codex-spark---Codex",
+              "planId": null,
+              "providerId": "droid",
+              "taskId": "state.selection_controller",
+              "trialIndex": 1
+            }
+          ],
+          "config": {
+            "evaluatorWeights": {
+              "analyze": 1.0,
+              "compile": 1.0,
+              "diff_size": 0.2,
+              "hidden_test": 1.0,
+              "llm_judge": 0.7,
+              "test": 1.0,
+              "test_author": 4.0,
+              "widget_tree": 1.0
+            },
+            "existingRunId": null,
+            "generatedCodeSandbox": {
+              "backend": "bubblewrap",
+              "enforced": true,
+              "required": true
+            },
+            "judge": {
+              "modelId": null,
+              "providerId": null
+            },
+            "maxConcurrency": 1,
+            "modelsByProvider": {
+              "droid": [
+                "custom:gpt-5.3-codex-spark---Codex"
+              ]
+            },
+            "name": "Spark sandboxed official repeated clean provenance validation",
+            "pricingRegistry": {
+              "currency": "USD",
+              "modelCount": 7,
+              "models": {
+                "anthropic:claude-opus-4.7": {
+                  "effectiveFrom": "2026-05-31",
+                  "inputCostPerMToken": "[redacted]",
+                  "outputCostPerMToken": "[redacted]",
+                  "source": "manual"
+                },
+                "anthropic:claude-sonnet-4.5": {
+                  "effectiveFrom": "2026-05-31",
+                  "inputCostPerMToken": "[redacted]",
+                  "outputCostPerMToken": "[redacted]",
+                  "source": "manual"
+                },
+                "deepseek:deepseek-v4-flash": {
+                  "effectiveFrom": "2026-05-31",
+                  "inputCostPerMToken": "[redacted]",
+                  "outputCostPerMToken": "[redacted]",
+                  "source": "manual"
+                },
+                "deepseek:deepseek-v4-pro": {
+                  "effectiveFrom": "2026-05-31",
+                  "inputCostPerMToken": "[redacted]",
+                  "outputCostPerMToken": "[redacted]",
+                  "source": "manual"
+                },
+                "openai:gpt-5": {
+                  "effectiveFrom": "2026-05-31",
+                  "inputCostPerMToken": "[redacted]",
+                  "outputCostPerMToken": "[redacted]",
+                  "source": "manual"
+                },
+                "openai:gpt-5.3-codex": {
+                  "effectiveFrom": "2026-05-31",
+                  "inputCostPerMToken": "[redacted]",
+                  "outputCostPerMToken": "[redacted]",
+                  "source": "manual"
+                },
+                "openai:gpt-5.5": {
+                  "effectiveFrom": "2026-05-31",
+                  "inputCostPerMToken": "[redacted]",
+                  "outputCostPerMToken": "[redacted]",
+                  "source": "manual"
+                }
+              },
+              "version": "2026-05-31"
+            },
+            "trialsPerTask": 2,
+            "useReferencePlan": false
+          },
+          "environment": {
+            "dartVersion": "3.11.4 (stable) (Tue Mar 24 01:02:20 2026 -0700) on \"linux_x64\"",
+            "dependencySnapshot": {
+              "files": {
+                "pubspec.lock": {
+                  "bytes": 29033,
+                  "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4"
+                },
+                "pubspec.yaml": {
+                  "bytes": 6329,
+                  "sha256": "6bc4664b1d14a5e7e4c1a8676c48a0618875afd1c3aa9b64789b2045bf136674"
+                }
+              },
+              "status": "present"
+            },
+            "flutterVersion": "3.41.6",
+            "gitCommit": "3b582f9a76e52a9ffd292a6d072c65c894877e65",
+            "gitDirty": false,
+            "hostPlatform": "linux",
+            "locale": "C.UTF-8",
+            "operatingSystemVersion": "Linux 7.0.10-2-cachyos #1 SMP PREEMPT_DYNAMIC Thu, 28 May 2026 21:12:58 +0000"
+          },
+          "providers": [
+            {
+              "displayName": "Factory Droid",
+              "id": "droid",
+              "mode": "agent",
+              "runtimeConfig": {
+                "execution": "droid_exec",
+                "providerMode": "agent",
+                "secretsRedacted": "[redacted]"
+              },
+              "secretsRedacted": "[redacted]",
+              "selectedModelConfigs": [
+                {
+                  "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+                  "modelConfig": {
+                    "autonomyMode": "medium",
+                    "configuredModelSnapshot": "gpt-5.3-codex-spark",
+                    "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+                    "customModelProvider": "openai",
+                    "executionMode": "direct_prompt",
+                    "factoryCustomModel": true,
+                    "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+                    "imageInputSupported": true,
+                    "outputFormat": "text",
+                    "temperature": {
+                      "configured": false,
+                      "status": "provider_default"
+                    },
+                    "toolPolicy": "disabled",
+                    "toolsEnabled": false
+                  },
+                  "modelId": "custom:gpt-5.3-codex-spark---Codex"
+                }
+              ],
+              "selectedModels": [
+                "custom:gpt-5.3-codex-spark---Codex"
+              ]
+            }
+          ],
+          "runId": "spark-sandboxed-official-repeated-clean-20260605",
+          "schemaVersion": 1,
+          "tasks": [
+            {
+              "category": "bugFix",
+              "difficulty": "medium",
+              "executionPolicy": {
+                "allowInternet": false,
+                "resourceEnforcement": {
+                  "cpus": {
+                    "enforced": true,
+                    "kernelEnforced": true,
+                    "mechanism": "systemdCpuQuota"
+                  },
+                  "maxOutputBytes": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "boundedOutputCapture"
+                  },
+                  "maxProcesses": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "processTreePolling"
+                  },
+                  "memoryMb": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "rssPolling"
+                  }
+                },
+                "resources": {
+                  "cpus": 2,
+                  "maxOutputBytes": 1048576,
+                  "maxProcesses": 64,
+                  "memoryMb": 8192
+                }
+              },
+              "generatedCodePath": "lib/email_signup_controller.dart",
+              "hiddenAssetsExcluded": true,
+              "hiddenVerifierDigests": {
+                "email_signup_hidden": "b6780025038ecc497475ce4c9a5e12bf92f748af91c19cb652bf9a55254c20b5"
+              },
+              "id": "forms.email_validation",
+              "isFlutter": true,
+              "platformRequirements": [
+                "linux"
+              ],
+              "promptSha256": "89439de7e883aa731d490b3a0aa6949489e2088ace84ca3f30bc1f62ece09f48",
+              "publicFixtureDigests": {
+                "lib/email_signup_controller.dart": "d727ca53812cab4fa9c20bf77f2c1f5825e1ce2559e35b39e85faf3549e57f54",
+                "pubspec.yaml": "2cee2aaf0bc9ba6f961776cf302a29866254891e2ed212351f93fbb681d75c8a",
+                "test/email_signup_controller_test.dart": "7058bd016d76a6eeb7dd4afc22d34ba8f79e882e9ff0112389781236673ea128"
+              },
+              "tags": [
+                "bugfix",
+                "testing",
+                "ui"
+              ],
+              "timeoutMs": 900000,
+              "track": "agentic",
+              "version": 1
+            },
+            {
+              "category": "bugFix",
+              "difficulty": "medium",
+              "executionPolicy": {
+                "allowInternet": false,
+                "resourceEnforcement": {
+                  "cpus": {
+                    "enforced": true,
+                    "kernelEnforced": true,
+                    "mechanism": "systemdCpuQuota"
+                  },
+                  "maxOutputBytes": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "boundedOutputCapture"
+                  },
+                  "maxProcesses": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "processTreePolling"
+                  },
+                  "memoryMb": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "rssPolling"
+                  }
+                },
+                "resources": {
+                  "cpus": 2,
+                  "maxOutputBytes": 1048576,
+                  "maxProcesses": 64,
+                  "memoryMb": 8192
+                }
+              },
+              "generatedCodePath": "lib/contact_search_controller.dart",
+              "hiddenAssetsExcluded": true,
+              "hiddenVerifierDigests": {
+                "contact_search_hidden": "53a0af592f25f53e570e71da1591635368b510012f4137baa735bea83ee9a997"
+              },
+              "id": "lists.contact_search",
+              "isFlutter": true,
+              "platformRequirements": [
+                "linux"
+              ],
+              "promptSha256": "99491b74f4b89955f21842eb8074a8667cc8aeedc03ec3ea475e27abcf7e6f0b",
+              "publicFixtureDigests": {
+                "lib/contact_search_controller.dart": "7d186660dd4fa3889f9993c374ec7f4ca34450e7aff387c8a629da570699dfb5",
+                "pubspec.yaml": "1ec7610260ab31d2b7d5da30f88d995edf8fcb2724535f1dcd7354cccdb475ec",
+                "test/contact_search_controller_test.dart": "24ae4db089dc80b3b8d04d529869b2dd5822937f0cdc84804e3ff2616ee2f9bc"
+              },
+              "tags": [
+                "bugfix",
+                "testing",
+                "ui"
+              ],
+              "timeoutMs": 900000,
+              "track": "agentic",
+              "version": 1
+            },
+            {
+              "category": "bugFix",
+              "difficulty": "medium",
+              "executionPolicy": {
+                "allowInternet": false,
+                "resourceEnforcement": {
+                  "cpus": {
+                    "enforced": true,
+                    "kernelEnforced": true,
+                    "mechanism": "systemdCpuQuota"
+                  },
+                  "maxOutputBytes": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "boundedOutputCapture"
+                  },
+                  "maxProcesses": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "processTreePolling"
+                  },
+                  "memoryMb": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "rssPolling"
+                  }
+                },
+                "resources": {
+                  "cpus": 2,
+                  "maxOutputBytes": 1048576,
+                  "maxProcesses": 64,
+                  "memoryMb": 8192
+                }
+              },
+              "generatedCodePath": "lib/auth_router.dart",
+              "hiddenAssetsExcluded": true,
+              "hiddenVerifierDigests": {
+                "auth_redirect_hidden": "7cc827ee3bc2d5b0f61f1b56c649cb856540d88da2ba610a95115c4be40e8935"
+              },
+              "id": "navigation.auth_redirect_race",
+              "isFlutter": true,
+              "platformRequirements": [
+                "linux"
+              ],
+              "promptSha256": "67b7cbf3aad040a2b76c2fefb8385a6d4df65a4ebaef494511e835dc66850242",
+              "publicFixtureDigests": {
+                "lib/auth_router.dart": "cbbf9aa7ebc2f47e090f317537245ddf3ead07136a7b28a027ba77b0ad65d59e",
+                "pubspec.yaml": "c05b14a6f7a5541f76461b59354fa3f5ccb6100e71ec3e84ea884b5ab11c3a11",
+                "test/auth_router_test.dart": "b51a885522032ca906bd1c3dea8201644ffb508a0ba0bcf40b41a4f102bb58b9"
+              },
+              "tags": [
+                "bugfix",
+                "navigation"
+              ],
+              "timeoutMs": 900000,
+              "track": "agentic",
+              "version": 1
+            },
+            {
+              "category": "bugFix",
+              "difficulty": "medium",
+              "executionPolicy": {
+                "allowInternet": false,
+                "resourceEnforcement": {
+                  "cpus": {
+                    "enforced": true,
+                    "kernelEnforced": true,
+                    "mechanism": "systemdCpuQuota"
+                  },
+                  "maxOutputBytes": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "boundedOutputCapture"
+                  },
+                  "maxProcesses": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "processTreePolling"
+                  },
+                  "memoryMb": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "rssPolling"
+                  }
+                },
+                "resources": {
+                  "cpus": 2,
+                  "maxOutputBytes": 1048576,
+                  "maxProcesses": 64,
+                  "memoryMb": 8192
+                }
+              },
+              "generatedCodePath": "lib/battery_service.dart",
+              "hiddenAssetsExcluded": true,
+              "hiddenVerifierDigests": {
+                "battery_service_hidden": "8b140ca81f6e2de3e586135710bc2891a6d9a359213dda8538df0832ff871b47"
+              },
+              "id": "platform.channel_mock",
+              "isFlutter": true,
+              "platformRequirements": [
+                "linux"
+              ],
+              "promptSha256": "2038d1e135031e0a7eb94fc54ae04183d2333a9d51eb96740ca3d2af6258ac5c",
+              "publicFixtureDigests": {
+                "lib/battery_service.dart": "6a0b68f07017caa7b7ef4204a089227996b2ed4a80726e0b33782274b3998868",
+                "pubspec.yaml": "93d7bf9370af81bf70882b876a3c0cd5aca5a13f46e4f211d9cd25a422bdf89f",
+                "test/battery_service_test.dart": "24b131a72f9dca61bce116f6aa05fe3b7a9be27e3a81da1cdfdbf3de73ad1980"
+              },
+              "tags": [
+                "bugfix",
+                "platform",
+                "testing"
+              ],
+              "timeoutMs": 900000,
+              "track": "agentic",
+              "version": 1
+            },
+            {
+              "category": "bugFix",
+              "difficulty": "medium",
+              "executionPolicy": {
+                "allowInternet": false,
+                "resourceEnforcement": {
+                  "cpus": {
+                    "enforced": true,
+                    "kernelEnforced": true,
+                    "mechanism": "systemdCpuQuota"
+                  },
+                  "maxOutputBytes": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "boundedOutputCapture"
+                  },
+                  "maxProcesses": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "processTreePolling"
+                  },
+                  "memoryMb": {
+                    "enforced": true,
+                    "kernelEnforced": false,
+                    "mechanism": "rssPolling"
+                  }
+                },
+                "resources": {
+                  "cpus": 2,
+                  "maxOutputBytes": 1048576,
+                  "maxProcesses": 64,
+                  "memoryMb": 8192
+                }
+              },
+              "generatedCodePath": "lib/selection_controller.dart",
+              "hiddenAssetsExcluded": true,
+              "hiddenVerifierDigests": {
+                "selection_controller_hidden": "b11649f9eef657b89791328666b55e1cac598d671cfccf74e7850a01117624ab"
+              },
+              "id": "state.selection_controller",
+              "isFlutter": true,
+              "platformRequirements": [
+                "linux"
+              ],
+              "promptSha256": "7e1924bdf9e69476cea730a64965a2695a39ba378083e30f2c8e32bda664c9d8",
+              "publicFixtureDigests": {
+                "lib/selection_controller.dart": "ff6bf2a46be06d26694d20c1df043bf830dc767cc59263be3922ccd4a9135cef",
+                "pubspec.yaml": "1411d382d8275d7810e9a9e1b9caeae0218812b9afc81a31946de57b58542f66",
+                "test/selection_controller_test.dart": "af7ffbf686ee6ffb9f770c6c6cffda9962200c31cc599818915ac1ff5bee68c5"
+              },
+              "tags": [
+                "bugfix",
+                "state_bloc",
+                "ui"
+              ],
+              "timeoutMs": 900000,
+              "track": "agentic",
+              "version": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "artifactBundle": {
+    "status": "present",
+    "schemaVersion": 1,
+    "runId": "spark-sandboxed-official-repeated-clean-20260605",
+    "runIdStatus": "present",
+    "runIdInLeaderboardSource": true,
+    "manifestPopulationSummaryStatus": "present",
+    "manifestTaskCountStatus": "present",
+    "manifestProviderCountStatus": "present",
+    "manifestModelCountStatus": "present",
+    "manifestTaskCount": 5,
+    "manifestProviderCount": 1,
+    "manifestModelCount": 1,
+    "manifestDistinctTaskCount": 5,
+    "manifestDistinctProviderCount": 1,
+    "manifestDistinctModelCount": 1,
+    "manifestPopulationCountMismatchCount": 0,
+    "manifestRunMetadataStatus": "present",
+    "manifestRunNameStatus": "present",
+    "manifestRunStartedAtStatus": "present",
+    "manifestRunCompletedAtStatus": "present",
+    "manifestRunDurationStatus": "valid",
+    "manifestRunCompletedBeforeGeneratedAtStatus": "valid",
+    "manifestOutcomeSummaryStatus": "present",
+    "manifestPassSummaryStatus": "present",
+    "manifestFailureSummaryStatus": "present",
+    "manifestPassSummaryMismatchCount": 0,
+    "manifestFailureSummaryMismatchCount": 0,
+    "taskRunCount": 10,
+    "agenticTaskRunCount": 10,
+    "evaluationCount": 60,
+    "manifestEvaluatorIdCount": 10,
+    "invalidManifestEvaluatorIdCount": 0,
+    "duplicateManifestEvaluatorIdCount": 0,
+    "artifactCount": 20,
+    "artifactKindCounts": {
+      "patch": 10,
+      "response": 10
+    },
+    "responseArtifactCount": 10,
+    "patchArtifactCount": 10,
+    "trajectoryArtifactCount": 0,
+    "warningCount": 0,
+    "warningCodeCounts": {},
+    "missingResponseArtifactCount": 0,
+    "missingAgenticPatchArtifactCount": 0,
+    "missingAgenticHarnessMetadataCount": 0,
+    "missingLeaderboardTrialSummaryTaskRunCount": 0,
+    "extraLeaderboardTrialSummaryTaskRunCount": 0,
+    "invalidTaskRunModelIdentityCount": 0,
+    "invalidTaskRunCount": 0,
+    "duplicateTaskRunCount": 0,
+    "invalidArtifactCount": 0,
+    "invalidArtifactDigestCount": 0,
+    "invalidArtifactIdCount": 0,
+    "duplicateArtifactIdCount": 0,
+    "unknownArtifactKindCount": 0,
+    "duplicateArtifactReferenceCount": 0,
+    "unsafeArtifactPathCount": 0,
+    "absoluteArtifactPathCount": 0,
+    "parentArtifactPathCount": 0,
+    "privateArtifactPathCount": 0,
+    "outsideArtifactRootPathCount": 0,
+    "manifestMetadataStatus": "present",
+    "manifestGeneratedAtStatus": "present",
+    "manifestAppVersionStatus": "present",
+    "manifestDriftSchemaVersionStatus": "present",
+    "manifestExportToolStatus": "present",
+    "manifestExportEnvironmentStatus": "present",
+    "manifestExportEnvironmentGitStatus": "clean",
+    "manifestProvenanceStatus": "present",
+    "manifestProvenanceRunId": "spark-sandboxed-official-repeated-clean-20260605",
+    "manifestProvenanceRunIdMatchesManifest": true,
+    "manifestProvenanceSandboxStatus": "enforced",
+    "manifestProvenanceSandboxBackend": "bubblewrap",
+    "manifestProvenanceTaskExecutionPolicyStatus": "present",
+    "manifestProvenanceNetworkDisabledTaskPolicyStatus": "disabled",
+    "manifestProvenanceTaskResourceLimitStatus": "present",
+    "manifestProvenanceSdkVersionStatus": "present",
+    "manifestProvenanceDependencySnapshotStatus": "present",
+    "manifestProvenancePricingRegistryStatus": "present",
+    "checksumsPath": "checksums.json",
+    "checksumsPathStatus": "present",
+    "checksumSchemaVersion": 1,
+    "checksumsStatus": "present",
+    "checksumAlgorithm": "sha256",
+    "checksumFileCount": 24,
+    "manifestChecksumStatus": "present",
+    "manifestChecksumDigestStatus": "matched",
+    "checksumsPathMatchesInput": true,
+    "coveredArtifactChecksumCount": 20,
+    "missingArtifactChecksumCount": 0,
+    "coveredStandardChecksumCount": 4,
+    "missingStandardChecksumCount": 0,
+    "verifiedStandardChecksumCount": 3,
+    "missingStandardInputCount": 0,
+    "mismatchedStandardChecksumCount": 0,
+    "standardInputPathMismatchCount": 0,
+    "verifiedArtifactFileCount": 20,
+    "missingArtifactFileCount": 0,
+    "mismatchedArtifactFileByteCount": 0,
+    "mismatchedArtifactFileDigestCount": 0,
+    "mismatchedManifestArtifactDigestCount": 0,
+    "unexpectedChecksumPathCount": 0,
+    "unsafeChecksumPathCount": 0,
+    "absoluteChecksumPathCount": 0,
+    "parentChecksumPathCount": 0,
+    "privateChecksumPathCount": 0,
+    "outsideArtifactRootChecksumPathCount": 0,
+    "invalidChecksumEntryCount": 0,
+    "duplicateChecksumPathCount": 0,
+    "resultsCsvStatus": "present",
+    "resultsCsvTaskRunCount": 10,
+    "missingResultsCsvHeaderCount": 0,
+    "invalidResultsCsvTaskRunCount": 0,
+    "duplicateResultsCsvTaskRunCount": 0,
+    "missingResultsCsvTaskRunCount": 0,
+    "extraResultsCsvTaskRunCount": 0,
+    "mismatchedResultsCsvRunResultsCount": 0,
+    "invalidResultsCsvOutcomeCount": 0,
+    "reportMarkdownStatus": "present",
+    "reportMarkdownDeclaredTaskRunCount": 10,
+    "reportMarkdownTaskRunCount": 10,
+    "missingReportMarkdownSectionCount": 0,
+    "missingReportMarkdownColumnCount": 0,
+    "invalidReportMarkdownTaskRunCount": 0,
+    "duplicateReportMarkdownTaskRunCount": 0,
+    "missingReportMarkdownTaskRunCount": 0,
+    "extraReportMarkdownTaskRunCount": 0,
+    "mismatchedReportMarkdownRunResultsCount": 0,
+    "invalidReportMarkdownOutcomeCount": 0,
+    "runResultsStatus": "present",
+    "runResultsSchemaVersion": 1,
+    "runResultsRunId": "spark-sandboxed-official-repeated-clean-20260605",
+    "runResultsRunIdMatchesManifest": true,
+    "runResultsRunMetadataStatus": "present",
+    "runResultsRunNameMatchesManifest": true,
+    "runResultsRunStartedAtMatchesManifest": true,
+    "runResultsRunCompletedAtMatchesManifest": true,
+    "mismatchedRunResultsRunMetadataFieldCount": 0,
+    "runResultsTaskRunCount": 10,
+    "runResultsEvaluationCount": 60,
+    "runResultsEvaluationCountMatchesManifest": true,
+    "runResultsEvaluatorIdCount": 10,
+    "runResultsEvaluatorIdsMatchManifest": true,
+    "missingRunResultsEvaluatorIdCount": 0,
+    "extraRunResultsEvaluatorIdCount": 0,
+    "missingRunResultsTaskRunCount": 0,
+    "extraRunResultsTaskRunCount": 0,
+    "mismatchedRunResultsTaskRunCount": 0,
+    "missingRunResultsAgenticHarnessMetadataCount": 0,
+    "mismatchedRunResultsAgenticHarnessMetadataCount": 0,
+    "mismatchedRunResultsTaskRunRunIdCount": 0,
+    "mismatchedRunResultsTrialOutcomeCount": 0,
+    "invalidRunResultsTrialOutcomeCount": 0,
+    "invalidRunResultsTimingTaskRunCount": 0,
+    "invalidRunResultsTokenUsageTaskRunCount": 0,
+    "missingRunResultsEvaluationTaskRunCount": 0,
+    "invalidRunResultsEvaluationCount": 0,
+    "invalidRunResultsEvaluationRationaleCount": 0,
+    "invalidRunResultsEvaluationDetailsMetadataCount": 0,
+    "invalidRunResultsBlockedEvaluationMetadataCount": 0,
+    "invalidRunResultsJudgeOverheadMetadataCount": 0,
+    "missingRunResultsAgentHarnessStatusMetadataCount": 0,
+    "invalidRunResultsAgentHarnessStatusMetadataCount": 0,
+    "duplicateRunResultsEvaluationIdCount": 0,
+    "duplicateRunResultsTaskEvaluatorCount": 0,
+    "missingRunResultsArtifactCount": 0,
+    "extraRunResultsArtifactCount": 0,
+    "mismatchedRunResultsArtifactCount": 0,
+    "missingRunResultsArtifactMetadataCount": 0,
+    "invalidRunResultsArtifactMetadataEntryCount": 0,
+    "mismatchedRunResultsArtifactMetadataCount": 0,
+    "invalidRunResultsArtifactIdCount": 0,
+    "mismatchedRunResultsArtifactIdCount": 0,
+    "invalidRunResultsArtifactMetadataCount": 0,
+    "mismatchedRunResultsArtifactByteCount": 0,
+    "mismatchedRunResultsArtifactDigestCount": 0,
+    "invalidRunResultsTaskRunCount": 0,
+    "invalidRunResultsTaskRunModelIdentityCount": 0,
+    "duplicateRunResultsTaskRunCount": 0
+  }
+}
