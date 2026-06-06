@@ -1,54 +1,50 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-31T00:00:00.000Z",
+  "generatedAt": "2026-06-06T11:34:43.877532Z",
   "benchmark": {
     "name": "Dart Arena",
     "brand": "Pickforge",
     "title": "Dart Arena by Pickforge",
     "version": "2026-05-31-master-spec",
-    "taskSetId": "taskset-sample",
+    "taskSetId": "taskset-f8b9c2a68ba9ca9b",
     "evaluatorSchemaVersion": 1,
     "track": "agentic",
     "dataPolicy": "aggregate-compatible"
   },
   "source": {
-    "anchorRunId": "sample-run-2026-05-31",
+    "anchorRunId": "spark-sandboxed-official-repeated-clean-20260605",
     "runIds": [
-      "sample-run-2026-05-31"
+      "spark-sandboxed-official-repeated-clean-20260605"
     ],
-    "taskCount": 2,
-    "taskRunCount": 8,
-    "modelCount": 2,
-    "trialSummaryCount": 8,
-    "trialSummaryTotalCount": 8,
+    "taskCount": 5,
+    "taskRunCount": 10,
+    "modelCount": 1,
+    "trialSummaryCount": 10,
+    "trialSummaryTotalCount": 10,
     "trialSummaryTruncated": false,
     "trialSummaryLimit": 1000,
-    "warnings": [
-      "Sample static data for web scaffold preview; replace with leaderboard:export output."
-    ],
+    "warnings": [],
     "judgeOverhead": {
-      "evaluationCount": 4,
-      "promptTokens": 2400,
-      "completionTokens": 400,
-      "knownEstimatedCostCount": 4,
+      "evaluationCount": 0,
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "knownEstimatedCostCount": 0,
       "unknownEstimatedCostCount": 0,
-      "totalEstimatedCostMicros": 9500,
-      "pricingStatusCounts": {
-        "exact": 4
-      }
+      "totalEstimatedCostMicros": 0,
+      "pricingStatusCounts": {}
     },
     "runProvenance": {
       "runCount": 1,
-    "embeddedRunCount": 1,
-    "sandboxEnforcedRunCount": 1,
-    "taskExecutionPolicyRunCount": 1,
-    "networkDisabledTaskPolicyRunCount": 1,
-    "taskResourceLimitRunCount": 1,
-    "sdkVersionRunCount": 1,
+      "embeddedRunCount": 1,
+      "sandboxEnforcedRunCount": 1,
+      "taskExecutionPolicyRunCount": 1,
+      "networkDisabledTaskPolicyRunCount": 1,
+      "taskResourceLimitRunCount": 1,
+      "sdkVersionRunCount": 1,
       "dependencySnapshotRunCount": 1,
       "pricingRegistryRunCount": 1,
       "generatedCodeSandboxBackends": [
-        "sample-sandbox"
+        "bubblewrap"
       ],
       "dartVersions": [
         "3.11.4"
@@ -57,7 +53,7 @@
         "3.41.6"
       ],
       "environmentIds": [
-        "sampleenv001"
+        "23c9cd1e0d63"
       ],
       "warnings": []
     }
@@ -114,198 +110,403 @@
   "pricingRegistry": {
     "version": "2026-05-31",
     "currency": "USD",
-    "modelCount": 2,
+    "modelCount": 7,
     "models": {
-      "anthropic:claude-sample": {
-        "inputCostPerMToken": 3,
-        "outputCostPerMToken": 15,
-        "source": "sample",
+      "anthropic:claude-opus-4.7": {
+        "inputCostPerMToken": 15.0,
+        "outputCostPerMToken": 75.0,
+        "source": "manual",
         "effectiveFrom": "2026-05-31"
       },
-      "openai:gpt-5-sample": {
+      "anthropic:claude-sonnet-4.5": {
+        "inputCostPerMToken": 3.0,
+        "outputCostPerMToken": 15.0,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      },
+      "deepseek:deepseek-v4-flash": {
+        "inputCostPerMToken": 0.14,
+        "outputCostPerMToken": 0.28,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      },
+      "deepseek:deepseek-v4-pro": {
+        "inputCostPerMToken": 1.0,
+        "outputCostPerMToken": 3.0,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      },
+      "openai:gpt-5": {
         "inputCostPerMToken": 1.25,
-        "outputCostPerMToken": 10,
-        "source": "sample",
+        "outputCostPerMToken": 10.0,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      },
+      "openai:gpt-5.3-codex": {
+        "inputCostPerMToken": 1.25,
+        "outputCostPerMToken": 10.0,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      },
+      "openai:gpt-5.5": {
+        "inputCostPerMToken": 1.25,
+        "outputCostPerMToken": 10.0,
+        "source": "manual",
         "effectiveFrom": "2026-05-31"
       }
     }
   },
   "models": [
     {
-      "providerId": "openai",
-      "modelId": "gpt-5-sample",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
       "rank": 1,
-      "score": 0.75,
-      "passRate": 0.75,
-      "trialCount": 4,
-      "passCount": 3,
-      "sampleCount": 4,
+      "score": 0.7,
+      "passRate": 0.7,
+      "trialCount": 10,
+      "passCount": 7,
+      "sampleCount": 10,
       "passAtK": {
         "1": {
           "k": 1,
-          "passCount": 2,
-          "sampleCount": 2,
-          "passRate": 1.0
+          "passCount": 4,
+          "sampleCount": 5,
+          "passRate": 0.8
         },
         "2": {
           "k": 2,
-          "passCount": 2,
-          "sampleCount": 2,
-          "passRate": 1.0
+          "passCount": 4,
+          "sampleCount": 5,
+          "passRate": 0.8
         }
       },
-      "medianStepCount": 18,
-      "medianPeakContextTokens": 14300,
-      "publicPassCount": 4,
-      "publicSampleCount": 4,
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 10,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 10,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 10,
+        "completeTraceMetricCount": 0
+      },
+      "tokenUsageCoverage": {
+        "sampleCount": 10,
+        "promptTokensKnownCount": 0,
+        "promptTokensUnknownCount": 10,
+        "completionTokensKnownCount": 0,
+        "completionTokensUnknownCount": 10,
+        "completeTokenUsageCount": 0
+      },
+      "publicPassCount": 9,
+      "publicSampleCount": 9,
       "publicPassRate": 1.0,
-      "hiddenPassCount": 3,
-      "hiddenSampleCount": 4,
-      "hiddenPassRate": 0.75,
+      "hiddenPassCount": 7,
+      "hiddenSampleCount": 9,
+      "hiddenPassRate": 0.7777777777777778,
       "confidenceInterval": {
-        "lower": 0.3006,
-        "upper": 0.9544
+        "lower": 0.39677869261194887,
+        "upper": 0.8922085135442429
       },
-      "lowSample": true,
-      "medianLatencyMs": 42000,
-      "medianPromptTokens": 5200,
-      "medianCompletionTokens": 1800,
-      "medianEstimatedCostMicros": 125000,
-      "knownEstimatedCostCount": 4,
-      "unknownEstimatedCostCount": 0,
-      "totalEstimatedCostMicros": 500000,
-      "costPerSolvedTaskMicros": 166667,
-      "cheapestPassingEstimatedCostMicros": 120000,
-      "blockedEvaluationCount": 0,
-      "blockedTaskRunCount": 0,
-      "failureBreakdown": {
-        "hidden_verifier_failed": 1
-      }
-    },
-    {
-      "providerId": "anthropic",
-      "modelId": "claude-sample",
-      "rank": 2,
-      "score": 0.5,
-      "passRate": 0.5,
-      "trialCount": 4,
-      "passCount": 2,
-      "sampleCount": 4,
-      "passAtK": {
-        "1": {
-          "k": 1,
-          "passCount": 1,
-          "sampleCount": 2,
-          "passRate": 0.5
-        },
-        "2": {
-          "k": 2,
-          "passCount": 1,
-          "sampleCount": 2,
-          "passRate": 0.5
-        }
-      },
-      "medianStepCount": 22,
-      "medianPeakContextTokens": 15700,
-      "publicPassCount": 3,
-      "publicSampleCount": 4,
-      "publicPassRate": 0.75,
-      "hiddenPassCount": 2,
-      "hiddenSampleCount": 4,
-      "hiddenPassRate": 0.5,
-      "confidenceInterval": {
-        "lower": 0.1500,
-        "upper": 0.8500
-      },
-      "lowSample": true,
-      "medianLatencyMs": 39000,
-      "medianPromptTokens": 5100,
-      "medianCompletionTokens": 1600,
-      "medianEstimatedCostMicros": 140000,
-      "knownEstimatedCostCount": 3,
-      "unknownEstimatedCostCount": 1,
+      "lowSample": false,
+      "medianLatencyMs": 151470,
+      "medianPromptTokens": null,
+      "medianCompletionTokens": null,
+      "medianEstimatedCostMicros": null,
+      "knownEstimatedCostCount": 0,
+      "unknownEstimatedCostCount": 10,
       "totalEstimatedCostMicros": null,
       "costPerSolvedTaskMicros": null,
-      "cheapestPassingEstimatedCostMicros": 135000,
-      "blockedEvaluationCount": 1,
-      "blockedTaskRunCount": 1,
+      "cheapestPassingEstimatedCostMicros": null,
       "failureBreakdown": {
-        "analysis_failed": 1,
-        "public_tests_failed": 1
-      }
+        "compile_failed": 1,
+        "hidden_verifier_failed": 2,
+        "pass": 7
+      },
+      "blockedEvaluationCount": 2,
+      "blockedTaskRunCount": 1
     }
   ],
   "tasks": [
     {
-      "taskId": "sample.counter_bloc",
+      "taskId": "forms.email_validation",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
-      "trialCount": 4,
-      "sampleCount": 4,
-      "modelCount": 2,
-      "passRate": 0.25,
+      "trialCount": 2,
+      "sampleCount": 2,
+      "modelCount": 1,
+      "passRate": 1.0,
+      "confidenceInterval": {
+        "lower": 0.3423811429771653,
+        "upper": 1.0
+      },
       "passAtK": {
         "1": {
           "k": 1,
           "passCount": 1,
-          "sampleCount": 2,
-          "passRate": 0.5
+          "sampleCount": 1,
+          "passRate": 1.0
         },
         "2": {
           "k": 2,
           "passCount": 1,
-          "sampleCount": 2,
-          "passRate": 0.5
+          "sampleCount": 1,
+          "passRate": 1.0
         }
       },
-      "confidenceInterval": {
-        "lower": 0.0456,
-        "upper": 0.6994
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 2,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 2,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 2,
+        "completeTraceMetricCount": 0
       },
-      "medianStepCount": 20,
-      "medianPeakContextTokens": 15000,
-      "publicPassCount": 3,
-      "publicSampleCount": 4,
-      "publicPassRate": 0.75,
+      "tokenUsageCoverage": {
+        "sampleCount": 2,
+        "promptTokensKnownCount": 0,
+        "promptTokensUnknownCount": 2,
+        "completionTokensKnownCount": 0,
+        "completionTokensUnknownCount": 2,
+        "completeTokenUsageCount": 0
+      },
+      "publicPassCount": 2,
+      "publicSampleCount": 2,
+      "publicPassRate": 1.0,
+      "hiddenPassCount": 2,
+      "hiddenSampleCount": 2,
+      "hiddenPassRate": 1.0,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0
+    },
+    {
+      "taskId": "lists.contact_search",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialCount": 2,
+      "sampleCount": 2,
+      "modelCount": 1,
+      "passRate": 0.5,
+      "confidenceInterval": {
+        "lower": 0.09453148796027494,
+        "upper": 0.905468512039725
+      },
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        },
+        "2": {
+          "k": 2,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        }
+      },
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 2,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 2,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 2,
+        "completeTraceMetricCount": 0
+      },
+      "tokenUsageCoverage": {
+        "sampleCount": 2,
+        "promptTokensKnownCount": 0,
+        "promptTokensUnknownCount": 2,
+        "completionTokensKnownCount": 0,
+        "completionTokensUnknownCount": 2,
+        "completeTokenUsageCount": 0
+      },
+      "publicPassCount": 1,
+      "publicSampleCount": 1,
+      "publicPassRate": 1.0,
       "hiddenPassCount": 1,
-      "hiddenSampleCount": 3,
-      "hiddenPassRate": 0.3333,
-      "blockedEvaluationCount": 1,
+      "hiddenSampleCount": 1,
+      "hiddenPassRate": 1.0,
+      "blockedEvaluationCount": 2,
       "blockedTaskRunCount": 1
     },
     {
-      "taskId": "sample.profile_card",
+      "taskId": "navigation.auth_redirect_race",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
-      "trialCount": 4,
-      "sampleCount": 4,
-      "modelCount": 2,
-      "passRate": 1.0,
+      "trialCount": 2,
+      "sampleCount": 2,
+      "modelCount": 1,
+      "passRate": 0.0,
+      "confidenceInterval": {
+        "lower": 0.0,
+        "upper": 0.6576188570228346
+      },
       "passAtK": {
         "1": {
           "k": 1,
-          "passCount": 2,
-          "sampleCount": 2,
+          "passCount": 0,
+          "sampleCount": 1,
+          "passRate": 0.0
+        },
+        "2": {
+          "k": 2,
+          "passCount": 0,
+          "sampleCount": 1,
+          "passRate": 0.0
+        }
+      },
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 2,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 2,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 2,
+        "completeTraceMetricCount": 0
+      },
+      "tokenUsageCoverage": {
+        "sampleCount": 2,
+        "promptTokensKnownCount": 0,
+        "promptTokensUnknownCount": 2,
+        "completionTokensKnownCount": 0,
+        "completionTokensUnknownCount": 2,
+        "completeTokenUsageCount": 0
+      },
+      "publicPassCount": 2,
+      "publicSampleCount": 2,
+      "publicPassRate": 1.0,
+      "hiddenPassCount": 0,
+      "hiddenSampleCount": 2,
+      "hiddenPassRate": 0.0,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0
+    },
+    {
+      "taskId": "platform.channel_mock",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialCount": 2,
+      "sampleCount": 2,
+      "modelCount": 1,
+      "passRate": 1.0,
+      "confidenceInterval": {
+        "lower": 0.3423811429771653,
+        "upper": 1.0
+      },
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 1,
           "passRate": 1.0
         },
         "2": {
           "k": 2,
-          "passCount": 2,
-          "sampleCount": 2,
+          "passCount": 1,
+          "sampleCount": 1,
           "passRate": 1.0
         }
       },
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 2,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 2,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 2,
+        "completeTraceMetricCount": 0
+      },
+      "tokenUsageCoverage": {
+        "sampleCount": 2,
+        "promptTokensKnownCount": 0,
+        "promptTokensUnknownCount": 2,
+        "completionTokensKnownCount": 0,
+        "completionTokensUnknownCount": 2,
+        "completeTokenUsageCount": 0
+      },
+      "publicPassCount": 2,
+      "publicSampleCount": 2,
+      "publicPassRate": 1.0,
+      "hiddenPassCount": 2,
+      "hiddenSampleCount": 2,
+      "hiddenPassRate": 1.0,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0
+    },
+    {
+      "taskId": "state.selection_controller",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialCount": 2,
+      "sampleCount": 2,
+      "modelCount": 1,
+      "passRate": 1.0,
       "confidenceInterval": {
-        "lower": 0.5101,
+        "lower": 0.3423811429771653,
         "upper": 1.0
       },
-      "medianStepCount": 17,
-      "medianPeakContextTokens": 14200,
-      "publicPassCount": 4,
-      "publicSampleCount": 4,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        },
+        "2": {
+          "k": 2,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        }
+      },
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 2,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 2,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 2,
+        "completeTraceMetricCount": 0
+      },
+      "tokenUsageCoverage": {
+        "sampleCount": 2,
+        "promptTokensKnownCount": 0,
+        "promptTokensUnknownCount": 2,
+        "completionTokensKnownCount": 0,
+        "completionTokensUnknownCount": 2,
+        "completeTokenUsageCount": 0
+      },
+      "publicPassCount": 2,
+      "publicSampleCount": 2,
       "publicPassRate": 1.0,
-      "hiddenPassCount": 4,
-      "hiddenSampleCount": 4,
+      "hiddenPassCount": 2,
+      "hiddenSampleCount": 2,
       "hiddenPassRate": 1.0,
       "blockedEvaluationCount": 0,
       "blockedTaskRunCount": 0
@@ -313,65 +514,37 @@
   ],
   "taskModelCells": [
     {
-      "providerId": "anthropic",
-      "modelId": "claude-sample",
-      "taskId": "sample.counter_bloc",
-      "taskVersion": 1,
-      "benchmarkTrack": "agentic",
-      "trialCount": 2,
-      "passCount": 0,
-      "sampleCount": 2,
-      "passRate": 0.0,
-      "errorCount": 2,
-      "passAtK": {
-        "1": {
-          "k": 1,
-          "passCount": 0,
-          "sampleCount": 1,
-          "passRate": 0.0
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
         },
-        "2": {
-          "k": 2,
-          "passCount": 0,
-          "sampleCount": 1,
-          "passRate": 0.0
-        }
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
       },
-      "confidenceInterval": {
-        "lower": 0.0,
-        "upper": 0.6576
-      },
-      "medianStepCount": 24,
-      "medianPeakContextTokens": 16000,
-      "publicPassCount": 1,
-      "publicSampleCount": 2,
-      "publicPassRate": 0.5,
-      "hiddenPassCount": 0,
-      "hiddenSampleCount": 1,
-      "hiddenPassRate": 0.0,
-      "blockedEvaluationCount": 1,
-      "blockedTaskRunCount": 1,
-      "medianLatencyMs": 39000,
-      "medianPromptTokens": 5100,
-      "medianCompletionTokens": 1600,
-      "medianEstimatedCostMicros": 140000,
-      "knownEstimatedCostCount": 1,
-      "unknownEstimatedCostCount": 1,
-      "failureBreakdown": {
-        "analysis_failed": 1,
-        "public_tests_failed": 1
-      }
-    },
-    {
-      "providerId": "anthropic",
-      "modelId": "claude-sample",
-      "taskId": "sample.profile_card",
+      "taskId": "forms.email_validation",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
       "trialCount": 2,
       "passCount": 2,
       "sampleCount": 2,
       "passRate": 1.0,
+      "confidenceInterval": {
+        "lower": 0.3423811429771653,
+        "upper": 1.0
+      },
       "errorCount": 0,
       "passAtK": {
         "1": {
@@ -387,12 +560,24 @@
           "passRate": 1.0
         }
       },
-      "confidenceInterval": {
-        "lower": 0.3424,
-        "upper": 1.0
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 2,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 2,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 2,
+        "completeTraceMetricCount": 0
       },
-      "medianStepCount": 18,
-      "medianPeakContextTokens": 14800,
+      "tokenUsageCoverage": {
+        "sampleCount": 2,
+        "promptTokensKnownCount": 0,
+        "promptTokensUnknownCount": 2,
+        "completionTokensKnownCount": 0,
+        "completionTokensUnknownCount": 2,
+        "completeTokenUsageCount": 0
+      },
       "publicPassCount": 2,
       "publicSampleCount": 2,
       "publicPassRate": 1.0,
@@ -401,26 +586,48 @@
       "hiddenPassRate": 1.0,
       "blockedEvaluationCount": 0,
       "blockedTaskRunCount": 0,
-      "medianLatencyMs": 41000,
-      "medianPromptTokens": 5000,
-      "medianCompletionTokens": 1500,
-      "medianEstimatedCostMicros": 135000,
-      "knownEstimatedCostCount": 2,
-      "unknownEstimatedCostCount": 0,
+      "medianLatencyMs": 205182,
+      "medianPromptTokens": null,
+      "medianCompletionTokens": null,
+      "medianEstimatedCostMicros": null,
+      "knownEstimatedCostCount": 0,
+      "unknownEstimatedCostCount": 2,
       "failureBreakdown": {
         "pass": 2
       }
     },
     {
-      "providerId": "openai",
-      "modelId": "gpt-5-sample",
-      "taskId": "sample.counter_bloc",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "lists.contact_search",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
       "trialCount": 2,
       "passCount": 1,
       "sampleCount": 2,
       "passRate": 0.5,
+      "confidenceInterval": {
+        "lower": 0.09453148796027494,
+        "upper": 0.905468512039725
+      },
       "errorCount": 1,
       "passAtK": {
         "1": {
@@ -436,41 +643,158 @@
           "passRate": 1.0
         }
       },
-      "confidenceInterval": {
-        "lower": 0.0945,
-        "upper": 0.9055
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 2,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 2,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 2,
+        "completeTraceMetricCount": 0
       },
-      "medianStepCount": 18,
-      "medianPeakContextTokens": 14300,
-      "publicPassCount": 2,
-      "publicSampleCount": 2,
+      "tokenUsageCoverage": {
+        "sampleCount": 2,
+        "promptTokensKnownCount": 0,
+        "promptTokensUnknownCount": 2,
+        "completionTokensKnownCount": 0,
+        "completionTokensUnknownCount": 2,
+        "completeTokenUsageCount": 0
+      },
+      "publicPassCount": 1,
+      "publicSampleCount": 1,
       "publicPassRate": 1.0,
       "hiddenPassCount": 1,
-      "hiddenSampleCount": 2,
-      "hiddenPassRate": 0.5,
-      "blockedEvaluationCount": 0,
-      "blockedTaskRunCount": 0,
-      "medianLatencyMs": 42000,
-      "medianPromptTokens": 5200,
-      "medianCompletionTokens": 1800,
-      "medianEstimatedCostMicros": 125000,
-      "knownEstimatedCostCount": 2,
-      "unknownEstimatedCostCount": 0,
+      "hiddenSampleCount": 1,
+      "hiddenPassRate": 1.0,
+      "blockedEvaluationCount": 2,
+      "blockedTaskRunCount": 1,
+      "medianLatencyMs": 151470,
+      "medianPromptTokens": null,
+      "medianCompletionTokens": null,
+      "medianEstimatedCostMicros": null,
+      "knownEstimatedCostCount": 0,
+      "unknownEstimatedCostCount": 2,
       "failureBreakdown": {
-        "hidden_verifier_failed": 1,
+        "compile_failed": 1,
         "pass": 1
       }
     },
     {
-      "providerId": "openai",
-      "modelId": "gpt-5-sample",
-      "taskId": "sample.profile_card",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "navigation.auth_redirect_race",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialCount": 2,
+      "passCount": 0,
+      "sampleCount": 2,
+      "passRate": 0.0,
+      "confidenceInterval": {
+        "lower": 0.0,
+        "upper": 0.6576188570228346
+      },
+      "errorCount": 2,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 0,
+          "sampleCount": 1,
+          "passRate": 0.0
+        },
+        "2": {
+          "k": 2,
+          "passCount": 0,
+          "sampleCount": 1,
+          "passRate": 0.0
+        }
+      },
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 2,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 2,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 2,
+        "completeTraceMetricCount": 0
+      },
+      "tokenUsageCoverage": {
+        "sampleCount": 2,
+        "promptTokensKnownCount": 0,
+        "promptTokensUnknownCount": 2,
+        "completionTokensKnownCount": 0,
+        "completionTokensUnknownCount": 2,
+        "completeTokenUsageCount": 0
+      },
+      "publicPassCount": 2,
+      "publicSampleCount": 2,
+      "publicPassRate": 1.0,
+      "hiddenPassCount": 0,
+      "hiddenSampleCount": 2,
+      "hiddenPassRate": 0.0,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0,
+      "medianLatencyMs": 190138,
+      "medianPromptTokens": null,
+      "medianCompletionTokens": null,
+      "medianEstimatedCostMicros": null,
+      "knownEstimatedCostCount": 0,
+      "unknownEstimatedCostCount": 2,
+      "failureBreakdown": {
+        "hidden_verifier_failed": 2
+      }
+    },
+    {
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "platform.channel_mock",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
       "trialCount": 2,
       "passCount": 2,
       "sampleCount": 2,
       "passRate": 1.0,
+      "confidenceInterval": {
+        "lower": 0.3423811429771653,
+        "upper": 1.0
+      },
       "errorCount": 0,
       "passAtK": {
         "1": {
@@ -486,12 +810,24 @@
           "passRate": 1.0
         }
       },
-      "confidenceInterval": {
-        "lower": 0.3424,
-        "upper": 1.0
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 2,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 2,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 2,
+        "completeTraceMetricCount": 0
       },
-      "medianStepCount": 15,
-      "medianPeakContextTokens": 13500,
+      "tokenUsageCoverage": {
+        "sampleCount": 2,
+        "promptTokensKnownCount": 0,
+        "promptTokensUnknownCount": 2,
+        "completionTokensKnownCount": 0,
+        "completionTokensUnknownCount": 2,
+        "completeTokenUsageCount": 0
+      },
       "publicPassCount": 2,
       "publicSampleCount": 2,
       "publicPassRate": 1.0,
@@ -500,12 +836,95 @@
       "hiddenPassRate": 1.0,
       "blockedEvaluationCount": 0,
       "blockedTaskRunCount": 0,
-      "medianLatencyMs": 44000,
-      "medianPromptTokens": 5300,
-      "medianCompletionTokens": 1700,
-      "medianEstimatedCostMicros": 120000,
-      "knownEstimatedCostCount": 2,
-      "unknownEstimatedCostCount": 0,
+      "medianLatencyMs": 98598,
+      "medianPromptTokens": null,
+      "medianCompletionTokens": null,
+      "medianEstimatedCostMicros": null,
+      "knownEstimatedCostCount": 0,
+      "unknownEstimatedCostCount": 2,
+      "failureBreakdown": {
+        "pass": 2
+      }
+    },
+    {
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "state.selection_controller",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialCount": 2,
+      "passCount": 2,
+      "sampleCount": 2,
+      "passRate": 1.0,
+      "confidenceInterval": {
+        "lower": 0.3423811429771653,
+        "upper": 1.0
+      },
+      "errorCount": 0,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        },
+        "2": {
+          "k": 2,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        }
+      },
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 2,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 2,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 2,
+        "completeTraceMetricCount": 0
+      },
+      "tokenUsageCoverage": {
+        "sampleCount": 2,
+        "promptTokensKnownCount": 0,
+        "promptTokensUnknownCount": 2,
+        "completionTokensKnownCount": 0,
+        "completionTokensUnknownCount": 2,
+        "completeTokenUsageCount": 0
+      },
+      "publicPassCount": 2,
+      "publicSampleCount": 2,
+      "publicPassRate": 1.0,
+      "hiddenPassCount": 2,
+      "hiddenSampleCount": 2,
+      "hiddenPassRate": 1.0,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0,
+      "medianLatencyMs": 213536,
+      "medianPromptTokens": null,
+      "medianCompletionTokens": null,
+      "medianEstimatedCostMicros": null,
+      "knownEstimatedCostCount": 0,
+      "unknownEstimatedCostCount": 2,
       "failureBreakdown": {
         "pass": 2
       }
@@ -513,188 +932,494 @@
   ],
   "trialSummaries": [
     {
-      "trialId": "anth-counter-1",
-      "runId": "sample-run-2026-05-31",
-      "providerId": "anthropic",
-      "modelId": "claude-sample",
-      "taskId": "sample.counter_bloc",
+      "trialId": "674f76c7e493",
+      "runId": "spark-sandboxed-official-repeated-clean-20260605",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "forms.email_validation",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
       "trialIndex": 0,
-      "completedAt": "2026-05-31T12:00:00.000Z",
-      "primaryPass": false,
-      "failureTag": "analysis_failed",
-      "aggregateScore": 0.2,
-      "publicPassed": false,
-      "hiddenPassed": null,
-      "blockedEvaluationCount": 1,
-      "stepCount": 25,
-      "peakContextTokens": 16200,
-      "latencyMs": 38000,
-      "promptTokens": 5000,
-      "completionTokens": 1500,
-      "estimatedCostMicros": 135000
-    },
-    {
-      "trialId": "anth-counter-2",
-      "runId": "sample-run-2026-05-31",
-      "providerId": "anthropic",
-      "modelId": "claude-sample",
-      "taskId": "sample.counter_bloc",
-      "taskVersion": 1,
-      "benchmarkTrack": "agentic",
-      "trialIndex": 1,
-      "completedAt": "2026-05-31T12:02:00.000Z",
-      "primaryPass": false,
-      "failureTag": "public_tests_failed",
-      "aggregateScore": 0.35,
-      "publicPassed": false,
-      "hiddenPassed": false,
+      "completedAt": "2026-06-05T16:21:09.000Z",
+      "primaryPass": true,
+      "failureTag": "pass",
+      "aggregateScore": 0.9873200017706015,
+      "publicPassed": true,
+      "hiddenPassed": true,
       "blockedEvaluationCount": 0,
-      "stepCount": 23,
-      "peakContextTokens": 15800,
-      "latencyMs": 40000,
-      "promptTokens": 5200,
-      "completionTokens": 1700,
+      "stepCount": null,
+      "peakContextTokens": null,
+      "traceMetricStatus": {
+        "stepCount": "unknown",
+        "peakContextTokens": "unknown"
+      },
+      "latencyMs": 278416,
+      "promptTokens": null,
+      "completionTokens": null,
+      "tokenUsageStatus": {
+        "promptTokens": "unknown",
+        "completionTokens": "unknown"
+      },
       "estimatedCostMicros": null
     },
     {
-      "trialId": "anth-profile-1",
-      "runId": "sample-run-2026-05-31",
-      "providerId": "anthropic",
-      "modelId": "claude-sample",
-      "taskId": "sample.profile_card",
-      "taskVersion": 1,
-      "benchmarkTrack": "agentic",
-      "trialIndex": 0,
-      "completedAt": "2026-05-31T12:04:00.000Z",
-      "primaryPass": true,
-      "failureTag": "pass",
-      "aggregateScore": 1.0,
-      "publicPassed": true,
-      "hiddenPassed": true,
-      "blockedEvaluationCount": 0,
-      "stepCount": 18,
-      "peakContextTokens": 14800,
-      "latencyMs": 41000,
-      "promptTokens": 5000,
-      "completionTokens": 1500,
-      "estimatedCostMicros": 135000
-    },
-    {
-      "trialId": "anth-profile-2",
-      "runId": "sample-run-2026-05-31",
-      "providerId": "anthropic",
-      "modelId": "claude-sample",
-      "taskId": "sample.profile_card",
+      "trialId": "ca3f602ea773",
+      "runId": "spark-sandboxed-official-repeated-clean-20260605",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "forms.email_validation",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
       "trialIndex": 1,
-      "completedAt": "2026-05-31T12:06:00.000Z",
+      "completedAt": "2026-06-05T16:23:48.000Z",
       "primaryPass": true,
       "failureTag": "pass",
-      "aggregateScore": 1.0,
+      "aggregateScore": 0.9873200017706015,
       "publicPassed": true,
       "hiddenPassed": true,
       "blockedEvaluationCount": 0,
-      "stepCount": 18,
-      "peakContextTokens": 14800,
-      "latencyMs": 41000,
-      "promptTokens": 5000,
-      "completionTokens": 1500,
-      "estimatedCostMicros": 135000
+      "stepCount": null,
+      "peakContextTokens": null,
+      "traceMetricStatus": {
+        "stepCount": "unknown",
+        "peakContextTokens": "unknown"
+      },
+      "latencyMs": 131947,
+      "promptTokens": null,
+      "completionTokens": null,
+      "tokenUsageStatus": {
+        "promptTokens": "unknown",
+        "completionTokens": "unknown"
+      },
+      "estimatedCostMicros": null
     },
     {
-      "trialId": "openai-counter-1",
-      "runId": "sample-run-2026-05-31",
-      "providerId": "openai",
-      "modelId": "gpt-5-sample",
-      "taskId": "sample.counter_bloc",
+      "trialId": "8438479206c3",
+      "runId": "spark-sandboxed-official-repeated-clean-20260605",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "lists.contact_search",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
       "trialIndex": 0,
-      "completedAt": "2026-05-31T12:08:00.000Z",
+      "completedAt": "2026-06-05T16:26:40.000Z",
       "primaryPass": true,
       "failureTag": "pass",
-      "aggregateScore": 1.0,
+      "aggregateScore": 0.9788203447737391,
       "publicPassed": true,
       "hiddenPassed": true,
       "blockedEvaluationCount": 0,
-      "stepCount": 17,
-      "peakContextTokens": 14200,
-      "latencyMs": 41000,
-      "promptTokens": 5100,
-      "completionTokens": 1700,
-      "estimatedCostMicros": 120000
+      "stepCount": null,
+      "peakContextTokens": null,
+      "traceMetricStatus": {
+        "stepCount": "unknown",
+        "peakContextTokens": "unknown"
+      },
+      "latencyMs": 144776,
+      "promptTokens": null,
+      "completionTokens": null,
+      "tokenUsageStatus": {
+        "promptTokens": "unknown",
+        "completionTokens": "unknown"
+      },
+      "estimatedCostMicros": null
     },
     {
-      "trialId": "openai-counter-2",
-      "runId": "sample-run-2026-05-31",
-      "providerId": "openai",
-      "modelId": "gpt-5-sample",
-      "taskId": "sample.counter_bloc",
+      "trialId": "63243656179b",
+      "runId": "spark-sandboxed-official-repeated-clean-20260605",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "lists.contact_search",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
       "trialIndex": 1,
-      "completedAt": "2026-05-31T12:10:00.000Z",
+      "completedAt": "2026-06-05T16:29:34.000Z",
+      "primaryPass": false,
+      "failureTag": "compile_failed",
+      "aggregateScore": 0.2,
+      "publicPassed": null,
+      "hiddenPassed": null,
+      "blockedEvaluationCount": 2,
+      "stepCount": null,
+      "peakContextTokens": null,
+      "traceMetricStatus": {
+        "stepCount": "unknown",
+        "peakContextTokens": "unknown"
+      },
+      "latencyMs": 158163,
+      "promptTokens": null,
+      "completionTokens": null,
+      "tokenUsageStatus": {
+        "promptTokens": "unknown",
+        "completionTokens": "unknown"
+      },
+      "estimatedCostMicros": null
+    },
+    {
+      "trialId": "a7e514c01d2e",
+      "runId": "spark-sandboxed-official-repeated-clean-20260605",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "navigation.auth_redirect_race",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 0,
+      "completedAt": "2026-06-05T16:33:35.000Z",
       "primaryPass": false,
       "failureTag": "hidden_verifier_failed",
-      "aggregateScore": 0.75,
+      "aggregateScore": 0.6,
       "publicPassed": true,
       "hiddenPassed": false,
       "blockedEvaluationCount": 0,
-      "stepCount": 19,
-      "peakContextTokens": 14600,
-      "latencyMs": 43000,
-      "promptTokens": 5300,
-      "completionTokens": 1900,
-      "estimatedCostMicros": 130000
+      "stepCount": null,
+      "peakContextTokens": null,
+      "traceMetricStatus": {
+        "stepCount": "unknown",
+        "peakContextTokens": "unknown"
+      },
+      "latencyMs": 210345,
+      "promptTokens": null,
+      "completionTokens": null,
+      "tokenUsageStatus": {
+        "promptTokens": "unknown",
+        "completionTokens": "unknown"
+      },
+      "estimatedCostMicros": null
     },
     {
-      "trialId": "openai-profile-1",
-      "runId": "sample-run-2026-05-31",
-      "providerId": "openai",
-      "modelId": "gpt-5-sample",
-      "taskId": "sample.profile_card",
-      "taskVersion": 1,
-      "benchmarkTrack": "agentic",
-      "trialIndex": 0,
-      "completedAt": "2026-05-31T12:12:00.000Z",
-      "primaryPass": true,
-      "failureTag": "pass",
-      "aggregateScore": 1.0,
-      "publicPassed": true,
-      "hiddenPassed": true,
-      "blockedEvaluationCount": 0,
-      "stepCount": 15,
-      "peakContextTokens": 13500,
-      "latencyMs": 44000,
-      "promptTokens": 5300,
-      "completionTokens": 1700,
-      "estimatedCostMicros": 120000
-    },
-    {
-      "trialId": "openai-profile-2",
-      "runId": "sample-run-2026-05-31",
-      "providerId": "openai",
-      "modelId": "gpt-5-sample",
-      "taskId": "sample.profile_card",
+      "trialId": "310853d02925",
+      "runId": "spark-sandboxed-official-repeated-clean-20260605",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "navigation.auth_redirect_race",
       "taskVersion": 1,
       "benchmarkTrack": "agentic",
       "trialIndex": 1,
-      "completedAt": "2026-05-31T12:14:00.000Z",
+      "completedAt": "2026-06-05T16:36:54.000Z",
+      "primaryPass": false,
+      "failureTag": "hidden_verifier_failed",
+      "aggregateScore": 0.6,
+      "publicPassed": true,
+      "hiddenPassed": false,
+      "blockedEvaluationCount": 0,
+      "stepCount": null,
+      "peakContextTokens": null,
+      "traceMetricStatus": {
+        "stepCount": "unknown",
+        "peakContextTokens": "unknown"
+      },
+      "latencyMs": 169930,
+      "promptTokens": null,
+      "completionTokens": null,
+      "tokenUsageStatus": {
+        "promptTokens": "unknown",
+        "completionTokens": "unknown"
+      },
+      "estimatedCostMicros": null
+    },
+    {
+      "trialId": "7ec73f66b286",
+      "runId": "spark-sandboxed-official-repeated-clean-20260605",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "platform.channel_mock",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 0,
+      "completedAt": "2026-06-05T16:38:47.000Z",
       "primaryPass": true,
       "failureTag": "pass",
-      "aggregateScore": 1.0,
+      "aggregateScore": 0.986062621216222,
       "publicPassed": true,
       "hiddenPassed": true,
       "blockedEvaluationCount": 0,
-      "stepCount": 15,
-      "peakContextTokens": 13500,
-      "latencyMs": 44000,
-      "promptTokens": 5300,
-      "completionTokens": 1700,
-      "estimatedCostMicros": 120000
+      "stepCount": null,
+      "peakContextTokens": null,
+      "traceMetricStatus": {
+        "stepCount": "unknown",
+        "peakContextTokens": "unknown"
+      },
+      "latencyMs": 85040,
+      "promptTokens": null,
+      "completionTokens": null,
+      "tokenUsageStatus": {
+        "promptTokens": "unknown",
+        "completionTokens": "unknown"
+      },
+      "estimatedCostMicros": null
+    },
+    {
+      "trialId": "8fab04fca413",
+      "runId": "spark-sandboxed-official-repeated-clean-20260605",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "platform.channel_mock",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 1,
+      "completedAt": "2026-06-05T16:41:05.000Z",
+      "primaryPass": true,
+      "failureTag": "pass",
+      "aggregateScore": 0.9873200017706015,
+      "publicPassed": true,
+      "hiddenPassed": true,
+      "blockedEvaluationCount": 0,
+      "stepCount": null,
+      "peakContextTokens": null,
+      "traceMetricStatus": {
+        "stepCount": "unknown",
+        "peakContextTokens": "unknown"
+      },
+      "latencyMs": 112155,
+      "promptTokens": null,
+      "completionTokens": null,
+      "tokenUsageStatus": {
+        "promptTokens": "unknown",
+        "completionTokens": "unknown"
+      },
+      "estimatedCostMicros": null
+    },
+    {
+      "trialId": "9b4538f71f3f",
+      "runId": "spark-sandboxed-official-repeated-clean-20260605",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "state.selection_controller",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 0,
+      "completedAt": "2026-06-05T16:43:32.000Z",
+      "primaryPass": true,
+      "failureTag": "pass",
+      "aggregateScore": 0.9837288388607879,
+      "publicPassed": true,
+      "hiddenPassed": true,
+      "blockedEvaluationCount": 0,
+      "stepCount": null,
+      "peakContextTokens": null,
+      "traceMetricStatus": {
+        "stepCount": "unknown",
+        "peakContextTokens": "unknown"
+      },
+      "latencyMs": 120218,
+      "promptTokens": null,
+      "completionTokens": null,
+      "tokenUsageStatus": {
+        "promptTokens": "unknown",
+        "completionTokens": "unknown"
+      },
+      "estimatedCostMicros": null
+    },
+    {
+      "trialId": "6ee6a03e518a",
+      "runId": "spark-sandboxed-official-repeated-clean-20260605",
+      "providerId": "droid",
+      "modelId": "custom:gpt-5.3-codex-spark---Codex",
+      "baseModelId": "custom:gpt-5.3-codex-spark---Codex",
+      "modelConfig": {
+        "autonomyMode": "medium",
+        "configuredModelSnapshot": "gpt-5.3-codex-spark",
+        "customModelDisplayName": "GPT 5.3 Codex Spark - Codex",
+        "customModelProvider": "openai",
+        "executionMode": "direct_prompt",
+        "factoryCustomModel": true,
+        "factoryCustomModelId": "custom:gpt-5.3-codex-spark---Codex",
+        "imageInputSupported": true,
+        "outputFormat": "text",
+        "temperature": {
+          "configured": false,
+          "status": "provider_default"
+        },
+        "toolPolicy": "disabled",
+        "toolsEnabled": false
+      },
+      "taskId": "state.selection_controller",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 1,
+      "completedAt": "2026-06-05T16:49:05.000Z",
+      "primaryPass": true,
+      "failureTag": "pass",
+      "aggregateScore": 0.9806378962996696,
+      "publicPassed": true,
+      "hiddenPassed": true,
+      "blockedEvaluationCount": 0,
+      "stepCount": null,
+      "peakContextTokens": null,
+      "traceMetricStatus": {
+        "stepCount": "unknown",
+        "peakContextTokens": "unknown"
+      },
+      "latencyMs": 306853,
+      "promptTokens": null,
+      "completionTokens": null,
+      "tokenUsageStatus": {
+        "promptTokens": "unknown",
+        "completionTokens": "unknown"
+      },
+      "estimatedCostMicros": null
     }
   ]
 }
