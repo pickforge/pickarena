@@ -5,10 +5,10 @@
 </script>
 
 <svelte:head>
-  <title>Dart Arena by Pickforge</title>
+  <title>PickArena by Pickforge Studio</title>
   <meta
     name="description"
-    content="Dart Arena by Pickforge benchmarks AI coding models on Dart and Flutter engineering tasks."
+    content="PickArena by Pickforge Studio benchmarks AI coding models on Dart and Flutter engineering tasks."
   />
 </svelte:head>
 

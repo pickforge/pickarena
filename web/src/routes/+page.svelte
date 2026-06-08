@@ -32,7 +32,7 @@
 
   const homeHref = `${base}/`;
   const pickforgeMarkSrc = `${base}/branding/pickforge_mark.png`;
-  const dartArenaLogoSrc = `${base}/branding/dart_arena_logo_horizontal_light.png`;
+  const pickArenaLogoSrc = `${base}/branding/pickarena-lockup-horizontal.png`;
 
   let leaderboard = $derived(data.leaderboard);
   let rankedModels = $derived(sortModels(leaderboard.models));
@@ -271,9 +271,9 @@
 
 <main class="shell">
   <header class="site-header">
-    <a class="brand-lockup" href={homeHref} aria-label="Dart Arena by Pickforge home">
+    <a class="brand-lockup" href={homeHref} aria-label="PickArena by Pickforge Studio home">
       <img src={pickforgeMarkSrc} alt="" width="44" height="44" />
-      <span>Dart Arena by Pickforge</span>
+      <span>PickArena by Pickforge Studio</span>
     </a>
     <nav class="nav-links" aria-label="Page sections">
       <a href="#leaderboard">Leaderboard</a>
@@ -288,13 +288,13 @@
     <div class="hero-content">
       <img
         class="hero-logo"
-        src={dartArenaLogoSrc}
-        alt="Dart Arena"
+        src={pickArenaLogoSrc}
+        alt="PickArena"
       />
       <p class="eyebrow">Static public benchmark</p>
       <h1 id="hero-title">Benchmark AI coding models on Dart and Flutter engineering tasks.</h1>
       <p class="lede">
-        Dart Arena uses a Dart/Flutter runner to execute coding tasks, aggregate
+        PickArena uses a Dart/Flutter runner to execute coding tasks, aggregate
         compatible public results, and publish a static leaderboard export for
         comparing model quality, speed, and efficiency.
       </p>
@@ -403,8 +403,8 @@
             Each point represents a model row with a known pass rate and known
             {metricLabel(chartMode)}. Lower x values are more efficient.
           </desc>
-          <line x1="72" y1="282" x2="588" y2="282" stroke="rgba(24,21,17,0.24)" />
-          <line x1="72" y1="48" x2="72" y2="282" stroke="rgba(24,21,17,0.24)" />
+          <line x1="72" y1="282" x2="588" y2="282" stroke="rgba(242,242,243,0.24)" />
+          <line x1="72" y1="48" x2="72" y2="282" stroke="rgba(242,242,243,0.24)" />
           <text class="axis-label" x="72" y="314">lower {chartMode}</text>
           <text class="axis-label" x="500" y="314">higher {chartMode}</text>
           <text class="axis-label" x="18" y="58">100%</text>
@@ -415,7 +415,7 @@
               y1={282 - guide * 218}
               x2="588"
               y2={282 - guide * 218}
-              stroke="rgba(24,21,17,0.09)"
+              stroke="rgba(242,242,243,0.09)"
             />
           {/each}
           {#each chartRows as row}
@@ -425,7 +425,7 @@
                 cy={row.y}
                 r={row.model.lowSample ? 8 : 10}
                 fill="var(--accent)"
-                stroke="#181511"
+                stroke="#0a0a0b"
                 stroke-width="2"
               />
               <text class="point-label" x={Math.min(row.x + 12, 486)} y={row.y - 10}>
@@ -799,8 +799,8 @@
   <footer class="site-footer">
     <div class="footer-brand">
       <img src={pickforgeMarkSrc} alt="" width="32" height="32" />
-      <strong>Pickforge</strong>
+      <strong>Pickforge Studio</strong>
     </div>
-    <span>Dart Arena static data · leaderboard.v{leaderboard.schemaVersion}</span>
+    <span>PickArena static data · leaderboard.v{leaderboard.schemaVersion}</span>
   </footer>
 </main>

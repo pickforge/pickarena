@@ -134,9 +134,9 @@ Future<Map<String, Object?>> buildLeaderboardExport(
     'schemaVersion': 1,
     'generatedAt': generatedAt.toIso8601String(),
     'benchmark': <String, Object?>{
-      'name': 'Dart Arena',
-      'brand': 'Pickforge',
-      'title': 'Dart Arena by Pickforge',
+      'name': 'PickArena',
+      'brand': 'Pickforge Studio',
+      'title': 'PickArena by Pickforge Studio',
       'version': dartArenaBenchmarkVersion,
       'taskSetId': _taskSetId(taskKeys),
       'evaluatorSchemaVersion': dartArenaEvaluatorSchemaVersion,

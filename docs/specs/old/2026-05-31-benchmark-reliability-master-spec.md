@@ -1,6 +1,6 @@
 # Dart Arena Benchmark Reliability Master Spec
 
-Status: archived; superseded by `docs/specs/2026-05-31-dart-arena-by-pickforge-master.md`
+Status: archived; superseded by `docs/specs/2026-05-31-pickarena-by-pickforge-studio-master.md`
 Created: 2026-05-31
 
 ## Goal

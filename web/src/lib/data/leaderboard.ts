@@ -224,7 +224,7 @@ const emptyLeaderboard: LeaderboardData = {
   schemaVersion: 1,
   generatedAt: null,
   benchmark: {
-    title: 'Dart Arena by Pickforge',
+    title: 'PickArena by Pickforge Studio',
     version: null,
     taskSetId: null,
     evaluatorSchemaVersion: 0,

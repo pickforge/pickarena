@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "Dart Arena contributors" "\0"
-            VALUE "FileDescription", "Dart Arena" "\0"
+            VALUE "CompanyName", "Pickforge Studio" "\0"
+            VALUE "FileDescription", "PickArena" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "dart_arena" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 Dart Arena contributors" "\0"
-            VALUE "OriginalFilename", "dart_arena.exe" "\0"
-            VALUE "ProductName", "Dart Arena" "\0"
+            VALUE "InternalName", "pickarena" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Pickforge Studio" "\0"
+            VALUE "OriginalFilename", "pickarena.exe" "\0"
+            VALUE "ProductName", "PickArena" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

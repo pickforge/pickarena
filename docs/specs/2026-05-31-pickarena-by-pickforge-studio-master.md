@@ -1,4 +1,4 @@
-# Dart Arena by Pickforge — Master Spec
+# PickArena by Pickforge Studio — Master Spec
 
 Status: active consolidated master spec
 Created: 2026-05-31
@@ -6,7 +6,7 @@ Updated: 2026-06-02
 
 ## Goal
 
-Create a trustworthy Dart and Flutter AI coding benchmark under the Pickforge brand, with the Flutter/Dart app as the benchmark runner and source of truth, a static public web surface for leaderboard publishing, objective-first scoring, reproducible exports, cost/efficiency reporting, and DeepSWE-style task/verifier rigor.
+Create a trustworthy Dart and Flutter AI coding benchmark under the Pickforge Studio brand, with the Flutter/Dart app as the benchmark runner and source of truth, a static public web surface for leaderboard publishing, objective-first scoring, reproducible exports, cost/efficiency reporting, and DeepSWE-style task/verifier rigor.
 
 ## Current status and execution posture
 
@@ -47,9 +47,9 @@ Official benchmark status: **release-report ready for the current local candidat
 
 ## Product direction
 
-- Public name: **Dart Arena by Pickforge**
+- Public name: **PickArena by Pickforge Studio**
 - Positioning: a benchmark for comparing AI coding models on Dart and Flutter engineering tasks.
-- Visual identity: Pickforge near-black geometric shapes, orange dot accent, white/near-white canvas, bracket/dot motif from `pickforge_mark.png`.
+- Visual identity: Pickforge Studio near-black geometric shapes, orange dot accent, white/near-white canvas, bracket/dot motif from `pickforge_mark.png`.
 
 ## Target architecture
 
@@ -148,9 +148,9 @@ Initial public contract:
   "schemaVersion": 1,
   "generatedAt": "2026-05-31T00:00:00.000Z",
   "benchmark": {
-    "name": "Dart Arena",
-    "brand": "Pickforge",
-    "title": "Dart Arena by Pickforge",
+    "name": "PickArena",
+    "brand": "Pickforge Studio",
+    "title": "PickArena by Pickforge Studio",
     "track": "agentic",
     "dataPolicy": "aggregate-compatible"
   },
@@ -172,14 +172,14 @@ Use Bun + Svelte/SvelteKit as a static site under `web/`.
 
 Core sections:
 
-1. Header with Pickforge mark and **Dart Arena by Pickforge**
+1. Header with Pickforge Studio mark and **PickArena by Pickforge Studio**
 2. Hero with benchmark summary and primary CTA
 3. Key metrics cards
 4. Pass-rate vs cost/time scatter plot
 5. Ranked model table
 6. Task examples
 7. Methodology/provenance section
-8. Footer with Pickforge branding
+8. Footer with Pickforge Studio branding
 
 The first implementation should be static and data-driven from `leaderboard.v1.json`. Add richer interactivity only after the contract is stable.
 
@@ -210,7 +210,7 @@ During the monorepo migration, keep canonical Flutter assets under `app/assets/b
    - Load sample `leaderboard.v1.json`.
 
 4. **Landing page UI**
-   - Implement Pickforge-styled page sections.
+   - Implement Pickforge Studio-styled page sections.
    - Add responsive layout and accessible tables/charts.
 
 5. **Validation and polish**
@@ -299,7 +299,7 @@ These invariants should be preserved across all future work:
 
 ## Benchmark tracks
 
-Dart Arena should keep separate tracks because they measure different abilities:
+PickArena should keep separate tracks because they measure different abilities:
 
 - **Fast Dart codegen track**: small deterministic tasks for quick local model checks.
 - **Flutter widget/UI track**: visible UI behavior, semantics, golden, localization, responsive layout, interaction, and accessibility tests.
@@ -321,7 +321,7 @@ Good agentic Flutter task categories:
 
 ## DeepSWE alignment
 
-DeepSWE is a useful north star for turning Dart Arena from a useful local benchmark into a trusted public benchmark. Dart Arena is directionally aligned, especially after objective scoring, hidden verifiers, task QA, and headless exports, but it is not yet DeepSWE-grade.
+DeepSWE is a useful north star for turning PickArena from a useful local benchmark into a trusted public benchmark. PickArena is directionally aligned, especially after objective scoring, hidden verifiers, task QA, and headless exports, but it is not yet DeepSWE-grade.
 
 Observed DeepSWE properties:
 
@@ -976,7 +976,7 @@ Implementation progress:
 
 ## Official release readiness gates
 
-Dart Arena should not publish an official benchmark claim until all gates below pass for the selected release:
+PickArena should not publish an official benchmark claim until all gates below pass for the selected release:
 
 ### Corpus gates
 

@@ -98,7 +98,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dart Arena'),
+        title: const Text('PickArena'),
         actions: [
           IconButton(
             icon: const Icon(Icons.history),

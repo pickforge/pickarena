@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="app/assets/branding/dart_arena_logo_horizontal_dark.png" alt="Dart Arena logo" height="250">
+  <img src="app/assets/branding/pickarena-lockup-horizontal.png" alt="PickArena logo" height="250">
 </p>
 
-# Dart Arena
+# PickArena
 
-Dart Arena is a Flutter desktop app for benchmarking AI coding models on Dart and Flutter tasks. It helps compare model quality across code generation, agentic execution, hidden verification, repeated trials, and human preference review.
+PickArena is a Flutter desktop app for benchmarking AI coding models on Dart and Flutter tasks. It helps compare model quality across code generation, agentic execution, hidden verification, repeated trials, and human preference review.
 
 ## What it measures
 
@@ -29,7 +29,7 @@ Use `windows` or `macos` instead of `linux` when running on those hosts.
 
 ## Provider setup
 
-Open **Settings** in the app to configure model providers. Dart Arena currently supports:
+Open **Settings** in the app to configure model providers. PickArena currently supports:
 
 - Ollama Local and Ollama Cloud
 - OpenCode Go
@@ -52,7 +52,7 @@ API keys and provider base URLs are stored through platform secure storage. Do n
 
 ## Official Bubblewrap run and website publishing
 
-Use this flow when you want to run the private official agentic corpus, publish the result to the static Pickforge/Dart Arena web leaderboard, and keep the evidence reproducible.
+Use this flow when you want to run the private official agentic corpus, publish the result to the static Pickforge Studio/PickArena web leaderboard, and keep the evidence reproducible.
 
 Prerequisites:
 
@@ -134,7 +134,7 @@ Deploying the website:
 
 - If Vercel, Netlify, or another static host is connected to `main`, pushing the data commit is enough for the host to rebuild.
 - Otherwise, run `bun run web:smoke` and deploy the generated `web/build/` directory.
-- For a non-root path such as GitHub Pages at `/dart_arena`, build with `PUBLIC_BASE_PATH=/dart_arena bun run web:smoke` and deploy `web/build/`.
+- For a non-root path such as GitHub Pages at `/pickarena`, build with `PUBLIC_BASE_PATH=/pickarena bun run web:smoke` and deploy `web/build/`.
 
 ## Validation
 
@@ -191,10 +191,10 @@ flutter test
 
 ## License
 
-Dart Arena is released under the MIT License. See [LICENSE](LICENSE).
+PickArena is released under the MIT License. See [LICENSE](LICENSE).
 
 ---
 
 <p align="center">
-  <img src="app/assets/branding/pickforge_logo.png" alt="Pickforge" width="160">
+  <img src="app/assets/branding/pickforge_logo.png" alt="Pickforge Studio" width="180">
 </p>

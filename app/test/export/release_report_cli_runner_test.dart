@@ -8778,137 +8778,126 @@ void main() {
     expect(reportingGate['privacyIssueCount'], 7);
   });
 
-  test(
-    'blocks report when run provenance lacks release safety gates',
-    () async {
-      final tmp = await Directory.systemTemp.createTemp('release_report_gate_');
-      addTearDown(() async {
-        if (await tmp.exists()) await tmp.delete(recursive: true);
-      });
-      final leaderboardPath = p.join(tmp.path, 'leaderboard.v1.json');
-      final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
-      await taskQaDir.create(recursive: true);
-      final taskQaSummaryPath = p.join(
-        taskQaDir.path,
-        'admission_summary.json',
-      );
-      final reportPath = p.join(taskQaDir.path, 'tasks', 'a', 'report.json');
-      await Directory(p.dirname(reportPath)).create(recursive: true);
-      await File(leaderboardPath).writeAsString(
-        _prettyJson(
-          _leaderboardJson(sampleCount: 2, includeJudgeOverhead: false),
-        ),
-      );
-      await File(
+  test('blocks report when run provenance lacks release safety gates', () async {
+    final tmp = await Directory.systemTemp.createTemp('release_report_gate_');
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+    final leaderboardPath = p.join(tmp.path, 'leaderboard.v1.json');
+    final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
+    await taskQaDir.create(recursive: true);
+    final taskQaSummaryPath = p.join(taskQaDir.path, 'admission_summary.json');
+    final reportPath = p.join(taskQaDir.path, 'tasks', 'a', 'report.json');
+    await Directory(p.dirname(reportPath)).create(recursive: true);
+    await File(leaderboardPath).writeAsString(
+      _prettyJson(
+        _leaderboardJson(sampleCount: 2, includeJudgeOverhead: false),
+      ),
+    );
+    await File(
+      taskQaSummaryPath,
+    ).writeAsString(_prettyJson(_taskQaSummaryJson(reportPath: reportPath)));
+    await File(reportPath).writeAsString(_prettyJson(_taskQaReportJson()));
+    final databasePath = p.join(tmp.path, 'dart_arena.sqlite');
+    await _seedDatabase(
+      databasePath,
+      sandboxEnforced: false,
+      includeTaskExecutionPolicy: false,
+      includeSdkVersions: false,
+      includeDependencySnapshot: false,
+      includePricingRegistry: false,
+    );
+    final outPath = p.join(tmp.path, 'release_report.v1.json');
+    final stdoutLines = <String>[];
+    final stderrLines = <String>[];
+
+    final exitCode = await runReleaseReportCli(
+      [
+        '--leaderboard',
+        leaderboardPath,
+        '--task-qa-summary',
         taskQaSummaryPath,
-      ).writeAsString(_prettyJson(_taskQaSummaryJson(reportPath: reportPath)));
-      await File(reportPath).writeAsString(_prettyJson(_taskQaReportJson()));
-      final databasePath = p.join(tmp.path, 'dart_arena.sqlite');
-      await _seedDatabase(
+        '--database',
         databasePath,
-        sandboxEnforced: false,
-        includeTaskExecutionPolicy: false,
-        includeSdkVersions: false,
-        includeDependencySnapshot: false,
-        includePricingRegistry: false,
-      );
-      final outPath = p.join(tmp.path, 'release_report.v1.json');
-      final stdoutLines = <String>[];
-      final stderrLines = <String>[];
+        '--out',
+        outPath,
+        '--release-id',
+        '2026-06-gated',
+        '--fail-on-blocked',
+      ],
+      dependencies: ReleaseReportCliDependencies(
+        now: () => DateTime.utc(2026, 6, 3, 17),
+      ),
+      stdoutWriter: stdoutLines.add,
+      stderrWriter: stderrLines.add,
+    );
 
-      final exitCode = await runReleaseReportCli(
-        [
-          '--leaderboard',
-          leaderboardPath,
-          '--task-qa-summary',
-          taskQaSummaryPath,
-          '--database',
-          databasePath,
-          '--out',
-          outPath,
-          '--release-id',
-          '2026-06-gated',
-          '--fail-on-blocked',
-        ],
-        dependencies: ReleaseReportCliDependencies(
-          now: () => DateTime.utc(2026, 6, 3, 17),
-        ),
-        stdoutWriter: stdoutLines.add,
-        stderrWriter: stderrLines.add,
-      );
-
-      expect(exitCode, 1);
-      expect(stdoutLines, isEmpty);
-      expect(stderrLines.single, contains('"status":"blocked"'));
-      final report =
-          jsonDecode(await File(outPath).readAsString())
-              as Map<String, Object?>;
-      expect(report['status'], 'blocked');
-      final blockers = (report['blockers']! as List<Object?>).join('\n');
-      expect(
-        blockers,
-        contains(
-          'Run run-1 does not record generated-code sandbox enforcement',
-        ),
-      );
-      expect(
-        blockers,
-        contains('Run run-1 has incomplete task execution policy provenance'),
-      );
-      expect(
-        blockers,
-        contains(
-          'Run run-1 has incomplete network-disabled task policy provenance',
-        ),
-      );
-      expect(
-        blockers,
-        contains(
-          'Run run-1 has incomplete or unenforced task resource limit provenance',
-        ),
-      );
-      expect(
-        blockers,
-        contains('Run run-1 has incomplete SDK version provenance'),
-      );
-      expect(
-        blockers,
-        contains('Run run-1 has incomplete dependency lockfile provenance'),
-      );
-      expect(
-        blockers,
-        contains('Run run-1 has incomplete pricing registry provenance'),
-      );
-      expect(
-        blockers,
-        contains('Leaderboard source has incomplete judge overhead summary'),
-      );
-      final provenance = report['provenance']! as Map<String, Object?>;
-      expect(provenance['sandboxEnforcedRunCount'], 0);
-      expect(provenance['taskExecutionPolicyRunCount'], 0);
-      expect(provenance['networkDisabledTaskPolicyRunCount'], 0);
-      expect(provenance['taskResourceLimitRunCount'], 0);
-      expect(provenance['sdkVersionRunCount'], 0);
-      expect(provenance['dependencySnapshotRunCount'], 0);
-      expect(provenance['pricingRegistryRunCount'], 0);
-      final readinessGates = report['readinessGates']! as Map<String, Object?>;
-      final executionGate =
-          readinessGates['execution']! as Map<String, Object?>;
-      expect(executionGate['status'], 'blocked');
-      expect(executionGate['sourceSandboxEnforcedRunCount'], 1);
-      expect(executionGate['storedSandboxEnforcedRunCount'], 0);
-      expect(executionGate['storedTaskExecutionPolicyRunCount'], 0);
-      expect(executionGate['storedNetworkDisabledTaskPolicyRunCount'], 0);
-      expect(executionGate['storedTaskResourceLimitRunCount'], 0);
-      expect(executionGate['storedSdkVersionRunCount'], 0);
-      expect(executionGate['storedDependencySnapshotRunCount'], 0);
-      expect(executionGate['storedPricingRegistryRunCount'], 0);
-      final reportingGate =
-          readinessGates['reporting']! as Map<String, Object?>;
-      expect(reportingGate['status'], 'blocked');
-      expect(reportingGate['judgeOverheadStatus'], 'incomplete');
-    },
-  );
+    expect(exitCode, 1);
+    expect(stdoutLines, isEmpty);
+    expect(stderrLines.single, contains('"status":"blocked"'));
+    final report =
+        jsonDecode(await File(outPath).readAsString()) as Map<String, Object?>;
+    expect(report['status'], 'blocked');
+    final blockers = (report['blockers']! as List<Object?>).join('\n');
+    expect(
+      blockers,
+      contains('Run run-1 does not record generated-code sandbox enforcement'),
+    );
+    expect(
+      blockers,
+      contains('Run run-1 has incomplete task execution policy provenance'),
+    );
+    expect(
+      blockers,
+      contains(
+        'Run run-1 has incomplete network-disabled task policy provenance',
+      ),
+    );
+    expect(
+      blockers,
+      contains(
+        'Run run-1 has incomplete or unenforced task resource limit provenance',
+      ),
+    );
+    expect(
+      blockers,
+      contains('Run run-1 has incomplete SDK version provenance'),
+    );
+    expect(
+      blockers,
+      contains('Run run-1 has incomplete dependency lockfile provenance'),
+    );
+    expect(
+      blockers,
+      contains('Run run-1 has incomplete pricing registry provenance'),
+    );
+    expect(
+      blockers,
+      contains('Leaderboard source has incomplete judge overhead summary'),
+    );
+    final provenance = report['provenance']! as Map<String, Object?>;
+    expect(provenance['sandboxEnforcedRunCount'], 0);
+    expect(provenance['taskExecutionPolicyRunCount'], 0);
+    expect(provenance['networkDisabledTaskPolicyRunCount'], 0);
+    expect(provenance['taskResourceLimitRunCount'], 0);
+    expect(provenance['sdkVersionRunCount'], 0);
+    expect(provenance['dependencySnapshotRunCount'], 0);
+    expect(provenance['pricingRegistryRunCount'], 0);
+    final readinessGates = report['readinessGates']! as Map<String, Object?>;
+    final executionGate = readinessGates['execution']! as Map<String, Object?>;
+    expect(executionGate['status'], 'blocked');
+    expect(executionGate['sourceSandboxEnforcedRunCount'], 1);
+    expect(executionGate['storedSandboxEnforcedRunCount'], 0);
+    expect(executionGate['storedTaskExecutionPolicyRunCount'], 0);
+    expect(executionGate['storedNetworkDisabledTaskPolicyRunCount'], 0);
+    expect(executionGate['storedTaskResourceLimitRunCount'], 0);
+    expect(executionGate['storedSdkVersionRunCount'], 0);
+    expect(executionGate['storedDependencySnapshotRunCount'], 0);
+    expect(executionGate['storedPricingRegistryRunCount'], 0);
+    final reportingGate = readinessGates['reporting']! as Map<String, Object?>;
+    expect(reportingGate['status'], 'blocked');
+    expect(reportingGate['judgeOverheadStatus'], 'incomplete');
+  });
 
   test(
     'blocks report when hidden verifier flake evidence is below release minimum',
@@ -10529,9 +10518,9 @@ Map<String, Object?> _leaderboardJson({
   'schemaVersion': 1,
   'generatedAt': '2026-06-03T12:00:00.000Z',
   'benchmark': {
-    'name': 'Dart Arena',
-    'brand': 'Pickforge',
-    'title': 'Dart Arena by Pickforge',
+    'name': 'PickArena',
+    'brand': 'Pickforge Studio',
+    'title': 'PickArena by Pickforge Studio',
     if (includeBenchmarkReleaseMetadata) ...{
       'version': '2026-05-31-master-spec',
       'taskSetId': 'taskset-test',

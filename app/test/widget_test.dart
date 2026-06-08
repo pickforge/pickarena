@@ -37,6 +37,6 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Dart Arena'), findsOneWidget);
+    expect(find.text('PickArena'), findsOneWidget);
   });
 }

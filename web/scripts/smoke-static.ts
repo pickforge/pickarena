@@ -10,13 +10,13 @@ const buildRoot = resolve(webRoot, 'build');
 const indexPath = resolve(buildRoot, 'index.html');
 const leaderboardPath = resolve(buildRoot, 'data', 'leaderboard.v1.json');
 const requiredBrandingAssets = [
-  'dart_arena_logo_horizontal_light.png',
-  'dart_arena_mark.png',
+  'pickarena-lockup-horizontal.png',
+  'pickarena-mark-raster.png',
   'pickforge_logo.png',
   'pickforge_mark.png'
 ];
 const requiredAnchors = ['leaderboard', 'tasks', 'methodology'];
-const publicTitle = 'Dart Arena by Pickforge';
+const publicTitle = 'PickArena by Pickforge Studio';
 const basePath = normalizeBasePath(process.env.PUBLIC_BASE_PATH ?? '');
 const appAssetPath = `${basePath}/_app/`;
 const brandingAssetPath = `${basePath}/branding/`;

@@ -4,7 +4,7 @@
   "workspaces": {
     "": {},
     "web": {
-      "name": "dart-arena-web",
+      "name": "pickarena-web",
       "version": "0.0.0",
       "devDependencies": {
         "@sveltejs/adapter-static": "^3.0.8",
@@ -165,7 +165,7 @@
 
     "cookie": ["cookie@0.6.0", "", {}, "sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw=="],
 
-    "dart-arena-web": ["dart-arena-web@workspace:web"],
+    "pickarena-web": ["pickarena-web@workspace:web"],
 
     "deepmerge": ["deepmerge@4.3.1", "", {}, "sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A=="],
 
