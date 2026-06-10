@@ -1,10 +1,14 @@
 <p align="center">
-  <img src="app/assets/branding/pickarena-lockup-horizontal.png" alt="PickArena logo" height="250">
+  <img src="app/assets/branding/pickarena-lockup-horizontal.svg" alt="PickArena" width="560">
 </p>
 
 # PickArena
 
-PickArena is a Flutter desktop app for benchmarking AI coding models on Dart and Flutter tasks. It helps compare model quality across code generation, agentic execution, hidden verification, repeated trials, and human preference review.
+A benchmark arena for AI coding models on real Dart and Flutter tasks. PickArena is a Flutter desktop app that compares model quality across code generation, agentic execution, hidden verification, repeated trials, and human preference review — then publishes reproducible leaderboards.
+
+PickForge builds the app. PickLab lets agents see, run, and test it. PickArena measures the results.
+
+Local-first. Open source. Built for people who ship.
 
 ## What it measures
 
@@ -15,17 +19,23 @@ PickArena is a Flutter desktop app for benchmarking AI coding models on Dart and
 - **Provenance and exports:** save run manifests, environment details, summaries, CSV/Markdown/JSON reports, and reproducible artifact bundles.
 - **Headless CI smoke:** exercise the headless benchmark runner in GitHub Actions for release confidence.
 
-## Quick start
+## Quickstart
 
 Install Flutter for your desktop platform, then run:
 
 ```sh
 cd app
 flutter pub get
-flutter run -d linux
+flutter run -d linux   # or -d windows, -d macos
 ```
 
-Use `windows` or `macos` instead of `linux` when running on those hosts.
+### A benchmark run
+
+Configure at least one provider in **Settings**, select **New Run**, choose tasks, providers, models, evaluator settings, concurrency, and trial count — then start the run and monitor progress. Review the leaderboard, inspect task-run details, export run bundles, or compare outputs in the review queue.
+
+<p align="center">
+  <img src="app/assets/branding/pickarena-benchmark-mock.svg" alt="PICKARENA · BENCHMARK RUN — leaderboard, live trials with hidden verifiers, human review queue, and static-site publishing" width="900">
+</p>
 
 ## Provider setup
 
@@ -41,14 +51,6 @@ Open **Settings** in the app to configure model providers. PickArena currently s
 - local Factory Droid execution
 
 API keys and provider base URLs are stored through platform secure storage. Do not commit keys, exported credentials, local databases, or benchmark work directories.
-
-## Running benchmarks
-
-1. Configure at least one provider in **Settings**.
-2. Select **New Run**.
-3. Choose tasks, providers, models, evaluator settings, concurrency, and trial count.
-4. Start the run and monitor progress.
-5. Review the leaderboard, inspect task-run details, export run bundles, or compare outputs in the review queue.
 
 ## Official Bubblewrap run and website publishing
 
@@ -136,26 +138,6 @@ Deploying the website:
 - Otherwise, run `bun run web:smoke` and deploy the generated `web/build/` directory.
 - For a non-root path such as GitHub Pages at `/pickarena`, build with `PUBLIC_BASE_PATH=/pickarena bun run web:smoke` and deploy `web/build/`.
 
-## Validation
-
-Use these commands before submitting changes:
-
-```sh
-cd app
-flutter pub get
-dart format --set-exit-if-changed lib test
-flutter analyze
-flutter test
-flutter build linux --debug
-```
-
-The CI smoke workflow also runs:
-
-```sh
-cd app
-flutter test test/headless/headless_benchmark_runner_test.dart
-```
-
 ## Desktop builds
 
 Build debug desktop artifacts from the matching host OS:
@@ -176,25 +158,36 @@ Cross-building Windows or macOS from Linux is not supported by Flutter, so run t
 - Hidden verifier fixtures are part of the local benchmark corpus and should not be exposed to model prompts during a run.
 - The app does not require committing local databases, caches, generated build outputs, or exported benchmark artifacts.
 
-## Contributing
+## Development
 
-Contributions should keep the package/import name as `dart_arena`, preserve benchmark reproducibility, and include tests for scoring, task fixtures, or UI behavior when changed.
-
-Before opening a pull request:
+Use these commands before submitting changes:
 
 ```sh
 cd app
+flutter pub get
 dart format --set-exit-if-changed lib test
 flutter analyze
 flutter test
+flutter build linux --debug
 ```
+
+The CI smoke workflow also runs:
+
+```sh
+cd app
+flutter test test/headless/headless_benchmark_runner_test.dart
+```
+
+Contributions should keep the package/import name as `dart_arena`, preserve benchmark reproducibility, and include tests for scoring, task fixtures, or UI behavior when changed.
 
 ## License
 
-PickArena is released under the MIT License. See [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
 
 ---
 
 <p align="center">
-  <img src="app/assets/branding/pickforge_logo.png" alt="Pickforge Studio" width="180">
+  <a href="https://pickforge.dev">
+    <img src="app/assets/branding/pickforge-studio-footer.svg" alt="Pickforge Studio — local-first, open source, built for people who ship" width="560">
+  </a>
 </p>
