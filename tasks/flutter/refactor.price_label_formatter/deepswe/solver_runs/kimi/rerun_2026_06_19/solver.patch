@@ -1,0 +1,170 @@
+diff --git a/lib/cart_line_price_row.dart b/lib/cart_line_price_row.dart
+index 47b2cd4..377b4b0 100644
+--- a/lib/cart_line_price_row.dart
++++ b/lib/cart_line_price_row.dart
+@@ -26,18 +26,6 @@ class CartLinePriceRow extends StatelessWidget {
+   final int unitPriceCents;
+   final PriceLabelFormatter formatter;
+ 
+-  String _formatCents(int cents) {
+-    if (cents == 0) {
+-      return 'Free';
+-    }
+-    final dollars = cents ~/ 100;
+-    final remainder = cents % 100;
+-    if (remainder == 0) {
+-      return '\$$dollars';
+-    }
+-    return '\$$dollars.${remainder.toString().padLeft(2, '0')}';
+-  }
+-
+   @override
+   Widget build(BuildContext context) {
+     return Row(
+@@ -45,8 +33,11 @@ class CartLinePriceRow extends StatelessWidget {
+       children: <Widget>[
+         Text(name, key: nameTextKey),
+         Text('Qty: $quantity', key: quantityTextKey),
+-        Text(_formatCents(unitPriceCents), key: unitPriceTextKey),
+-        Text(_formatCents(quantity * unitPriceCents), key: lineTotalTextKey),
++        Text(formatter.formatCents(unitPriceCents), key: unitPriceTextKey),
++        Text(
++          formatter.formatCents(quantity * unitPriceCents),
++          key: lineTotalTextKey,
++        ),
+       ],
+     );
+   }
+diff --git a/lib/checkout_price_summary.dart b/lib/checkout_price_summary.dart
+index 6a09c89..9051e71 100644
+--- a/lib/checkout_price_summary.dart
++++ b/lib/checkout_price_summary.dart
+@@ -24,27 +24,15 @@ class CheckoutPriceSummary extends StatelessWidget {
+   final int totalCents;
+   final PriceLabelFormatter formatter;
+ 
+-  String _formatCents(int cents) {
+-    if (cents == 0) {
+-      return 'Free';
+-    }
+-    final dollars = cents ~/ 100;
+-    final remainder = cents % 100;
+-    if (remainder == 0) {
+-      return '\$$dollars';
+-    }
+-    return '\$$dollars.${remainder.toString().padLeft(2, '0')}';
+-  }
+-
+   @override
+   Widget build(BuildContext context) {
+     return Column(
+       crossAxisAlignment: CrossAxisAlignment.start,
+       mainAxisSize: MainAxisSize.min,
+       children: <Widget>[
+-        Text(_formatCents(subtotalCents), key: subtotalTextKey),
+-        Text(_formatCents(shippingCents), key: shippingTextKey),
+-        Text(_formatCents(totalCents), key: totalTextKey),
++        Text(formatter.formatCents(subtotalCents), key: subtotalTextKey),
++        Text(formatter.formatCents(shippingCents), key: shippingTextKey),
++        Text(formatter.formatCents(totalCents), key: totalTextKey),
+       ],
+     );
+   }
+diff --git a/lib/price_label_formatter.dart b/lib/price_label_formatter.dart
+index ae6c832..bd29777 100644
+--- a/lib/price_label_formatter.dart
++++ b/lib/price_label_formatter.dart
+@@ -3,12 +3,44 @@ class PriceLabelFormatter {
+   const PriceLabelFormatter();
+ 
+   String formatCents(int cents) {
++    if (cents == 0) {
++      return 'Free';
++    }
+     final dollars = cents ~/ 100;
+     final remainder = cents % 100;
+-    return '\$$dollars.${remainder.toString().padLeft(2, '0')}';
++    final dollarString = _formatDollars(dollars);
++    if (remainder == 0) {
++      return '\$$dollarString';
++    }
++    return '\$$dollarString.${remainder.toString().padLeft(2, '0')}';
+   }
+ 
+   String formatSaleLabel({required int priceCents, int? compareAtCents}) {
+-    return formatCents(priceCents);
++    final current = formatCents(priceCents);
++    final compareAt = compareAtCents;
++    if (compareAt != null && compareAt > priceCents) {
++      return '$current (was ${formatCents(compareAt)})';
++    }
++    return current;
++  }
++
++  String _formatDollars(int dollars) {
++    if (dollars == 0) {
++      return '0';
++    }
++    final negative = dollars < 0;
++    var value = negative ? -dollars : dollars;
++    final groups = <String>[];
++    while (value > 0) {
++      final group = value % 1000;
++      value ~/= 1000;
++      if (groups.isEmpty) {
++        groups.add(group.toString());
++      } else {
++        groups.add(group.toString().padLeft(3, '0'));
++      }
++    }
++    final result = groups.reversed.join(',');
++    return negative ? '-$result' : result;
+   }
+ }
+diff --git a/lib/product_price_tile.dart b/lib/product_price_tile.dart
+index 25151c4..62d919d 100644
+--- a/lib/product_price_tile.dart
++++ b/lib/product_price_tile.dart
+@@ -24,27 +24,6 @@ class ProductPriceTile extends StatelessWidget {
+   final int? compareAtCents;
+   final PriceLabelFormatter formatter;
+ 
+-  String _formatCents(int cents) {
+-    if (cents == 0) {
+-      return 'Free';
+-    }
+-    final dollars = cents ~/ 100;
+-    final remainder = cents % 100;
+-    if (remainder == 0) {
+-      return '\$$dollars';
+-    }
+-    return '\$$dollars.${remainder.toString().padLeft(2, '0')}';
+-  }
+-
+-  String _formatSaleLabel() {
+-    final current = _formatCents(priceCents);
+-    final compareAt = compareAtCents;
+-    if (compareAt != null && compareAt > priceCents) {
+-      return '$current (was ${_formatCents(compareAt)})';
+-    }
+-    return current;
+-  }
+-
+   @override
+   Widget build(BuildContext context) {
+     return Column(
+@@ -52,7 +31,13 @@ class ProductPriceTile extends StatelessWidget {
+       mainAxisSize: MainAxisSize.min,
+       children: <Widget>[
+         Text(title, key: titleTextKey),
+-        Text(_formatSaleLabel(), key: priceTextKey),
++        Text(
++          formatter.formatSaleLabel(
++            priceCents: priceCents,
++            compareAtCents: compareAtCents,
++          ),
++          key: priceTextKey,
++        ),
+       ],
+     );
+   }

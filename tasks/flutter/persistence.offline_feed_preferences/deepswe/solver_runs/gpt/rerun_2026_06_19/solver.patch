@@ -1,0 +1,33 @@
+diff --git a/lib/offline_feed_preferences.dart b/lib/offline_feed_preferences.dart
+index ea58079..df68be7 100644
+--- a/lib/offline_feed_preferences.dart
++++ b/lib/offline_feed_preferences.dart
+@@ -52,14 +52,7 @@ class OfflineFeedPreferencesRepository {
+ 
+   final OfflineFeedPreferencesStore store;
+ 
+-  OfflineFeedPreferences? _cached;
+-
+   Future<OfflineFeedPreferences> load() async {
+-    final cached = _cached;
+-    if (cached != null) {
+-      return cached;
+-    }
+-
+     final sortOrderRaw = await store.readString(sortOrderKey);
+     final filterRaw = await store.readString(filterKey);
+     final downloadedOnlyRaw = await store.readString(downloadedOnlyKey);
+@@ -83,7 +76,12 @@ class OfflineFeedPreferencesRepository {
+   }
+ 
+   Future<void> save(OfflineFeedPreferences preferences) async {
+-    _cached = preferences;
++    await store.writeString(sortOrderKey, preferences.sortOrder.name);
++    await store.writeString(filterKey, preferences.filter.name);
++    await store.writeString(
++      downloadedOnlyKey,
++      preferences.downloadedOnly ? 'true' : 'false',
++    );
+   }
+ 
+   T _parseEnum<T extends Enum>(List<T> values, String? raw, T fallback) {

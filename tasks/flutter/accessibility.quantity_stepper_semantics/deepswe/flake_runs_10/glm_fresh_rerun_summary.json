@@ -1,0 +1,81 @@
+{
+  "target": "glm_fresh_rerun",
+  "expected": "pass",
+  "pubGetExitCode": 0,
+  "pubGetDurationSeconds": 0.505,
+  "passCount": 10,
+  "failCount": 0,
+  "passedExpectation": true,
+  "runs": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 8.253,
+      "log": "glm_fresh_rerun_run_01.log"
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.547,
+      "log": "glm_fresh_rerun_run_02.log"
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 3.027,
+      "log": "glm_fresh_rerun_run_03.log"
+    },
+    {
+      "run": 4,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 3.058,
+      "log": "glm_fresh_rerun_run_04.log"
+    },
+    {
+      "run": 5,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.625,
+      "log": "glm_fresh_rerun_run_05.log"
+    },
+    {
+      "run": 6,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.455,
+      "log": "glm_fresh_rerun_run_06.log"
+    },
+    {
+      "run": 7,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.939,
+      "log": "glm_fresh_rerun_run_07.log"
+    },
+    {
+      "run": 8,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 3.039,
+      "log": "glm_fresh_rerun_run_08.log"
+    },
+    {
+      "run": 9,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.698,
+      "log": "glm_fresh_rerun_run_09.log"
+    },
+    {
+      "run": 10,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.378,
+      "log": "glm_fresh_rerun_run_10.log"
+    }
+  ]
+}

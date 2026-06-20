@@ -1,0 +1,499 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "taskVersion": 1,
+  "category": "bugFix",
+  "difficulty": "medium",
+  "track": "agentic",
+  "tags": [
+    "bugfix",
+    "state_bloc",
+    "testing"
+  ],
+  "release": {
+    "corpus": "private_official",
+    "status": "active"
+  },
+  "admission": {
+    "tool": {
+      "name": "dart_arena_task_qa"
+    },
+    "evaluator": {
+      "schemaVersion": 1,
+      "version": "2026-05-31-master-spec"
+    },
+    "environment": {
+      "dartVersion": "3.11.4 (stable) (Tue Mar 24 01:02:20 2026 -0700) on \"linux_x64\"",
+      "dependencySnapshot": {
+        "status": "present",
+        "files": {
+          "pubspec.yaml": {
+            "sha256": "1a77a2d12be10b5c49655dbf690c7aca5593a6d934b523763549077517314f4e",
+            "bytes": 6336
+          },
+          "pubspec.lock": {
+            "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
+            "bytes": 29033
+          }
+        }
+      },
+      "flutterVersion": "3.41.6",
+      "gitCommit": "7e84e175f9bfcdafa881eb8484074e8282bded7c",
+      "gitDirty": true,
+      "hostPlatform": "linux",
+      "locale": "en_US.UTF-8",
+      "operatingSystemVersion": "Linux 7.0.12-1-cachyos #1 SMP PREEMPT_DYNAMIC Sat, 13 Jun 2026 11:49:00 +0000"
+    }
+  },
+  "executionPolicy": {
+    "allowInternet": false,
+    "resources": {
+      "cpus": 2,
+      "memoryMb": 8192,
+      "maxProcesses": 64,
+      "maxOutputBytes": 1048576
+    },
+    "resourceEnforcement": {
+      "cpus": {
+        "enforced": true,
+        "mechanism": "systemdCpuQuota",
+        "kernelEnforced": true
+      },
+      "memoryMb": {
+        "enforced": true,
+        "mechanism": "rssPolling",
+        "kernelEnforced": false
+      },
+      "maxProcesses": {
+        "enforced": true,
+        "mechanism": "processTreePolling",
+        "kernelEnforced": false
+      },
+      "maxOutputBytes": {
+        "enforced": true,
+        "mechanism": "boundedOutputCapture",
+        "kernelEnforced": false
+      }
+    }
+  },
+  "status": "admitted",
+  "generatedAt": "2026-06-18T15:03:18.234774Z",
+  "checks": {
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "requiredNegativeCaseKindsCovered": true,
+    "hiddenFlakeRuns": 3,
+    "promptSafeContextLeakFree": true,
+    "noopRejected": true,
+    "apiBreakingRejected": true,
+    "overfitRejected": true
+  },
+  "hiddenVerifierDigests": {
+    "refresh_deduplicator_hidden": "8a67039538e9f9598542f7eba93e911e4d9c05582a2d2ad3d61dbc107c2906be"
+  },
+  "verifierQualityAudit": {
+    "falsePositiveCount": 0,
+    "falseNegativeCount": 0,
+    "disagreementCount": 3,
+    "infrastructureErrorCount": 0,
+    "flakeRunCount": 3,
+    "flakeFailureCount": 0,
+    "flakeRate": 0.0,
+    "negativeCaseCount": 4,
+    "acceptedNegativeCaseCount": 0,
+    "referencePublicFailureCount": 0,
+    "referenceHiddenFailureCount": 0
+  },
+  "promptSafety": {
+    "target_context_present": true,
+    "public_test_context_present": true,
+    "public_test_context_required": true,
+    "implementation_bodies_omitted": true,
+    "hidden_verifier_leak_free": true,
+    "reference_leak_free": true,
+    "required_negative_case_kinds": [
+      "api_breaking",
+      "noop",
+      "overfit"
+    ],
+    "present_negative_case_kinds": [
+      "api_breaking",
+      "custom",
+      "noop",
+      "overfit"
+    ],
+    "missing_negative_case_kinds": [],
+    "passed": true
+  },
+  "negativeCases": [
+    {
+      "id": "noop",
+      "description": "Leaves the duplicate-refresh and stale-overwrite behavior unchanged.",
+      "kind": "noop",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 11.5s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 10.1s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "2/2 tests passed",
+          "details": {
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 72,
+            "new_lines": 72,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "refresh_deduplicator_hidden",
+          "passed": false,
+          "score": 0.3333333333333333,
+          "rationale": "2/6 hidden tests passed",
+          "details": {
+            "total": 6,
+            "passed": 2,
+            "failed": 3,
+            "errored": 1,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 4,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/feed_refresh_controller_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/feed_refresh_controller_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api_breaking",
+      "description": "Renames the public FeedRefreshController API.",
+      "kind": "api_breaking",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "analysis errors present",
+          "details": {
+            "exitCode": 1,
+            "stdout": "Analyzing segment_async.re_cc567ca8ad40...                      \n\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:22:31 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:31:23 • undefined_getter\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:39:36 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:44:23 • undefined_getter\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:53:23 • undefined_getter\n\n",
+            "stderr": "5 issues found. (ran in 11.8s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "errors=5 warnings=0 infos=0",
+          "details": {
+            "errors": 5,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 1,
+            "raw_stdout": "Analyzing segment_async.re_cc567ca8ad40...                      \n\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:22:31 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:31:23 • undefined_getter\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:39:36 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:44:23 • undefined_getter\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:53:23 • undefined_getter\n\n",
+            "stderr": "5 issues found. (ran in 10.2s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "blocked by compile",
+          "details": {
+            "blocked": true,
+            "blocked_by": "compile",
+            "blocked_by_rationale": "analysis errors present",
+            "skipped": true,
+            "reason": "blocked by compile"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 0.3166367693790533,
+          "rationale": "changed_lines=23",
+          "details": {
+            "original_lines": 72,
+            "new_lines": 79,
+            "changed_lines": 23,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "overfit_collapse_all",
+      "description": "Collapses every in-flight request so forceRefresh and stale ordering fail.",
+      "kind": "overfit",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 11.6s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 10.6s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "2/2 tests passed",
+          "details": {
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 0.6703200460356393,
+          "rationale": "changed_lines=8",
+          "details": {
+            "original_lines": 72,
+            "new_lines": 78,
+            "changed_lines": 8,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "refresh_deduplicator_hidden",
+          "passed": false,
+          "score": 0.5,
+          "rationale": "3/6 hidden tests passed",
+          "details": {
+            "total": 6,
+            "passed": 3,
+            "failed": 1,
+            "errored": 2,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/feed_refresh_controller_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/feed_refresh_controller_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "deleted_or_weakened_public_test",
+      "description": "Replaces the public test with a trivial always-passing test.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 11.3s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 9.8s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "1/1 tests passed",
+          "details": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 72,
+            "new_lines": 72,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "refresh_deduplicator_hidden",
+          "passed": false,
+          "score": 0.3333333333333333,
+          "rationale": "2/6 hidden tests passed",
+          "details": {
+            "total": 6,
+            "passed": 2,
+            "failed": 3,
+            "errored": 1,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 4,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/feed_refresh_controller_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/feed_refresh_controller_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "failureMessages": []
+}

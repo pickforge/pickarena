@@ -1,0 +1,81 @@
+{
+  "target": "reference_solution",
+  "expected": "pass",
+  "pubGetExitCode": 0,
+  "pubGetDurationSeconds": 0.506,
+  "passCount": 10,
+  "failCount": 0,
+  "passedExpectation": true,
+  "runs": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 7.359,
+      "log": "reference_solution_run_01.log"
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.601,
+      "log": "reference_solution_run_02.log"
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.629,
+      "log": "reference_solution_run_03.log"
+    },
+    {
+      "run": 4,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.651,
+      "log": "reference_solution_run_04.log"
+    },
+    {
+      "run": 5,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.626,
+      "log": "reference_solution_run_05.log"
+    },
+    {
+      "run": 6,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.634,
+      "log": "reference_solution_run_06.log"
+    },
+    {
+      "run": 7,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.676,
+      "log": "reference_solution_run_07.log"
+    },
+    {
+      "run": 8,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.678,
+      "log": "reference_solution_run_08.log"
+    },
+    {
+      "run": 9,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.634,
+      "log": "reference_solution_run_09.log"
+    },
+    {
+      "run": 10,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.668,
+      "log": "reference_solution_run_10.log"
+    }
+  ]
+}

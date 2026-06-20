@@ -1,0 +1,580 @@
+{
+  "schemaVersion": 1,
+  "taskId": "persistence.offline_feed_preferences",
+  "taskVersion": 1,
+  "category": "bugFix",
+  "difficulty": "medium",
+  "track": "agentic",
+  "tags": [
+    "bugfix",
+    "state_bloc",
+    "testing"
+  ],
+  "release": {
+    "corpus": "private_official",
+    "status": "active"
+  },
+  "admission": {
+    "tool": {
+      "name": "dart_arena_task_qa"
+    },
+    "evaluator": {
+      "schemaVersion": 1,
+      "version": "2026-05-31-master-spec"
+    },
+    "environment": {
+      "dartVersion": "3.11.4 (stable) (Tue Mar 24 01:02:20 2026 -0700) on \"linux_x64\"",
+      "dependencySnapshot": {
+        "status": "present",
+        "files": {
+          "pubspec.yaml": {
+            "sha256": "1a77a2d12be10b5c49655dbf690c7aca5593a6d934b523763549077517314f4e",
+            "bytes": 6336
+          },
+          "pubspec.lock": {
+            "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
+            "bytes": 29033
+          }
+        }
+      },
+      "flutterVersion": "3.41.6",
+      "gitCommit": "7e84e175f9bfcdafa881eb8484074e8282bded7c",
+      "gitDirty": true,
+      "hostPlatform": "linux",
+      "locale": "en_US.UTF-8",
+      "operatingSystemVersion": "Linux 7.0.12-1-cachyos #1 SMP PREEMPT_DYNAMIC Sat, 13 Jun 2026 11:49:00 +0000"
+    }
+  },
+  "executionPolicy": {
+    "allowInternet": false,
+    "resources": {
+      "cpus": 2,
+      "memoryMb": 8192,
+      "maxProcesses": 64,
+      "maxOutputBytes": 1048576
+    },
+    "resourceEnforcement": {
+      "cpus": {
+        "enforced": true,
+        "mechanism": "systemdCpuQuota",
+        "kernelEnforced": true
+      },
+      "memoryMb": {
+        "enforced": true,
+        "mechanism": "rssPolling",
+        "kernelEnforced": false
+      },
+      "maxProcesses": {
+        "enforced": true,
+        "mechanism": "processTreePolling",
+        "kernelEnforced": false
+      },
+      "maxOutputBytes": {
+        "enforced": true,
+        "mechanism": "boundedOutputCapture",
+        "kernelEnforced": false
+      }
+    }
+  },
+  "status": "admitted",
+  "generatedAt": "2026-06-19T08:46:50.896665Z",
+  "checks": {
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "requiredNegativeCaseKindsCovered": true,
+    "hiddenFlakeRuns": 3,
+    "promptSafeContextLeakFree": true,
+    "noopRejected": true,
+    "apiBreakingRejected": true,
+    "overfitRejected": true
+  },
+  "hiddenVerifierDigests": {
+    "offline_feed_preferences_hidden": "ba5834d82577e36bfa55c6e87d83dec9d3612b6674cc989dc11a9990ed176003"
+  },
+  "verifierQualityAudit": {
+    "falsePositiveCount": 0,
+    "falseNegativeCount": 0,
+    "disagreementCount": 2,
+    "infrastructureErrorCount": 0,
+    "flakeRunCount": 3,
+    "flakeFailureCount": 0,
+    "flakeRate": 0.0,
+    "negativeCaseCount": 6,
+    "acceptedNegativeCaseCount": 0,
+    "referencePublicFailureCount": 0,
+    "referenceHiddenFailureCount": 0
+  },
+  "promptSafety": {
+    "target_context_present": true,
+    "public_test_context_present": true,
+    "public_test_context_required": true,
+    "implementation_bodies_omitted": true,
+    "hidden_verifier_leak_free": true,
+    "reference_leak_free": true,
+    "required_negative_case_kinds": [
+      "api_breaking",
+      "noop",
+      "overfit"
+    ],
+    "present_negative_case_kinds": [
+      "api_breaking",
+      "custom",
+      "noop",
+      "overfit"
+    ],
+    "missing_negative_case_kinds": [],
+    "passed": true
+  },
+  "negativeCases": [
+    {
+      "id": "noop",
+      "description": "Leaves preferences cached in memory and unsafe for corrupt stored values.",
+      "kind": "noop",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 9.5s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 8.4s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "4/4 tests passed",
+          "details": {
+            "total": 4,
+            "passed": 4,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 106,
+            "new_lines": 106,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "offline_feed_preferences_hidden",
+          "passed": false,
+          "score": 0.6666666666666666,
+          "rationale": "4/6 hidden tests passed",
+          "details": {
+            "total": 6,
+            "passed": 4,
+            "failed": 2,
+            "errored": 0,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/offline_feed_preferences_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/offline_feed_preferences_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api_breaking",
+      "description": "Breaks the public repository API.",
+      "kind": "api_breaking",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "analysis errors present",
+          "details": {
+            "exitCode": 1,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \n\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:22:37 • undefined_method\n  error • The method 'save' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:37:24 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:39:31 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:51:37 • undefined_method\n\n",
+            "stderr": "4 issues found. (ran in 9.2s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "errors=4 warnings=0 infos=0",
+          "details": {
+            "errors": 4,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 1,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \n\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:22:37 • undefined_method\n  error • The method 'save' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:37:24 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:39:31 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:51:37 • undefined_method\n\n",
+            "stderr": "4 issues found. (ran in 8.6s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "blocked by compile",
+          "details": {
+            "blocked": true,
+            "blocked_by": "compile",
+            "blocked_by_rationale": "analysis errors present",
+            "skipped": true,
+            "reason": "blocked by compile"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.12873490358780423,
+          "rationale": "changed_lines=41",
+          "details": {
+            "original_lines": 106,
+            "new_lines": 111,
+            "changed_lines": 41,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "overfit_public_values",
+      "description": "Special-cases the public examples instead of persisting arbitrary preferences.",
+      "kind": "overfit",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 9.3s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 8.4s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "4/4 tests passed",
+          "details": {
+            "total": 4,
+            "passed": 4,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.0706512130604296,
+          "rationale": "changed_lines=53",
+          "details": {
+            "original_lines": 106,
+            "new_lines": 85,
+            "changed_lines": 53,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "cache_only",
+      "description": "Saves through a cache instead of the injected store.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 9.4s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 8.3s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "4/4 tests passed",
+          "details": {
+            "total": 4,
+            "passed": 4,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.2592402606458915,
+          "rationale": "changed_lines=27",
+          "details": {
+            "original_lines": 106,
+            "new_lines": 113,
+            "changed_lines": 27,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "always_defaults_on_corruption",
+      "description": "Returns full defaults when one stored field is corrupt, losing valid sibling fields.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 9.4s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 8.6s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "4/4 tests passed",
+          "details": {
+            "total": 4,
+            "passed": 4,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.01831563888873418,
+          "rationale": "changed_lines=80",
+          "details": {
+            "original_lines": 106,
+            "new_lines": 88,
+            "changed_lines": 80,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "deleted_or_weakened_public_test",
+      "description": "Replaces the public tests with a trivial always-passing test.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 9.4s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 8.5s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "1/1 tests passed",
+          "details": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 106,
+            "new_lines": 106,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "offline_feed_preferences_hidden",
+          "passed": false,
+          "score": 0.6666666666666666,
+          "rationale": "4/6 hidden tests passed",
+          "details": {
+            "total": 6,
+            "passed": 4,
+            "failed": 2,
+            "errored": 0,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/offline_feed_preferences_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/offline_feed_preferences_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "failureMessages": []
+}

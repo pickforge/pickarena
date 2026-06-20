@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/core/path_safety.dart';
@@ -92,6 +93,51 @@ void main() {
       isFalse,
     );
   });
+
+  test(
+    'collectWorkspaceIsolationEvidence redacts paths and contents',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_isolation_evidence_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final workDir = Directory(p.join(root.path, 'runs', 'r', 'p', 'm', 't'));
+      await workDir.create(recursive: true);
+      await File(
+        p.join(workDir.path, 'lib', 'visible.dart'),
+      ).create(recursive: true);
+      await File(
+        p.join(workDir.path, 'lib', 'visible.dart'),
+      ).writeAsString('visible contents');
+      await File(
+        p.join(workDir.path, 'test', '_hidden', 'secret_test.dart'),
+      ).create(recursive: true);
+      await File(
+        p.join(workDir.path, 'test', '_hidden', 'secret_test.dart'),
+      ).writeAsString('hidden verifier contents');
+
+      final evidence = await WorkdirManager(
+        root: root,
+      ).collectWorkspaceIsolationEvidence(workDir);
+      final evidenceJson = jsonEncode(evidence.toJson());
+
+      expect(evidence.workdirUnderRunsRoot, isTrue);
+      expect(evidence.rootConfined, isTrue);
+      expect(evidence.relativePathsOnly, isTrue);
+      expect(evidence.restrictedPathCount, greaterThan(0));
+      expect(evidence.restrictedPathsAbsent, isFalse);
+      expect(evidence.visibleFileCount, 1);
+      expect(evidence.visibleManifestSha256, hasLength(64));
+      expect(evidenceJson, isNot(contains(root.path)));
+      expect(evidenceJson, isNot(contains(workDir.path)));
+      expect(evidenceJson, isNot(contains('visible.dart')));
+      expect(evidenceJson, isNot(contains('secret_test.dart')));
+      expect(evidenceJson, isNot(contains('visible contents')));
+      expect(evidenceJson, isNot(contains('hidden verifier contents')));
+    },
+  );
 
   test('uses safe modelId path segments', () async {
     final root = await Directory.systemTemp.createTemp('dart_arena_sanitize_');

@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ui.action_bar_overflow",
+  "createdDate": "2026-06-19",
+  "status": "failed-deepswe-candidate",
+  "deepSWEComplete": false,
+  "replayVerified": false,
+  "workspaceIsolationVerified": false,
+  "durationCostTokenCaptured": true,
+  "providerInternalStreamChunksCaptured": false,
+  "cleanCommittedProvenance": false,
+  "authoredByProvenance": "unknown",
+  "failedCandidate": true,
+  "admissionEvidence": {
+    "status": "admitted",
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "requiredNegativeCaseKindsCovered": true,
+    "flakeRunCount": 3,
+    "flakeFailureCount": 0,
+    "falsePositiveCount": 0,
+    "falseNegativeCount": 0,
+    "gitDirty": true
+  },
+  "freshSolverReruns": {
+    "gpt": {
+      "model": "openai-codex/gpt-5.5:xhigh",
+      "patchSha256": "d76c185ed99b457eef01be06d8fef2e567eef0c86a92c80fd8337d1477699a9a",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": false,
+      "cleanReplayVerified": false,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "trajectoryArtifacts": {
+        "input": "trajectory/subagent_input.md",
+        "output": "trajectory/subagent_output.md",
+        "meta": "trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    },
+    "glm": {
+      "model": "ollama/glm-5.2:cloud:xhigh",
+      "patchSha256": "e840d8a60daeb38debb2131289239048dc9c933fda468525cc28ae2c81d97d96",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": false,
+      "cleanReplayVerified": false,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "trajectoryArtifacts": {
+        "input": "trajectory/subagent_input.md",
+        "output": "trajectory/subagent_output.md",
+        "meta": "trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    },
+    "opus": {
+      "model": "anthropic/claude-opus-4-8:xhigh",
+      "patchSha256": "8a10bb0463741a2a7912194e7ab9636feae8e3d5f5f4528e94585f0aef287cfa",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": false,
+      "cleanReplayVerified": false,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "trajectoryArtifacts": {
+        "input": "trajectory/subagent_input.md",
+        "output": "trajectory/subagent_output.md",
+        "meta": "trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    },
+    "minimax": {
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "patchSha256": "fa834b0667dc135e384b1b4ac39f489d3f34ebaed3f9fa4b3d24c405e580d2d4",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": false,
+      "cleanReplayVerified": false,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "trajectoryArtifacts": {
+        "input": "trajectory/subagent_input.md",
+        "output": "trajectory/subagent_output.md",
+        "meta": "trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    },
+    "kimi": {
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "patchSha256": "f727b867e7b93e4dd72059e76c10ab707f54eab03dcb8cc99cbf112c4e76df92",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": false,
+      "cleanReplayVerified": false,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "trajectoryArtifacts": {
+        "input": "trajectory/subagent_input.md",
+        "output": "trajectory/subagent_output.md",
+        "meta": "trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    }
+  },
+  "passingFreshSolverFamilies": [],
+  "failedFreshSolverFamilies": [
+    "gpt",
+    "glm",
+    "opus",
+    "minimax",
+    "kimi"
+  ],
+  "solverCountFreshRerun": 5,
+  "solverCountCleanReplayVerified": 0,
+  "promotionFailure": "All five fresh solver families passed public replay but failed hidden replay. No solver family is promoted for this slice.",
+  "flakeLoop10": {
+    "path": "flake_runs_10/flake_loop_10_result.json",
+    "passed": true,
+    "runsPerTarget": 10,
+    "targetCount": 7
+  },
+  "fullTaskQaRepetition": {
+    "path": "qa_repetition/qa_repetition_result.json",
+    "passed": true,
+    "runsRequested": 5,
+    "hiddenFlakeRuns": 5
+  },
+  "telemetry": {
+    "path": "command_telemetry/command_telemetry_result.json",
+    "durationCostTokenCaptured": true,
+    "providerInternalStreamChunksCaptured": false
+  },
+  "checklists": {
+    "promptVerifierBijection": "prompt_verifier_bijection.md",
+    "f2p": "f2p_checklist.md",
+    "p2p": "p2p_checklist.md"
+  },
+  "pendingEvidence": [
+    "at least three fresh solver families with clean public+hidden replay",
+    "provider-internal stream chunks/session JSONL not exposed",
+    "clean committed provenance / gitDirty=false run not available",
+    "authored-by provenance not durably recorded",
+    "workspace isolation cannot be fully proven from artifacts alone"
+  ],
+  "restrictedArtifacts": [
+    "prompt_verifier_bijection.md",
+    "f2p_checklist.md",
+    "solver_runs/*/rerun_2026_06_19/hidden_results.log",
+    "solver_runs/*/rerun_2026_06_19/hidden_pub_get.log",
+    "command_telemetry/*_hidden_replay.log",
+    "command_telemetry/*_hidden_pub_get.log",
+    "flake_runs_10/*_run_*.log",
+    "flake_runs_10/*_pub_get.log"
+  ]
+}

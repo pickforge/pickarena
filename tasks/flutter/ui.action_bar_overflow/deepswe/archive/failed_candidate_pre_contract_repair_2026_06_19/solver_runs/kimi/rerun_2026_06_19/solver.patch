@@ -1,0 +1,137 @@
+diff --git a/lib/responsive_action_bar.dart b/lib/responsive_action_bar.dart
+index c6d9dde..6e95e04 100644
+--- a/lib/responsive_action_bar.dart
++++ b/lib/responsive_action_bar.dart
+@@ -43,20 +43,18 @@ class ResponsiveActionBar extends StatelessWidget {
+   Widget build(BuildContext context) {
+     return LayoutBuilder(
+       builder: (context, constraints) {
+-        final split = _splitActions(constraints.maxWidth);
++        final split = _splitActions(context, constraints.maxWidth);
+         return Row(
++          spacing: _inlineSpacing,
+           children: <Widget>[
+-            for (final action in split.inline)
+-              Flexible(child: _ActionButton(action: action)),
++            for (final action in split.inline) _ActionButton(action: action),
+             if (split.overflow.isNotEmpty)
+               _OverflowMenu(actions: split.overflow, tooltip: overflowTooltip),
+             const Spacer(),
+-            Flexible(
+-              child: FilledButton(
+-                key: primaryButtonKey,
+-                onPressed: onPrimaryPressed,
+-                child: Text(primaryLabel, overflow: TextOverflow.ellipsis),
+-              ),
++            FilledButton(
++              key: primaryButtonKey,
++              onPressed: onPrimaryPressed,
++              child: Text(primaryLabel, overflow: TextOverflow.ellipsis),
+             ),
+           ],
+         );
+@@ -64,9 +62,102 @@ class ResponsiveActionBar extends StatelessWidget {
+     );
+   }
+ 
+-  _ActionSplit _splitActions(double _) {
+-    return _ActionSplit(actions, const <ResponsiveActionBarAction>[]);
++  _ActionSplit _splitActions(BuildContext context, double maxWidth) {
++    if (actions.isEmpty) {
++      return _ActionSplit(const <ResponsiveActionBarAction>[], const <ResponsiveActionBarAction>[]);
++    }
++
++    final theme = Theme.of(context);
++    final textScaler = MediaQuery.textScalerOf(context);
++    final textDirection = Directionality.of(context);
++    final labelStyle = theme.textTheme.labelLarge ?? theme.textTheme.bodyLarge;
++
++    final primaryWidth = _measureText(
++          text: primaryLabel,
++          style: labelStyle,
++          textScaler: textScaler,
++          textDirection: textDirection,
++        ) +
++        _primaryHorizontalPadding;
++
++    final actionWidths = <double>[];
++    for (final action in actions) {
++      actionWidths.add(
++        _measureText(
++              text: action.label,
++              style: labelStyle,
++              textScaler: textScaler,
++              textDirection: textDirection,
++            ) +
++            _actionHorizontalOverhead,
++      );
++    }
++
++    final sortedIndices = List<int>.generate(actions.length, (i) => i);
++    sortedIndices.sort((a, b) {
++      final priorityCompare = actions[a].priority.compareTo(actions[b].priority);
++      if (priorityCompare != 0) return priorityCompare;
++      return a.compareTo(b);
++    });
++
++    final totalInlineWidth = actionWidths.fold<double>(0, (sum, w) => sum + w);
++
++    // Can every action stay inline without needing an overflow button?
++    if (totalInlineWidth + primaryWidth + (actions.length + 1) * _inlineSpacing <=
++        maxWidth) {
++      return _ActionSplit(actions.toList(), const <ResponsiveActionBarAction>[]);
++    }
++
++    // Otherwise keep the lowest-priority actions inline that still leave room
++    // for the overflow button.
++    var inlineCount = 0;
++    double usedWidth = 0;
++    for (var i = 0; i < sortedIndices.length; i++) {
++      final projectedWidth = usedWidth + actionWidths[sortedIndices[i]];
++      final projectedTotal = projectedWidth +
++          primaryWidth +
++          _overflowButtonWidth +
++          (i + 3) * _inlineSpacing;
++      if (projectedTotal <= maxWidth) {
++        inlineCount = i + 1;
++        usedWidth = projectedWidth;
++      } else {
++        break;
++      }
++    }
++
++    final inline = <ResponsiveActionBarAction>[];
++    final overflow = <ResponsiveActionBarAction>[];
++    for (var i = 0; i < sortedIndices.length; i++) {
++      if (i < inlineCount) {
++        inline.add(actions[sortedIndices[i]]);
++      } else {
++        overflow.add(actions[sortedIndices[i]]);
++      }
++    }
++
++    return _ActionSplit(inline, overflow);
+   }
++
++  static double _measureText({
++    required String text,
++    required TextStyle? style,
++    required TextScaler textScaler,
++    required TextDirection textDirection,
++  }) {
++    final painter = TextPainter(
++      text: TextSpan(text: text, style: style),
++      textDirection: textDirection,
++      textScaler: textScaler,
++    );
++    painter.layout();
++    return painter.width;
++  }
++
++  static const double _primaryHorizontalPadding = 48;
++  static const double _actionHorizontalOverhead = 56;
++  static const double _overflowButtonWidth = 48;
++  static const double _inlineSpacing = 8;
+ }
+ 
+ class _ActionButton extends StatelessWidget {

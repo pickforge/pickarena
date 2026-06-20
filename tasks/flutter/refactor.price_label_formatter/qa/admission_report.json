@@ -1,0 +1,677 @@
+{
+  "schemaVersion": 1,
+  "taskId": "refactor.price_label_formatter",
+  "taskVersion": 1,
+  "category": "refactor",
+  "difficulty": "medium",
+  "track": "agentic",
+  "tags": [
+    "refactor",
+    "testing",
+    "ui"
+  ],
+  "release": {
+    "corpus": "private_official",
+    "status": "active"
+  },
+  "admission": {
+    "tool": {
+      "name": "dart_arena_task_qa"
+    },
+    "evaluator": {
+      "schemaVersion": 1,
+      "version": "2026-05-31-master-spec"
+    },
+    "environment": {
+      "dartVersion": "3.11.4 (stable) (Tue Mar 24 01:02:20 2026 -0700) on \"linux_x64\"",
+      "dependencySnapshot": {
+        "status": "present",
+        "files": {
+          "pubspec.yaml": {
+            "sha256": "1a77a2d12be10b5c49655dbf690c7aca5593a6d934b523763549077517314f4e",
+            "bytes": 6336
+          },
+          "pubspec.lock": {
+            "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
+            "bytes": 29033
+          }
+        }
+      },
+      "flutterVersion": "3.41.6",
+      "gitCommit": "7e84e175f9bfcdafa881eb8484074e8282bded7c",
+      "gitDirty": true,
+      "hostPlatform": "linux",
+      "locale": "en_US.UTF-8",
+      "operatingSystemVersion": "Linux 7.0.12-1-cachyos #1 SMP PREEMPT_DYNAMIC Sat, 13 Jun 2026 11:49:00 +0000"
+    }
+  },
+  "executionPolicy": {
+    "allowInternet": false,
+    "resources": {
+      "cpus": 2,
+      "memoryMb": 8192,
+      "maxProcesses": 64,
+      "maxOutputBytes": 1048576
+    },
+    "resourceEnforcement": {
+      "cpus": {
+        "enforced": true,
+        "mechanism": "systemdCpuQuota",
+        "kernelEnforced": true
+      },
+      "memoryMb": {
+        "enforced": true,
+        "mechanism": "rssPolling",
+        "kernelEnforced": false
+      },
+      "maxProcesses": {
+        "enforced": true,
+        "mechanism": "processTreePolling",
+        "kernelEnforced": false
+      },
+      "maxOutputBytes": {
+        "enforced": true,
+        "mechanism": "boundedOutputCapture",
+        "kernelEnforced": false
+      }
+    }
+  },
+  "status": "admitted",
+  "generatedAt": "2026-06-19T07:53:32.337436Z",
+  "checks": {
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "requiredNegativeCaseKindsCovered": true,
+    "hiddenFlakeRuns": 3,
+    "promptSafeContextLeakFree": true,
+    "noopRejected": true,
+    "apiBreakingRejected": true,
+    "overfitRejected": true
+  },
+  "hiddenVerifierDigests": {
+    "price_label_formatter_hidden": "a524c00066131b832f41cb859d691e729422b21d4de014f819436759f2b8dae4"
+  },
+  "verifierQualityAudit": {
+    "falsePositiveCount": 0,
+    "falseNegativeCount": 0,
+    "disagreementCount": 2,
+    "infrastructureErrorCount": 0,
+    "flakeRunCount": 3,
+    "flakeFailureCount": 0,
+    "flakeRate": 0.0,
+    "negativeCaseCount": 6,
+    "acceptedNegativeCaseCount": 0,
+    "referencePublicFailureCount": 0,
+    "referenceHiddenFailureCount": 0
+  },
+  "promptSafety": {
+    "target_context_present": true,
+    "public_test_context_present": true,
+    "public_test_context_required": true,
+    "implementation_bodies_omitted": true,
+    "hidden_verifier_leak_free": true,
+    "reference_leak_free": true,
+    "required_negative_case_kinds": [
+      "api_breaking",
+      "noop",
+      "overfit"
+    ],
+    "present_negative_case_kinds": [
+      "api_breaking",
+      "custom",
+      "noop",
+      "overfit"
+    ],
+    "missing_negative_case_kinds": [],
+    "passed": true
+  },
+  "negativeCases": [
+    {
+      "id": "noop",
+      "description": "Leaves the incomplete formatter and duplicated widget helpers unchanged.",
+      "kind": "noop",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 9.7s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.0s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "6/6 tests passed",
+          "details": {
+            "total": 6,
+            "passed": 6,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 15,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "price_label_formatter_hidden",
+          "passed": false,
+          "score": 0.5,
+          "rationale": "10/20 hidden tests passed",
+          "details": {
+            "total": 20,
+            "passed": 10,
+            "failed": 6,
+            "errored": 4,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 4,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 5,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 6,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 7,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 8,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 9,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 10,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/price_label_formatter_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/price_label_formatter_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api_breaking",
+      "description": "Renames the public ProductPriceTile price key and price parameter.",
+      "kind": "api_breaking",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "analysis errors present",
+          "details": {
+            "exitCode": 1,
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \n\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:19:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:19:56 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:24:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:32:15 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:34:11 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:41:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:48:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:48:53 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:52:55 • undefined_getter\n\n",
+            "stderr": "9 issues found. (ran in 9.9s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "errors=9 warnings=0 infos=0",
+          "details": {
+            "errors": 9,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 1,
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \n\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:19:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:19:56 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:24:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:32:15 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:34:11 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:41:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:48:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:48:53 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:52:55 • undefined_getter\n\n",
+            "stderr": "9 issues found. (ran in 1.9s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "blocked by compile",
+          "details": {
+            "blocked": true,
+            "blocked_by": "compile",
+            "blocked_by_rationale": "analysis errors present",
+            "skipped": true,
+            "reason": "blocked by compile"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 15,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "overfit_public_values",
+      "description": "Routes widgets through a formatter that only handles the public example values.",
+      "kind": "overfit",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 9.6s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 6.3s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "6/6 tests passed",
+          "details": {
+            "total": 6,
+            "passed": 6,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.17377394345044514,
+          "rationale": "changed_lines=35",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 36,
+            "changed_lines": 35,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "unused_formatter",
+      "description": "Completes the formatter but leaves widgets on their private helpers.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 9.7s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 1.9s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "6/6 tests passed",
+          "details": {
+            "total": 6,
+            "passed": 6,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.2592402606458915,
+          "rationale": "changed_lines=27",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 28,
+            "changed_lines": 27,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "behavior_changing_currency",
+      "description": "Centralizes formatting but changes the customer-facing labels.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 9.7s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 1.8s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.3333333333333333,
+          "rationale": "2/6 tests passed",
+          "details": {
+            "total": 6,
+            "passed": 2,
+            "failed": 0,
+            "errored": 4,
+            "failures": [
+              {
+                "name": "product tile shows a sale price with compare-at",
+                "message": "Test failed. See exception logs above.\nThe test description was: product tile shows a sale price with compare-at"
+              },
+              {
+                "name": "product tile shows a sale price with compare-at",
+                "message": "error"
+              },
+              {
+                "name": "product tile shows Free for a zero price",
+                "message": "Test failed. See exception logs above.\nThe test description was: product tile shows Free for a zero price"
+              },
+              {
+                "name": "product tile shows Free for a zero price",
+                "message": "error"
+              },
+              {
+                "name": "cart line row shows quantity, unit price, and line total",
+                "message": "Test failed. See exception logs above.\nThe test description was: cart line row shows quantity, unit price, and line total"
+              },
+              {
+                "name": "cart line row shows quantity, unit price, and line total",
+                "message": "error"
+              },
+              {
+                "name": "checkout summary shows subtotal, shipping, and total",
+                "message": "Test failed. See exception logs above.\nThe test description was: checkout summary shows subtotal, shipping, and total"
+              },
+              {
+                "name": "checkout summary shows subtotal, shipping, and total",
+                "message": "error"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 0.5769498103804866,
+          "rationale": "changed_lines=11",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 22,
+            "changed_lines": 11,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "deleted_or_weakened_public_test",
+      "description": "Replaces the public tests with a trivial always-passing test.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 9.5s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 1.9s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "1/1 tests passed",
+          "details": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 15,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "price_label_formatter_hidden",
+          "passed": false,
+          "score": 0.5,
+          "rationale": "10/20 hidden tests passed",
+          "details": {
+            "total": 20,
+            "passed": 10,
+            "failed": 6,
+            "errored": 4,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 4,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 5,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 6,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 7,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 8,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 9,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 10,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/price_label_formatter_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/price_label_formatter_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "failureMessages": []
+}

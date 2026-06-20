@@ -19,6 +19,13 @@ Local-first. Open source. Built for people who ship.
 - **Provenance and exports:** save run manifests, environment details, summaries, CSV/Markdown/JSON reports, and reproducible artifact bundles.
 - **Headless CI smoke:** exercise the headless benchmark runner in GitHub Actions for release confidence.
 
+## Benchmark docs
+
+- [Specs entry point](docs/specs/README.md)
+- [Mobile Agent Benchmark spec](docs/specs/2026-06-15-pickarena-mobile-agent-benchmark.md)
+- [Task author entry point](tasks/README.md)
+- [Task authoring reference](tasks/AUTHORING.md)
+
 ## Quickstart
 
 Install Flutter for your desktop platform, then run:
@@ -71,7 +78,7 @@ RUN_ID=spark-sandboxed-official-$(date -u +%Y%m%dT%H%M%SZ) \
   bash scripts/run-official-bubblewrap-benchmark.sh
 ```
 
-The script writes `.factory/$RUN_ID/run.json`, runs `dart_arena_headless`, enables `requireGeneratedCodeSandbox`, uses Bubblewrap for generated code, runs the five active official Flutter tasks, and stores the run database plus artifact bundle under `.factory/$RUN_ID/`.
+The script writes `.factory/$RUN_ID/run.json`, runs `dart_arena_headless`, enables `requireGeneratedCodeSandbox`, uses Bubblewrap for generated code, runs the active official Flutter tasks, and stores the run database plus artifact bundle under `.factory/$RUN_ID/`.
 
 Useful overrides:
 

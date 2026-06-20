@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "createdDate": "2026-06-19",
+  "scope": "full task QA repeated runs with hidden flake runs set to 5",
+  "command": "cd app && dart run --verbosity=error dart_arena:dart_arena_task_qa --task-bundle-root ../tasks/flutter --task async.refresh_deduplicator --hidden-flake-runs 5 --out build/deepswe_async_refresh_qa_repetition/run_<n>",
+  "runs": [
+    {
+      "run": 1,
+      "logPath": "tasks/flutter/async.refresh_deduplicator/deepswe/qa_repetition/run_1.log",
+      "summaryPath": "app/build/deepswe_async_refresh_qa_repetition/run_1/admission_summary.json",
+      "reportPath": "app/build/deepswe_async_refresh_qa_repetition/run_1/tasks/task_async.refresh_deduplicator_cc567ca8ad40/admission_report.json",
+      "status": "completed",
+      "admittedTaskCount": 1,
+      "rejectedTaskCount": 0,
+      "failureMessages": [],
+      "flakeRunCount": 5,
+      "flakeFailureCount": 0,
+      "exitCodeInferred": 0
+    },
+    {
+      "run": 2,
+      "logPath": "tasks/flutter/async.refresh_deduplicator/deepswe/qa_repetition/run_2.log",
+      "summaryPath": "app/build/deepswe_async_refresh_qa_repetition/run_2/admission_summary.json",
+      "reportPath": "app/build/deepswe_async_refresh_qa_repetition/run_2/tasks/task_async.refresh_deduplicator_cc567ca8ad40/admission_report.json",
+      "status": "completed",
+      "admittedTaskCount": 1,
+      "rejectedTaskCount": 0,
+      "failureMessages": [],
+      "flakeRunCount": 5,
+      "flakeFailureCount": 0,
+      "exitCodeInferred": 0
+    },
+    {
+      "run": 3,
+      "logPath": "tasks/flutter/async.refresh_deduplicator/deepswe/qa_repetition/run_3.log",
+      "summaryPath": "app/build/deepswe_async_refresh_qa_repetition/run_3/admission_summary.json",
+      "reportPath": "app/build/deepswe_async_refresh_qa_repetition/run_3/tasks/task_async.refresh_deduplicator_cc567ca8ad40/admission_report.json",
+      "status": "completed",
+      "admittedTaskCount": 1,
+      "rejectedTaskCount": 0,
+      "failureMessages": [],
+      "flakeRunCount": 5,
+      "flakeFailureCount": 0,
+      "exitCodeInferred": 0
+    },
+    {
+      "run": 4,
+      "logPath": "tasks/flutter/async.refresh_deduplicator/deepswe/qa_repetition/run_4.log",
+      "summaryPath": "app/build/deepswe_async_refresh_qa_repetition/run_4/admission_summary.json",
+      "reportPath": "app/build/deepswe_async_refresh_qa_repetition/run_4/tasks/task_async.refresh_deduplicator_cc567ca8ad40/admission_report.json",
+      "status": "completed",
+      "admittedTaskCount": 1,
+      "rejectedTaskCount": 0,
+      "failureMessages": [],
+      "flakeRunCount": 5,
+      "flakeFailureCount": 0,
+      "exitCodeInferred": 0
+    },
+    {
+      "run": 5,
+      "logPath": "tasks/flutter/async.refresh_deduplicator/deepswe/qa_repetition/run_5.log",
+      "summaryPath": "app/build/deepswe_async_refresh_qa_repetition/run_5/admission_summary.json",
+      "reportPath": "app/build/deepswe_async_refresh_qa_repetition/run_5/tasks/task_async.refresh_deduplicator_cc567ca8ad40/admission_report.json",
+      "status": "completed",
+      "admittedTaskCount": 1,
+      "rejectedTaskCount": 0,
+      "failureMessages": [],
+      "flakeRunCount": 5,
+      "flakeFailureCount": 0,
+      "exitCodeInferred": 0
+    }
+  ],
+  "passed": true,
+  "limitations": [
+    "QA still runs from the current dirty/uncommitted worktree; clean committed provenance remains pending."
+  ]
+}

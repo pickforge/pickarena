@@ -105,8 +105,22 @@ void main() {
               as Map<String, Object?>;
       expect(summary['status'], 'completed');
       expect(summary['taskCount'], 1);
+      expect(summary['generatedCodeSandbox'], {
+        'required': false,
+        'enforced': false,
+        'backend': 'bubblewrap',
+      });
       final reports = summary['reports']! as List<Object?>;
       final reportEntry = reports.single! as Map<String, Object?>;
+      final taskRuntimeIsolation =
+          reportEntry['runtimeIsolation']! as Map<String, Object?>;
+      expect(taskRuntimeIsolation['generatedCodeSandboxEnforced'], isFalse);
+      expect(taskRuntimeIsolation['workspaceEvidenceCount'], 5);
+      expect(
+        taskRuntimeIsolation['workspaceManifestSha256'],
+        isA<String>().having((value) => value.length, 'length', 64),
+      );
+      expect(taskRuntimeIsolation['restrictedPathCount'], 0);
       final reportPath = reportEntry['reportPath']! as String;
       expect(p.isAbsolute(reportPath), isFalse);
       expect(
@@ -120,6 +134,11 @@ void main() {
               )
               as Map<String, Object?>;
       final checks = report['checks']! as Map<String, Object?>;
+      final reportRuntimeIsolation =
+          report['runtimeIsolation']! as Map<String, Object?>;
+      final reportRuntimeText = jsonEncode(reportRuntimeIsolation);
+      final reportWorkspaceEvidence =
+          reportRuntimeIsolation['workspaceEvidence']! as Map<String, Object?>;
 
       expect(report['taskId'], _CliQaTask.taskId);
       expect(report['status'], 'admitted');
@@ -158,6 +177,19 @@ void main() {
       expect(checks['apiBreakingRejected'], isTrue);
       expect(checks['overfitRejected'], isTrue);
       expect(checks['promptSafeContextLeakFree'], isTrue);
+      expect(checks['generatedCodeSandboxRequired'], isFalse);
+      expect(checks['generatedCodeSandboxEnforced'], isFalse);
+      expect(checks['workspaceEvidenceCollected'], isTrue);
+      expect(checks['workspaceRestrictedPathsAbsent'], isTrue);
+      expect(reportRuntimeIsolation['generatedCodeSandbox'], {
+        'required': false,
+        'enforced': false,
+        'backend': 'bubblewrap',
+      });
+      expect(reportWorkspaceEvidence['workspaceCount'], 5);
+      expect(reportWorkspaceEvidence['restrictedPathCount'], 0);
+      expect(reportRuntimeText, isNot(contains(outputDir.path)));
+      expect(reportRuntimeText, isNot(contains(tmp.path)));
       expect(report['verifierQualityAudit'], {
         'falsePositiveCount': 0,
         'falseNegativeCount': 0,
@@ -174,6 +206,51 @@ void main() {
       expect(report['failureMessages'], isEmpty);
     },
     timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'required generated-code sandbox failure does not recreate workdir root',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'task_qa_cli_sandbox_required_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+      final outputDir = Directory(p.join(tmp.path, 'reports'));
+      final workdirRoot = Directory(p.join(tmp.path, 'workdirs'));
+      await workdirRoot.create(recursive: true);
+      final marker = File(p.join(workdirRoot.path, 'marker.txt'));
+      await marker.writeAsString('keep');
+      final stdoutLines = <String>[];
+      final stderrLines = <String>[];
+
+      final exitCode = await runTaskQaCli(
+        [
+          '--out',
+          outputDir.path,
+          '--workdir-root',
+          workdirRoot.path,
+          '--task',
+          _CliQaTask.taskId,
+          '--require-generated-code-sandbox',
+        ],
+        dependencies: TaskQaCliDependencies(
+          generatedCodeSandboxBuilder: (_) async => null,
+        ),
+        stdoutWriter: stdoutLines.add,
+        stderrWriter: stderrLines.add,
+      );
+
+      expect(exitCode, 1);
+      expect(stdoutLines, isEmpty);
+      expect(stderrLines, hasLength(1));
+      final error = jsonDecode(stderrLines.single) as Map<String, Object?>;
+      expect(error['status'], 'failed');
+      expect(error['error'].toString(), contains('sandbox is required'));
+      expect(marker.existsSync(), isTrue);
+      expect(await marker.readAsString(), 'keep');
+    },
   );
 }
 

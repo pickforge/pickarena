@@ -1,0 +1,81 @@
+{
+  "target": "glm_failed_rerun",
+  "expected": "fail",
+  "pubGetExitCode": 0,
+  "pubGetDurationSeconds": 0.338,
+  "passCount": 0,
+  "failCount": 10,
+  "passedExpectation": true,
+  "runs": [
+    {
+      "run": 1,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 9.176,
+      "log": "glm_failed_rerun_run_01.log"
+    },
+    {
+      "run": 2,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 3.214,
+      "log": "glm_failed_rerun_run_02.log"
+    },
+    {
+      "run": 3,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 3.222,
+      "log": "glm_failed_rerun_run_03.log"
+    },
+    {
+      "run": 4,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 3.006,
+      "log": "glm_failed_rerun_run_04.log"
+    },
+    {
+      "run": 5,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 3.019,
+      "log": "glm_failed_rerun_run_05.log"
+    },
+    {
+      "run": 6,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.996,
+      "log": "glm_failed_rerun_run_06.log"
+    },
+    {
+      "run": 7,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 3.14,
+      "log": "glm_failed_rerun_run_07.log"
+    },
+    {
+      "run": 8,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 3.115,
+      "log": "glm_failed_rerun_run_08.log"
+    },
+    {
+      "run": 9,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 3.087,
+      "log": "glm_failed_rerun_run_09.log"
+    },
+    {
+      "run": 10,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 3.034,
+      "log": "glm_failed_rerun_run_10.log"
+    }
+  ]
+}

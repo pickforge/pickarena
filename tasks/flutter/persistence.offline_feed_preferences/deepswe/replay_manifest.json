@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "taskId": "persistence.offline_feed_preferences",
+  "createdDate": "2026-06-19",
+  "status": "v2-deepswe-slice-in-progress",
+  "deepSWEComplete": false,
+  "replayVerified": true,
+  "workspaceIsolationVerified": false,
+  "durationCostTokenCaptured": true,
+  "providerInternalStreamChunksCaptured": false,
+  "cleanCommittedProvenance": false,
+  "authoredByProvenance": "unknown",
+  "admissionEvidence": {
+    "status": "admitted",
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "requiredNegativeCaseKindsCovered": true,
+    "flakeRunCount": 3,
+    "flakeFailureCount": 0,
+    "falsePositiveCount": 0,
+    "falseNegativeCount": 0,
+    "gitDirty": true
+  },
+  "freshSolverReruns": {
+    "gpt": {
+      "model": "openai-codex/gpt-5.5:xhigh",
+      "patchSha256": "884b00a17ad0d65bf2c209ed633828fbaded1af8c8d9ab59ac3bad1bf50b52a9",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "cleanReplayVerified": true,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "trajectoryArtifacts": {
+        "input": "trajectory/subagent_input.md",
+        "output": "trajectory/subagent_output.md",
+        "meta": "trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    },
+    "minimax": {
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "patchSha256": "2a1d3f4684cdffb6f93c145b3c95c041941a31d7dd1d1d0fba3b99a6953fe886",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "cleanReplayVerified": true,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "trajectoryArtifacts": {
+        "input": "trajectory/subagent_input.md",
+        "output": "trajectory/subagent_output.md",
+        "meta": "trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    },
+    "glm": {
+      "model": "ollama/glm-5.2:cloud:xhigh",
+      "patchSha256": "690154a33792bc3d89b3f4a828f408de8e00e0d15befda6b5c6098b59366e043",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "cleanReplayVerified": true,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "trajectoryArtifacts": {
+        "input": "trajectory/subagent_input.md",
+        "output": "trajectory/subagent_output.md",
+        "meta": "trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    },
+    "kimi": {
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "patchSha256": "76fd293e5fb07520d85afce4257c773f2e5c6b1ec1d1be7957d6b3b8a510d057",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "cleanReplayVerified": true,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "trajectoryArtifacts": {
+        "input": "trajectory/subagent_input.md",
+        "output": "trajectory/subagent_output.md",
+        "meta": "trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    }
+  },
+  "passingFreshSolverFamilies": [
+    "gpt",
+    "minimax",
+    "glm",
+    "kimi"
+  ],
+  "failedFreshSolverFamilies": [],
+  "solverCountFreshRerun": 4,
+  "solverCountCleanReplayVerified": 4,
+  "flakeLoop10": {
+    "path": "flake_runs_10/flake_loop_10_result.json",
+    "passed": true,
+    "runsPerTarget": 10,
+    "targetCount": 6
+  },
+  "fullTaskQaRepetition": {
+    "path": "qa_repetition/qa_repetition_result.json",
+    "passed": true,
+    "runsRequested": 5,
+    "hiddenFlakeRuns": 5
+  },
+  "telemetry": {
+    "path": "command_telemetry/command_telemetry_result.json",
+    "durationCostTokenCaptured": true,
+    "providerInternalStreamChunksCaptured": false
+  },
+  "checklists": {
+    "promptVerifierBijection": "prompt_verifier_bijection.md",
+    "f2p": "f2p_checklist.md",
+    "p2p": "p2p_checklist.md"
+  },
+  "pendingEvidence": [
+    "provider-internal stream chunks/session JSONL not exposed",
+    "clean committed provenance / gitDirty=false run not available",
+    "authored-by provenance not durably recorded",
+    "workspace isolation cannot be fully proven from artifacts alone"
+  ],
+  "restrictedArtifacts": [
+    "prompt_verifier_bijection.md",
+    "f2p_checklist.md",
+    "solver_runs/*/rerun_2026_06_19/hidden_results.log",
+    "solver_runs/*/rerun_2026_06_19/hidden_pub_get.log",
+    "command_telemetry/*_hidden_replay.log",
+    "command_telemetry/*_hidden_pub_get.log",
+    "flake_runs_10/*_run_*.log",
+    "flake_runs_10/*_pub_get.log"
+  ]
+}

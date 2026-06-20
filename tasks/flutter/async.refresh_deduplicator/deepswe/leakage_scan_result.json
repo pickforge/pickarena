@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "scanScope": "solver-facing artifacts only: original/fresh-rerun patches, summaries, public replay logs, copied subagent prompt/output/metadata/session JSONL, pre-hidden workspace snapshots, redacted command telemetry summaries, and flake-loop summaries; hidden-verifier logs are excluded and classified restricted/evaluator-only.",
+  "forbiddenPathTokens": [
+    "_hidden/",
+    "hidden_tests",
+    "solution/",
+    "negative_cases"
+  ],
+  "hiddenLiteralSampleCount": 6,
+  "results": [
+    {
+      "family": "kimi",
+      "checkedFiles": [
+        "solver.patch",
+        "summary.md",
+        "public_results.log",
+        "trajectory/subagent_input.md",
+        "trajectory/subagent_output.md",
+        "trajectory/subagent_meta.json",
+        "rerun_2026_06_19/solver.patch",
+        "rerun_2026_06_19/public_results.log",
+        "rerun_2026_06_19/workspace_snapshot/instruction.md",
+        "rerun_2026_06_19/workspace_snapshot/pubspec.yaml",
+        "rerun_2026_06_19/workspace_snapshot/lib/feed_refresh_controller.dart",
+        "rerun_2026_06_19/workspace_snapshot/test/feed_refresh_controller_test.dart",
+        "rerun_2026_06_19/workspace_snapshot/solver_report.md",
+        "rerun_2026_06_19/trajectory/subagent_input.md",
+        "rerun_2026_06_19/trajectory/subagent_output.md",
+        "rerun_2026_06_19/trajectory/subagent_meta.json",
+        "rerun_2026_06_19/trajectory/subagent_session.jsonl",
+        "rerun_2026_06_19/workspace_snapshot/pubspec.lock",
+        "command_telemetry/kimi_fresh_rerun_public_replay.log",
+        "command_telemetry/command_telemetry_result.json",
+        "command_telemetry/full_task_qa_hidden_flake_5.log",
+        "flake_runs_10/flake_loop_10_result.json",
+        "flake_runs_10/baseline_expected_failure_summary.json",
+        "flake_runs_10/reference_solution_summary.json",
+        "flake_runs_10/kimi_fresh_rerun_summary.json",
+        "flake_runs_10/minimax_fresh_rerun_summary.json",
+        "flake_runs_10/gpt_fresh_rerun_summary.json",
+        "p2p_checklist.md"
+      ],
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "family": "minimax",
+      "checkedFiles": [
+        "solver.patch",
+        "summary.md",
+        "public_results.log",
+        "trajectory/subagent_input.md",
+        "trajectory/subagent_output.md",
+        "trajectory/subagent_meta.json",
+        "rerun_2026_06_19/solver.patch",
+        "rerun_2026_06_19/public_results.log",
+        "rerun_2026_06_19/workspace_snapshot/instruction.md",
+        "rerun_2026_06_19/workspace_snapshot/pubspec.yaml",
+        "rerun_2026_06_19/workspace_snapshot/lib/feed_refresh_controller.dart",
+        "rerun_2026_06_19/workspace_snapshot/test/feed_refresh_controller_test.dart",
+        "rerun_2026_06_19/workspace_snapshot/solver_report.md",
+        "rerun_2026_06_19/trajectory/subagent_input.md",
+        "rerun_2026_06_19/trajectory/subagent_output.md",
+        "rerun_2026_06_19/trajectory/subagent_meta.json",
+        "rerun_2026_06_19/trajectory/subagent_session.jsonl",
+        "rerun_2026_06_19/workspace_snapshot/pubspec.lock",
+        "command_telemetry/minimax_fresh_rerun_public_replay.log"
+      ],
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "family": "gpt",
+      "checkedFiles": [
+        "rerun_2026_06_19/solver.patch",
+        "rerun_2026_06_19/public_results.log",
+        "rerun_2026_06_19/workspace_snapshot/instruction.md",
+        "rerun_2026_06_19/workspace_snapshot/pubspec.yaml",
+        "rerun_2026_06_19/workspace_snapshot/lib/feed_refresh_controller.dart",
+        "rerun_2026_06_19/workspace_snapshot/test/feed_refresh_controller_test.dart",
+        "rerun_2026_06_19/workspace_snapshot/solver_report.md",
+        "rerun_2026_06_19/trajectory/subagent_input.md",
+        "rerun_2026_06_19/trajectory/subagent_output.md",
+        "rerun_2026_06_19/trajectory/subagent_meta.json",
+        "rerun_2026_06_19/trajectory/subagent_session.jsonl",
+        "rerun_2026_06_19/workspace_snapshot/pubspec.lock",
+        "command_telemetry/gpt_fresh_rerun_public_replay.log"
+      ],
+      "findingCount": 0,
+      "findings": []
+    }
+  ],
+  "passed": true,
+  "solverFacingScanPassed": true,
+  "restrictedArtifacts": [
+    {
+      "pathGlob": "flake_runs/*_run_*.log",
+      "classification": "restricted/evaluator-only",
+      "reason": "contains hidden verifier output such as hidden test paths/names and assertion details; not solver-facing evidence"
+    },
+    {
+      "pathGlob": "solver_runs/*/hidden_results.log",
+      "classification": "restricted/evaluator-only",
+      "reason": "contains hidden verifier output from clean grading replay; intentionally excluded from solver-facing leakage scan"
+    },
+    {
+      "pathGlob": "solver_runs/*/rerun_2026_06_19/hidden_results.log",
+      "classification": "restricted/evaluator-only",
+      "reason": "contains hidden verifier output from fresh rerun grading replay; intentionally excluded from solver-facing leakage scan"
+    },
+    {
+      "pathGlob": "command_telemetry/*_hidden_replay.log",
+      "classification": "restricted/evaluator-only",
+      "reason": "contains hidden verifier output from measured hidden replay commands; intentionally excluded from solver-facing leakage scan"
+    },
+    {
+      "pathGlob": "flake_runs_10/*_run_*.log",
+      "classification": "restricted/evaluator-only",
+      "reason": "contains hidden verifier output from 10-run hidden flake loop; intentionally excluded from solver-facing leakage scan"
+    },
+    {
+      "pathGlob": "solver_runs/gpt/rerun_2026_06_19/hidden_results.log",
+      "classification": "restricted/evaluator-only",
+      "reason": "contains hidden verifier output from GPT fresh rerun grading replay"
+    },
+    {
+      "pathGlob": "command_telemetry/gpt_fresh_rerun_hidden_replay.log",
+      "classification": "restricted/evaluator-only",
+      "reason": "contains hidden verifier output from measured GPT hidden replay command"
+    },
+    {
+      "pathGlob": "flake_runs_10/gpt_fresh_rerun_run_*.log",
+      "classification": "restricted/evaluator-only",
+      "reason": "contains hidden verifier output from GPT 10-run hidden flake loop"
+    },
+    {
+      "pathGlob": "prompt_verifier_bijection.md",
+      "classification": "restricted/evaluator-only",
+      "reason": "names hidden verifier cases; evaluator-only mapping artifact"
+    },
+    {
+      "pathGlob": "f2p_checklist.md",
+      "classification": "restricted/evaluator-only",
+      "reason": "summarizes hidden failure-to-pass coverage; evaluator-only mapping artifact"
+    }
+  ],
+  "checkedNonSolverLogClasses": [
+    {
+      "pathGlob": "qa_repetition/run_*.log",
+      "classification": "non-solver-facing summary log",
+      "hiddenDetailsFound": false
+    }
+  ],
+  "notes": [
+    "passed=true applies only to the solver-facing scan scope above.",
+    "Restricted evaluator-only logs may be retained as grading evidence but must not be supplied to solvers."
+  ],
+  "hiddenLiteralSampleScope": "hidden-only string literals not present in instruction, baseline source, or public tests"
+}

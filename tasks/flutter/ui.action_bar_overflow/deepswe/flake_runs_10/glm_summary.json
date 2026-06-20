@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ui.action_bar_overflow",
+  "createdDate": "2026-06-19",
+  "target": "glm",
+  "kind": "solver_failed",
+  "expectedPass": false,
+  "passCount": 0,
+  "failCount": 10,
+  "expectationOk": true,
+  "patchSha256": "fa8ecb4c137c234d636a82013a07805c6a7d554c02b7ae636182cff464edb67a",
+  "runs": [
+    {
+      "run": 1,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 7.825,
+      "logPath": "glm_run_01.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 2,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.713,
+      "logPath": "glm_run_02.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 3,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.701,
+      "logPath": "glm_run_03.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 4,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.718,
+      "logPath": "glm_run_04.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 5,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.668,
+      "logPath": "glm_run_05.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 6,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.672,
+      "logPath": "glm_run_06.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 7,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.75,
+      "logPath": "glm_run_07.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 8,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.674,
+      "logPath": "glm_run_08.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 9,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.697,
+      "logPath": "glm_run_09.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 10,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.783,
+      "logPath": "glm_run_10.log",
+      "logClassification": "restricted/evaluator-only"
+    }
+  ],
+  "rawRunLogClassification": "restricted/evaluator-only"
+}

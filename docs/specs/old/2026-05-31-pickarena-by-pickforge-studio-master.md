@@ -1,6 +1,8 @@
 # PickArena by Pickforge Studio — Master Spec
 
-Status: active consolidated master spec
+> Superseded on 2026-06-15 by [`../2026-06-15-pickarena-mobile-agent-benchmark.md`](../2026-06-15-pickarena-mobile-agent-benchmark.md). This archive preserves the old body for historical context.
+
+Status: archived; superseded by `../2026-06-15-pickarena-mobile-agent-benchmark.md`
 Created: 2026-05-31
 Updated: 2026-06-02
 

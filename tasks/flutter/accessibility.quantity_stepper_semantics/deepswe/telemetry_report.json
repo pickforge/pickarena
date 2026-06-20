@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "taskId": "accessibility.quantity_stepper_semantics",
+  "createdDate": "2026-06-19",
+  "durationCostTokenCaptured": true,
+  "providerInternalStreamChunksCaptured": false,
+  "deepSWEComplete": false,
+  "commandTelemetryPath": "command_telemetry/command_telemetry_result.json",
+  "subagentFamilies": {
+    "gpt": {
+      "model": "openai-codex/gpt-5.5:xhigh",
+      "durationMs": 213463,
+      "usage": {
+        "input": 25380,
+        "output": 9705,
+        "cacheRead": 22016,
+        "cacheWrite": 0,
+        "cost": 0.42905800000000005,
+        "turns": 5
+      },
+      "runId": "418a9192"
+    },
+    "glm": {
+      "model": "ollama/glm-5.2:cloud:xhigh",
+      "durationMs": 128591,
+      "usage": {
+        "input": 40000,
+        "output": 6580,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 6
+      },
+      "runId": "418a9192"
+    },
+    "opus": {
+      "model": "anthropic/claude-opus-4-8:xhigh",
+      "durationMs": 123104,
+      "usage": {
+        "input": 14,
+        "output": 8989,
+        "cacheRead": 43250,
+        "cacheWrite": 9409,
+        "cost": 0.30522625000000003,
+        "turns": 7
+      },
+      "runId": "90f0896e"
+    },
+    "minimax": {
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "durationMs": 217668,
+      "usage": {
+        "input": 0,
+        "output": 12249,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 20
+      },
+      "runId": "418a9192"
+    },
+    "kimi": {
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "durationMs": 63608,
+      "usage": {
+        "input": 60598,
+        "output": 5812,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 6
+      },
+      "runId": "418a9192"
+    }
+  },
+  "commandRecordCount": 10,
+  "failedCommandRecords": [
+    {
+      "family": "minimax",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "78bfdf5b8f719c0a457e1674b89d69f1df67c164c7a717681661e5e2d87eed6c",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.495,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 1,
+        "durationSeconds": 8.015,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    },
+    {
+      "family": "kimi",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "5024d8219fc7a2cc8980db9832d9effb52e80fb00056778407a2984075c31244",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.515,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 1,
+        "durationSeconds": 8.176,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    }
+  ],
+  "notes": [
+    "MiniMax and Kimi hidden replay failures are expected failed-solver evidence, not promoted replay evidence.",
+    "Provider-internal stream chunks/session JSONL were not exposed."
+  ]
+}

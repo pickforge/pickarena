@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ui.action_bar_overflow",
+  "createdDate": "2026-06-19",
+  "deepSWEFlakeVerified": true,
+  "failedCandidateFlakeEvidence": false,
+  "deepSWEComplete": false,
+  "hiddenReplayFlakeLoop10": {
+    "path": "flake_runs_10/flake_loop_10_result.json",
+    "passed": true,
+    "runsPerTarget": 10,
+    "targets": {
+      "baseline": {
+        "expected": "fail",
+        "passCount": 0,
+        "failCount": 10,
+        "passedExpectation": true,
+        "summaryPath": "flake_runs_10/baseline_summary.json"
+      },
+      "reference": {
+        "expected": "pass",
+        "passCount": 10,
+        "failCount": 0,
+        "passedExpectation": true,
+        "summaryPath": "flake_runs_10/reference_summary.json"
+      },
+      "gpt": {
+        "expected": "pass",
+        "passCount": 10,
+        "failCount": 0,
+        "passedExpectation": true,
+        "summaryPath": "flake_runs_10/gpt_summary.json"
+      },
+      "minimax": {
+        "expected": "pass",
+        "passCount": 10,
+        "failCount": 0,
+        "passedExpectation": true,
+        "summaryPath": "flake_runs_10/minimax_summary.json"
+      },
+      "kimi": {
+        "expected": "pass",
+        "passCount": 10,
+        "failCount": 0,
+        "passedExpectation": true,
+        "summaryPath": "flake_runs_10/kimi_summary.json"
+      },
+      "glm": {
+        "expected": "fail",
+        "passCount": 0,
+        "failCount": 10,
+        "passedExpectation": true,
+        "summaryPath": "flake_runs_10/glm_summary.json"
+      }
+    }
+  },
+  "fullTaskQaRepetition": {
+    "path": "qa_repetition/qa_repetition_result.json",
+    "passed": true,
+    "runsRequested": 5,
+    "hiddenFlakeRuns": 5
+  },
+  "notes": [
+    "Baseline and GLM matched expected failure outcomes; reference, GPT, MiniMax, and Kimi matched expected passing outcomes.",
+    "Raw replay-loop logs are restricted evaluator-only."
+  ]
+}

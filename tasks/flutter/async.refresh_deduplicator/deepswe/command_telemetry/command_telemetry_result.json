@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "createdDate": "2026-06-19",
+  "scope": "measured wall-clock command telemetry for one full QA run and fresh rerun public/hidden replays",
+  "records": [
+    {
+      "label": "full_task_qa_hidden_flake_5",
+      "command": "dart run --verbosity=error dart_arena:dart_arena_task_qa --task-bundle-root ../tasks/flutter --task async.refresh_deduplicator --hidden-flake-runs 5 --out build/deepswe_async_refresh_telemetry_2026_06_19/qa",
+      "cwd": "<repo>/app",
+      "exitCode": 0,
+      "durationMs": 248076,
+      "logPath": "command_telemetry/full_task_qa_hidden_flake_5.log",
+      "restrictedEvaluatorOnly": false,
+      "commandRedacted": false
+    },
+    {
+      "label": "kimi_fresh_rerun_public_replay",
+      "command": "flutter pub get && flutter test test/feed_refresh_controller_test.dart",
+      "cwd": "/tmp/pickarena_async_kimi_telemetry_public",
+      "exitCode": 0,
+      "durationMs": 6957,
+      "logPath": "command_telemetry/kimi_fresh_rerun_public_replay.log",
+      "restrictedEvaluatorOnly": false,
+      "commandRedacted": false
+    },
+    {
+      "label": "kimi_fresh_rerun_hidden_replay",
+      "command": "flutter pub get && flutter test <restricted hidden verifier path>",
+      "cwd": "/tmp/pickarena_async_kimi_telemetry_hidden",
+      "exitCode": 0,
+      "durationMs": 6988,
+      "logPath": "command_telemetry/kimi_fresh_rerun_hidden_replay.log",
+      "restrictedEvaluatorOnly": true,
+      "commandRedacted": true
+    },
+    {
+      "label": "minimax_fresh_rerun_public_replay",
+      "command": "flutter pub get && flutter test test/feed_refresh_controller_test.dart",
+      "cwd": "/tmp/pickarena_async_minimax_telemetry_public",
+      "exitCode": 0,
+      "durationMs": 7093,
+      "logPath": "command_telemetry/minimax_fresh_rerun_public_replay.log",
+      "restrictedEvaluatorOnly": false,
+      "commandRedacted": false
+    },
+    {
+      "label": "minimax_fresh_rerun_hidden_replay",
+      "command": "flutter pub get && flutter test <restricted hidden verifier path>",
+      "cwd": "/tmp/pickarena_async_minimax_telemetry_hidden",
+      "exitCode": 0,
+      "durationMs": 7012,
+      "logPath": "command_telemetry/minimax_fresh_rerun_hidden_replay.log",
+      "restrictedEvaluatorOnly": true,
+      "commandRedacted": true
+    },
+    {
+      "label": "gpt_fresh_rerun_public_replay",
+      "command": "flutter pub get && flutter test test/feed_refresh_controller_test.dart",
+      "cwd": "/tmp/pickarena_async_gpt_telemetry_public",
+      "exitCode": 0,
+      "durationMs": 6932,
+      "logPath": "command_telemetry/gpt_fresh_rerun_public_replay.log",
+      "restrictedEvaluatorOnly": false,
+      "commandRedacted": false
+    },
+    {
+      "label": "gpt_fresh_rerun_hidden_replay",
+      "command": "flutter pub get && flutter test <restricted hidden verifier path>",
+      "cwd": "/tmp/pickarena_async_gpt_telemetry_hidden",
+      "exitCode": 0,
+      "durationMs": 6977,
+      "logPath": "command_telemetry/gpt_fresh_rerun_hidden_replay.log",
+      "restrictedEvaluatorOnly": true,
+      "commandRedacted": true
+    }
+  ],
+  "passed": true,
+  "errorCount": 0,
+  "restrictedArtifacts": [
+    "command_telemetry/gpt_fresh_rerun_hidden_replay.log",
+    "command_telemetry/kimi_fresh_rerun_hidden_replay.log",
+    "command_telemetry/minimax_fresh_rerun_hidden_replay.log"
+  ],
+  "limitations": [
+    "Single measured pass for full QA and per-rerun replay commands; not a statistically stable performance benchmark.",
+    "Restricted hidden replay logs are evaluator-only and not solver-facing."
+  ]
+}

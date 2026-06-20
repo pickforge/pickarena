@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "createdDate": "2026-06-19",
+  "scope": "10-run hidden verifier loop for baseline expected-failure, reference, and fresh solver rerun patches",
+  "runsPerTarget": 10,
+  "targets": [
+    {
+      "target": "baseline_expected_failure",
+      "mode": "baseline",
+      "runs": 10,
+      "passed": 0,
+      "failed": 10
+    },
+    {
+      "target": "reference_solution",
+      "mode": "solution",
+      "runs": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "target": "kimi_fresh_rerun",
+      "mode": "patch",
+      "runs": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "target": "minimax_fresh_rerun",
+      "mode": "patch",
+      "runs": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "target": "gpt_fresh_rerun",
+      "mode": "patch",
+      "runs": 10,
+      "passed": 10,
+      "failed": 0
+    }
+  ],
+  "expectedOutcomes": {
+    "baseline_expected_failure": "all runs should fail hidden verifier",
+    "reference_solution": "all runs should pass hidden verifier",
+    "kimi_fresh_rerun": "all runs should pass hidden verifier",
+    "minimax_fresh_rerun": "all runs should pass hidden verifier",
+    "gpt_fresh_rerun": "all runs should pass hidden verifier"
+  },
+  "passed": true,
+  "restrictedArtifacts": [
+    "*_run_*.log"
+  ],
+  "limitations": [
+    "Hidden verifier loop only; raw logs are restricted evaluator-only."
+  ]
+}

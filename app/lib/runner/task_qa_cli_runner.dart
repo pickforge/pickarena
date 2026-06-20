@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/path_safety.dart';
 import 'package:dart_arena/core/task_registry.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/task_qa_runner.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
@@ -16,16 +17,20 @@ typedef TaskQaCliLineWriter = void Function(String line);
 typedef TaskQaCliTaskRegistryBuilder = TaskRegistry Function();
 typedef TaskQaCliEnvironmentProviderBuilder =
     RunProvenanceEnvironmentProvider Function();
+typedef TaskQaCliGeneratedCodeSandboxBuilder =
+    Future<GeneratedCodeSandbox?> Function(bool generatedCodeSandboxRequired);
 
 class TaskQaCliDependencies {
   const TaskQaCliDependencies({
     this.taskRegistryBuilder = buildDefaultTaskRegistry,
     this.environmentProviderBuilder = _defaultEnvironmentProvider,
+    this.generatedCodeSandboxBuilder = _defaultGeneratedCodeSandboxBuilder,
     this.now = _now,
   });
 
   final TaskQaCliTaskRegistryBuilder taskRegistryBuilder;
   final TaskQaCliEnvironmentProviderBuilder environmentProviderBuilder;
+  final TaskQaCliGeneratedCodeSandboxBuilder generatedCodeSandboxBuilder;
   final DateTime Function() now;
 }
 
@@ -53,6 +58,14 @@ Future<int> runTaskQaCli(
       out(jsonEncode(_helpJson()));
       return 0;
     }
+    final generatedCodeSandbox = await dependencies.generatedCodeSandboxBuilder(
+      parsed.generatedCodeSandboxRequired,
+    );
+    if (parsed.generatedCodeSandboxRequired && generatedCodeSandbox == null) {
+      throw const TaskQaCliException(
+        'Generated-code sandbox is required, but no sandbox backend was configured.',
+      );
+    }
 
     final registry = dependencies.taskRegistryBuilder();
     final loadedBundleTaskIds = await _registerFileBackedTasks(
@@ -78,6 +91,8 @@ Future<int> runTaskQaCli(
       requiredHiddenFlakeRuns: parsed.hiddenFlakeRuns,
       requireNegativeCases: true,
       evaluatorTimeout: parsed.evaluatorTimeout,
+      generatedCodeSandboxRequired: parsed.generatedCodeSandboxRequired,
+      generatedCodeSandbox: generatedCodeSandbox,
     );
     final environment = await dependencies
         .environmentProviderBuilder()
@@ -103,6 +118,14 @@ Future<int> runTaskQaCli(
         'status': admitted ? 'admitted' : 'rejected',
         'failureCount': report.failureMessages.length,
         'reportPath': _relativeOutputPath(outputDir, reportFile),
+        'runtimeIsolation': {
+          'generatedCodeSandboxEnforced':
+              report.runtimeIsolation.generatedCodeSandboxEnforced,
+          'workspaceEvidenceCount': report.runtimeIsolation.workspaceCount,
+          'workspaceManifestSha256':
+              report.runtimeIsolation.combinedVisibleManifestSha256,
+          'restrictedPathCount': report.runtimeIsolation.restrictedPathCount,
+        },
       });
     }
 
@@ -115,6 +138,13 @@ Future<int> runTaskQaCli(
       'taskCount': tasks.length,
       'admittedTaskCount': tasks.length - rejectedTaskCount,
       'rejectedTaskCount': rejectedTaskCount,
+      'generatedCodeSandbox': {
+        'required': parsed.generatedCodeSandboxRequired,
+        'enforced': generatedCodeSandbox != null,
+        'backend':
+            generatedCodeSandbox?.backend ??
+            bubblewrapGeneratedCodeSandboxBackend,
+      },
       'reports': taskSummaries,
     };
     await summaryFile.writeAsString(_prettyJson(summary));
@@ -214,6 +244,7 @@ _TaskQaCliArgs? _parseArgs(List<String> args) {
   String? workdirRoot;
   var hiddenFlakeRuns = 3;
   Duration? evaluatorTimeout = const Duration(minutes: 2);
+  var generatedCodeSandboxRequired = false;
   final taskIds = <String>[];
   final taskBundleRoots = <String>[];
 
@@ -240,6 +271,9 @@ _TaskQaCliArgs? _parseArgs(List<String> args) {
           seconds: _positiveInt(_requiredValue(args, ++i, arg), arg),
         );
         break;
+      case '--require-generated-code-sandbox':
+        generatedCodeSandboxRequired = true;
+        break;
       default:
         throw TaskQaCliException('unknown argument: $arg');
     }
@@ -260,6 +294,7 @@ _TaskQaCliArgs? _parseArgs(List<String> args) {
     ),
     hiddenFlakeRuns: hiddenFlakeRuns,
     evaluatorTimeout: evaluatorTimeout,
+    generatedCodeSandboxRequired: generatedCodeSandboxRequired,
   );
 }
 
@@ -294,6 +329,7 @@ Map<String, Object?> _helpJson() {
         'value': 'seconds',
         'required': false,
       },
+      {'name': '--require-generated-code-sandbox', 'required': false},
       {'name': '--help', 'required': false},
     ],
     'defaults':
@@ -307,6 +343,14 @@ RunProvenanceEnvironmentProvider _defaultEnvironmentProvider() {
   return DefaultRunProvenanceEnvironmentProvider();
 }
 
+Future<GeneratedCodeSandbox?> _defaultGeneratedCodeSandboxBuilder(
+  bool generatedCodeSandboxRequired,
+) async {
+  if (!generatedCodeSandboxRequired) return null;
+  await BubblewrapGeneratedCodeSandbox.ensureAvailable();
+  return const BubblewrapGeneratedCodeSandbox();
+}
+
 class _TaskQaCliArgs {
   const _TaskQaCliArgs({
     required this.outputDir,
@@ -315,6 +359,7 @@ class _TaskQaCliArgs {
     required this.taskBundleRoots,
     required this.hiddenFlakeRuns,
     required this.evaluatorTimeout,
+    required this.generatedCodeSandboxRequired,
   });
 
   final String outputDir;
@@ -323,4 +368,5 @@ class _TaskQaCliArgs {
   final List<String> taskBundleRoots;
   final int hiddenFlakeRuns;
   final Duration? evaluatorTimeout;
+  final bool generatedCodeSandboxRequired;
 }

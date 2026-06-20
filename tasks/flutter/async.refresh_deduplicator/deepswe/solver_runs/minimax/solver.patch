@@ -1,0 +1,57 @@
+diff --git a/lib/feed_refresh_controller.dart b/lib/feed_refresh_controller.dart
+index 5c2695e..6c298f6 100644
+--- a/lib/feed_refresh_controller.dart
++++ b/lib/feed_refresh_controller.dart
+@@ -36,6 +36,7 @@ class FeedRefreshController {
+   RefreshState _state = const RefreshState(status: RefreshStatus.idle);
+   int _latestRequestId = 0;
+   bool _inFlight = false;
++  Future<void>? _pendingRefresh;
+ 
+   RefreshState get state => _state;
+ 
+@@ -44,12 +45,27 @@ class FeedRefreshController {
+   bool get isLoading => _inFlight;
+ 
+   Future<void> refresh() async {
+-    await _load();
++    final pending = _pendingRefresh;
++    if (pending != null) {
++      return pending;
++    }
++    final future = _load();
++    _pendingRefresh = future;
++    try {
++      await future;
++    } finally {
++      if (identical(_pendingRefresh, future)) {
++        _pendingRefresh = null;
++      }
++    }
+   }
+ 
+   Future<void> forceRefresh() => _load();
+ 
+   Future<void> retry() async {
++    if (_state.status != RefreshStatus.error) {
++      return;
++    }
+     await _load();
+   }
+ 
+@@ -59,9 +75,13 @@ class FeedRefreshController {
+     _state = const RefreshState(status: RefreshStatus.loading);
+     try {
+       final items = await _repository.fetchFeed();
+-      _state = RefreshState(status: RefreshStatus.success, items: items);
++      if (requestId == _latestRequestId) {
++        _state = RefreshState(status: RefreshStatus.success, items: items);
++      }
+     } catch (error) {
+-      _state = RefreshState(status: RefreshStatus.error, error: error);
++      if (requestId == _latestRequestId) {
++        _state = RefreshState(status: RefreshStatus.error, error: error);
++      }
+     } finally {
+       if (requestId == _latestRequestId) {
+         _inFlight = false;

@@ -1,0 +1,620 @@
+{
+  "schemaVersion": 1,
+  "taskId": "accessibility.quantity_stepper_semantics",
+  "taskVersion": 1,
+  "category": "widgetTesting",
+  "difficulty": "medium",
+  "track": "agentic",
+  "tags": [
+    "accessibility",
+    "bugfix",
+    "testing",
+    "ui"
+  ],
+  "release": {
+    "corpus": "private_official",
+    "status": "active"
+  },
+  "admission": {
+    "tool": {
+      "name": "dart_arena_task_qa"
+    },
+    "evaluator": {
+      "schemaVersion": 1,
+      "version": "2026-05-31-master-spec"
+    },
+    "environment": {
+      "dartVersion": "3.11.4 (stable) (Tue Mar 24 01:02:20 2026 -0700) on \"linux_x64\"",
+      "dependencySnapshot": {
+        "status": "present",
+        "files": {
+          "pubspec.yaml": {
+            "sha256": "1a77a2d12be10b5c49655dbf690c7aca5593a6d934b523763549077517314f4e",
+            "bytes": 6336
+          },
+          "pubspec.lock": {
+            "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
+            "bytes": 29033
+          }
+        }
+      },
+      "flutterVersion": "3.41.6",
+      "gitCommit": "7e84e175f9bfcdafa881eb8484074e8282bded7c",
+      "gitDirty": true,
+      "hostPlatform": "linux",
+      "locale": "en_US.UTF-8",
+      "operatingSystemVersion": "Linux 7.0.12-1-cachyos #1 SMP PREEMPT_DYNAMIC Sat, 13 Jun 2026 11:49:00 +0000"
+    }
+  },
+  "executionPolicy": {
+    "allowInternet": false,
+    "resources": {
+      "cpus": 2,
+      "memoryMb": 8192,
+      "maxProcesses": 64,
+      "maxOutputBytes": 1048576
+    },
+    "resourceEnforcement": {
+      "cpus": {
+        "enforced": true,
+        "mechanism": "systemdCpuQuota",
+        "kernelEnforced": true
+      },
+      "memoryMb": {
+        "enforced": true,
+        "mechanism": "rssPolling",
+        "kernelEnforced": false
+      },
+      "maxProcesses": {
+        "enforced": true,
+        "mechanism": "processTreePolling",
+        "kernelEnforced": false
+      },
+      "maxOutputBytes": {
+        "enforced": true,
+        "mechanism": "boundedOutputCapture",
+        "kernelEnforced": false
+      }
+    }
+  },
+  "status": "admitted",
+  "generatedAt": "2026-06-19T05:22:38.930426Z",
+  "checks": {
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "requiredNegativeCaseKindsCovered": true,
+    "hiddenFlakeRuns": 3,
+    "promptSafeContextLeakFree": true,
+    "noopRejected": true,
+    "apiBreakingRejected": true,
+    "overfitRejected": true
+  },
+  "hiddenVerifierDigests": {
+    "quantity_stepper_semantics_hidden": "091f9b0f30e8fb47c9fd3210b4d130f68ad2c7a999ca2049f7606c8fd7062170"
+  },
+  "verifierQualityAudit": {
+    "falsePositiveCount": 0,
+    "falseNegativeCount": 0,
+    "disagreementCount": 2,
+    "infrastructureErrorCount": 0,
+    "flakeRunCount": 3,
+    "flakeFailureCount": 0,
+    "flakeRate": 0.0,
+    "negativeCaseCount": 6,
+    "acceptedNegativeCaseCount": 0,
+    "referencePublicFailureCount": 0,
+    "referenceHiddenFailureCount": 0
+  },
+  "promptSafety": {
+    "target_context_present": true,
+    "public_test_context_present": true,
+    "public_test_context_required": true,
+    "implementation_bodies_omitted": true,
+    "hidden_verifier_leak_free": true,
+    "reference_leak_free": true,
+    "required_negative_case_kinds": [
+      "api_breaking",
+      "noop",
+      "overfit"
+    ],
+    "present_negative_case_kinds": [
+      "api_breaking",
+      "custom",
+      "noop",
+      "overfit"
+    ],
+    "missing_negative_case_kinds": [],
+    "passed": true
+  },
+  "negativeCases": [
+    {
+      "id": "noop",
+      "description": "Leaves the quantity stepper visually working but inaccessible.",
+      "kind": "noop",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 9.2s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 7.7s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "6/6 tests passed",
+          "details": {
+            "total": 6,
+            "passed": 6,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 41,
+            "new_lines": 41,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "quantity_stepper_semantics_hidden",
+          "passed": false,
+          "score": 0.2222222222222222,
+          "rationale": "2/9 hidden tests passed",
+          "details": {
+            "total": 9,
+            "passed": 2,
+            "failed": 0,
+            "errored": 7,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 4,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 5,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 6,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 7,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/quantity_stepper_semantics_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/quantity_stepper_semantics_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api_breaking",
+      "description": "Breaks the public QuantityStepper API and static test keys.",
+      "kind": "api_breaking",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "analysis errors present",
+          "details": {
+            "exitCode": 1,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \n\n  error • The named parameter 'onValueChanged' is required, but there's no corresponding argument • test/quantity_stepper_test.dart:13:13 • missing_required_argument\n  error • The named parameter 'onChanged' isn't defined • test/quantity_stepper_test.dart:17:9 • undefined_named_parameter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:33:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:35:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:60:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:89:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:104:34 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:120:34 • undefined_getter\n\n",
+            "stderr": "8 issues found. (ran in 9.1s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "errors=8 warnings=0 infos=0",
+          "details": {
+            "errors": 8,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 1,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \n\n  error • The named parameter 'onValueChanged' is required, but there's no corresponding argument • test/quantity_stepper_test.dart:13:13 • missing_required_argument\n  error • The named parameter 'onChanged' isn't defined • test/quantity_stepper_test.dart:17:9 • undefined_named_parameter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:33:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:35:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:60:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:89:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:104:34 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:120:34 • undefined_getter\n\n",
+            "stderr": "8 issues found. (ran in 7.5s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "blocked by compile",
+          "details": {
+            "blocked": true,
+            "blocked_by": "compile",
+            "blocked_by_rationale": "analysis errors present",
+            "skipped": true,
+            "reason": "blocked by compile"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.14956861922263506,
+          "rationale": "changed_lines=38",
+          "details": {
+            "original_lines": 41,
+            "new_lines": 51,
+            "changed_lines": 38,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "overfit_public_values",
+      "description": "Special-cases only the public test range instead of fixing semantics generally.",
+      "kind": "overfit",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 9.5s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 7.6s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "6/6 tests passed",
+          "details": {
+            "total": 6,
+            "passed": 6,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.23457028809379765,
+          "rationale": "changed_lines=29",
+          "details": {
+            "original_lines": 41,
+            "new_lines": 54,
+            "changed_lines": 29,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "deleted_or_weakened_public_test",
+      "description": "Replaces the public widget tests with a trivial always-passing test.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 9.5s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 7.6s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "1/1 tests passed",
+          "details": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 41,
+            "new_lines": 41,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "quantity_stepper_semantics_hidden",
+          "passed": false,
+          "score": 0.2222222222222222,
+          "rationale": "2/9 hidden tests passed",
+          "details": {
+            "total": 9,
+            "passed": 2,
+            "failed": 0,
+            "errored": 7,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 4,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 5,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 6,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 7,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/quantity_stepper_semantics_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/quantity_stepper_semantics_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "fake_labels",
+      "description": "Adds accessibility words as fake offstage labels instead of labeling the real controls.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "analysis errors present",
+          "details": {
+            "exitCode": 1,
+            "stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \n\n   info • Use 'const' with the constructor to improve performance • lib/quantity_stepper.dart:26:9 • prefer_const_constructors\n   info • Use 'const' with the constructor to improve performance • lib/quantity_stepper.dart:28:18 • prefer_const_constructors\n\n",
+            "stderr": "2 issues found. (ran in 9.2s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 0.96,
+          "rationale": "errors=0 warnings=0 infos=2",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 2,
+            "exit_code": 1,
+            "raw_stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \n\n   info • Use 'const' with the constructor to improve performance • lib/quantity_stepper.dart:26:9 • prefer_const_constructors\n   info • Use 'const' with the constructor to improve performance • lib/quantity_stepper.dart:28:18 • prefer_const_constructors\n\n",
+            "stderr": "2 issues found. (ran in 7.7s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "blocked by compile",
+          "details": {
+            "blocked": true,
+            "blocked_by": "compile",
+            "blocked_by_rationale": "analysis errors present",
+            "skipped": true,
+            "reason": "blocked by compile"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.14956861922263506,
+          "rationale": "changed_lines=38",
+          "details": {
+            "original_lines": 41,
+            "new_lines": 59,
+            "changed_lines": 38,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "fake_semantics_callback",
+      "description": "Adds decorative semantics actions that do not invoke the real onChanged callback.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 9.3s)\n",
+            "stderr": "",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 7.7s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "6/6 tests passed",
+          "details": {
+            "total": 6,
+            "passed": 6,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.09071795328941251,
+          "rationale": "changed_lines=48",
+          "details": {
+            "original_lines": 41,
+            "new_lines": 69,
+            "changed_lines": 48,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    }
+  ],
+  "failureMessages": []
+}

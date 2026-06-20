@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "createdDate": "2026-06-19",
+  "scope": "hidden verifier repeated loop only",
+  "runsPerTarget": 5,
+  "targets": [
+    {
+      "target": "baseline_expected_failure",
+      "mode": "baseline",
+      "runs": 5,
+      "passed": 0,
+      "failed": 5
+    },
+    {
+      "target": "reference_solution",
+      "mode": "solution",
+      "runs": 5,
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "target": "kimi_replay",
+      "mode": "patch",
+      "runs": 5,
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "target": "minimax_replay",
+      "mode": "patch",
+      "runs": 5,
+      "passed": 5,
+      "failed": 0
+    }
+  ],
+  "expectedOutcomes": {
+    "baseline_expected_failure": "all runs should fail hidden verifier",
+    "reference_solution": "all runs should pass hidden verifier",
+    "kimi_replay": "all runs should pass hidden verifier",
+    "minimax_replay": "all runs should pass hidden verifier"
+  },
+  "passed": true,
+  "limitations": [
+    "public tests and negative cases were not repeated in this loop",
+    "duration/cost/token telemetry was not captured"
+  ]
+}

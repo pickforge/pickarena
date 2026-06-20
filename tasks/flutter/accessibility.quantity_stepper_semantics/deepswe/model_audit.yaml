@@ -1,0 +1,109 @@
+schemaVersion: 1
+taskId: accessibility.quantity_stepper_semantics
+createdDate: '2026-06-19'
+deep_swe_complete: false
+replay_verified: true
+workspace_isolation_verified: false
+duration_cost_token_captured: true
+provider_internal_stream_chunks_captured: false
+solvers:
+- family: gpt
+  model: openai-codex/gpt-5.5:xhigh
+  durable_patch: true
+  patch_sha256: 98cff265b2452874476f0031fa4e96cf00902fbbd701fe4ca008d1ef4caae2e8
+  public_passed: true
+  hidden_passed_after_injection: true
+  clean_replay_verified: true
+  promoted: true
+  subagent_duration_ms: 213463
+  usage:
+    input: 25380
+    output: 9705
+    cacheRead: 22016
+    cacheWrite: 0
+    cost: 0.42905800000000005
+    turns: 5
+- family: glm
+  model: ollama/glm-5.2:cloud:xhigh
+  durable_patch: true
+  patch_sha256: 1622043629313cbef0ba63c42275ae76a8d632eb234c9c1f4e5fd4a2091fe7c1
+  public_passed: true
+  hidden_passed_after_injection: true
+  clean_replay_verified: true
+  promoted: true
+  subagent_duration_ms: 128591
+  usage:
+    input: 40000
+    output: 6580
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 6
+- family: opus
+  model: anthropic/claude-opus-4-8:xhigh
+  durable_patch: true
+  patch_sha256: 64f5fbc210e6f62b1548b91d4137461f0a2e341e3d66906c4f367a7576cff5fb
+  public_passed: true
+  hidden_passed_after_injection: true
+  clean_replay_verified: true
+  promoted: true
+  subagent_duration_ms: 123104
+  usage:
+    input: 14
+    output: 8989
+    cacheRead: 43250
+    cacheWrite: 9409
+    cost: 0.30522625000000003
+    turns: 7
+- family: minimax
+  model: ollama/minimax-m3:cloud:xhigh
+  durable_patch: true
+  patch_sha256: 78bfdf5b8f719c0a457e1674b89d69f1df67c164c7a717681661e5e2d87eed6c
+  public_passed: true
+  hidden_passed_after_injection: false
+  clean_replay_verified: false
+  promoted: false
+  subagent_duration_ms: 217668
+  usage:
+    input: 0
+    output: 12249
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 20
+- family: kimi
+  model: ollama/kimi-k2.7-code:cloud:xhigh
+  durable_patch: true
+  patch_sha256: 5024d8219fc7a2cc8980db9832d9effb52e80fb00056778407a2984075c31244
+  public_passed: true
+  hidden_passed_after_injection: false
+  clean_replay_verified: false
+  promoted: false
+  subagent_duration_ms: 63608
+  usage:
+    input: 60598
+    output: 5812
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 6
+passing_fresh_solver_families:
+- gpt
+- glm
+- opus
+failed_fresh_solver_families:
+- minimax
+- kimi
+checks:
+  qa_repetition_passed: true
+  hidden_flake_loop_10_passed: true
+  solver_facing_leakage_scan_passed: true
+checklists:
+  prompt_verifier_bijection: prompt_verifier_bijection.md
+  f2p: f2p_checklist.md
+  p2p: p2p_checklist.md
+pending:
+- provider-internal stream chunks/session JSONL not exposed
+- clean committed provenance / gitDirty=false run
+- authored-by provenance unknown
+- strong workspace-isolation proof

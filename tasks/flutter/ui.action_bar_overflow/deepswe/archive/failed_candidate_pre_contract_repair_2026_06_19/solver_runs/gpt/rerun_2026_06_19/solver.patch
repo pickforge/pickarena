@@ -1,0 +1,163 @@
+diff --git a/lib/responsive_action_bar.dart b/lib/responsive_action_bar.dart
+index c6d9dde..384b6a6 100644
+--- a/lib/responsive_action_bar.dart
++++ b/lib/responsive_action_bar.dart
+@@ -1,3 +1,5 @@
++import 'dart:math' as math;
++
+ import 'package:flutter/material.dart';
+ 
+ class ResponsiveActionBarAction {
+@@ -43,7 +45,10 @@ class ResponsiveActionBar extends StatelessWidget {
+   Widget build(BuildContext context) {
+     return LayoutBuilder(
+       builder: (context, constraints) {
+-        final split = _splitActions(constraints.maxWidth);
++        final split = _splitActions(context, constraints.maxWidth);
++        final hasSecondaryControls =
++            split.inline.isNotEmpty || split.overflow.isNotEmpty;
++
+         return Row(
+           children: <Widget>[
+             for (final action in split.inline)
+@@ -51,6 +56,7 @@ class ResponsiveActionBar extends StatelessWidget {
+             if (split.overflow.isNotEmpty)
+               _OverflowMenu(actions: split.overflow, tooltip: overflowTooltip),
+             const Spacer(),
++            if (hasSecondaryControls) const SizedBox(width: _groupSpacing),
+             Flexible(
+               child: FilledButton(
+                 key: primaryButtonKey,
+@@ -64,9 +70,109 @@ class ResponsiveActionBar extends StatelessWidget {
+     );
+   }
+ 
+-  _ActionSplit _splitActions(double _) {
+-    return _ActionSplit(actions, const <ResponsiveActionBarAction>[]);
++  _ActionSplit _splitActions(BuildContext context, double maxWidth) {
++    final orderedActions = _orderedActions();
++    if (orderedActions.isEmpty || !maxWidth.isFinite) {
++      return _ActionSplit(
++        orderedActions,
++        const <ResponsiveActionBarAction>[],
++      );
++    }
++
++    final primaryWidth = _primaryButtonWidth(context, primaryLabel);
++    final allInlineWidth = orderedActions.fold<double>(
++          primaryWidth + _groupSpacing,
++          (width, action) => width + _actionButtonWidth(context, action.label),
++        );
++
++    if (allInlineWidth <= maxWidth) {
++      return _ActionSplit(
++        orderedActions,
++        const <ResponsiveActionBarAction>[],
++      );
++    }
++
++    final primaryReserve = math.max(primaryWidth, maxWidth / 2);
++    final availableForInline =
++        maxWidth - primaryReserve - _overflowButtonWidth - _groupSpacing;
++    final inline = <ResponsiveActionBarAction>[];
++    var usedWidth = 0.0;
++
++    for (final action in orderedActions) {
++      final actionWidth = _actionButtonWidth(context, action.label);
++      if (usedWidth + actionWidth > availableForInline) {
++        break;
++      }
++      inline.add(action);
++      usedWidth += actionWidth;
++    }
++
++    return _ActionSplit(
++      inline,
++      orderedActions.skip(inline.length).toList(growable: false),
++    );
+   }
++
++  List<ResponsiveActionBarAction> _orderedActions() {
++    final indexedActions = <_IndexedAction>[
++      for (var index = 0; index < actions.length; index++)
++        _IndexedAction(actions[index], index),
++    ]..sort((a, b) {
++        final priorityOrder = a.action.priority.compareTo(b.action.priority);
++        if (priorityOrder != 0) {
++          return priorityOrder;
++        }
++        return a.index.compareTo(b.index);
++      });
++
++    return <ResponsiveActionBarAction>[
++      for (final indexedAction in indexedActions) indexedAction.action,
++    ];
++  }
++}
++
++const double _groupSpacing = 16;
++const double _overflowButtonWidth = 48;
++const double _buttonMinWidth = 64;
++const double _primaryHorizontalPadding = 48;
++const double _actionHorizontalPadding = 40;
++const double _actionIconWidth = 24;
++const double _actionIconGap = 8;
++
++class _IndexedAction {
++  const _IndexedAction(this.action, this.index);
++
++  final ResponsiveActionBarAction action;
++  final int index;
++}
++
++double _primaryButtonWidth(BuildContext context, String label) {
++  return math.max(
++    _buttonMinWidth,
++    _textWidth(context, label) + _primaryHorizontalPadding,
++  );
++}
++
++double _actionButtonWidth(BuildContext context, String label) {
++  return math.max(
++    _buttonMinWidth,
++    _textWidth(context, label) +
++        _actionIconWidth +
++        _actionIconGap +
++        _actionHorizontalPadding,
++  );
++}
++
++double _textWidth(BuildContext context, String text) {
++  final style = Theme.of(context).textTheme.labelLarge ??
++      const TextStyle(fontSize: 14);
++  final painter = TextPainter(
++    text: TextSpan(text: text, style: style),
++    textDirection: Directionality.of(context),
++    textScaler: MediaQuery.textScalerOf(context),
++  )..layout();
++
++  return painter.width;
+ }
+ 
+ class _ActionButton extends StatelessWidget {
+@@ -112,16 +218,11 @@ class _OverflowMenu extends StatelessWidget {
+           }
+         }
+ 
+-        return Semantics(
++        return IconButton(
+           key: ResponsiveActionBar.overflowButtonKey,
+-          label: tooltip,
+-          button: true,
+-          onTap: toggleMenu,
+-          child: IconButton(
+-            tooltip: tooltip,
+-            icon: const Icon(Icons.more_horiz),
+-            onPressed: toggleMenu,
+-          ),
++          tooltip: tooltip,
++          icon: const Icon(Icons.more_horiz),
++          onPressed: toggleMenu,
+         );
+       },
+     );

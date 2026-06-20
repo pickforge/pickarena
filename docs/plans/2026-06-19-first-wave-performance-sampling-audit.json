@@ -1,0 +1,1553 @@
+{
+  "schemaVersion": 1,
+  "createdDate": "2026-06-19",
+  "scope": {
+    "name": "first-wave performance/duration sampling audit",
+    "taskOrder": [
+      "async.refresh_deduplicator",
+      "accessibility.quantity_stepper_semantics",
+      "refactor.price_label_formatter",
+      "persistence.offline_feed_preferences",
+      "ui.action_bar_overflow"
+    ],
+    "source": "existing DeepSWE artifacts only",
+    "artifactScopeOnly": true
+  },
+  "claim": {
+    "deepSWEComplete": false,
+    "workspaceIsolationVerified": false,
+    "artifactScopeOnly": true,
+    "performanceBenchmark": false,
+    "broaderPerformanceSamplingAudited": true,
+    "restrictedContentRedacted": true,
+    "hiddenCommandsRedacted": true
+  },
+  "sourcePolicy": {
+    "includedArtifactTypes": [
+      "replay_manifest.json",
+      "telemetry_report.json",
+      "command_telemetry/command_telemetry_result.json",
+      "qa_repetition/qa_repetition_result.json",
+      "flake_report.json",
+      "flake_runs_10/flake_loop_10_result.json",
+      "solver_runs/*/rerun_2026_06_19/rerun_result.json",
+      "solver_runs/*/rerun_2026_06_19/trajectory/subagent_meta.json"
+    ],
+    "redactionRule": "Do not copy hidden command strings, restricted log contents, restricted hidden log filenames, hidden test paths, prompt-verifier/f2p contents, or session JSONL contents. Use only task IDs, family/model names, durations, token/cost metadata, pass/fail counts, exit-code counts, booleans, and source artifact JSON paths.",
+    "hiddenCommandFieldsCopied": false,
+    "restrictedLogContentCopied": false,
+    "sessionJsonlContentCopied": false
+  },
+  "overall": {
+    "tasksAudited": 5,
+    "acceptedSliceCount": 5,
+    "failedCandidateSlices": [],
+    "comparableSolverSampleCount": 20,
+    "legacySolverSampleCount": 2,
+    "allSolverMetadataSampleCount": 23,
+    "commandRecordCount": 41,
+    "publicReplayCommandCount": 20,
+    "hiddenReplayCommandCount": 20,
+    "fullQaMeasuredCommandCount": 1,
+    "solverPublicPassedCount": 20,
+    "solverHiddenPassedCount": 16,
+    "solverHiddenFailedCount": 4,
+    "commandFailureCount": 4,
+    "fullTaskQaRepetitionRunCount": 25,
+    "qaRepetitionFailureCount": 0,
+    "hiddenFlakeLoopTargetCount": 30,
+    "hiddenFlakeLoopRunCount": 300,
+    "hiddenFlakeLoopExpectationFailureCount": 0,
+    "commandFailureContext": "All 4 command failures are expected hidden replay failures from failed solver evidence."
+  },
+  "durationStats": {
+    "p95Method": "nearest-rank",
+    "solverSubagentDurationMs": {
+      "overall": {
+        "count": 23,
+        "min": 37927,
+        "median": 128039,
+        "mean": 203910.609,
+        "p95": 652764,
+        "max": 1038638
+      },
+      "comparableFreshFinal": {
+        "count": 20,
+        "min": 37927,
+        "median": 125571.5,
+        "mean": 147792.55,
+        "p95": 277498,
+        "max": 518440
+      },
+      "legacyInitial": {
+        "count": 2,
+        "min": 42691,
+        "median": 347727.5,
+        "mean": 347727.5,
+        "p95": 652764,
+        "max": 652764
+      },
+      "byTask": {
+        "async.refresh_deduplicator": {
+          "count": 5,
+          "min": 42691,
+          "median": 152440,
+          "mean": 224712.6,
+          "p95": 652764,
+          "max": 652764
+        },
+        "accessibility.quantity_stepper_semantics": {
+          "count": 5,
+          "min": 63608,
+          "median": 128591,
+          "mean": 149286.8,
+          "p95": 217668,
+          "max": 217668
+        },
+        "refactor.price_label_formatter": {
+          "count": 4,
+          "min": 42345,
+          "median": 75619.5,
+          "mean": 86527.75,
+          "p95": 152527,
+          "max": 152527
+        },
+        "persistence.offline_feed_preferences": {
+          "count": 4,
+          "min": 37927,
+          "median": 77852.5,
+          "mean": 80417.75,
+          "p95": 128039,
+          "max": 128039
+        },
+        "ui.action_bar_overflow": {
+          "count": 5,
+          "min": 83339,
+          "median": 277498,
+          "mean": 430433,
+          "p95": 1038638,
+          "max": 1038638
+        }
+      }
+    },
+    "commandReplayDurationMs": {
+      "public": {
+        "count": 20,
+        "min": 6932,
+        "median": 7852.5,
+        "mean": 7772.5,
+        "p95": 8200,
+        "max": 8536
+      },
+      "hidden": {
+        "count": 20,
+        "min": 2509,
+        "median": 7869.5,
+        "mean": 6881.75,
+        "p95": 8510,
+        "max": 8691
+      },
+      "overallReplay": {
+        "count": 40,
+        "min": 2509,
+        "median": 7869.5,
+        "mean": 7327.125,
+        "p95": 8510,
+        "max": 8691
+      },
+      "byTask": {
+        "async.refresh_deduplicator": {
+          "public": {
+            "count": 3,
+            "min": 6932,
+            "median": 6957,
+            "mean": 6994,
+            "p95": 7093,
+            "max": 7093
+          },
+          "hidden": {
+            "count": 3,
+            "min": 6977,
+            "median": 6988,
+            "mean": 6992.333,
+            "p95": 7012,
+            "max": 7012
+          },
+          "overallReplay": {
+            "count": 6,
+            "min": 6932,
+            "median": 6982.5,
+            "mean": 6993.167,
+            "p95": 7093,
+            "max": 7093
+          }
+        },
+        "accessibility.quantity_stepper_semantics": {
+          "public": {
+            "count": 5,
+            "min": 8046,
+            "median": 8138,
+            "mean": 8198.8,
+            "p95": 8536,
+            "max": 8536
+          },
+          "hidden": {
+            "count": 5,
+            "min": 8153,
+            "median": 8390,
+            "mean": 8404.2,
+            "p95": 8691,
+            "max": 8691
+          },
+          "overallReplay": {
+            "count": 10,
+            "min": 8046,
+            "median": 8215,
+            "mean": 8301.5,
+            "p95": 8691,
+            "max": 8691
+          }
+        },
+        "refactor.price_label_formatter": {
+          "public": {
+            "count": 4,
+            "min": 7989,
+            "median": 8040,
+            "mean": 8067.25,
+            "p95": 8200,
+            "max": 8200
+          },
+          "hidden": {
+            "count": 4,
+            "min": 8101,
+            "median": 8153.5,
+            "mean": 8173,
+            "p95": 8284,
+            "max": 8284
+          },
+          "overallReplay": {
+            "count": 8,
+            "min": 7989,
+            "median": 8122.5,
+            "mean": 8120.125,
+            "p95": 8284,
+            "max": 8284
+          }
+        },
+        "persistence.offline_feed_preferences": {
+          "public": {
+            "count": 4,
+            "min": 7773,
+            "median": 7810.5,
+            "mean": 7821.5,
+            "p95": 7892,
+            "max": 7892
+          },
+          "hidden": {
+            "count": 4,
+            "min": 7769,
+            "median": 7813,
+            "mean": 7819.75,
+            "p95": 7884,
+            "max": 7884
+          },
+          "overallReplay": {
+            "count": 8,
+            "min": 7769,
+            "median": 7810.5,
+            "mean": 7820.625,
+            "p95": 7892,
+            "max": 7892
+          }
+        },
+        "ui.action_bar_overflow": {
+          "public": {
+            "count": 4,
+            "min": 7446,
+            "median": 7481.5,
+            "mean": 7479.75,
+            "p95": 7510,
+            "max": 7510
+          },
+          "hidden": {
+            "count": 4,
+            "min": 2509,
+            "median": 2712,
+            "mean": 2666.5,
+            "p95": 2733,
+            "max": 2733
+          },
+          "overallReplay": {
+            "count": 8,
+            "min": 2509,
+            "median": 5089.5,
+            "mean": 5073.125,
+            "p95": 7510,
+            "max": 7510
+          }
+        }
+      }
+    },
+    "fullQaMeasuredDurationMs": {
+      "count": 1,
+      "min": 248076,
+      "median": 248076,
+      "mean": 248076,
+      "p95": 248076,
+      "max": 248076,
+      "sourceTask": "async.refresh_deduplicator",
+      "sourceLabel": "full_task_qa_hidden_flake_5"
+    },
+    "qaRepetitionSeconds": {
+      "overall": {
+        "count": 15,
+        "min": 224.247,
+        "median": 248.788,
+        "mean": 250.412,
+        "p95": 271.15,
+        "max": 271.15
+      },
+      "availableRunCount": 15,
+      "durationUnavailableRunCount": 10,
+      "byTask": {
+        "async.refresh_deduplicator": {
+          "durationSeconds": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          },
+          "durationUnavailableRunCount": 5
+        },
+        "accessibility.quantity_stepper_semantics": {
+          "durationSeconds": {
+            "count": 5,
+            "min": 224.247,
+            "median": 228.089,
+            "mean": 229.286,
+            "p95": 235.285,
+            "max": 235.285
+          },
+          "durationUnavailableRunCount": 0
+        },
+        "refactor.price_label_formatter": {
+          "durationSeconds": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          },
+          "durationUnavailableRunCount": 5
+        },
+        "persistence.offline_feed_preferences": {
+          "durationSeconds": {
+            "count": 5,
+            "min": 246.562,
+            "median": 248.788,
+            "mean": 253.405,
+            "p95": 271.15,
+            "max": 271.15
+          },
+          "durationUnavailableRunCount": 0
+        },
+        "ui.action_bar_overflow": {
+          "durationSeconds": {
+            "count": 5,
+            "min": 267.228,
+            "median": 268.683,
+            "mean": 268.546,
+            "p95": 269.986,
+            "max": 269.986
+          },
+          "durationUnavailableRunCount": 0
+        }
+      }
+    },
+    "flakeLoopSeconds": {
+      "runDurationSeconds": {
+        "count": 250,
+        "min": 1.601,
+        "median": 2.466,
+        "mean": 2.896,
+        "p95": 7.916,
+        "max": 9.698
+      },
+      "targetPubGetDurationSeconds": {
+        "count": 19,
+        "min": 0.483,
+        "median": 0.505,
+        "mean": 0.516,
+        "p95": 0.696,
+        "max": 0.696
+      },
+      "availableRunDurationCount": 250,
+      "durationUnavailableRunCount": 50,
+      "availableTargetPubGetDurationCount": 19,
+      "targetPubGetDurationUnavailableCount": 11,
+      "byTask": {
+        "async.refresh_deduplicator": {
+          "runDurationSeconds": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          },
+          "targetPubGetDurationSeconds": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          },
+          "durationUnavailable": {
+            "runDurationUnavailableCount": 50,
+            "targetPubGetDurationUnavailableCount": 5
+          }
+        },
+        "accessibility.quantity_stepper_semantics": {
+          "runDurationSeconds": {
+            "count": 70,
+            "min": 2.286,
+            "median": 2.62,
+            "mean": 3.143,
+            "p95": 8.134,
+            "max": 8.489
+          },
+          "targetPubGetDurationSeconds": {
+            "count": 7,
+            "min": 0.483,
+            "median": 0.497,
+            "mean": 0.5,
+            "p95": 0.514,
+            "max": 0.514
+          },
+          "durationUnavailable": {
+            "runDurationUnavailableCount": 0,
+            "targetPubGetDurationUnavailableCount": 0
+          }
+        },
+        "refactor.price_label_formatter": {
+          "runDurationSeconds": {
+            "count": 60,
+            "min": 2.195,
+            "median": 2.276,
+            "mean": 2.87,
+            "p95": 7.916,
+            "max": 8.072
+          },
+          "targetPubGetDurationSeconds": {
+            "count": 6,
+            "min": 0.493,
+            "median": 0.498,
+            "mean": 0.5,
+            "p95": 0.508,
+            "max": 0.508
+          },
+          "durationUnavailable": {
+            "runDurationUnavailableCount": 0,
+            "targetPubGetDurationUnavailableCount": 0
+          }
+        },
+        "persistence.offline_feed_preferences": {
+          "runDurationSeconds": {
+            "count": 60,
+            "min": 1.601,
+            "median": 1.706,
+            "mean": 2.424,
+            "p95": 7.359,
+            "max": 9.698
+          },
+          "targetPubGetDurationSeconds": {
+            "count": 6,
+            "min": 0.505,
+            "median": 0.514,
+            "mean": 0.551,
+            "p95": 0.696,
+            "max": 0.696
+          },
+          "durationUnavailable": {
+            "runDurationUnavailableCount": 0,
+            "targetPubGetDurationUnavailableCount": 0
+          }
+        },
+        "ui.action_bar_overflow": {
+          "runDurationSeconds": {
+            "count": 60,
+            "min": 2.417,
+            "median": 2.619,
+            "mean": 3.108,
+            "p95": 7.767,
+            "max": 7.929
+          },
+          "targetPubGetDurationSeconds": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          },
+          "durationUnavailable": {
+            "runDurationUnavailableCount": 0,
+            "targetPubGetDurationUnavailableCount": 6
+          }
+        }
+      }
+    }
+  },
+  "usageTotals": {
+    "overall": {
+      "sampleCount": 23,
+      "comparableSampleCount": 20,
+      "legacySampleCount": 2,
+      "totals": {
+        "input": 1500867,
+        "output": 206812,
+        "cacheRead": 646585,
+        "cacheWrite": 24487,
+        "turns": 235,
+        "cost": 2.908
+      }
+    },
+    "byTask": {
+      "async.refresh_deduplicator": {
+        "sampleCount": 5,
+        "comparableSampleCount": 3,
+        "legacySampleCount": 2,
+        "totals": {
+          "input": 140205,
+          "output": 40692,
+          "cacheRead": 42496,
+          "cacheWrite": 0,
+          "turns": 45,
+          "cost": 0.348
+        }
+      },
+      "accessibility.quantity_stepper_semantics": {
+        "sampleCount": 5,
+        "comparableSampleCount": 5,
+        "legacySampleCount": 0,
+        "totals": {
+          "input": 125992,
+          "output": 43335,
+          "cacheRead": 65266,
+          "cacheWrite": 9409,
+          "turns": 44,
+          "cost": 0.734
+        }
+      },
+      "refactor.price_label_formatter": {
+        "sampleCount": 4,
+        "comparableSampleCount": 4,
+        "legacySampleCount": 0,
+        "totals": {
+          "input": 130683,
+          "output": 16664,
+          "cacheRead": 145920,
+          "cacheWrite": 0,
+          "turns": 45,
+          "cost": 0.416
+        }
+      },
+      "persistence.offline_feed_preferences": {
+        "sampleCount": 4,
+        "comparableSampleCount": 4,
+        "legacySampleCount": 0,
+        "totals": {
+          "input": 72988,
+          "output": 8654,
+          "cacheRead": 69120,
+          "cacheWrite": 0,
+          "turns": 32,
+          "cost": 0.235
+        }
+      },
+      "ui.action_bar_overflow": {
+        "sampleCount": 5,
+        "comparableSampleCount": 4,
+        "legacySampleCount": 0,
+        "abortedMetadataOnlySampleCount": 1,
+        "totals": {
+          "input": 1030999,
+          "output": 97467,
+          "cacheRead": 323783,
+          "cacheWrite": 15078,
+          "turns": 69,
+          "cost": 1.175
+        }
+      }
+    }
+  },
+  "tasks": [
+    {
+      "taskId": "async.refresh_deduplicator",
+      "sourceArtifacts": {
+        "replayManifest": "tasks/flutter/async.refresh_deduplicator/deepswe/replay_manifest.json",
+        "telemetryReport": "tasks/flutter/async.refresh_deduplicator/deepswe/telemetry_report.json",
+        "commandTelemetry": "tasks/flutter/async.refresh_deduplicator/deepswe/command_telemetry/command_telemetry_result.json",
+        "qaRepetition": "tasks/flutter/async.refresh_deduplicator/deepswe/qa_repetition/qa_repetition_result.json",
+        "flakeReport": "tasks/flutter/async.refresh_deduplicator/deepswe/flake_report.json",
+        "flakeLoop10": "tasks/flutter/async.refresh_deduplicator/deepswe/flake_runs_10/flake_loop_10_result.json",
+        "solverRerunResults": [
+          "tasks/flutter/async.refresh_deduplicator/deepswe/solver_runs/gpt/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/async.refresh_deduplicator/deepswe/solver_runs/kimi/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/async.refresh_deduplicator/deepswe/solver_runs/minimax/rerun_2026_06_19/rerun_result.json"
+        ]
+      },
+      "sliceState": "accepted-artifact-scope-slice",
+      "acceptedArtifactScopeSlice": true,
+      "failedCandidate": false,
+      "deepSWEComplete": false,
+      "solverTelemetrySummary": {
+        "comparableFreshFinalSampleCount": 3,
+        "legacyInitialSampleCount": 2,
+        "allMetadataSampleCount": 5,
+        "publicPassedCount": 3,
+        "publicTotalCount": 3,
+        "hiddenPassedCount": 3,
+        "hiddenFailedCount": 0,
+        "hiddenTotalCount": 3,
+        "durationMs": {
+          "allMetadata": {
+            "count": 5,
+            "min": 42691,
+            "median": 152440,
+            "mean": 224712.6,
+            "p95": 652764,
+            "max": 652764
+          },
+          "comparableFreshFinal": {
+            "count": 3,
+            "min": 57822,
+            "median": 152440,
+            "mean": 142702.667,
+            "p95": 217846,
+            "max": 217846
+          },
+          "legacyInitial": {
+            "count": 2,
+            "min": 42691,
+            "median": 347727.5,
+            "mean": 347727.5,
+            "p95": 652764,
+            "max": 652764
+          }
+        },
+        "usageTotals": {
+          "input": 140205,
+          "output": 40692,
+          "cacheRead": 42496,
+          "cacheWrite": 0,
+          "turns": 45,
+          "cost": 0.348
+        },
+        "families": [
+          "kimi",
+          "minimax",
+          "gpt"
+        ],
+        "legacyFamilies": [
+          "kimi",
+          "minimax"
+        ],
+        "models": [
+          "ollama/kimi-k2.7-code:cloud:xhigh",
+          "ollama/minimax-m3:cloud:xhigh",
+          "openai-codex/gpt-5.5:xhigh"
+        ]
+      },
+      "commandTelemetrySummary": {
+        "commandRecordCount": 7,
+        "publicReplayCommandCount": 3,
+        "hiddenReplayCommandCount": 3,
+        "fullQaMeasuredCommandCount": 1,
+        "commandFailureCount": 0,
+        "commandFailureContext": "No command failures recorded.",
+        "durationMs": {
+          "publicReplay": {
+            "count": 3,
+            "min": 6932,
+            "median": 6957,
+            "mean": 6994,
+            "p95": 7093,
+            "max": 7093
+          },
+          "hiddenReplay": {
+            "count": 3,
+            "min": 6977,
+            "median": 6988,
+            "mean": 6992.333,
+            "p95": 7012,
+            "max": 7012
+          },
+          "overallReplay": {
+            "count": 6,
+            "min": 6932,
+            "median": 6982.5,
+            "mean": 6993.167,
+            "p95": 7093,
+            "max": 7093
+          },
+          "fullQaMeasured": {
+            "count": 1,
+            "min": 248076,
+            "median": 248076,
+            "mean": 248076,
+            "p95": 248076,
+            "max": 248076
+          }
+        },
+        "hiddenCommandRedacted": true,
+        "restrictedLogContentRedacted": true
+      },
+      "qaRepetitionSummary": {
+        "runCount": 5,
+        "failureCount": 0,
+        "passed": true,
+        "durationSeconds": {
+          "count": 0,
+          "min": null,
+          "median": null,
+          "mean": null,
+          "p95": null,
+          "max": null
+        },
+        "durationUnavailableCount": 5
+      },
+      "flakeLoopSummary": {
+        "targetCount": 5,
+        "runCount": 50,
+        "expectationFailureCount": 0,
+        "runDurationSeconds": {
+          "count": 0,
+          "min": null,
+          "median": null,
+          "mean": null,
+          "p95": null,
+          "max": null
+        },
+        "targetPubGetDurationSeconds": {
+          "count": 0,
+          "min": null,
+          "median": null,
+          "mean": null,
+          "p95": null,
+          "max": null
+        },
+        "durationUnavailable": {
+          "runDurationUnavailableCount": 50,
+          "targetPubGetDurationUnavailableCount": 5
+        },
+        "passed": true
+      },
+      "redactions": {
+        "restrictedContentRedacted": true,
+        "hiddenCommandsRedacted": true,
+        "hiddenCommandStringsCopied": false,
+        "restrictedHiddenLogFilenamesCopied": false,
+        "hiddenTestPathsCopied": false,
+        "promptVerifierOrF2pContentsCopied": false,
+        "sessionJsonlContentsCopied": false
+      },
+      "limitations": [
+        "DeepSWE completion remains false; this audit uses existing artifact-scope evidence only.",
+        "This is duration/performance sampling, not a statistical benchmark.",
+        "Provider-internal stream/session JSONL gaps remain; no session JSONL content is copied.",
+        "Runtime workspace isolation remains artifact-scope only.",
+        "Two legacy initial solver metadata samples are retained but separated from comparable fresh/final samples.",
+        "Async QA repetition run durations are unavailable in the QA repetition artifact; the single measured full-task QA command is reported separately."
+      ]
+    },
+    {
+      "taskId": "accessibility.quantity_stepper_semantics",
+      "sourceArtifacts": {
+        "replayManifest": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/replay_manifest.json",
+        "telemetryReport": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/telemetry_report.json",
+        "commandTelemetry": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/command_telemetry/command_telemetry_result.json",
+        "qaRepetition": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/qa_repetition/qa_repetition_result.json",
+        "flakeReport": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/flake_report.json",
+        "flakeLoop10": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/flake_runs_10/flake_loop_10_result.json",
+        "solverRerunResults": [
+          "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/glm/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/gpt/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/kimi/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/minimax/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/opus/<active-rerun>/rerun_result.json"
+        ]
+      },
+      "sliceState": "accepted-artifact-scope-slice",
+      "acceptedArtifactScopeSlice": true,
+      "failedCandidate": false,
+      "deepSWEComplete": false,
+      "solverTelemetrySummary": {
+        "comparableFreshFinalSampleCount": 5,
+        "legacyInitialSampleCount": 0,
+        "allMetadataSampleCount": 5,
+        "publicPassedCount": 5,
+        "publicTotalCount": 5,
+        "hiddenPassedCount": 3,
+        "hiddenFailedCount": 2,
+        "hiddenTotalCount": 5,
+        "durationMs": {
+          "allMetadata": {
+            "count": 5,
+            "min": 63608,
+            "median": 128591,
+            "mean": 149286.8,
+            "p95": 217668,
+            "max": 217668
+          },
+          "comparableFreshFinal": {
+            "count": 5,
+            "min": 63608,
+            "median": 128591,
+            "mean": 149286.8,
+            "p95": 217668,
+            "max": 217668
+          },
+          "legacyInitial": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          }
+        },
+        "usageTotals": {
+          "input": 125992,
+          "output": 43335,
+          "cacheRead": 65266,
+          "cacheWrite": 9409,
+          "turns": 44,
+          "cost": 0.734
+        },
+        "families": [
+          "glm",
+          "gpt",
+          "kimi",
+          "minimax",
+          "opus"
+        ],
+        "legacyFamilies": [],
+        "models": [
+          "anthropic/claude-opus-4-8:xhigh",
+          "ollama/glm-5.2:cloud:xhigh",
+          "ollama/kimi-k2.7-code:cloud:xhigh",
+          "ollama/minimax-m3:cloud:xhigh",
+          "openai-codex/gpt-5.5:xhigh"
+        ]
+      },
+      "commandTelemetrySummary": {
+        "commandRecordCount": 10,
+        "publicReplayCommandCount": 5,
+        "hiddenReplayCommandCount": 5,
+        "fullQaMeasuredCommandCount": 0,
+        "commandFailureCount": 2,
+        "commandFailureContext": "All command failures are hidden replay failures expected from failed solver/candidate evidence.",
+        "durationMs": {
+          "publicReplay": {
+            "count": 5,
+            "min": 8046,
+            "median": 8138,
+            "mean": 8198.8,
+            "p95": 8536,
+            "max": 8536
+          },
+          "hiddenReplay": {
+            "count": 5,
+            "min": 8153,
+            "median": 8390,
+            "mean": 8404.2,
+            "p95": 8691,
+            "max": 8691
+          },
+          "overallReplay": {
+            "count": 10,
+            "min": 8046,
+            "median": 8215,
+            "mean": 8301.5,
+            "p95": 8691,
+            "max": 8691
+          },
+          "fullQaMeasured": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          }
+        },
+        "hiddenCommandRedacted": true,
+        "restrictedLogContentRedacted": true
+      },
+      "qaRepetitionSummary": {
+        "runCount": 5,
+        "failureCount": 0,
+        "passed": true,
+        "durationSeconds": {
+          "count": 5,
+          "min": 224.247,
+          "median": 228.089,
+          "mean": 229.286,
+          "p95": 235.285,
+          "max": 235.285
+        },
+        "durationUnavailableCount": 0
+      },
+      "flakeLoopSummary": {
+        "targetCount": 7,
+        "runCount": 70,
+        "expectationFailureCount": 0,
+        "runDurationSeconds": {
+          "count": 70,
+          "min": 2.286,
+          "median": 2.62,
+          "mean": 3.143,
+          "p95": 8.134,
+          "max": 8.489
+        },
+        "targetPubGetDurationSeconds": {
+          "count": 7,
+          "min": 0.483,
+          "median": 0.497,
+          "mean": 0.5,
+          "p95": 0.514,
+          "max": 0.514
+        },
+        "durationUnavailable": {
+          "runDurationUnavailableCount": 0,
+          "targetPubGetDurationUnavailableCount": 0
+        },
+        "passed": true
+      },
+      "redactions": {
+        "restrictedContentRedacted": true,
+        "hiddenCommandsRedacted": true,
+        "hiddenCommandStringsCopied": false,
+        "restrictedHiddenLogFilenamesCopied": false,
+        "hiddenTestPathsCopied": false,
+        "promptVerifierOrF2pContentsCopied": false,
+        "sessionJsonlContentsCopied": false
+      },
+      "limitations": [
+        "DeepSWE completion remains false; this audit uses existing artifact-scope evidence only.",
+        "This is duration/performance sampling, not a statistical benchmark.",
+        "Provider-internal stream/session JSONL gaps remain; no session JSONL content is copied.",
+        "Runtime workspace isolation remains artifact-scope only."
+      ]
+    },
+    {
+      "taskId": "refactor.price_label_formatter",
+      "sourceArtifacts": {
+        "replayManifest": "tasks/flutter/refactor.price_label_formatter/deepswe/replay_manifest.json",
+        "telemetryReport": "tasks/flutter/refactor.price_label_formatter/deepswe/telemetry_report.json",
+        "commandTelemetry": "tasks/flutter/refactor.price_label_formatter/deepswe/command_telemetry/command_telemetry_result.json",
+        "qaRepetition": "tasks/flutter/refactor.price_label_formatter/deepswe/qa_repetition/qa_repetition_result.json",
+        "flakeReport": "tasks/flutter/refactor.price_label_formatter/deepswe/flake_report.json",
+        "flakeLoop10": "tasks/flutter/refactor.price_label_formatter/deepswe/flake_runs_10/flake_loop_10_result.json",
+        "solverRerunResults": [
+          "tasks/flutter/refactor.price_label_formatter/deepswe/solver_runs/glm/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/refactor.price_label_formatter/deepswe/solver_runs/gpt/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/refactor.price_label_formatter/deepswe/solver_runs/kimi/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/refactor.price_label_formatter/deepswe/solver_runs/minimax/rerun_2026_06_19/rerun_result.json"
+        ]
+      },
+      "sliceState": "accepted-artifact-scope-slice",
+      "acceptedArtifactScopeSlice": true,
+      "failedCandidate": false,
+      "deepSWEComplete": false,
+      "solverTelemetrySummary": {
+        "comparableFreshFinalSampleCount": 4,
+        "legacyInitialSampleCount": 0,
+        "allMetadataSampleCount": 4,
+        "publicPassedCount": 4,
+        "publicTotalCount": 4,
+        "hiddenPassedCount": 3,
+        "hiddenFailedCount": 1,
+        "hiddenTotalCount": 4,
+        "durationMs": {
+          "allMetadata": {
+            "count": 4,
+            "min": 42345,
+            "median": 75619.5,
+            "mean": 86527.75,
+            "p95": 152527,
+            "max": 152527
+          },
+          "comparableFreshFinal": {
+            "count": 4,
+            "min": 42345,
+            "median": 75619.5,
+            "mean": 86527.75,
+            "p95": 152527,
+            "max": 152527
+          },
+          "legacyInitial": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          }
+        },
+        "usageTotals": {
+          "input": 130683,
+          "output": 16664,
+          "cacheRead": 145920,
+          "cacheWrite": 0,
+          "turns": 45,
+          "cost": 0.416
+        },
+        "families": [
+          "glm",
+          "gpt",
+          "kimi",
+          "minimax"
+        ],
+        "legacyFamilies": [],
+        "models": [
+          "ollama/glm-5.2:cloud:xhigh",
+          "ollama/kimi-k2.7-code:cloud:xhigh",
+          "ollama/minimax-m3:cloud:xhigh",
+          "openai-codex/gpt-5.5:xhigh"
+        ]
+      },
+      "commandTelemetrySummary": {
+        "commandRecordCount": 8,
+        "publicReplayCommandCount": 4,
+        "hiddenReplayCommandCount": 4,
+        "fullQaMeasuredCommandCount": 0,
+        "commandFailureCount": 1,
+        "commandFailureContext": "All command failures are hidden replay failures expected from failed solver/candidate evidence.",
+        "durationMs": {
+          "publicReplay": {
+            "count": 4,
+            "min": 7989,
+            "median": 8040,
+            "mean": 8067.25,
+            "p95": 8200,
+            "max": 8200
+          },
+          "hiddenReplay": {
+            "count": 4,
+            "min": 8101,
+            "median": 8153.5,
+            "mean": 8173,
+            "p95": 8284,
+            "max": 8284
+          },
+          "overallReplay": {
+            "count": 8,
+            "min": 7989,
+            "median": 8122.5,
+            "mean": 8120.125,
+            "p95": 8284,
+            "max": 8284
+          },
+          "fullQaMeasured": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          }
+        },
+        "hiddenCommandRedacted": true,
+        "restrictedLogContentRedacted": true
+      },
+      "qaRepetitionSummary": {
+        "runCount": 5,
+        "failureCount": 0,
+        "passed": true,
+        "durationSeconds": {
+          "count": 0,
+          "min": null,
+          "median": null,
+          "mean": null,
+          "p95": null,
+          "max": null
+        },
+        "durationUnavailableCount": 5
+      },
+      "flakeLoopSummary": {
+        "targetCount": 6,
+        "runCount": 60,
+        "expectationFailureCount": 0,
+        "runDurationSeconds": {
+          "count": 60,
+          "min": 2.195,
+          "median": 2.276,
+          "mean": 2.87,
+          "p95": 7.916,
+          "max": 8.072
+        },
+        "targetPubGetDurationSeconds": {
+          "count": 6,
+          "min": 0.493,
+          "median": 0.498,
+          "mean": 0.5,
+          "p95": 0.508,
+          "max": 0.508
+        },
+        "durationUnavailable": {
+          "runDurationUnavailableCount": 0,
+          "targetPubGetDurationUnavailableCount": 0
+        },
+        "passed": true
+      },
+      "redactions": {
+        "restrictedContentRedacted": true,
+        "hiddenCommandsRedacted": true,
+        "hiddenCommandStringsCopied": false,
+        "restrictedHiddenLogFilenamesCopied": false,
+        "hiddenTestPathsCopied": false,
+        "promptVerifierOrF2pContentsCopied": false,
+        "sessionJsonlContentsCopied": false
+      },
+      "limitations": [
+        "DeepSWE completion remains false; this audit uses existing artifact-scope evidence only.",
+        "This is duration/performance sampling, not a statistical benchmark.",
+        "Provider-internal stream/session JSONL gaps remain; no session JSONL content is copied.",
+        "Runtime workspace isolation remains artifact-scope only.",
+        "QA repetition run durations are unavailable in the QA repetition artifact."
+      ]
+    },
+    {
+      "taskId": "persistence.offline_feed_preferences",
+      "sourceArtifacts": {
+        "replayManifest": "tasks/flutter/persistence.offline_feed_preferences/deepswe/replay_manifest.json",
+        "telemetryReport": "tasks/flutter/persistence.offline_feed_preferences/deepswe/telemetry_report.json",
+        "commandTelemetry": "tasks/flutter/persistence.offline_feed_preferences/deepswe/command_telemetry/command_telemetry_result.json",
+        "qaRepetition": "tasks/flutter/persistence.offline_feed_preferences/deepswe/qa_repetition/qa_repetition_result.json",
+        "flakeReport": "tasks/flutter/persistence.offline_feed_preferences/deepswe/flake_report.json",
+        "flakeLoop10": "tasks/flutter/persistence.offline_feed_preferences/deepswe/flake_runs_10/flake_loop_10_result.json",
+        "solverRerunResults": [
+          "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/glm/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/gpt/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/kimi/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/minimax/rerun_2026_06_19/rerun_result.json"
+        ]
+      },
+      "sliceState": "accepted-artifact-scope-slice",
+      "acceptedArtifactScopeSlice": true,
+      "failedCandidate": false,
+      "deepSWEComplete": false,
+      "solverTelemetrySummary": {
+        "comparableFreshFinalSampleCount": 4,
+        "legacyInitialSampleCount": 0,
+        "allMetadataSampleCount": 4,
+        "publicPassedCount": 4,
+        "publicTotalCount": 4,
+        "hiddenPassedCount": 4,
+        "hiddenFailedCount": 0,
+        "hiddenTotalCount": 4,
+        "durationMs": {
+          "allMetadata": {
+            "count": 4,
+            "min": 37927,
+            "median": 77852.5,
+            "mean": 80417.75,
+            "p95": 128039,
+            "max": 128039
+          },
+          "comparableFreshFinal": {
+            "count": 4,
+            "min": 37927,
+            "median": 77852.5,
+            "mean": 80417.75,
+            "p95": 128039,
+            "max": 128039
+          },
+          "legacyInitial": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          }
+        },
+        "usageTotals": {
+          "input": 72988,
+          "output": 8654,
+          "cacheRead": 69120,
+          "cacheWrite": 0,
+          "turns": 32,
+          "cost": 0.235
+        },
+        "families": [
+          "glm",
+          "gpt",
+          "kimi",
+          "minimax"
+        ],
+        "legacyFamilies": [],
+        "models": [
+          "ollama/glm-5.2:cloud:xhigh",
+          "ollama/kimi-k2.7-code:cloud:xhigh",
+          "ollama/minimax-m3:cloud:xhigh",
+          "openai-codex/gpt-5.5:xhigh"
+        ]
+      },
+      "commandTelemetrySummary": {
+        "commandRecordCount": 8,
+        "publicReplayCommandCount": 4,
+        "hiddenReplayCommandCount": 4,
+        "fullQaMeasuredCommandCount": 0,
+        "commandFailureCount": 0,
+        "commandFailureContext": "No command failures recorded.",
+        "durationMs": {
+          "publicReplay": {
+            "count": 4,
+            "min": 7773,
+            "median": 7810.5,
+            "mean": 7821.5,
+            "p95": 7892,
+            "max": 7892
+          },
+          "hiddenReplay": {
+            "count": 4,
+            "min": 7769,
+            "median": 7813,
+            "mean": 7819.75,
+            "p95": 7884,
+            "max": 7884
+          },
+          "overallReplay": {
+            "count": 8,
+            "min": 7769,
+            "median": 7810.5,
+            "mean": 7820.625,
+            "p95": 7892,
+            "max": 7892
+          },
+          "fullQaMeasured": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          }
+        },
+        "hiddenCommandRedacted": true,
+        "restrictedLogContentRedacted": true
+      },
+      "qaRepetitionSummary": {
+        "runCount": 5,
+        "failureCount": 0,
+        "passed": true,
+        "durationSeconds": {
+          "count": 5,
+          "min": 246.562,
+          "median": 248.788,
+          "mean": 253.405,
+          "p95": 271.15,
+          "max": 271.15
+        },
+        "durationUnavailableCount": 0
+      },
+      "flakeLoopSummary": {
+        "targetCount": 6,
+        "runCount": 60,
+        "expectationFailureCount": 0,
+        "runDurationSeconds": {
+          "count": 60,
+          "min": 1.601,
+          "median": 1.706,
+          "mean": 2.424,
+          "p95": 7.359,
+          "max": 9.698
+        },
+        "targetPubGetDurationSeconds": {
+          "count": 6,
+          "min": 0.505,
+          "median": 0.514,
+          "mean": 0.551,
+          "p95": 0.696,
+          "max": 0.696
+        },
+        "durationUnavailable": {
+          "runDurationUnavailableCount": 0,
+          "targetPubGetDurationUnavailableCount": 0
+        },
+        "passed": true
+      },
+      "redactions": {
+        "restrictedContentRedacted": true,
+        "hiddenCommandsRedacted": true,
+        "hiddenCommandStringsCopied": false,
+        "restrictedHiddenLogFilenamesCopied": false,
+        "hiddenTestPathsCopied": false,
+        "promptVerifierOrF2pContentsCopied": false,
+        "sessionJsonlContentsCopied": false
+      },
+      "limitations": [
+        "DeepSWE completion remains false; this audit uses existing artifact-scope evidence only.",
+        "This is duration/performance sampling, not a statistical benchmark.",
+        "Provider-internal stream/session JSONL gaps remain; no session JSONL content is copied.",
+        "Runtime workspace isolation remains artifact-scope only."
+      ]
+    },
+    {
+      "taskId": "ui.action_bar_overflow",
+      "sourceArtifacts": {
+        "replayManifest": "tasks/flutter/ui.action_bar_overflow/deepswe/replay_manifest.json",
+        "telemetryReport": "tasks/flutter/ui.action_bar_overflow/deepswe/telemetry_report.json",
+        "commandTelemetry": "tasks/flutter/ui.action_bar_overflow/deepswe/command_telemetry/command_telemetry_result.json",
+        "qaRepetition": "tasks/flutter/ui.action_bar_overflow/deepswe/qa_repetition/qa_repetition_result.json",
+        "flakeLoop10": "tasks/flutter/ui.action_bar_overflow/deepswe/flake_runs_10/flake_loop_10_result.json",
+        "solverRerunResults": [
+          "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/gpt/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/glm/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/minimax/rerun_2026_06_19/rerun_result.json",
+          "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/kimi/rerun_2026_06_19/rerun_result.json"
+        ],
+        "solverTrajectoryMetadata": [
+          "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_meta.json",
+          "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/glm/rerun_2026_06_19/trajectory/subagent_meta.json",
+          "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_meta.json",
+          "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_meta.json"
+        ]
+      },
+      "sliceState": "accepted-artifact-scope-slice",
+      "acceptedArtifactScopeSlice": true,
+      "failedCandidate": false,
+      "deepSWEComplete": false,
+      "solverTelemetrySummary": {
+        "activeFreshRerunCount": 4,
+        "comparableFreshFinalSampleCount": 4,
+        "legacyInitialSampleCount": 0,
+        "allMetadataSampleCount": 5,
+        "subagentTelemetryAvailable": true,
+        "publicPassedCount": 4,
+        "publicTotalCount": 4,
+        "hiddenPassedCount": 3,
+        "hiddenFailedCount": 1,
+        "hiddenTotalCount": 4,
+        "durationMs": {
+          "allMetadata": {
+            "count": 5,
+            "min": 83339,
+            "median": 277498,
+            "mean": 430433,
+            "p95": 1038638,
+            "max": 1038638
+          },
+          "comparableFreshFinal": {
+            "count": 4,
+            "min": 83339,
+            "median": 255874,
+            "mean": 278381.75,
+            "p95": 518440,
+            "max": 518440
+          },
+          "legacyInitial": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          }
+        },
+        "usageTotals": {
+          "input": 1030999,
+          "output": 97467,
+          "cacheRead": 323783,
+          "cacheWrite": 15078,
+          "turns": 69,
+          "cost": 1.175
+        },
+        "families": [
+          "gpt",
+          "glm",
+          "minimax",
+          "kimi"
+        ],
+        "promotedFamilies": [
+          "gpt",
+          "minimax",
+          "kimi"
+        ],
+        "failedFamilies": [
+          "glm"
+        ],
+        "abortedFamilies": [
+          "opus"
+        ],
+        "legacyFamilies": [],
+        "models": [
+          "openai-codex/gpt-5.5:xhigh",
+          "ollama/glm-5.2:cloud:xhigh",
+          "ollama/minimax-m3:cloud:xhigh",
+          "ollama/kimi-k2.7-code:cloud:xhigh",
+          "anthropic/claude-opus-4-8:xhigh"
+        ],
+        "abortedMetadataOnlySampleCount": 1,
+        "allMetadataFamilies": [
+          "gpt",
+          "glm",
+          "minimax",
+          "kimi",
+          "opus"
+        ],
+        "subagentRuns": [
+          {
+            "family": "gpt",
+            "runId": "cf75c215",
+            "subagentIndex": "coder_0",
+            "durationMs": 234250
+          },
+          {
+            "family": "glm",
+            "runId": "cf75c215",
+            "subagentIndex": "coder_1",
+            "durationMs": 277498
+          },
+          {
+            "family": "minimax",
+            "runId": "cf75c215",
+            "subagentIndex": "coder_3",
+            "durationMs": 518440
+          },
+          {
+            "family": "kimi",
+            "runId": "cf75c215",
+            "subagentIndex": "coder_4",
+            "durationMs": 83339
+          }
+        ],
+        "abortedSubagentRuns": [
+          {
+            "family": "opus",
+            "runId": "cf75c215",
+            "subagentIndex": "coder_2",
+            "durationMs": 1038638,
+            "exitCode": 1,
+            "status": "aborted/unavailable"
+          }
+        ]
+      },
+      "commandTelemetrySummary": {
+        "commandRecordCount": 8,
+        "publicReplayCommandCount": 4,
+        "hiddenReplayCommandCount": 4,
+        "fullQaMeasuredCommandCount": 0,
+        "commandFailureCount": 1,
+        "commandFailureContext": "One hidden replay failure is retained as GLM failed solver evidence.",
+        "durationMs": {
+          "publicReplay": {
+            "count": 4,
+            "min": 7446,
+            "median": 7481.5,
+            "mean": 7479.75,
+            "p95": 7510,
+            "max": 7510
+          },
+          "hiddenReplay": {
+            "count": 4,
+            "min": 2509,
+            "median": 2712,
+            "mean": 2666.5,
+            "p95": 2733,
+            "max": 2733
+          },
+          "overallReplay": {
+            "count": 8,
+            "min": 2509,
+            "median": 5089.5,
+            "mean": 5073.125,
+            "p95": 7510,
+            "max": 7510
+          },
+          "fullQaMeasured": {
+            "count": 0,
+            "min": null,
+            "median": null,
+            "mean": null,
+            "p95": null,
+            "max": null
+          }
+        },
+        "hiddenCommandRedacted": true,
+        "restrictedLogContentRedacted": true
+      },
+      "qaRepetitionSummary": {
+        "runCount": 5,
+        "failureCount": 0,
+        "passed": true,
+        "durationSeconds": {
+          "count": 5,
+          "min": 267.228,
+          "median": 268.683,
+          "mean": 268.546,
+          "p95": 269.986,
+          "max": 269.986
+        },
+        "durationUnavailableCount": 0
+      },
+      "flakeLoopSummary": {
+        "targetCount": 6,
+        "runCount": 60,
+        "expectationFailureCount": 0,
+        "runDurationSeconds": {
+          "count": 60,
+          "min": 2.417,
+          "median": 2.619,
+          "mean": 3.108,
+          "p95": 7.767,
+          "max": 7.929
+        },
+        "targetPubGetDurationSeconds": {
+          "count": 0,
+          "min": null,
+          "median": null,
+          "mean": null,
+          "p95": null,
+          "max": null
+        },
+        "durationUnavailable": {
+          "runDurationUnavailableCount": 0,
+          "targetPubGetDurationUnavailableCount": 6
+        },
+        "passed": true
+      },
+      "redactions": {
+        "restrictedContentRedacted": true,
+        "hiddenCommandsRedacted": true,
+        "hiddenCommandStringsCopied": false,
+        "restrictedHiddenLogFilenamesCopied": false,
+        "hiddenTestPathsCopied": false,
+        "promptVerifierOrF2pContentsCopied": false,
+        "sessionJsonlContentsCopied": false
+      },
+      "limitations": [
+        "DeepSWE completion remains false; this audit uses existing artifact-scope evidence only.",
+        "This is duration/performance sampling, not a statistical benchmark.",
+        "Provider-internal stream/session JSONL gaps remain; no session JSONL content is copied.",
+        "Runtime workspace isolation remains artifact-scope only.",
+        "Opus aborted metadata is included only in all-metadata duration/token/cost totals; no active Opus solver run was created.",
+        "GLM remains failed solver evidence; opus is unavailable/aborted."
+      ]
+    }
+  ],
+  "remainingBlockers": [
+    "provider-internal stream/session JSONL gaps",
+    "clean committed provenance / gitDirty=false",
+    "durable authored-by provenance",
+    "runtime workspace isolation remains artifact-scope only",
+    "performance sampling remains artifact-scope and is not a statistical benchmark"
+  ]
+}

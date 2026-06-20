@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ui.action_bar_overflow",
+  "createdDate": "2026-06-19",
+  "target": "reference",
+  "kind": "reference",
+  "expectedPass": true,
+  "passCount": 10,
+  "failCount": 0,
+  "expectationOk": true,
+  "patchSha256": "e924ba67db09530a8245c180863903c169ac97eaeaa61bba08fecfd09041470d",
+  "runs": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 7.781,
+      "logPath": "reference_run_01.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.583,
+      "logPath": "reference_run_02.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.619,
+      "logPath": "reference_run_03.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 4,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.636,
+      "logPath": "reference_run_04.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 5,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.615,
+      "logPath": "reference_run_05.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 6,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.619,
+      "logPath": "reference_run_06.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 7,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.586,
+      "logPath": "reference_run_07.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 8,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.581,
+      "logPath": "reference_run_08.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 9,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.639,
+      "logPath": "reference_run_09.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 10,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.557,
+      "logPath": "reference_run_10.log",
+      "logClassification": "restricted/evaluator-only"
+    }
+  ],
+  "rawRunLogClassification": "restricted/evaluator-only"
+}

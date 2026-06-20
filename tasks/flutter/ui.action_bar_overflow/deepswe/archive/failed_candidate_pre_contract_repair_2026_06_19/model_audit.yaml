@@ -1,0 +1,111 @@
+schemaVersion: 1
+taskId: ui.action_bar_overflow
+createdDate: '2026-06-19'
+deep_swe_complete: false
+failed_candidate: true
+replay_verified: false
+workspace_isolation_verified: false
+duration_cost_token_captured: true
+provider_internal_stream_chunks_captured: false
+solvers:
+- family: gpt
+  model: openai-codex/gpt-5.5:xhigh
+  durable_patch: true
+  patch_sha256: d76c185ed99b457eef01be06d8fef2e567eef0c86a92c80fd8337d1477699a9a
+  public_passed: true
+  hidden_passed_after_injection: false
+  clean_replay_verified: false
+  promoted: false
+  subagent_duration_ms: 248725
+  usage:
+    input: 26862
+    output: 12019
+    cacheRead: 114688
+    cacheWrite: 0
+    cost: 0.552224
+    turns: 9
+- family: glm
+  model: ollama/glm-5.2:cloud:xhigh
+  durable_patch: true
+  patch_sha256: e840d8a60daeb38debb2131289239048dc9c933fda468525cc28ae2c81d97d96
+  public_passed: true
+  hidden_passed_after_injection: false
+  clean_replay_verified: false
+  promoted: false
+  subagent_duration_ms: 383698
+  usage:
+    input: 397221
+    output: 21022
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 22
+- family: opus
+  model: anthropic/claude-opus-4-8:xhigh
+  durable_patch: true
+  patch_sha256: 8a10bb0463741a2a7912194e7ab9636feae8e3d5f5f4528e94585f0aef287cfa
+  public_passed: true
+  hidden_passed_after_injection: false
+  clean_replay_verified: false
+  promoted: false
+  subagent_duration_ms: 764740
+  usage:
+    input: 38
+    output: 33125
+    cacheRead: 234261
+    cacheWrite: 21055
+    cost: 1.0770392500000001
+    turns: 19
+- family: minimax
+  model: ollama/minimax-m3:cloud:xhigh
+  durable_patch: true
+  patch_sha256: fa834b0667dc135e384b1b4ac39f489d3f34ebaed3f9fa4b3d24c405e580d2d4
+  public_passed: true
+  hidden_passed_after_injection: false
+  clean_replay_verified: false
+  promoted: false
+  subagent_duration_ms: 1076290
+  usage:
+    input: 1014840
+    output: 54494
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 48
+- family: kimi
+  model: ollama/kimi-k2.7-code:cloud:xhigh
+  durable_patch: true
+  patch_sha256: f727b867e7b93e4dd72059e76c10ab707f54eab03dcb8cc99cbf112c4e76df92
+  public_passed: true
+  hidden_passed_after_injection: false
+  clean_replay_verified: false
+  promoted: false
+  subagent_duration_ms: 308670
+  usage:
+    input: 601140
+    output: 32148
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 18
+passing_fresh_solver_families: []
+failed_fresh_solver_families:
+- gpt
+- glm
+- opus
+- minimax
+- kimi
+checks:
+  qa_repetition_passed: true
+  hidden_flake_loop_10_passed: true
+  solver_facing_leakage_scan_passed: true
+checklists:
+  prompt_verifier_bijection: prompt_verifier_bijection.md
+  f2p: f2p_checklist.md
+  p2p: p2p_checklist.md
+pending:
+- at least three fresh solver families with clean public+hidden replay
+- provider-internal stream chunks/session JSONL not exposed
+- clean committed provenance / gitDirty=false run
+- authored-by provenance unknown
+- strong workspace-isolation proof

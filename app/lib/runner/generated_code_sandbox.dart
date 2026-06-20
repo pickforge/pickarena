@@ -113,6 +113,7 @@ class BubblewrapGeneratedCodeSandbox extends GeneratedCodeSandbox {
 
     final workDir = p.normalize(p.absolute(workingDirectory));
     final sandboxEnvironment = Map<String, String>.from(environment);
+    _normalizeSandboxTempEnvironment(sandboxEnvironment);
     _suppressToolTelemetry(sandboxEnvironment);
     final executablePath = await _resolveExecutablePath(
       executable,
@@ -281,6 +282,13 @@ class BubblewrapGeneratedCodeSandbox extends GeneratedCodeSandbox {
       }
     }
     return environment;
+  }
+
+  void _normalizeSandboxTempEnvironment(Map<String, String> environment) {
+    environment
+      ..['TMPDIR'] = '/tmp'
+      ..['TMP'] = '/tmp'
+      ..['TEMP'] = '/tmp';
   }
 
   void _suppressToolTelemetry(Map<String, String> environment) {

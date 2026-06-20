@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "family": "kimi",
+  "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+  "createdDate": "2026-06-19",
+  "workspaceSnapshotPath": "workspace_snapshot",
+  "snapshotRestrictedPathHits": [],
+  "snapshotFiles": [
+    {
+      "path": "instruction.md",
+      "sha256": "d3343996651d645d6b5031834350e7ca48ef58e8c6fb08a5e93e6037a4b8ada3"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "590e1e67f61be0a8b3ec8aafd4b88c7cf9ff5f5cb72d133b15025269cd3ca2ba"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+    },
+    {
+      "path": "lib/responsive_action_bar.dart",
+      "sha256": "465d100194fd24d51c1b3fe36134156b73e939c04243d9566ed726fdc685e3d9"
+    },
+    {
+      "path": "test/responsive_action_bar_test.dart",
+      "sha256": "0f2e2b556796f2a96a4902c7859806b0b3336ebfbc58efdc1281e56a502f1a7f"
+    },
+    {
+      "path": "solver_report.md",
+      "sha256": "40b2c8c54e52d5b3b564e1552903f95d505970175014b7eefe008657be495c10"
+    }
+  ],
+  "solverReportPresent": true,
+  "patchPath": "solver.patch",
+  "patchSha256": "465d100194fd24d51c1b3fe36134156b73e939c04243d9566ed726fdc685e3d9",
+  "patchSha256Source": "repair replay summary; matches repaired lib/responsive_action_bar.dart SHA-256",
+  "generatedCodeSha256": "465d100194fd24d51c1b3fe36134156b73e939c04243d9566ed726fdc685e3d9",
+  "solverPatchFileSha256": "066e75fbb2b277fcb97572810e9e1cdb39fc2459a1a2e6151794253906bcb83f",
+  "pubGetExitCode": 0,
+  "publicExitCode": 0,
+  "hiddenExitCode": 0,
+  "publicPassed": true,
+  "hiddenPassedAfterInjection": true,
+  "cleanReplayVerified": true,
+  "promoted": true,
+  "publicSeconds": 7.508,
+  "hiddenSeconds": 2.705,
+  "publicPubGetLog": "public_pub_get.log",
+  "publicLog": "public_results.log",
+  "hiddenPubGetLog": "hidden_pub_get.log",
+  "hiddenLog": "hidden_results.log",
+  "hiddenLogClassification": "restricted/evaluator-only",
+  "subagentTelemetry": {
+    "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+    "runId": "cf75c215",
+    "subagentIndex": "coder_4",
+    "exitCode": 0,
+    "durationMs": 83339,
+    "usage": {
+      "input": 93978,
+      "output": 8685,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "cost": 0,
+      "turns": 8
+    },
+    "toolCount": 8,
+    "timestamp": 1781905814645,
+    "available": true,
+    "sourceArtifacts": {
+      "input": "trajectory/subagent_input.md",
+      "output": "trajectory/subagent_output.md",
+      "meta": "trajectory/subagent_meta.json",
+      "sessionJsonl": null
+    }
+  },
+  "providerSessionJsonlCaptured": false,
+  "notes": [
+    "workspace snapshot was captured from the fresh repair rerun source before hidden replay artifacts were copied",
+    "hidden tests were replayed in a separate evaluator workspace",
+    "provider-internal stream chunks/session JSONL were unavailable"
+  ],
+  "trajectoryArtifacts": {
+    "input": "trajectory/subagent_input.md",
+    "output": "trajectory/subagent_output.md",
+    "meta": "trajectory/subagent_meta.json",
+    "sessionJsonl": null
+  },
+  "subagentRunId": "cf75c215",
+  "subagentIndex": "coder_4",
+  "subagentDurationMs": 83339,
+  "subagentUsage": {
+    "input": 93978,
+    "output": 8685,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "cost": 0,
+    "turns": 8
+  }
+}

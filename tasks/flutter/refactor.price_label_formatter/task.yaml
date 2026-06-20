@@ -1,0 +1,101 @@
+schemaVersion: 1
+id: refactor.price_label_formatter
+version: 1
+category: refactor
+track: agentic
+tags:
+  - ui
+  - refactor
+  - testing
+difficulty: medium
+platformRequirements:
+  - linux
+timeoutSeconds: 900
+release:
+  corpus: private_official
+  status: active
+network: false
+resources:
+  cpus: 2
+  memory_mb: 8192
+  max_processes: 64
+  max_output_bytes: 1048576
+generatedCodePath: lib/price_label_formatter.dart
+isFlutter: true
+instructionPath: instruction.md
+workspace:
+  root: baseline
+  files:
+    pubspec.yaml: pubspec.yaml
+    lib/price_label_formatter.dart: lib/price_label_formatter.dart
+    lib/product_price_tile.dart: lib/product_price_tile.dart
+    lib/cart_line_price_row.dart: lib/cart_line_price_row.dart
+    lib/checkout_price_summary.dart: lib/checkout_price_summary.dart
+    test/price_labels_test.dart: test/price_labels_test.dart
+hiddenVerifiers:
+  - id: price_label_formatter_hidden
+    testPath: test/_hidden/price_label_formatter_hidden_test.dart
+    root: hidden_tests
+    files:
+      test/_hidden/price_label_formatter_hidden_test.dart: test/_hidden/price_label_formatter_hidden_test.dart
+reference:
+  type: files
+  root: solution
+  files:
+    lib/price_label_formatter.dart: lib/price_label_formatter.dart
+    lib/product_price_tile.dart: lib/product_price_tile.dart
+    lib/cart_line_price_row.dart: lib/cart_line_price_row.dart
+    lib/checkout_price_summary.dart: lib/checkout_price_summary.dart
+requiredNegativeCaseKinds:
+  - noop
+  - api_breaking
+  - overfit
+negativeCases:
+  - id: noop
+    kind: noop
+    description: Leaves the incomplete formatter and duplicated widget helpers unchanged.
+    root: negative_cases/noop
+    files:
+      lib/price_label_formatter.dart: lib/price_label_formatter.dart
+      lib/product_price_tile.dart: lib/product_price_tile.dart
+      lib/cart_line_price_row.dart: lib/cart_line_price_row.dart
+      lib/checkout_price_summary.dart: lib/checkout_price_summary.dart
+  - id: api_breaking
+    kind: api_breaking
+    description: Renames the public ProductPriceTile price key and price parameter.
+    root: negative_cases/api_breaking
+    files:
+      lib/product_price_tile.dart: lib/product_price_tile.dart
+  - id: overfit_public_values
+    kind: overfit
+    description: Routes widgets through a formatter that only handles the public example values.
+    root: negative_cases/overfit
+    files:
+      lib/price_label_formatter.dart: lib/price_label_formatter.dart
+      lib/product_price_tile.dart: lib/product_price_tile.dart
+      lib/cart_line_price_row.dart: lib/cart_line_price_row.dart
+      lib/checkout_price_summary.dart: lib/checkout_price_summary.dart
+  - id: unused_formatter
+    kind: custom
+    description: Completes the formatter but leaves widgets on their private helpers.
+    root: negative_cases/unused_formatter
+    files:
+      lib/price_label_formatter.dart: lib/price_label_formatter.dart
+      lib/product_price_tile.dart: lib/product_price_tile.dart
+      lib/cart_line_price_row.dart: lib/cart_line_price_row.dart
+      lib/checkout_price_summary.dart: lib/checkout_price_summary.dart
+  - id: behavior_changing_currency
+    kind: custom
+    description: Centralizes formatting but changes the customer-facing labels.
+    root: negative_cases/behavior_changing_currency
+    files:
+      lib/price_label_formatter.dart: lib/price_label_formatter.dart
+      lib/product_price_tile.dart: lib/product_price_tile.dart
+      lib/cart_line_price_row.dart: lib/cart_line_price_row.dart
+      lib/checkout_price_summary.dart: lib/checkout_price_summary.dart
+  - id: deleted_or_weakened_public_test
+    kind: custom
+    description: Replaces the public tests with a trivial always-passing test.
+    root: negative_cases/deleted_or_weakened_public_test
+    files:
+      test/price_labels_test.dart: test/price_labels_test.dart

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "taskId": "persistence.offline_feed_preferences",
+  "createdDate": "2026-06-19",
+  "durationCostTokenCaptured": true,
+  "providerInternalStreamChunksCaptured": false,
+  "deepSWEComplete": false,
+  "commandTelemetryPath": "command_telemetry/command_telemetry_result.json",
+  "subagentFamilies": {
+    "gpt": {
+      "model": "openai-codex/gpt-5.5:xhigh",
+      "durationMs": 108318,
+      "usage": {
+        "input": 14672,
+        "output": 4238,
+        "cacheRead": 69120,
+        "cacheWrite": 0,
+        "cost": 0.23506,
+        "turns": 9
+      },
+      "runId": "13254af7"
+    },
+    "minimax": {
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "durationMs": 128039,
+      "usage": {
+        "input": 0,
+        "output": 2439,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 12
+      },
+      "runId": "13254af7"
+    },
+    "glm": {
+      "model": "ollama/glm-5.2:cloud:xhigh",
+      "durationMs": 47387,
+      "usage": {
+        "input": 16189,
+        "output": 1023,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 5
+      },
+      "runId": "13254af7"
+    },
+    "kimi": {
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "durationMs": 37927,
+      "usage": {
+        "input": 42127,
+        "output": 954,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 6
+      },
+      "runId": "13254af7"
+    }
+  },
+  "commandRecordCount": 8,
+  "failedCommandRecords": [],
+  "notes": [
+    "Provider-internal stream chunks/session JSONL were not exposed."
+  ]
+}

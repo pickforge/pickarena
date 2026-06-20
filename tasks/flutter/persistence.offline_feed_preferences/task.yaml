@@ -1,0 +1,83 @@
+schemaVersion: 1
+id: persistence.offline_feed_preferences
+version: 1
+category: bug_fix
+track: agentic
+tags:
+  - state_bloc
+  - testing
+  - bugfix
+difficulty: medium
+platformRequirements:
+  - linux
+timeoutSeconds: 900
+release:
+  corpus: private_official
+  status: active
+network: false
+resources:
+  cpus: 2
+  memory_mb: 8192
+  max_processes: 64
+  max_output_bytes: 1048576
+generatedCodePath: lib/offline_feed_preferences.dart
+isFlutter: true
+instructionPath: instruction.md
+workspace:
+  root: baseline
+  files:
+    pubspec.yaml: pubspec.yaml
+    lib/offline_feed_preferences.dart: lib/offline_feed_preferences.dart
+    test/offline_feed_preferences_test.dart: test/offline_feed_preferences_test.dart
+hiddenVerifiers:
+  - id: offline_feed_preferences_hidden
+    testPath: test/_hidden/offline_feed_preferences_hidden_test.dart
+    root: hidden_tests
+    files:
+      test/_hidden/offline_feed_preferences_hidden_test.dart: test/_hidden/offline_feed_preferences_hidden_test.dart
+reference:
+  type: files
+  root: solution
+  files:
+    lib/offline_feed_preferences.dart: lib/offline_feed_preferences.dart
+requiredNegativeCaseKinds:
+  - noop
+  - api_breaking
+  - overfit
+negativeCases:
+  - id: noop
+    kind: noop
+    description: Leaves preferences cached in memory and unsafe for corrupt stored values.
+    root: negative_cases/noop
+    files:
+      lib/offline_feed_preferences.dart: lib/offline_feed_preferences.dart
+  - id: api_breaking
+    kind: api_breaking
+    description: Breaks the public repository API.
+    root: negative_cases/api_breaking
+    files:
+      lib/offline_feed_preferences.dart: lib/offline_feed_preferences.dart
+  - id: overfit_public_values
+    kind: overfit
+    description: Special-cases the public examples instead of persisting arbitrary preferences.
+    root: negative_cases/overfit
+    files:
+      lib/offline_feed_preferences.dart: lib/offline_feed_preferences.dart
+  - id: cache_only
+    kind: custom
+    description: Saves through a cache instead of the injected store.
+    root: negative_cases/cache_only
+    files:
+      lib/offline_feed_preferences.dart: lib/offline_feed_preferences.dart
+  - id: always_defaults_on_corruption
+    kind: custom
+    description: Returns full defaults when one stored field is corrupt, losing valid sibling fields.
+    root: negative_cases/always_defaults_on_corruption
+    files:
+      lib/offline_feed_preferences.dart: lib/offline_feed_preferences.dart
+  - id: deleted_or_weakened_public_test
+    kind: custom
+    description: Replaces the public tests with a trivial always-passing test.
+    root: negative_cases/deleted_or_weakened_public_test
+    files:
+      test/offline_feed_preferences_test.dart: test/offline_feed_preferences_test.dart

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dart_arena/agent/droid_agent_harness.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
@@ -111,6 +112,36 @@ class _CapturingHeadlessBenchmarkRunner extends HeadlessBenchmarkRunner {
   Future<HeadlessBenchmarkResult> run(HeadlessBenchmarkConfig config) {
     capturedConfig = config;
     throw StateError('stop after capture');
+  }
+}
+
+class _RedirectingGeneratedCodeSandbox extends GeneratedCodeSandbox {
+  _RedirectingGeneratedCodeSandbox(this.executable);
+
+  final File executable;
+  int get wrapProcessCallCount => _wrapProcessCallCount;
+  int _wrapProcessCallCount = 0;
+
+  @override
+  String get backend => 'fake';
+
+  @override
+  Future<SandboxedProcessStart> wrapProcess({
+    required String executable,
+    required List<String> arguments,
+    required String workingDirectory,
+    required Map<String, String> environment,
+    required bool allowInternet,
+    SandboxResourceLimits? resourceLimits,
+    Iterable<String> extraReadOnlyPaths = const [],
+  }) async {
+    _wrapProcessCallCount++;
+    return SandboxedProcessStart(
+      executable: this.executable.path,
+      arguments: arguments,
+      workingDirectory: workingDirectory,
+      environment: {...environment, 'DROID_SANDBOX_MARKER': 'fake-sandbox'},
+    );
   }
 }
 
@@ -593,6 +624,103 @@ void main() {
     );
   });
 
+  test(
+    'default Droid headless harness receives generated sandbox',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_cli_default_droid_sandbox_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+      final script = File(p.join(tmp.path, 'fake_droid_sandbox.sh'));
+      await script.writeAsString(r'''
+#!/bin/sh
+printf '%s' "$DROID_SANDBOX_MARKER" > headless-sandbox-marker.txt
+''');
+      final chmod = await Process.run('chmod', ['+x', script.path]);
+      expect(chmod.exitCode, 0, reason: chmod.stderr.toString());
+
+      final sandbox = _RedirectingGeneratedCodeSandbox(script);
+      final configFile = await _writeConfig(
+        tmp,
+        runId: 'cli-default-droid-sandbox-run',
+        tasks: ['agentic.phase7.headless_smoke'],
+        requireGeneratedCodeSandbox: true,
+      );
+      final runner = _CapturingHeadlessBenchmarkRunner();
+      final stderrLines = <String>[];
+
+      final exitCode = await runHeadlessCli(
+        ['--config', configFile.path],
+        dependencies: HeadlessCliDependencies(
+          environmentReader: _emptyEnv,
+          providerBuilder: (config, _) => DeterministicFakeProvider(
+            providerId: config.id,
+            providerDisplayName: config.displayName,
+            modelId: config.models.single,
+          ),
+          taskRegistryBuilder: () =>
+              TaskRegistry()..register(_AgenticHeadlessSmokeTask()),
+          now: () => DateTime.utc(2026, 5, 30, 12),
+          provenanceEnvironmentProviderBuilder: () =>
+              const FixedRunProvenanceEnvironmentProvider(),
+          exportEnvironmentProvider: () async => const {
+            'hostPlatform': 'test-os',
+          },
+          exportAppVersionProvider: () async => '1.0.0+headless-cli-test',
+          generatedCodeSandboxBuilder: (_) async => sandbox,
+          runner: runner,
+        ),
+        stdoutWriter: (_) {},
+        stderrWriter: stderrLines.add,
+      );
+
+      expect(exitCode, 1);
+      expect(stderrLines.single, contains('stop after capture'));
+      final agentHarnesses = runner.capturedConfig!.agentHarnesses;
+      expect(agentHarnesses, hasLength(1));
+      final harness = agentHarnesses.single;
+      expect(harness, isA<DroidAgentHarness>());
+
+      final workspace = Directory(p.join(tmp.path, 'harness-workspace'));
+      await workspace.create();
+      final result = await harness.run(
+        workspace: workspace,
+        instruction: 'prove generated sandbox wiring',
+        modelId: 'fake-headless-model',
+        timeout: const Duration(seconds: 2),
+      );
+
+      expect(
+        result.succeeded,
+        isTrue,
+        reason:
+            'stdout=${result.stdoutPreview} stderr=${result.stderrPreview} '
+            'metadata=${result.metadata}',
+      );
+      expect(sandbox.wrapProcessCallCount, 1);
+      expect(
+        await File(
+          p.join(workspace.path, 'headless-sandbox-marker.txt'),
+        ).readAsString(),
+        'fake-sandbox',
+      );
+      expect(result.metadata['runtimeBoundary'], {
+        'enforced': true,
+        'backend': 'fake',
+      });
+      final encodedMetadata = jsonEncode(result.metadata);
+      expect(
+        encodedMetadata,
+        isNot(contains('prove generated sandbox wiring')),
+      );
+      expect(encodedMetadata, isNot(contains('fake-headless-model')));
+      expect(encodedMetadata, isNot(contains('DROID_SANDBOX_MARKER')));
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+  );
+
   test('unknown task fails clearly', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_cli_task_');
     addTearDown(() async {
@@ -642,7 +770,7 @@ void main() {
             providerDisplayName: config.displayName,
             modelId: config.models.single,
           ),
-          agentHarnessBuilder: (config) {
+          agentHarnessBuilder: (config, _) {
             harness = DeterministicFakeAgentHarness(
               harnessId: config.providers.single.id,
               modelId: config.providers.single.models.single,
@@ -736,7 +864,7 @@ HeadlessCliDependencies _dependencies({
     taskRegistryBuilder:
         taskRegistryBuilder ??
         (() => TaskRegistry()..register(_HeadlessSmokeTask())),
-    agentHarnessBuilder: agentHarnessBuilder ?? (_) => const [],
+    agentHarnessBuilder: agentHarnessBuilder ?? (_, _) => const [],
     now: () => DateTime.utc(2026, 5, 30, 12),
     provenanceEnvironmentProviderBuilder: () =>
         const FixedRunProvenanceEnvironmentProvider(),

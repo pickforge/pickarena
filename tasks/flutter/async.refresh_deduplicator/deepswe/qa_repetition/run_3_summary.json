@@ -1,0 +1,13 @@
+{
+  "run": 3,
+  "logPath": "tasks/flutter/async.refresh_deduplicator/deepswe/qa_repetition/run_3.log",
+  "summaryPath": "app/build/deepswe_async_refresh_qa_repetition/run_3/admission_summary.json",
+  "reportPath": "app/build/deepswe_async_refresh_qa_repetition/run_3/tasks/task_async.refresh_deduplicator_cc567ca8ad40/admission_report.json",
+  "status": "completed",
+  "admittedTaskCount": 1,
+  "rejectedTaskCount": 0,
+  "failureMessages": [],
+  "flakeRunCount": 5,
+  "flakeFailureCount": 0,
+  "exitCodeInferred": 0
+}

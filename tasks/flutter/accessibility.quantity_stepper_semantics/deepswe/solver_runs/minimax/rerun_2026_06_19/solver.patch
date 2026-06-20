@@ -1,0 +1,36 @@
+diff --git a/lib/quantity_stepper.dart b/lib/quantity_stepper.dart
+index 41373e9..b8b8b94 100644
+--- a/lib/quantity_stepper.dart
++++ b/lib/quantity_stepper.dart
+@@ -20,19 +20,28 @@ class QuantityStepper extends StatelessWidget {
+ 
+   @override
+   Widget build(BuildContext context) {
++    final canDecrement = value > min;
++    final canIncrement = value < max;
+     return Row(
+       mainAxisSize: MainAxisSize.min,
+       children: <Widget>[
+         IconButton(
+           key: decrementButtonKey,
+           icon: const Icon(Icons.remove),
+-          onPressed: () => value > min ? onChanged(value - 1) : null,
++          tooltip: 'Decrease quantity',
++          onPressed: canDecrement ? () => onChanged(value - 1) : null,
++        ),
++        Semantics(
++          label: 'Quantity',
++          value: '$value',
++          excludeSemantics: true,
++          child: Text('$value', key: valueTextKey),
+         ),
+-        Text('$value', key: valueTextKey),
+         IconButton(
+           key: incrementButtonKey,
+           icon: const Icon(Icons.add),
+-          onPressed: () => value < max ? onChanged(value + 1) : null,
++          tooltip: 'Increase quantity',
++          onPressed: canIncrement ? () => onChanged(value + 1) : null,
+         ),
+       ],
+     );

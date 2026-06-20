@@ -1,0 +1,30 @@
+diff --git a/lib/feed_refresh_controller.dart b/lib/feed_refresh_controller.dart
+index 5c2695e..440b273 100644
+--- a/lib/feed_refresh_controller.dart
++++ b/lib/feed_refresh_controller.dart
+@@ -44,12 +44,14 @@ class FeedRefreshController {
+   bool get isLoading => _inFlight;
+ 
+   Future<void> refresh() async {
++    if (_inFlight) return;
+     await _load();
+   }
+ 
+   Future<void> forceRefresh() => _load();
+ 
+   Future<void> retry() async {
++    if (_state.status != RefreshStatus.error) return;
+     await _load();
+   }
+ 
+@@ -59,8 +61,10 @@ class FeedRefreshController {
+     _state = const RefreshState(status: RefreshStatus.loading);
+     try {
+       final items = await _repository.fetchFeed();
++      if (requestId != _latestRequestId) return;
+       _state = RefreshState(status: RefreshStatus.success, items: items);
+     } catch (error) {
++      if (requestId != _latestRequestId) return;
+       _state = RefreshState(status: RefreshStatus.error, error: error);
+     } finally {
+       if (requestId == _latestRequestId) {

@@ -1,0 +1,97 @@
+diff --git a/lib/responsive_action_bar.dart b/lib/responsive_action_bar.dart
+index c6d9dde..50f2752 100644
+--- a/lib/responsive_action_bar.dart
++++ b/lib/responsive_action_bar.dart
+@@ -43,7 +43,7 @@ class ResponsiveActionBar extends StatelessWidget {
+   Widget build(BuildContext context) {
+     return LayoutBuilder(
+       builder: (context, constraints) {
+-        final split = _splitActions(constraints.maxWidth);
++        final split = _splitActions(context, constraints.maxWidth);
+         return Row(
+           children: <Widget>[
+             for (final action in split.inline)
+@@ -64,9 +64,81 @@ class ResponsiveActionBar extends StatelessWidget {
+     );
+   }
+ 
+-  _ActionSplit _splitActions(double _) {
+-    return _ActionSplit(actions, const <ResponsiveActionBarAction>[]);
++  _ActionSplit _splitActions(BuildContext context, double maxWidth) {
++    if (actions.isEmpty) {
++      return const _ActionSplit(
++        <ResponsiveActionBarAction>[],
++        <ResponsiveActionBarAction>[],
++      );
++    }
++
++    final rankedActions = _rankedActions();
++    final textScale = _textScaleFactor(context);
++    final primaryWidth = _primaryWidth * textScale;
++    final actionWidth = _actionWidth * textScale;
++    final compactWidth = _compactWidth * textScale;
++
++    if (!maxWidth.isFinite ||
++        maxWidth >= primaryWidth + actionWidth * actions.length) {
++      return _ActionSplit(actions, const <ResponsiveActionBarAction>[]);
++    }
++
++    if (maxWidth < compactWidth) {
++      return _ActionSplit(const <ResponsiveActionBarAction>[], rankedActions);
++    }
++
++    final availableWidth = maxWidth - primaryWidth - _overflowWidth;
++    var inlineCount = (availableWidth / actionWidth).floor();
++    if (inlineCount < 0) {
++      inlineCount = 0;
++    }
++    if (inlineCount >= rankedActions.length) {
++      inlineCount = rankedActions.length - 1;
++    }
++
++    return _ActionSplit(
++      rankedActions.take(inlineCount).toList(growable: false),
++      rankedActions.skip(inlineCount).toList(growable: false),
++    );
++  }
++
++  List<ResponsiveActionBarAction> _rankedActions() {
++    final indexedActions = <_IndexedAction>[
++      for (var index = 0; index < actions.length; index++)
++        _IndexedAction(actions[index], index),
++    ];
++    indexedActions.sort((a, b) {
++      final priorityOrder = a.action.priority.compareTo(b.action.priority);
++      if (priorityOrder != 0) {
++        return priorityOrder;
++      }
++      return a.index.compareTo(b.index);
++    });
++    return <ResponsiveActionBarAction>[
++      for (final indexedAction in indexedActions) indexedAction.action,
++    ];
++  }
++
++  double _textScaleFactor(BuildContext context) {
++    const baseFontSize = 14.0;
++    final scaledFontSize = MediaQuery.textScalerOf(context).scale(baseFontSize);
++    if (!scaledFontSize.isFinite || scaledFontSize <= 0) {
++      return 1;
++    }
++    return scaledFontSize / baseFontSize;
+   }
++
++  static const double _primaryWidth = 136;
++  static const double _actionWidth = 96;
++  static const double _overflowWidth = 48;
++  static const double _compactWidth = 360;
++}
++
++class _IndexedAction {
++  const _IndexedAction(this.action, this.index);
++
++  final ResponsiveActionBarAction action;
++  final int index;
+ }
+ 
+ class _ActionButton extends StatelessWidget {

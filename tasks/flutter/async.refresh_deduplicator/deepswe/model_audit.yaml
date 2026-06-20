@@ -1,0 +1,178 @@
+schema_version: 1
+task: async.refresh_deduplicator
+created_date: 2026-06-19
+status: clean_replay_artifacts_captured_deepswe_pending
+deep_swe_complete: false
+authored_by:
+  status: unknown_not_durably_recorded
+  models: []
+  note: Do not backfill authoring provenance without a durable source.
+red_teamed_by:
+  v1plus_literal_audit:
+  - model: gpt-5.5-xhigh
+    source: /tmp/pickarena_v1plus_gpt_audit.md
+    durable_raw_artifact: false
+    verdict: no_blockers_reported
+  - model: opus-4.8-xhigh
+    source: /tmp/pickarena_v1plus_opus_audit.md
+    durable_raw_artifact: false
+    verdict: no_blockers_reported
+  - model: glm-5.2-xhigh
+    source: /tmp/pickarena_v1plus_glm_audit.md
+    durable_raw_artifact: false
+    verdict: no_blockers_reported
+deep_swe_panel:
+  date: 2026-06-19
+  models:
+  - gpt-5.5-xhigh
+  - opus-4.8-xhigh
+  - glm-5.2-xhigh
+  - ollama/kimi-k2.7-code:cloud:xhigh
+  - ollama/minimax-m3:cloud:xhigh
+  consensus: async.refresh_deduplicator is the safest first infrastructure proof,
+    but not a full DeepSWE claim yet.
+solved_by:
+- family: kimi
+  model: ollama/kimi-k2.7-code:cloud:xhigh
+  source_summary: solver_runs/kimi/summary.md
+  public_tests:
+    passed: 2
+    total: 2
+  hidden_tests_after_injection:
+    passed: 6
+    total: 6
+  sanitized_solver_workspace_reported: true
+  durable_patch: true
+  clean_replay_verified: true
+  duration_cost_token_captured: true
+  patch_path: solver_runs/kimi/solver.patch
+  replay_result: solver_runs/kimi/replay_result.json
+  trajectory_artifacts:
+    subagent_input: solver_runs/kimi/trajectory/subagent_input.md
+    subagent_output: solver_runs/kimi/trajectory/subagent_output.md
+    subagent_meta: solver_runs/kimi/trajectory/subagent_meta.json
+  duration_ms: 42691
+  usage:
+    input: 42252
+    output: 4227
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 5
+  tool_count: 7
+  fresh_pre_hidden_snapshot_rerun:
+    workspace_snapshot: solver_runs/kimi/rerun_2026_06_19/workspace_snapshot
+    snapshot_restricted_path_hits: []
+    patch_path: solver_runs/kimi/rerun_2026_06_19/solver.patch
+    patch_sha256: a903db717817a48c5049f1a0f9ad202b5ca6dab26f90f2c6e866788121310463
+    public_passed: true
+    hidden_passed_after_injection: true
+    subagent_meta: solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_meta.json
+    subagent_session_jsonl: solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_session.jsonl
+- family: minimax
+  model: ollama/minimax-m3:cloud:xhigh
+  source_summary: solver_runs/minimax/summary.md
+  public_tests:
+    passed: 2
+    total: 2
+  hidden_tests_after_injection:
+    passed: 6
+    total: 6
+  sanitized_solver_workspace_reported: true
+  durable_patch: true
+  clean_replay_verified: true
+  duration_cost_token_captured: true
+  patch_path: solver_runs/minimax/solver.patch
+  replay_result: solver_runs/minimax/replay_result.json
+  trajectory_artifacts:
+    subagent_input: solver_runs/minimax/trajectory/subagent_input.md
+    subagent_output: solver_runs/minimax/trajectory/subagent_output.md
+    subagent_meta: solver_runs/minimax/trajectory/subagent_meta.json
+  duration_ms: 652764
+  usage:
+    input: 0
+    output: 16615
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 15
+  tool_count: 14
+  fresh_pre_hidden_snapshot_rerun:
+    workspace_snapshot: solver_runs/minimax/rerun_2026_06_19/workspace_snapshot
+    snapshot_restricted_path_hits: []
+    patch_path: solver_runs/minimax/rerun_2026_06_19/solver.patch
+    patch_sha256: 5ed7076a6d6b06e0a1643b8d106a135bc12aea829220b6f01e062f5a3befa07d
+    public_passed: true
+    hidden_passed_after_injection: true
+    subagent_meta: solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_meta.json
+    subagent_session_jsonl: solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_session.jsonl
+- family: gpt
+  model: openai-codex/gpt-5.5:xhigh
+  source_summary: solver_runs/gpt/summary.md
+  public_tests:
+    passed: 2
+    total: 2
+  hidden_tests_after_injection:
+    passed: 6
+    total: 6
+  sanitized_solver_workspace_reported: true
+  durable_patch: true
+  clean_replay_verified: true
+  duration_cost_token_captured: true
+  patch_path: solver_runs/gpt/rerun_2026_06_19/solver.patch
+  replay_result: solver_runs/gpt/rerun_2026_06_19/rerun_result.json
+  fresh_pre_hidden_snapshot_rerun:
+    workspace_snapshot: solver_runs/gpt/rerun_2026_06_19/workspace_snapshot
+    snapshot_restricted_path_hits: []
+    patch_path: solver_runs/gpt/rerun_2026_06_19/solver.patch
+    patch_sha256: b7930dc9b9c9a1f816cc1c25717562ac487500fdd91ccbbfc3585e48c8900feb
+    public_passed: true
+    hidden_passed_after_injection: true
+    subagent_meta: solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_meta.json
+    subagent_session_jsonl: solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_session.jsonl
+  duration_ms: 152440
+  usage:
+    input: 25051
+    output: 6724
+    cacheRead: 42496
+    cacheWrite: 0
+    cost: 0.348223
+    turns: 7
+  tool_count: 10
+anti_model_shaping:
+  off_panel_solvers_present: false
+  author_solver_overlap_evaluable: false
+  blocker: authored_by provenance is not durably recorded.
+  note: Fresh solvers include Kimi, MiniMax, and GPT; these models also appeared in
+    the DeepSWE panel, and GPT overlaps the V1+ audit. Authored-by provenance remains
+    unknown, so strict author/red-team/solver independence is not fully evaluable.
+verifier_audit:
+  false_positive_count: 0
+  false_negative_count: 0
+  disagreement_count: 3
+  infrastructure_error_count: 0
+  hidden_flake_runs: 3
+  hidden_flake_failures: 0
+  flake_rate: 0.0
+  negative_case_count: 4
+  accepted_negative_case_count: 0
+pending:
+- provider-internal stream chunks beyond captured subagent session JSONL
+- broader performance sampling beyond single measured command pass
+- clean committed provenance run with gitDirty=false
+- authored_by provenance is not durably recorded
+command_telemetry:
+  result_path: command_telemetry/command_telemetry_result.json
+  passed: true
+  error_count: 0
+  record_count: 7
+hidden_flake_loop_10:
+  result_path: flake_runs_10/flake_loop_10_result.json
+  runs_per_target: 10
+  target_count: 5
+  passed: true
+solver_count_fresh_rerun: 3
+checklists:
+  prompt_verifier_bijection: prompt_verifier_bijection.md
+  f2p: f2p_checklist.md
+  p2p: p2p_checklist.md

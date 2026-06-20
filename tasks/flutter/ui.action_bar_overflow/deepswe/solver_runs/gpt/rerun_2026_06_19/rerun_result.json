@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "family": "gpt",
+  "model": "openai-codex/gpt-5.5:xhigh",
+  "createdDate": "2026-06-19",
+  "workspaceSnapshotPath": "workspace_snapshot",
+  "snapshotRestrictedPathHits": [],
+  "snapshotFiles": [
+    {
+      "path": "instruction.md",
+      "sha256": "d3343996651d645d6b5031834350e7ca48ef58e8c6fb08a5e93e6037a4b8ada3"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "590e1e67f61be0a8b3ec8aafd4b88c7cf9ff5f5cb72d133b15025269cd3ca2ba"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+    },
+    {
+      "path": "lib/responsive_action_bar.dart",
+      "sha256": "c0c2136d7ab897542e5284540c9995f88926c2f07a7c931da5db1233b5326816"
+    },
+    {
+      "path": "test/responsive_action_bar_test.dart",
+      "sha256": "0f2e2b556796f2a96a4902c7859806b0b3336ebfbc58efdc1281e56a502f1a7f"
+    },
+    {
+      "path": "solver_report.md",
+      "sha256": "98de539ea7fd90c5d73b9fd01fb925d0e92e0ad122e02d11c21bf6335fbb2400"
+    }
+  ],
+  "solverReportPresent": true,
+  "patchPath": "solver.patch",
+  "patchSha256": "c0c2136d7ab897542e5284540c9995f88926c2f07a7c931da5db1233b5326816",
+  "patchSha256Source": "repair replay summary; matches repaired lib/responsive_action_bar.dart SHA-256",
+  "generatedCodeSha256": "c0c2136d7ab897542e5284540c9995f88926c2f07a7c931da5db1233b5326816",
+  "solverPatchFileSha256": "4b8d1986c955d807a78c24fab03168552a83586b2fd3c6647a1a5e4011134a65",
+  "pubGetExitCode": 0,
+  "publicExitCode": 0,
+  "hiddenExitCode": 0,
+  "publicPassed": true,
+  "hiddenPassedAfterInjection": true,
+  "cleanReplayVerified": true,
+  "promoted": true,
+  "publicSeconds": 7.455,
+  "hiddenSeconds": 2.509,
+  "publicPubGetLog": "public_pub_get.log",
+  "publicLog": "public_results.log",
+  "hiddenPubGetLog": "hidden_pub_get.log",
+  "hiddenLog": "hidden_results.log",
+  "hiddenLogClassification": "restricted/evaluator-only",
+  "subagentTelemetry": {
+    "model": "openai-codex/gpt-5.5:xhigh",
+    "runId": "cf75c215",
+    "subagentIndex": "coder_0",
+    "exitCode": 0,
+    "durationMs": 234250,
+    "usage": {
+      "input": 24181,
+      "output": 11065,
+      "cacheRead": 126464,
+      "cacheWrite": 0,
+      "cost": 0.516087,
+      "turns": 10
+    },
+    "toolCount": 13,
+    "timestamp": 1781905965535,
+    "available": true,
+    "sourceArtifacts": {
+      "input": "trajectory/subagent_input.md",
+      "output": "trajectory/subagent_output.md",
+      "meta": "trajectory/subagent_meta.json",
+      "sessionJsonl": null
+    }
+  },
+  "providerSessionJsonlCaptured": false,
+  "notes": [
+    "workspace snapshot was captured from the fresh repair rerun source before hidden replay artifacts were copied",
+    "hidden tests were replayed in a separate evaluator workspace",
+    "provider-internal stream chunks/session JSONL were unavailable"
+  ],
+  "trajectoryArtifacts": {
+    "input": "trajectory/subagent_input.md",
+    "output": "trajectory/subagent_output.md",
+    "meta": "trajectory/subagent_meta.json",
+    "sessionJsonl": null
+  },
+  "subagentRunId": "cf75c215",
+  "subagentIndex": "coder_0",
+  "subagentDurationMs": 234250,
+  "subagentUsage": {
+    "input": 24181,
+    "output": 11065,
+    "cacheRead": 126464,
+    "cacheWrite": 0,
+    "cost": 0.516087,
+    "turns": 10
+  }
+}

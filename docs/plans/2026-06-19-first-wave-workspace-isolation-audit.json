@@ -1,0 +1,1346 @@
+{
+  "schemaVersion": 1,
+  "createdDate": "2026-06-19",
+  "scope": [
+    "async.refresh_deduplicator",
+    "accessibility.quantity_stepper_semantics",
+    "refactor.price_label_formatter",
+    "persistence.offline_feed_preferences",
+    "ui.action_bar_overflow"
+  ],
+  "claim": {
+    "deepSWEComplete": false,
+    "workspaceIsolationVerified": false,
+    "artifactScopeOnly": true,
+    "restrictedContentRedacted": true
+  },
+  "policy": {
+    "restrictedGlobTemplates": [
+      "tasks/flutter/<task>/hidden_tests/**",
+      "tasks/flutter/<task>/solution/**",
+      "tasks/flutter/<task>/negative_cases/**",
+      "tasks/flutter/<task>/deepswe/prompt_verifier_bijection.md",
+      "tasks/flutter/<task>/deepswe/f2p_checklist.md",
+      "tasks/flutter/<task>/deepswe/solver_runs/*/hidden_results.log",
+      "tasks/flutter/<task>/deepswe/solver_runs/*/rerun_2026_06_19/hidden_results.log",
+      "tasks/flutter/<task>/deepswe/solver_runs/*/rerun_2026_06_19/hidden_pub_get.log",
+      "tasks/flutter/<task>/deepswe/command_telemetry/*_hidden_replay.log",
+      "tasks/flutter/<task>/deepswe/command_telemetry/*_hidden_pub_get.log",
+      "tasks/flutter/<task>/deepswe/flake_runs/*_run_*.log",
+      "tasks/flutter/<task>/deepswe/flake_runs_10/*_run_*.log",
+      "tasks/flutter/<task>/deepswe/flake_runs_10/*_pub_get.log"
+    ],
+    "allowedSnapshotShape": {
+      "requiredRootFiles": [
+        "instruction.md",
+        "pubspec.yaml"
+      ],
+      "optionalRootFiles": [
+        "pubspec.lock",
+        "solver_report.md"
+      ],
+      "allowedTrees": [
+        "lib/**",
+        "test/**"
+      ],
+      "excludedSegments": [
+        "_hidden"
+      ]
+    },
+    "highSignalTerms": [
+      "_hidden",
+      "hidden_tests",
+      "hidden_results",
+      "hidden_pub_get",
+      "hidden_replay",
+      "prompt_verifier_bijection",
+      "f2p_checklist",
+      "negative_cases",
+      "solution/",
+      "reference_solution",
+      "admission_report",
+      "v1plus_report",
+      "task.yaml"
+    ],
+    "genericTerms": [
+      "hidden"
+    ],
+    "redactionRule": "Store only counts, paths, line numbers, and SHA-256 digests; never store file contents or snippets. Restricted glob contents are not read or included.",
+    "scanClassification": "Snapshot, solver.patch, public_results.log, and trajectory output high-signal hits count as restricted-content/overlap findings. Trajectory prompt and meta high-signal terms are reported separately as guardrail policy mentions and excluded from overlap counts."
+  },
+  "overall": {
+    "tasksAudited": 5,
+    "snapshotsAudited": 20,
+    "solverFacingLeakageScansPassed": true,
+    "snapshotRestrictedPathHitCount": 0,
+    "snapshotRestrictedContentHitCount": 0,
+    "solverFacingRestrictedOverlapCount": 0,
+    "snapshotShapeViolationCount": 0,
+    "snapshotSymlinkCount": 0,
+    "genericHiddenTermOccurrenceCount": 6,
+    "policyGuardrailHighSignalTermOccurrenceCount": 18,
+    "failedCandidateSlices": [],
+    "remainingBlockers": [
+      "provider-internal stream/session JSONL gaps",
+      "clean committed provenance / gitDirty=false",
+      "durable authored-by provenance",
+      "artifact-scope performance sampling is not a statistical benchmark",
+      "this audit is artifact-scope only and does not complete runtime workspace isolation or full DeepSWE"
+    ]
+  },
+  "tasks": [
+    {
+      "taskId": "async.refresh_deduplicator",
+      "manifest": {
+        "taskId": "async.refresh_deduplicator",
+        "status": "clean_replay_verified_deepswe_pending",
+        "deepSWEComplete": false,
+        "workspaceIsolationVerified": false,
+        "replayVerified": true,
+        "failedCandidate": false,
+        "passingFreshSolverFamilies": [
+          "gpt",
+          "kimi",
+          "minimax"
+        ],
+        "failedFreshSolverFamilies": [],
+        "solverCountFreshRerun": 3,
+        "solverCountCleanReplayVerified": 2,
+        "fieldSources": {
+          "passingFreshSolverFamilies": "derivedFromFreshRerunEntries",
+          "failedFreshSolverFamilies": "derivedFromFreshRerunEntries",
+          "solverCountCleanReplayVerified": "derivedFromSolverRuns.cleanReplayVerified"
+        }
+      },
+      "leakageScan": {
+        "passed": true,
+        "solverFacingScanPassed": true,
+        "findingCount": 0,
+        "perFamilyFindingCounts": [
+          {
+            "family": "kimi",
+            "findingCount": 0,
+            "checkedFileCount": 28
+          },
+          {
+            "family": "minimax",
+            "findingCount": 0,
+            "checkedFileCount": 19
+          },
+          {
+            "family": "gpt",
+            "findingCount": 0,
+            "checkedFileCount": 13
+          }
+        ],
+        "checkedFileCount": 60,
+        "hiddenLiteralSampleCount": 6,
+        "allSolverFacingLeakageScansPassedWithZeroFindings": true
+      },
+      "snapshotSummary": {
+        "snapshotsAudited": 3,
+        "fileCount": 18,
+        "restrictedPathHitCount": 0,
+        "highSignalContentHitCount": 0,
+        "solverFacingRestrictedOverlapCount": 0,
+        "shapeViolationCount": 0,
+        "symlinkCount": 0,
+        "genericHiddenTermOccurrenceCount": 0
+      },
+      "snapshots": [
+        {
+          "family": "gpt",
+          "path": "tasks/flutter/async.refresh_deduplicator/deepswe/solver_runs/gpt/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "6fbd180c2c31e28dcacd5577c5651060dc15a72ddf9d46b42f3d08deab56e336"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "acb58d1eb58b7b381ad123dcc85b87ce8618a5a7b225bf9aca81be8399431f55"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "fabbb16c3f0e5e23128c4605eea205200fd910723980c6667bb10d63a1fd8128"
+            },
+            {
+              "path": "lib/feed_refresh_controller.dart",
+              "sha256": "6c056e9b2c1aa5ccd8c83b8ee094136dd3def6737fee9f7da5315f777c2843b1"
+            },
+            {
+              "path": "test/feed_refresh_controller_test.dart",
+              "sha256": "e9c365a2b61000317dc70bf68c5d87b7a091c2d8a5823e441f081636eb4bd587"
+            }
+          ]
+        },
+        {
+          "family": "kimi",
+          "path": "tasks/flutter/async.refresh_deduplicator/deepswe/solver_runs/kimi/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "6fbd180c2c31e28dcacd5577c5651060dc15a72ddf9d46b42f3d08deab56e336"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "acb58d1eb58b7b381ad123dcc85b87ce8618a5a7b225bf9aca81be8399431f55"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "0ddd5729f20d4f123a4c301acf9d2dba275255dbf1fe0cac63e62ee78554a775"
+            },
+            {
+              "path": "lib/feed_refresh_controller.dart",
+              "sha256": "d6263d16df23a1a1f2a3b2a60b6ec5f278175f813b44648fef0e3a313a27100d"
+            },
+            {
+              "path": "test/feed_refresh_controller_test.dart",
+              "sha256": "e9c365a2b61000317dc70bf68c5d87b7a091c2d8a5823e441f081636eb4bd587"
+            }
+          ]
+        },
+        {
+          "family": "minimax",
+          "path": "tasks/flutter/async.refresh_deduplicator/deepswe/solver_runs/minimax/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "6fbd180c2c31e28dcacd5577c5651060dc15a72ddf9d46b42f3d08deab56e336"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "acb58d1eb58b7b381ad123dcc85b87ce8618a5a7b225bf9aca81be8399431f55"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "5a13f42a57e1bebdfaf55770cdd568beb8dc37601666ae32f5ebddb72c951d7a"
+            },
+            {
+              "path": "lib/feed_refresh_controller.dart",
+              "sha256": "b52f56c7720f840dea4d72506084e6b799a94e35feb9cf1e5eb4dd1f7f1b545b"
+            },
+            {
+              "path": "test/feed_refresh_controller_test.dart",
+              "sha256": "e9c365a2b61000317dc70bf68c5d87b7a091c2d8a5823e441f081636eb4bd587"
+            }
+          ]
+        }
+      ],
+      "findings": {
+        "manifestFlagFindings": [],
+        "snapshotRestrictedPathFindings": [],
+        "snapshotRestrictedPathFieldsSeen": [
+          "$.freshPreHiddenSnapshotReruns[0].snapshotRestrictedPathHits",
+          "$.freshPreHiddenSnapshotReruns[1].snapshotRestrictedPathHits",
+          "$.freshPreHiddenSnapshotReruns[2].snapshotRestrictedPathHits"
+        ],
+        "snapshotShapeViolations": [],
+        "snapshotSymlinks": [],
+        "snapshotRestrictedContentHits": [],
+        "solverFacingRestrictedOverlapHits": [],
+        "genericHiddenTermOccurrences": []
+      },
+      "redactedObservations": {
+        "policyGuardrailHighSignalTermMentionsExcludedFromOverlap": []
+      }
+    },
+    {
+      "taskId": "accessibility.quantity_stepper_semantics",
+      "manifest": {
+        "taskId": "accessibility.quantity_stepper_semantics",
+        "status": "v2-deepswe-slice-in-progress",
+        "deepSWEComplete": false,
+        "workspaceIsolationVerified": false,
+        "replayVerified": true,
+        "failedCandidate": false,
+        "passingFreshSolverFamilies": [
+          "glm",
+          "gpt",
+          "opus"
+        ],
+        "failedFreshSolverFamilies": [
+          "kimi",
+          "minimax"
+        ],
+        "solverCountFreshRerun": 5,
+        "solverCountCleanReplayVerified": 3,
+        "fieldSources": {
+          "passingFreshSolverFamilies": "manifest",
+          "failedFreshSolverFamilies": "manifest",
+          "solverCountCleanReplayVerified": "manifest"
+        }
+      },
+      "leakageScan": {
+        "passed": true,
+        "solverFacingScanPassed": true,
+        "findingCount": 0,
+        "perFamilyFindingCounts": [],
+        "checkedFileCount": 109,
+        "hiddenLiteralSampleCount": 9,
+        "allSolverFacingLeakageScansPassedWithZeroFindings": true
+      },
+      "snapshotSummary": {
+        "snapshotsAudited": 5,
+        "fileCount": 30,
+        "restrictedPathHitCount": 0,
+        "highSignalContentHitCount": 0,
+        "solverFacingRestrictedOverlapCount": 0,
+        "shapeViolationCount": 0,
+        "symlinkCount": 0,
+        "genericHiddenTermOccurrenceCount": 2
+      },
+      "snapshots": [
+        {
+          "family": "glm",
+          "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/glm/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "ccae8e203e824cb41fd9388d918bdd81c36719242b1f1c47de7a99a89ba4e959"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "5514d26310aa94912d018f5fe47a8fe7af6d2ea23183bce9434ce23e124bbd61"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "631f83336ed57ec2dd6c07e41fd1a3c235c5c8646159b1330c3bf97187e249bc"
+            },
+            {
+              "path": "lib/quantity_stepper.dart",
+              "sha256": "f8d65be4cbe5721332c99497e8b96134b2d861b4a6baa248586a78b56b041f60"
+            },
+            {
+              "path": "test/quantity_stepper_test.dart",
+              "sha256": "9bdb00413936c1d5501b09171217be339b1748eabd15ee3f7c24ad2ca63d0200"
+            }
+          ]
+        },
+        {
+          "family": "gpt",
+          "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/gpt/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "ccae8e203e824cb41fd9388d918bdd81c36719242b1f1c47de7a99a89ba4e959"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "5514d26310aa94912d018f5fe47a8fe7af6d2ea23183bce9434ce23e124bbd61"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "7aff2b9c454e722bf68b2c0633130777f91a029cb9eb5afd227f5dcb78f3b3b3"
+            },
+            {
+              "path": "lib/quantity_stepper.dart",
+              "sha256": "1aabd835633e96d39e98a84249665608d74dbc8780605436a757e37cb842e317"
+            },
+            {
+              "path": "test/quantity_stepper_test.dart",
+              "sha256": "9bdb00413936c1d5501b09171217be339b1748eabd15ee3f7c24ad2ca63d0200"
+            }
+          ]
+        },
+        {
+          "family": "kimi",
+          "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/kimi/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "ccae8e203e824cb41fd9388d918bdd81c36719242b1f1c47de7a99a89ba4e959"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "5514d26310aa94912d018f5fe47a8fe7af6d2ea23183bce9434ce23e124bbd61"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "c5c7a27e6ecb7db1a3b431219d32d3deb380b9c7a4f6b76be59726e025d9f7d4"
+            },
+            {
+              "path": "lib/quantity_stepper.dart",
+              "sha256": "514dd750f1fbf9347a3d4eec7887305ec7572b8d62cd59a19cf523005b6a27e2"
+            },
+            {
+              "path": "test/quantity_stepper_test.dart",
+              "sha256": "9bdb00413936c1d5501b09171217be339b1748eabd15ee3f7c24ad2ca63d0200"
+            }
+          ]
+        },
+        {
+          "family": "minimax",
+          "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/minimax/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "ccae8e203e824cb41fd9388d918bdd81c36719242b1f1c47de7a99a89ba4e959"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "5514d26310aa94912d018f5fe47a8fe7af6d2ea23183bce9434ce23e124bbd61"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "12eb7484d111cce93253ec3c1b02694a3e7616f8fb8fe7b4842878e14bef98c0"
+            },
+            {
+              "path": "lib/quantity_stepper.dart",
+              "sha256": "f3230d74c8bdbcdfe470a6fba287f7cf46f6771d18526331d542cfa392348da5"
+            },
+            {
+              "path": "test/quantity_stepper_test.dart",
+              "sha256": "9bdb00413936c1d5501b09171217be339b1748eabd15ee3f7c24ad2ca63d0200"
+            }
+          ]
+        },
+        {
+          "family": "opus",
+          "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/opus/<active-rerun>/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "ccae8e203e824cb41fd9388d918bdd81c36719242b1f1c47de7a99a89ba4e959"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "5514d26310aa94912d018f5fe47a8fe7af6d2ea23183bce9434ce23e124bbd61"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "c27238df0deee91fb577dbcd19652ae57a9eed906561979e7de2ffee2f90341a"
+            },
+            {
+              "path": "lib/quantity_stepper.dart",
+              "sha256": "855bb4a5bbb08837b6f56b4a8f2f119da38bbf26f99c0db250ff30a33946ea22"
+            },
+            {
+              "path": "test/quantity_stepper_test.dart",
+              "sha256": "9bdb00413936c1d5501b09171217be339b1748eabd15ee3f7c24ad2ca63d0200"
+            }
+          ]
+        }
+      ],
+      "findings": {
+        "manifestFlagFindings": [],
+        "snapshotRestrictedPathFindings": [],
+        "snapshotRestrictedPathFieldsSeen": [
+          "$.freshSolverReruns.gpt.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.glm.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.opus.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.minimax.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.kimi.workspaceSnapshotRestrictedPathHits"
+        ],
+        "snapshotShapeViolations": [],
+        "snapshotSymlinks": [],
+        "snapshotRestrictedContentHits": [],
+        "solverFacingRestrictedOverlapHits": [],
+        "genericHiddenTermOccurrences": [
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "minimax",
+            "artifact": "workspace_snapshot",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/minimax/rerun_2026_06_19/workspace_snapshot/solver_report.md",
+            "line": 30,
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "minimax",
+            "artifact": "trajectory_output",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_output.md",
+            "line": 18,
+            "occurrenceCount": 1
+          }
+        ]
+      },
+      "redactedObservations": {
+        "policyGuardrailHighSignalTermMentionsExcludedFromOverlap": [
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "glm",
+            "artifact": "trajectory_prompt",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/glm/rerun_2026_06_19/trajectory/subagent_input.md",
+            "line": 11,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "glm",
+            "artifact": "trajectory_meta",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/glm/rerun_2026_06_19/trajectory/subagent_meta.json",
+            "line": 4,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "gpt",
+            "artifact": "trajectory_prompt",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_input.md",
+            "line": 11,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "gpt",
+            "artifact": "trajectory_meta",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_meta.json",
+            "line": 4,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "kimi",
+            "artifact": "trajectory_prompt",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_input.md",
+            "line": 11,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "kimi",
+            "artifact": "trajectory_meta",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_meta.json",
+            "line": 4,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "minimax",
+            "artifact": "trajectory_prompt",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_input.md",
+            "line": 11,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "minimax",
+            "artifact": "trajectory_meta",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_meta.json",
+            "line": 4,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "opus",
+            "artifact": "trajectory_prompt",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/opus/<active-rerun>/trajectory/subagent_input.md",
+            "line": 11,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "accessibility.quantity_stepper_semantics",
+            "family": "opus",
+            "artifact": "trajectory_meta",
+            "path": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/solver_runs/opus/<active-rerun>/trajectory/subagent_meta.json",
+            "line": 4,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          }
+        ]
+      }
+    },
+    {
+      "taskId": "refactor.price_label_formatter",
+      "manifest": {
+        "taskId": "refactor.price_label_formatter",
+        "status": "v2-deepswe-slice-in-progress",
+        "deepSWEComplete": false,
+        "workspaceIsolationVerified": false,
+        "replayVerified": true,
+        "failedCandidate": false,
+        "passingFreshSolverFamilies": [
+          "glm",
+          "gpt",
+          "minimax"
+        ],
+        "failedFreshSolverFamilies": [
+          "kimi"
+        ],
+        "solverCountFreshRerun": 4,
+        "solverCountCleanReplayVerified": 3,
+        "fieldSources": {
+          "passingFreshSolverFamilies": "manifest",
+          "failedFreshSolverFamilies": "manifest",
+          "solverCountCleanReplayVerified": "manifest"
+        }
+      },
+      "leakageScan": {
+        "passed": true,
+        "solverFacingScanPassed": true,
+        "findingCount": 0,
+        "perFamilyFindingCounts": [],
+        "checkedFileCount": 103,
+        "hiddenLiteralSampleCount": 37,
+        "allSolverFacingLeakageScansPassedWithZeroFindings": true
+      },
+      "snapshotSummary": {
+        "snapshotsAudited": 4,
+        "fileCount": 35,
+        "restrictedPathHitCount": 0,
+        "highSignalContentHitCount": 0,
+        "solverFacingRestrictedOverlapCount": 0,
+        "shapeViolationCount": 0,
+        "symlinkCount": 0,
+        "genericHiddenTermOccurrenceCount": 0
+      },
+      "snapshots": [
+        {
+          "family": "glm",
+          "path": "tasks/flutter/refactor.price_label_formatter/deepswe/solver_runs/glm/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 9,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "f2df445cdaf920ee728aab43b58c00d51189d5b9726911b566641c016b35cd4b"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "a92e587d5c21cd48e620b475b2ed83267d0900779a3f643a3a3a96ab197a08f9"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "217cefd7592fcb3290b91bccbbe7463eddb9ae74ac6dbbeeffc930618f16a022"
+            },
+            {
+              "path": "lib/cart_line_price_row.dart",
+              "sha256": "c071a1d3a37dd3f9415714acf050d75179329f5781179d10f44f71288e612891"
+            },
+            {
+              "path": "lib/checkout_price_summary.dart",
+              "sha256": "8c06cbc30d23003883c25ee696ec4ba0752a185402079757080c2921789595df"
+            },
+            {
+              "path": "lib/price_label_formatter.dart",
+              "sha256": "188e32a73cde8bf61ac35d420b4971bb479db93f8757e30536f3b012fe310468"
+            },
+            {
+              "path": "lib/product_price_tile.dart",
+              "sha256": "6767dc38757ead77c5d89b817ecc4d0b9defeb8b922680d9df5eabe6a0fc2e4a"
+            },
+            {
+              "path": "test/price_labels_test.dart",
+              "sha256": "85361eff54a9a8812d714fa69f2c3b5a68290433a93c607b35e916041163898c"
+            }
+          ]
+        },
+        {
+          "family": "gpt",
+          "path": "tasks/flutter/refactor.price_label_formatter/deepswe/solver_runs/gpt/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 9,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "f2df445cdaf920ee728aab43b58c00d51189d5b9726911b566641c016b35cd4b"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "a92e587d5c21cd48e620b475b2ed83267d0900779a3f643a3a3a96ab197a08f9"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "f249bdd230833577e986a3d928177bfbaa34f47d6eea2a9db82971ce7376133c"
+            },
+            {
+              "path": "lib/cart_line_price_row.dart",
+              "sha256": "f34743397280bce7b834a7c7a86c298fb69175fcd568be5d8c831fd46e35d048"
+            },
+            {
+              "path": "lib/checkout_price_summary.dart",
+              "sha256": "cbcc9259e847f4e4e1cc0e231bd62bff624b7063761cdc50c58f33256c44f15b"
+            },
+            {
+              "path": "lib/price_label_formatter.dart",
+              "sha256": "269bf17cd007a773ac01316eeebd0238d2a2ec6287c26e85cd549fa803600cb2"
+            },
+            {
+              "path": "lib/product_price_tile.dart",
+              "sha256": "1fdcccf6f29706bba582aa4e253922fb8bf9a009113ce8db4f2c7ace4698e309"
+            },
+            {
+              "path": "test/price_labels_test.dart",
+              "sha256": "85361eff54a9a8812d714fa69f2c3b5a68290433a93c607b35e916041163898c"
+            }
+          ]
+        },
+        {
+          "family": "kimi",
+          "path": "tasks/flutter/refactor.price_label_formatter/deepswe/solver_runs/kimi/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 8,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "f2df445cdaf920ee728aab43b58c00d51189d5b9726911b566641c016b35cd4b"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "a92e587d5c21cd48e620b475b2ed83267d0900779a3f643a3a3a96ab197a08f9"
+            },
+            {
+              "path": "lib/cart_line_price_row.dart",
+              "sha256": "f5ef179d15bcceabb6cda97440a65aa45297eabb5ee3ffd2ecdc9c6edb1799d5"
+            },
+            {
+              "path": "lib/checkout_price_summary.dart",
+              "sha256": "9e76bbadccb113cbb734d8154d322fe47552e0ea24d17c8ecc0607f52a591e8f"
+            },
+            {
+              "path": "lib/price_label_formatter.dart",
+              "sha256": "26a4d6fde4961469c5ddbea7901990fd923a63159a4ddbbbfd09922925484973"
+            },
+            {
+              "path": "lib/product_price_tile.dart",
+              "sha256": "46540443acc71dd6f55ae176ccbfb88961afb786c2a51d8a5f1008a16524f0a9"
+            },
+            {
+              "path": "test/price_labels_test.dart",
+              "sha256": "85361eff54a9a8812d714fa69f2c3b5a68290433a93c607b35e916041163898c"
+            }
+          ]
+        },
+        {
+          "family": "minimax",
+          "path": "tasks/flutter/refactor.price_label_formatter/deepswe/solver_runs/minimax/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 9,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "f2df445cdaf920ee728aab43b58c00d51189d5b9726911b566641c016b35cd4b"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "a92e587d5c21cd48e620b475b2ed83267d0900779a3f643a3a3a96ab197a08f9"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "5737d11f7533635938cef3582324abee937645aff68f4a06768c6cd515e875a9"
+            },
+            {
+              "path": "lib/cart_line_price_row.dart",
+              "sha256": "b45a036fbc8d14e98f1d36c3dabfc68a1a1792d060ac041277449433261895f2"
+            },
+            {
+              "path": "lib/checkout_price_summary.dart",
+              "sha256": "ad1b847007acd8982777223974b5cfa1c047163b8ebd66a485fa5c066b6dc0fd"
+            },
+            {
+              "path": "lib/price_label_formatter.dart",
+              "sha256": "2257b42884e6956ad41b98bbd75c61a3779dba5e6fea4b89dae9c188795121a4"
+            },
+            {
+              "path": "lib/product_price_tile.dart",
+              "sha256": "dd069f77cfc87ed2af76cabe3cca513a9d649bd3e80580d78dd83977981d6ecc"
+            },
+            {
+              "path": "test/price_labels_test.dart",
+              "sha256": "85361eff54a9a8812d714fa69f2c3b5a68290433a93c607b35e916041163898c"
+            }
+          ]
+        }
+      ],
+      "findings": {
+        "manifestFlagFindings": [],
+        "snapshotRestrictedPathFindings": [],
+        "snapshotRestrictedPathFieldsSeen": [
+          "$.freshSolverReruns.gpt.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.minimax.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.glm.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.kimi.workspaceSnapshotRestrictedPathHits"
+        ],
+        "snapshotShapeViolations": [],
+        "snapshotSymlinks": [],
+        "snapshotRestrictedContentHits": [],
+        "solverFacingRestrictedOverlapHits": [],
+        "genericHiddenTermOccurrences": []
+      },
+      "redactedObservations": {
+        "policyGuardrailHighSignalTermMentionsExcludedFromOverlap": []
+      }
+    },
+    {
+      "taskId": "persistence.offline_feed_preferences",
+      "manifest": {
+        "taskId": "persistence.offline_feed_preferences",
+        "status": "v2-deepswe-slice-in-progress",
+        "deepSWEComplete": false,
+        "workspaceIsolationVerified": false,
+        "replayVerified": true,
+        "failedCandidate": false,
+        "passingFreshSolverFamilies": [
+          "glm",
+          "gpt",
+          "kimi",
+          "minimax"
+        ],
+        "failedFreshSolverFamilies": [],
+        "solverCountFreshRerun": 4,
+        "solverCountCleanReplayVerified": 4,
+        "fieldSources": {
+          "passingFreshSolverFamilies": "manifest",
+          "failedFreshSolverFamilies": "manifest",
+          "solverCountCleanReplayVerified": "manifest"
+        }
+      },
+      "leakageScan": {
+        "passed": true,
+        "solverFacingScanPassed": true,
+        "findingCount": 0,
+        "perFamilyFindingCounts": [],
+        "checkedFileCount": 92,
+        "hiddenLiteralSampleCount": 9,
+        "allSolverFacingLeakageScansPassedWithZeroFindings": true
+      },
+      "snapshotSummary": {
+        "snapshotsAudited": 4,
+        "fileCount": 24,
+        "restrictedPathHitCount": 0,
+        "highSignalContentHitCount": 0,
+        "solverFacingRestrictedOverlapCount": 0,
+        "shapeViolationCount": 0,
+        "symlinkCount": 0,
+        "genericHiddenTermOccurrenceCount": 0
+      },
+      "snapshots": [
+        {
+          "family": "glm",
+          "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/glm/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "6f6aa6de7ebcd42c13018737e6651d0a2f8df0cf40b652c40017c387c548516c"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "939440790d759f0e62c11aac46a5ab13aaef88639162ce25b8d0bdca730a9a24"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "7544b85bc3c91486b4b1f0900b57f1b1ca00d27b04eddf080019fc8fb1a0442f"
+            },
+            {
+              "path": "lib/offline_feed_preferences.dart",
+              "sha256": "7d2f83ae073986d4b57f868306e424807ed9c39343dd532be92658ef9ef20e4f"
+            },
+            {
+              "path": "test/offline_feed_preferences_test.dart",
+              "sha256": "1c0b3ef21f51901a066f66aa8eae4af35cda294e95e54308ec072530e9ab89dd"
+            }
+          ]
+        },
+        {
+          "family": "gpt",
+          "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/gpt/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "6f6aa6de7ebcd42c13018737e6651d0a2f8df0cf40b652c40017c387c548516c"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "939440790d759f0e62c11aac46a5ab13aaef88639162ce25b8d0bdca730a9a24"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "58204276ec6eb5bc13ad756a4c89c7328d0455893b6e342434dec9d7aa4e4089"
+            },
+            {
+              "path": "lib/offline_feed_preferences.dart",
+              "sha256": "2a42ae98402963682e7daad73112daec63d1d6f5972c427fd127cff68df30866"
+            },
+            {
+              "path": "test/offline_feed_preferences_test.dart",
+              "sha256": "1c0b3ef21f51901a066f66aa8eae4af35cda294e95e54308ec072530e9ab89dd"
+            }
+          ]
+        },
+        {
+          "family": "kimi",
+          "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/kimi/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "6f6aa6de7ebcd42c13018737e6651d0a2f8df0cf40b652c40017c387c548516c"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "939440790d759f0e62c11aac46a5ab13aaef88639162ce25b8d0bdca730a9a24"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "f88fe069d64bd77b23457fccbeb8e2c2fb936f86d79aeb32cba76d64f1968c77"
+            },
+            {
+              "path": "lib/offline_feed_preferences.dart",
+              "sha256": "13013ac4f28e1a212b67f745f30ae63ea23b1f56cf7ab041896ccf6e7317a609"
+            },
+            {
+              "path": "test/offline_feed_preferences_test.dart",
+              "sha256": "1c0b3ef21f51901a066f66aa8eae4af35cda294e95e54308ec072530e9ab89dd"
+            }
+          ]
+        },
+        {
+          "family": "minimax",
+          "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/minimax/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "6f6aa6de7ebcd42c13018737e6651d0a2f8df0cf40b652c40017c387c548516c"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "939440790d759f0e62c11aac46a5ab13aaef88639162ce25b8d0bdca730a9a24"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "40a7d6d06d2f1251dfbf41250f423b5c8a2f01e567b48e4e0a1871fb9051d17b"
+            },
+            {
+              "path": "lib/offline_feed_preferences.dart",
+              "sha256": "efd3c5476ba53d00012ccb10a3816102857d702c3eab22b86f6819831750d538"
+            },
+            {
+              "path": "test/offline_feed_preferences_test.dart",
+              "sha256": "1c0b3ef21f51901a066f66aa8eae4af35cda294e95e54308ec072530e9ab89dd"
+            }
+          ]
+        }
+      ],
+      "findings": {
+        "manifestFlagFindings": [],
+        "snapshotRestrictedPathFindings": [],
+        "snapshotRestrictedPathFieldsSeen": [
+          "$.freshSolverReruns.gpt.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.minimax.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.glm.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.kimi.workspaceSnapshotRestrictedPathHits"
+        ],
+        "snapshotShapeViolations": [],
+        "snapshotSymlinks": [],
+        "snapshotRestrictedContentHits": [],
+        "solverFacingRestrictedOverlapHits": [],
+        "genericHiddenTermOccurrences": []
+      },
+      "redactedObservations": {
+        "policyGuardrailHighSignalTermMentionsExcludedFromOverlap": [
+          {
+            "taskId": "persistence.offline_feed_preferences",
+            "family": "glm",
+            "artifact": "trajectory_prompt",
+            "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/glm/rerun_2026_06_19/trajectory/subagent_input.md",
+            "line": 11,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "persistence.offline_feed_preferences",
+            "family": "glm",
+            "artifact": "trajectory_meta",
+            "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/glm/rerun_2026_06_19/trajectory/subagent_meta.json",
+            "line": 4,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "persistence.offline_feed_preferences",
+            "family": "gpt",
+            "artifact": "trajectory_prompt",
+            "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_input.md",
+            "line": 11,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "persistence.offline_feed_preferences",
+            "family": "gpt",
+            "artifact": "trajectory_meta",
+            "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_meta.json",
+            "line": 4,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "persistence.offline_feed_preferences",
+            "family": "kimi",
+            "artifact": "trajectory_prompt",
+            "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_input.md",
+            "line": 11,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "persistence.offline_feed_preferences",
+            "family": "kimi",
+            "artifact": "trajectory_meta",
+            "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_meta.json",
+            "line": 4,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "persistence.offline_feed_preferences",
+            "family": "minimax",
+            "artifact": "trajectory_prompt",
+            "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_input.md",
+            "line": 11,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "persistence.offline_feed_preferences",
+            "family": "minimax",
+            "artifact": "trajectory_meta",
+            "path": "tasks/flutter/persistence.offline_feed_preferences/deepswe/solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_meta.json",
+            "line": 4,
+            "term": "task.yaml",
+            "occurrenceCount": 1
+          }
+        ]
+      }
+    },
+    {
+      "taskId": "ui.action_bar_overflow",
+      "manifest": {
+        "taskId": "ui.action_bar_overflow",
+        "status": "contract-repaired-replay-verified-incomplete-provenance",
+        "deepSWEComplete": false,
+        "workspaceIsolationVerified": false,
+        "replayVerified": true,
+        "failedCandidate": false,
+        "passingFreshSolverFamilies": [
+          "gpt",
+          "minimax",
+          "kimi"
+        ],
+        "failedFreshSolverFamilies": [
+          "glm"
+        ],
+        "abortedFreshSolverFamilies": [
+          "opus"
+        ],
+        "solverCountFreshRerun": 4,
+        "solverCountCleanReplayVerified": 3,
+        "fieldSources": {
+          "passingFreshSolverFamilies": "manifest",
+          "failedFreshSolverFamilies": "manifest",
+          "abortedFreshSolverFamilies": "manifest",
+          "solverCountCleanReplayVerified": "manifest"
+        }
+      },
+      "leakageScan": {
+        "passed": true,
+        "solverFacingScanPassed": true,
+        "findingCount": 0,
+        "perFamilyFindingCounts": [],
+        "checkedFileCount": 75,
+        "hiddenLiteralSampleCount": 11,
+        "allSolverFacingLeakageScansPassedWithZeroFindings": true
+      },
+      "snapshotSummary": {
+        "snapshotsAudited": 4,
+        "fileCount": 24,
+        "restrictedPathHitCount": 0,
+        "highSignalContentHitCount": 0,
+        "solverFacingRestrictedOverlapCount": 0,
+        "shapeViolationCount": 0,
+        "symlinkCount": 0,
+        "genericHiddenTermOccurrenceCount": 4
+      },
+      "snapshots": [
+        {
+          "family": "gpt",
+          "path": "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/gpt/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "d3343996651d645d6b5031834350e7ca48ef58e8c6fb08a5e93e6037a4b8ada3"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "590e1e67f61be0a8b3ec8aafd4b88c7cf9ff5f5cb72d133b15025269cd3ca2ba"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "lib/responsive_action_bar.dart",
+              "sha256": "c0c2136d7ab897542e5284540c9995f88926c2f07a7c931da5db1233b5326816"
+            },
+            {
+              "path": "test/responsive_action_bar_test.dart",
+              "sha256": "0f2e2b556796f2a96a4902c7859806b0b3336ebfbc58efdc1281e56a502f1a7f"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "98de539ea7fd90c5d73b9fd01fb925d0e92e0ad122e02d11c21bf6335fbb2400"
+            }
+          ]
+        },
+        {
+          "family": "glm",
+          "path": "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/glm/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "d3343996651d645d6b5031834350e7ca48ef58e8c6fb08a5e93e6037a4b8ada3"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "590e1e67f61be0a8b3ec8aafd4b88c7cf9ff5f5cb72d133b15025269cd3ca2ba"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "lib/responsive_action_bar.dart",
+              "sha256": "fa8ecb4c137c234d636a82013a07805c6a7d554c02b7ae636182cff464edb67a"
+            },
+            {
+              "path": "test/responsive_action_bar_test.dart",
+              "sha256": "0f2e2b556796f2a96a4902c7859806b0b3336ebfbc58efdc1281e56a502f1a7f"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "1b014cbf2c00f95afd3759bafa7e046c71ad72911d26b3a3b22cab16025dad28"
+            }
+          ]
+        },
+        {
+          "family": "minimax",
+          "path": "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/minimax/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "d3343996651d645d6b5031834350e7ca48ef58e8c6fb08a5e93e6037a4b8ada3"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "590e1e67f61be0a8b3ec8aafd4b88c7cf9ff5f5cb72d133b15025269cd3ca2ba"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "lib/responsive_action_bar.dart",
+              "sha256": "de079f24ce175c8041b97c711baf6bdd6035098e267cf9d5fe50b07792ca75a7"
+            },
+            {
+              "path": "test/responsive_action_bar_test.dart",
+              "sha256": "0f2e2b556796f2a96a4902c7859806b0b3336ebfbc58efdc1281e56a502f1a7f"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "7b1d5586feee531a6b6170f84bd1f27baf9d100248eda4ffd0a9c133fcd0350e"
+            }
+          ]
+        },
+        {
+          "family": "kimi",
+          "path": "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/kimi/rerun_2026_06_19/workspace_snapshot",
+          "fileCount": 6,
+          "shapeViolationCount": 0,
+          "symlinkCount": 0,
+          "files": [
+            {
+              "path": "instruction.md",
+              "sha256": "d3343996651d645d6b5031834350e7ca48ef58e8c6fb08a5e93e6037a4b8ada3"
+            },
+            {
+              "path": "pubspec.yaml",
+              "sha256": "590e1e67f61be0a8b3ec8aafd4b88c7cf9ff5f5cb72d133b15025269cd3ca2ba"
+            },
+            {
+              "path": "pubspec.lock",
+              "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+            },
+            {
+              "path": "lib/responsive_action_bar.dart",
+              "sha256": "465d100194fd24d51c1b3fe36134156b73e939c04243d9566ed726fdc685e3d9"
+            },
+            {
+              "path": "test/responsive_action_bar_test.dart",
+              "sha256": "0f2e2b556796f2a96a4902c7859806b0b3336ebfbc58efdc1281e56a502f1a7f"
+            },
+            {
+              "path": "solver_report.md",
+              "sha256": "40b2c8c54e52d5b3b564e1552903f95d505970175014b7eefe008657be495c10"
+            }
+          ]
+        }
+      ],
+      "findings": {
+        "manifestFlagFindings": [],
+        "snapshotRestrictedPathFindings": [],
+        "snapshotRestrictedPathFieldsSeen": [
+          "$.freshSolverReruns.gpt.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.glm.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.minimax.workspaceSnapshotRestrictedPathHits",
+          "$.freshSolverReruns.kimi.workspaceSnapshotRestrictedPathHits"
+        ],
+        "snapshotShapeViolations": [],
+        "snapshotSymlinks": [],
+        "snapshotRestrictedContentHits": [],
+        "solverFacingRestrictedOverlapHits": [],
+        "genericHiddenTermOccurrences": [
+          {
+            "taskId": "ui.action_bar_overflow",
+            "family": "glm",
+            "artifact": "workspace_snapshot",
+            "path": "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/glm/rerun_2026_06_19/workspace_snapshot/solver_report.md",
+            "line": 57,
+            "occurrenceCount": 2
+          },
+          {
+            "taskId": "ui.action_bar_overflow",
+            "family": "kimi",
+            "artifact": "workspace_snapshot",
+            "path": "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/kimi/rerun_2026_06_19/workspace_snapshot/solver_report.md",
+            "line": 25,
+            "occurrenceCount": 1
+          },
+          {
+            "taskId": "ui.action_bar_overflow",
+            "family": "kimi",
+            "artifact": "workspace_snapshot",
+            "path": "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/kimi/rerun_2026_06_19/workspace_snapshot/solver_report.md",
+            "line": 26,
+            "occurrenceCount": 1
+          }
+        ]
+      },
+      "redactedObservations": {
+        "policyGuardrailHighSignalTermMentionsExcludedFromOverlap": []
+      }
+    }
+  ]
+}
