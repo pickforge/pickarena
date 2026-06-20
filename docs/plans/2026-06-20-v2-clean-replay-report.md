@@ -27,7 +27,7 @@ Five replayed tasks were admitted with `completed`, `taskCount: 1`, `admittedTas
 
 - Local guard checks passed: diff check, V2-only wording, no completion/runtime-proof overclaim, and no secret-pattern hit.
 - Independent read-only review accepted the report contents before this validation-status note was added.
-- The report remains untracked until explicit maintainer approval to commit it.
+- The report was committed after owner continuation approval; it remains V2-scoped and makes no broader completion claim.
 
 ## Still blocked
 

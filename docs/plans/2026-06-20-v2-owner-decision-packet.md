@@ -80,7 +80,7 @@ Notes: do not persist generated replay outputs without explicit maintainer appro
 
 - Local guard checks passed: diff check, V2-only wording, no completion/runtime-proof overclaim, and no secret-pattern hit.
 - Fresh-context read-only review accepted this packet as actionable, V2-scoped, aligned with the clean replay report, and clear that the recommended low-risk response is not an applied decision.
-- No corrections were required before asking the owner to answer or approve committing these docs.
+- No corrections were required before committing these docs and asking the owner to answer.
 
 ## Non-goals
 
