@@ -60,7 +60,7 @@ Read-only Opus review: ACCEPT.
 - The headless smoke proves the default Droid harness path can launch Droid through Bubblewrap and persist sanitized `runtimeBoundary` metadata, but it failed at sandbox auth/config before a provider session succeeded.
 - Follow-up investigation found the wrapped Droid process uses a scrubbed environment with parent inheritance disabled, built-in models add no custom credential allowlist, and current Bubblewrap binds do not expose Droid auth/session, Factory settings, host home/config/cache/runtime state, or Droid-specific writable state. Any auth exposure strategy changes security scope and needs user/maintainer approval before implementation.
 - The headless CLI default Droid harness test uses a fake generated sandbox and sanitized metadata only; it is not real Droid/provider-in-Bubblewrap proof.
-- Clean committed replay is still blocked on user approval to stage/commit and rerun.
+- Clean committed V2 local replay is complete, but it resolves only the V2 local replay blocker.
 - Provider-internal stream/session export remains blocked.
 - Authored-by provenance remains unknown until a durable provenance source is provided.
 - Generated-code sandbox evidence and test-harness probe evidence must not be treated as official solver/provider OS-sandbox proof.

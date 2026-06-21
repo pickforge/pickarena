@@ -77,7 +77,7 @@ As of 2026-06-20, the first-wave bundles are admitted, have V1+ evidence, and ha
 
 Do not call the first wave a DeepSWE finish: all slices keep `deepSWEComplete: false`. `ui.action_bar_overflow` has contract-repaired accepted evidence with promoted GPT, MiniMax, and Kimi solver runs, while GLM remains retained failed-solver evidence.
 
-Further progress is approval-gated: clean committed replay, Droid/Bubblewrap auth strategy, provider/session export decision, and authored-by provenance must be resolved before any DeepSWE completion claim.
+Clean committed V2 local replay is complete. Further progress is approval-gated: Droid/Bubblewrap auth strategy, provider/session export decision, and authored-by provenance must be resolved before any DeepSWE completion claim.
 
 ## Phase 1: coverage slice
 

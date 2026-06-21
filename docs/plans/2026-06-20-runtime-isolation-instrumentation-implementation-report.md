@@ -8,7 +8,7 @@ This is not a completion claim. Every first-wave slice remains `deepSWEComplete:
 
 ## Scope
 
-This records the first approved-by-continuation implementation slice for Task QA runtime-isolation evidence and links the redacted first-wave required-sandbox QA evidence in [`docs/plans/2026-06-20-first-wave-required-sandbox-qa-evidence.md`](./2026-06-20-first-wave-required-sandbox-qa-evidence.md). It does not close the full runtime workspace isolation blocker because clean committed replay and solver/agent harness boundary proof are still pending.
+This records the first approved-by-continuation implementation slice for Task QA runtime-isolation evidence and links the redacted first-wave required-sandbox QA evidence in [`docs/plans/2026-06-20-first-wave-required-sandbox-qa-evidence.md`](./2026-06-20-first-wave-required-sandbox-qa-evidence.md). Clean committed V2 local replay is now complete, but this slice still does not close the full runtime workspace isolation blocker because provider/session evidence, authored-by provenance, and successful solver/agent provider-in-sandbox proof are still pending.
 
 ## Implemented
 
@@ -45,7 +45,7 @@ cd app && flutter test test/tasks/official_file_backed_task_test.dart
 
 Required-sandbox smoke history: `async.refresh_deduplicator` completed, `taskCount: 1`, `admittedTaskCount: 1`, sandbox required/enforced with `bubblewrap`, workspace evidence collected for 6 workdirs, `restrictedPathCount: 0`, manifest digest length 64.
 
-Full first-wave required-sandbox QA evidence: [`docs/plans/2026-06-20-first-wave-required-sandbox-qa-evidence.md`](./2026-06-20-first-wave-required-sandbox-qa-evidence.md). The run completed/admitted all five first-wave tasks: `taskCount 5`, `admitted 5`, `rejected 0`; sandbox required/enforced with `bubblewrap` for all five; aggregate `workspaceCount 40`, `visibleFileCount 144`, `visibleBytes 270573`, `restrictedPathCount 0`, `symlinkCount 0`, `unreadableFileCount 0`, and digest lengths `[64,64,64,64,64]`. This is not from a clean committed state.
+Full first-wave required-sandbox QA evidence: [`docs/plans/2026-06-20-first-wave-required-sandbox-qa-evidence.md`](./2026-06-20-first-wave-required-sandbox-qa-evidence.md). The run completed/admitted all five first-wave tasks: `taskCount 5`, `admitted 5`, `rejected 0`; sandbox required/enforced with `bubblewrap` for all five; aggregate `workspaceCount 40`, `visibleFileCount 144`, `visibleBytes 270573`, `restrictedPathCount 0`, `symlinkCount 0`, `unreadableFileCount 0`, and digest lengths `[64,64,64,64,64]`. This original evidence predated the clean committed replay; V2 local replay is now captured in [`docs/plans/2026-06-20-v2-clean-replay-report.md`](./2026-06-20-v2-clean-replay-report.md).
 
 Official regression result: `cd app && flutter test test/tasks/official_file_backed_task_test.dart` passed in `29:51`.
 
@@ -53,8 +53,8 @@ Read-only Opus review before the temp-env smoke fix: ACCEPT. A follow-up review 
 
 ## Remaining proof gaps
 
-- Clean committed provenance is still blocked on user approval to stage/commit and rerun.
-- Required-sandbox Task QA evidence exists for all five first-wave tasks, but not from a clean committed state; clean committed replay and solver/agent harness boundary proof remain open.
+- Clean committed V2 local replay is complete, but it resolves only the V2 local replay blocker.
+- Required-sandbox Task QA evidence exists for all five first-wave tasks; successful solver/agent provider-in-sandbox proof remains open.
 - Provider-internal stream/session export remains blocked.
 - Authored-by provenance remains unknown until a durable provenance source is provided.
 - Droid/agent solver harness runtime boundary proof was not attempted in this slice.

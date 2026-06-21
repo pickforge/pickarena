@@ -1,6 +1,6 @@
 # First-wave required-sandbox Task QA evidence
 
-Status: evidence captured; clean replay pending
+Status: evidence captured; V2 clean replay completed
 Created: 2026-06-20
 Goal id: `10c571fa-4c4b-42d0-9432-8dc0aff6e4e7`
 
@@ -45,11 +45,11 @@ cd app && dart run --verbosity=error dart_arena:dart_arena_task_qa --out build/t
 
 ## Remaining blockers
 
-- This evidence is not from a clean committed state.
+- This original evidence predated the clean committed replay; V2 local replay is now captured separately in [`docs/plans/2026-06-20-v2-clean-replay-report.md`](./2026-06-20-v2-clean-replay-report.md).
 - This evidence is not provider-internal stream export evidence.
 - This evidence is not authored-by provenance.
 - This evidence is not solver/agent harness boundary proof.
-- Therefore, the runtime isolation blocker remains partially open; clean committed replay and solver/agent harness boundary proof remain required.
+- Therefore, the runtime isolation blocker remains partially open; successful solver/agent provider-in-sandbox proof remains required.
 
 ## Redaction
 

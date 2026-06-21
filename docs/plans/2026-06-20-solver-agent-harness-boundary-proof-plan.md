@@ -12,7 +12,7 @@ This is not a completion claim. `deepSWEComplete: false` remains.
 - Record the smallest safe implementation slice needed before any solver/agent OS-sandbox proof can be claimed.
 - The optional sandbox slice is implemented in [`docs/plans/2026-06-20-solver-agent-harness-boundary-implementation-report.md`](./2026-06-20-solver-agent-harness-boundary-implementation-report.md).
 - Record the headless CLI default Droid harness wiring slice that passes the already-created generated sandbox into default Droid harness construction for Droid providers.
-- Keep the final blocker status blocked until clean committed replay, provider/session provenance, authored-by provenance, and solver/agent harness boundary proof are resolved.
+- Clean committed V2 local replay is complete; keep the final blocker status blocked until provider/session evidence, authored-by provenance, and successful solver/agent provider-in-sandbox proof are resolved.
 - Do not edit app code, tests, task bundles, or specs in this docs-only note.
 
 ## Current solver harness behavior
