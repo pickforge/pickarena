@@ -175,3 +175,4 @@ app.*.symbols
 .agents/rules/personal-*
 .agents/skills/personal-*
 .playwright-mcp/
+.codegraph/
