@@ -177,9 +177,10 @@ app.*.symbols
 .playwright-mcp/
 .codegraph/
 
-/.crew/
-/.crew
-!.crew/artifacts/
-!.crew/graphs/
-!.crew/artifacts/.gitkeep
-!.crew/graphs/.gitkeep
+/.crew/*
+!/.crew/artifacts/
+/.crew/artifacts/*
+!/.crew/artifacts/.gitkeep
+!/.crew/graphs/
+/.crew/graphs/*
+!/.crew/graphs/.gitkeep

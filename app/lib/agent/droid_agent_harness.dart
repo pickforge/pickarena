@@ -120,6 +120,16 @@ $instruction
     return 'droid';
   }
 
+  static List<String> _factoryConfigReadOnlyPaths() {
+    final home =
+        Platform.environment['HOME'] ??
+        Platform.environment['USERPROFILE'] ??
+        '';
+    if (home.isEmpty) return const [];
+    final factoryDir = Directory(p.join(home, '.factory'));
+    return factoryDir.existsSync() ? [factoryDir.path] : const [];
+  }
+
   static Future<AgentRunResult> _defaultRunner(
     String exe,
     List<String> args,
@@ -156,7 +166,7 @@ $instruction
               environment: environment,
               allowInternet: true,
               resourceLimits: null,
-              extraReadOnlyPaths: const [],
+              extraReadOnlyPaths: _factoryConfigReadOnlyPaths(),
             );
       process = await Process.start(
         processStart.executable,

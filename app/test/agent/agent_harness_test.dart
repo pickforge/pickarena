@@ -107,7 +107,15 @@ printf '%s' "$DROID_SANDBOX_MARKER" > sandbox-marker.txt
       expect(sandbox.seenWorkingDirectory, workspace.path);
       expect(sandbox.seenAllowInternet, isTrue);
       expect(sandbox.seenResourceLimits, isNull);
-      expect(sandbox.seenExtraReadOnlyPaths, isEmpty);
+      final home =
+          Platform.environment['HOME'] ??
+          Platform.environment['USERPROFILE'] ??
+          '';
+      final factoryDir = Directory(p.join(home, '.factory'));
+      expect(
+        sandbox.seenExtraReadOnlyPaths,
+        factoryDir.existsSync() ? [factoryDir.path] : isEmpty,
+      );
       expect(
         await File(p.join(workspace.path, 'sandbox-marker.txt')).readAsString(),
         'fake-sandbox',
