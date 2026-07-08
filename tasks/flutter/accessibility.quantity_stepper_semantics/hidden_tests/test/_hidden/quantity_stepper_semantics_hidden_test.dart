@@ -25,6 +25,7 @@ void main() {
   testWidgets('mid-range decrement control announces Decrease quantity', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
     await tester.pumpWidget(_host(value: 4, min: 0, max: 8, onChanged: (_) {}));
 
     expect(
@@ -37,11 +38,13 @@ void main() {
         hasTapAction: true,
       ),
     );
+    semanticsHandle.dispose();
   });
 
   testWidgets('mid-range increment control announces Increase quantity', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
     await tester.pumpWidget(_host(value: 4, min: 0, max: 8, onChanged: (_) {}));
 
     expect(
@@ -54,11 +57,13 @@ void main() {
         hasTapAction: true,
       ),
     );
+    semanticsHandle.dispose();
   });
 
   testWidgets('current value node exposes Quantity label and numeric value', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
     await tester.pumpWidget(_host(value: 4, min: 0, max: 8, onChanged: (_) {}));
 
     expect(
@@ -66,11 +71,13 @@ void main() {
       containsSemantics(label: 'Quantity', value: '4'),
     );
     expect(find.text('4'), findsOneWidget);
+    semanticsHandle.dispose();
   });
 
   testWidgets('at min the decrement control is disabled to accessibility', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
     final calls = <int>[];
     await tester.pumpWidget(
       _host(value: 0, min: 0, max: 8, onChanged: calls.add),
@@ -96,11 +103,13 @@ void main() {
     );
     await tester.pump();
     expect(calls, isEmpty);
+    semanticsHandle.dispose();
   });
 
   testWidgets('at max the increment control is disabled to accessibility', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
     final calls = <int>[];
     await tester.pumpWidget(
       _host(value: 8, min: 0, max: 8, onChanged: calls.add),
@@ -126,11 +135,13 @@ void main() {
     );
     await tester.pump();
     expect(calls, isEmpty);
+    semanticsHandle.dispose();
   });
 
   testWidgets('screen-reader tap invokes the real onChanged exactly once', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
     final increments = <int>[];
     await tester.pumpWidget(
       _host(value: 4, min: 0, max: 8, onChanged: increments.add),
@@ -154,11 +165,13 @@ void main() {
     owner.performAction(decrementNode.id, SemanticsAction.tap);
     await tester.pump();
     expect(decrements, <int>[3]);
+    semanticsHandle.dispose();
   });
 
   testWidgets('value semantics stay consistent with visible text on rebuild', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
     var value = 4;
     await tester.pumpWidget(
       StatefulBuilder(
@@ -186,11 +199,13 @@ void main() {
       tester.getSemantics(find.byKey(QuantityStepper.valueTextKey)),
       containsSemantics(label: 'Quantity', value: '5'),
     );
+    semanticsHandle.dispose();
   });
 
   testWidgets('special-case ranges still expose accessible controls', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
     await tester.pumpWidget(_host(value: 6, min: 2, max: 6, onChanged: (_) {}));
 
     expect(
@@ -211,11 +226,13 @@ void main() {
         hasTapAction: false,
       ),
     );
+    semanticsHandle.dispose();
   });
 
   testWidgets('accessibility strings are not added as visible label text', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
     await tester.pumpWidget(_host(value: 4, min: 0, max: 8, onChanged: (_) {}));
 
     final texts = tester.widgetList<Text>(
@@ -227,5 +244,6 @@ void main() {
       expect(data.contains('Increase quantity'), isFalse);
       expect(data.contains('Quantity'), isFalse);
     }
+    semanticsHandle.dispose();
   });
 }

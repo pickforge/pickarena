@@ -38,11 +38,11 @@
         }
       },
       "flutterVersion": "3.41.6",
-      "gitCommit": "7e84e175f9bfcdafa881eb8484074e8282bded7c",
+      "gitCommit": "68321eeaff3fbf5a1bfee2893c2fab3b0b446d0a",
       "gitDirty": true,
       "hostPlatform": "linux",
-      "locale": "en_US.UTF-8",
-      "operatingSystemVersion": "Linux 7.0.12-1-cachyos #1 SMP PREEMPT_DYNAMIC Sat, 13 Jun 2026 11:49:00 +0000"
+      "locale": "C.UTF-8",
+      "operatingSystemVersion": "Linux 7.1.3-1-cachyos #1 SMP PREEMPT_DYNAMIC Mon, 06 Jul 2026 19:44:10 +0000"
     }
   },
   "executionPolicy": {
@@ -76,8 +76,154 @@
       }
     }
   },
+  "runtimeIsolation": {
+    "generatedCodeSandbox": {
+      "required": true,
+      "enforced": true,
+      "backend": "bubblewrap"
+    },
+    "workspaceEvidence": {
+      "snapshotStage": "pre_tool_execution",
+      "workspaceCount": 8,
+      "visibleFileCount": 24,
+      "visibleBytes": 41950,
+      "combinedVisibleManifestSha256": "c6e1a50bf1bb7d826796b23f1f4b45bab67c7e14b8f73de28b3b5e3d4be03099",
+      "restrictedPathCount": 0,
+      "symlinkCount": 0,
+      "unreadableFileCount": 0,
+      "pathGuards": {
+        "workdirsUnderRunsRoot": true,
+        "rootConfined": true,
+        "relativePathsOnly": true,
+        "restrictedPathsAbsent": true,
+        "symlinksFollowed": false
+      },
+      "workspaces": [
+        {
+          "role": "baseline",
+          "index": 0,
+          "visibleFileCount": 3,
+          "visibleBytes": 5409,
+          "visibleManifestSha256": "7b8a282d161cf08e5a21eb690205e84e1614e0bd3d1e6eb948e1c0dc53405381",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "reference",
+          "index": 0,
+          "visibleFileCount": 3,
+          "visibleBytes": 5659,
+          "visibleManifestSha256": "98da68e38eca3b635ce0ba501a3b2f570ca3f7539eece7686f8c4f4c0e2112e1",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 0,
+          "visibleFileCount": 3,
+          "visibleBytes": 5409,
+          "visibleManifestSha256": "7b8a282d161cf08e5a21eb690205e84e1614e0bd3d1e6eb948e1c0dc53405381",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 1,
+          "visibleFileCount": 3,
+          "visibleBytes": 5742,
+          "visibleManifestSha256": "ba63ab34975acd2191a330c6a629bb0421a6151e12b7cee65752e8bb57095b82",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 2,
+          "visibleFileCount": 3,
+          "visibleBytes": 5113,
+          "visibleManifestSha256": "fbd699aa529d484f92f4c43c174c75f98c561051747ced8a2f7428d4bfe08292",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 3,
+          "visibleFileCount": 3,
+          "visibleBytes": 5679,
+          "visibleManifestSha256": "0f4082857c2230210467d361fb20b7da4519512fa1ff5d8f976ee2b5aa8c126d",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 4,
+          "visibleFileCount": 3,
+          "visibleBytes": 5439,
+          "visibleManifestSha256": "e6526e98c44f203b4cbfe4809526b30bed246ceb22b074ca4082ab9cc2455b5d",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 5,
+          "visibleFileCount": 3,
+          "visibleBytes": 3500,
+          "visibleManifestSha256": "81a732ce8fc036b270157bfb3ebdf7394354b07928d55dad5441f44ce0e4b48f",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        }
+      ]
+    }
+  },
   "status": "admitted",
-  "generatedAt": "2026-06-19T08:46:50.896665Z",
+  "generatedAt": "2026-07-08T20:16:22.780483Z",
   "checks": {
     "baselineHiddenFailed": true,
     "referencePublicPassed": true,
@@ -86,6 +232,10 @@
     "requiredNegativeCaseKindsCovered": true,
     "hiddenFlakeRuns": 3,
     "promptSafeContextLeakFree": true,
+    "generatedCodeSandboxRequired": true,
+    "generatedCodeSandboxEnforced": true,
+    "workspaceEvidenceCollected": true,
+    "workspaceRestrictedPathsAbsent": true,
     "noopRejected": true,
     "apiBreakingRejected": true,
     "overfitRejected": true
@@ -144,8 +294,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 9.5s)\n",
-            "stderr": "",
+            "stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 11.7s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -159,7 +309,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 8.4s)\n",
+            "raw_stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 10.7s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -175,6 +326,7 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -238,8 +390,8 @@
           "rationale": "analysis errors present",
           "details": {
             "exitCode": 1,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \n\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:22:37 • undefined_method\n  error • The method 'save' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:37:24 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:39:31 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:51:37 • undefined_method\n\n",
-            "stderr": "4 issues found. (ran in 9.2s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \n\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:22:37 • undefined_method\n  error • The method 'save' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:37:24 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:39:31 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:51:37 • undefined_method\n\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n4 issues found. (ran in 11.8s)\n",
             "tool": "flutter"
           }
         },
@@ -253,8 +405,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 1,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \n\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:22:37 • undefined_method\n  error • The method 'save' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:37:24 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:39:31 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:51:37 • undefined_method\n\n",
-            "stderr": "4 issues found. (ran in 8.6s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \n\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:22:37 • undefined_method\n  error • The method 'save' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:37:24 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:39:31 • undefined_method\n  error • The method 'load' isn't defined for the type 'OfflineFeedPreferencesRepository' • test/offline_feed_preferences_test.dart:51:37 • undefined_method\n\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n4 issues found. (ran in 10.6s)\n",
             "tool": "flutter"
           }
         },
@@ -302,8 +454,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 9.3s)\n",
-            "stderr": "",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 11.8s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -317,7 +469,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.12 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 8.4s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 10.1s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -333,6 +486,7 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -367,8 +521,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 9.4s)\n",
-            "stderr": "",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 11.1s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -382,7 +536,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 8.3s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 10.1s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -398,6 +553,7 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -432,8 +588,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 9.4s)\n",
-            "stderr": "",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 10.9s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -447,7 +603,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 8.6s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 9.9s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -463,6 +620,7 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -497,8 +655,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 9.4s)\n",
-            "stderr": "",
+            "stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 11.0s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -512,7 +670,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 8.5s)\n",
+            "raw_stdout": "Analyzing segment_persiste_1f45479965d3...                      \nNo issues found! (ran in 10.0s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -528,6 +687,7 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },

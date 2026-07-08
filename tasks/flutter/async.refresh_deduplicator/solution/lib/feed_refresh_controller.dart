@@ -35,6 +35,7 @@ class FeedRefreshController {
 
   RefreshState _state = const RefreshState(status: RefreshStatus.idle);
   int _latestRequestId = 0;
+  int _settledRequests = 0;
   bool _inFlight = false;
 
   RefreshState get state => _state;
@@ -44,18 +45,14 @@ class FeedRefreshController {
   bool get isLoading => _inFlight;
 
   Future<void> refresh() async {
-    if (_inFlight) {
-      return;
-    }
+    if (_inFlight) return;
     await _load();
   }
 
   Future<void> forceRefresh() => _load();
 
   Future<void> retry() async {
-    if (_state.status != RefreshStatus.error) {
-      return;
-    }
+    if (_state.status != RefreshStatus.error) return;
     await _load();
   }
 
@@ -65,19 +62,14 @@ class FeedRefreshController {
     _state = const RefreshState(status: RefreshStatus.loading);
     try {
       final items = await _repository.fetchFeed();
-      if (requestId != _latestRequestId) {
-        return;
-      }
+      if (requestId != _latestRequestId) return;
       _state = RefreshState(status: RefreshStatus.success, items: items);
     } catch (error) {
-      if (requestId != _latestRequestId) {
-        return;
-      }
+      if (requestId != _latestRequestId) return;
       _state = RefreshState(status: RefreshStatus.error, error: error);
     } finally {
-      if (requestId == _latestRequestId) {
-        _inFlight = false;
-      }
+      _settledRequests++;
+      _inFlight = _settledRequests < _latestRequestId;
     }
   }
 }
