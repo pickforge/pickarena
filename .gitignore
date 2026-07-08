@@ -176,3 +176,11 @@ app.*.symbols
 .agents/skills/personal-*
 .playwright-mcp/
 .codegraph/
+
+/.crew/*
+!/.crew/artifacts/
+/.crew/artifacts/*
+!/.crew/artifacts/.gitkeep
+!/.crew/graphs/
+/.crew/graphs/*
+!/.crew/graphs/.gitkeep

@@ -1,0 +1,49 @@
+{
+  "taskId": "ui.action_bar_overflow",
+  "createdDate": "2026-06-19",
+  "runsRequested": 5,
+  "hiddenFlakeRuns": 5,
+  "runs": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "durationSeconds": 267.995,
+      "status": "completed",
+      "admittedTaskCount": 1,
+      "rejectedTaskCount": 0
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "durationSeconds": 269.986,
+      "status": "completed",
+      "admittedTaskCount": 1,
+      "rejectedTaskCount": 0
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "durationSeconds": 268.836,
+      "status": "completed",
+      "admittedTaskCount": 1,
+      "rejectedTaskCount": 0
+    },
+    {
+      "run": 4,
+      "exitCode": 0,
+      "durationSeconds": 267.228,
+      "status": "completed",
+      "admittedTaskCount": 1,
+      "rejectedTaskCount": 0
+    },
+    {
+      "run": 5,
+      "exitCode": 0,
+      "durationSeconds": 268.683,
+      "status": "completed",
+      "admittedTaskCount": 1,
+      "rejectedTaskCount": 0
+    }
+  ],
+  "passed": true
+}

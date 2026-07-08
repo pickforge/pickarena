@@ -1,0 +1,75 @@
+diff --git a/lib/responsive_action_bar.dart b/lib/responsive_action_bar.dart
+index c6d9dde..fa0c2da 100644
+--- a/lib/responsive_action_bar.dart
++++ b/lib/responsive_action_bar.dart
+@@ -1,3 +1,5 @@
++import 'dart:math' as math;
++
+ import 'package:flutter/material.dart';
+ 
+ class ResponsiveActionBarAction {
+@@ -43,7 +45,10 @@ class ResponsiveActionBar extends StatelessWidget {
+   Widget build(BuildContext context) {
+     return LayoutBuilder(
+       builder: (context, constraints) {
+-        final split = _splitActions(constraints.maxWidth);
++        final split = _splitActions(
++          constraints,
++          MediaQuery.textScalerOf(context),
++        );
+         return Row(
+           children: <Widget>[
+             for (final action in split.inline)
+@@ -64,8 +69,50 @@ class ResponsiveActionBar extends StatelessWidget {
+     );
+   }
+ 
+-  _ActionSplit _splitActions(double _) {
+-    return _ActionSplit(actions, const <ResponsiveActionBarAction>[]);
++  _ActionSplit _splitActions(
++    BoxConstraints constraints,
++    TextScaler textScaler,
++  ) {
++    if (actions.isEmpty) {
++      return const _ActionSplit([], []);
++    }
++
++    final indexed = actions.indexed.toList();
++    indexed.sort((a, b) {
++      final priorityComparison = a.$2.priority.compareTo(b.$2.priority);
++      if (priorityComparison != 0) return priorityComparison;
++      return a.$1.compareTo(b.$1);
++    });
++    final sorted = indexed.map((e) => e.$2).toList();
++
++    final scaledWidth = constraints.maxWidth / textScaler.scale(1);
++
++    // Below this threshold every secondary action is considered too squeezed
++    // to keep inline, so they all move behind the overflow menu.
++    const compactThreshold = 480.0;
++    if (scaledWidth < compactThreshold) {
++      return _ActionSplit(const [], sorted);
++    }
++
++    const actionMinWidth = 96.0;
++    const primaryMinWidth = 96.0;
++    const overflowMinWidth = 40.0;
++    final availableForActions =
++        scaledWidth - primaryMinWidth - overflowMinWidth;
++    final maxInline = math.max(
++      0,
++      (availableForActions / actionMinWidth).floor(),
++    );
++    final inlineCount = math.min(sorted.length, maxInline);
++
++    if (inlineCount >= sorted.length) {
++      return _ActionSplit(sorted, const []);
++    }
++
++    return _ActionSplit(
++      sorted.sublist(0, inlineCount),
++      sorted.sublist(inlineCount),
++    );
+   }
+ }
+ 

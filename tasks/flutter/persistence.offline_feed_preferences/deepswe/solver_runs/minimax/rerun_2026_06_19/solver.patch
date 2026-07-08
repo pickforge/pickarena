@@ -1,0 +1,17 @@
+diff --git a/lib/offline_feed_preferences.dart b/lib/offline_feed_preferences.dart
+index ea58079..c4305f9 100644
+--- a/lib/offline_feed_preferences.dart
++++ b/lib/offline_feed_preferences.dart
+@@ -83,6 +83,12 @@ class OfflineFeedPreferencesRepository {
+   }
+ 
+   Future<void> save(OfflineFeedPreferences preferences) async {
++    await store.writeString(sortOrderKey, preferences.sortOrder.name);
++    await store.writeString(filterKey, preferences.filter.name);
++    await store.writeString(
++      downloadedOnlyKey,
++      preferences.downloadedOnly.toString(),
++    );
+     _cached = preferences;
+   }
+ 

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "taskId": "persistence.offline_feed_preferences",
+  "createdDate": "2026-06-19",
+  "deepSWEFlakeVerified": true,
+  "deepSWEComplete": false,
+  "hiddenReplayFlakeLoop10": {
+    "path": "flake_runs_10/flake_loop_10_result.json",
+    "passed": true,
+    "runsPerTarget": 10,
+    "targets": {
+      "baseline_expected_failure": {
+        "expected": "fail",
+        "passCount": 0,
+        "failCount": 10,
+        "passedExpectation": true
+      },
+      "reference_solution": {
+        "expected": "pass",
+        "passCount": 10,
+        "failCount": 0,
+        "passedExpectation": true
+      },
+      "gpt_fresh_rerun": {
+        "expected": "pass",
+        "passCount": 10,
+        "failCount": 0,
+        "passedExpectation": true
+      },
+      "minimax_fresh_rerun": {
+        "expected": "pass",
+        "passCount": 10,
+        "failCount": 0,
+        "passedExpectation": true
+      },
+      "glm_fresh_rerun": {
+        "expected": "pass",
+        "passCount": 10,
+        "failCount": 0,
+        "passedExpectation": true
+      },
+      "kimi_fresh_rerun": {
+        "expected": "pass",
+        "passCount": 10,
+        "failCount": 0,
+        "passedExpectation": true
+      }
+    }
+  },
+  "fullTaskQaRepetition": {
+    "path": "qa_repetition/qa_repetition_result.json",
+    "passed": true,
+    "runsRequested": 5,
+    "hiddenFlakeRuns": 5
+  },
+  "notes": [
+    "Raw hidden logs are restricted evaluator-only."
+  ]
+}

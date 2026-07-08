@@ -1,0 +1,9 @@
+{
+  "targets": [
+    "baseline_expected_failure",
+    "reference_solution",
+    "kimi_replay",
+    "minimax_replay"
+  ],
+  "runsPerTarget": 5
+}

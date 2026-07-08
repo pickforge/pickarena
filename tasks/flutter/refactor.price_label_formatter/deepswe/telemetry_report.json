@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "taskId": "refactor.price_label_formatter",
+  "createdDate": "2026-06-19",
+  "durationCostTokenCaptured": true,
+  "providerInternalStreamChunksCaptured": false,
+  "deepSWEComplete": false,
+  "commandTelemetryPath": "command_telemetry/command_telemetry_result.json",
+  "subagentFamilies": {
+    "gpt": {
+      "model": "openai-codex/gpt-5.5:xhigh",
+      "durationMs": 152527,
+      "usage": {
+        "input": 32468,
+        "output": 6016,
+        "cacheRead": 145920,
+        "cacheWrite": 0,
+        "cost": 0.41578000000000004,
+        "turns": 15
+      },
+      "runId": "f2ed0622"
+    },
+    "minimax": {
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "durationMs": 88135,
+      "usage": {
+        "input": 18750,
+        "output": 4459,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 18
+      },
+      "runId": "f2ed0622"
+    },
+    "glm": {
+      "model": "ollama/glm-5.2:cloud:xhigh",
+      "durationMs": 42345,
+      "usage": {
+        "input": 32034,
+        "output": 2718,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 6
+      },
+      "runId": "9e788d86"
+    },
+    "kimi": {
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "durationMs": 63104,
+      "usage": {
+        "input": 47431,
+        "output": 3471,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 6
+      },
+      "runId": "f2ed0622"
+    }
+  },
+  "commandRecordCount": 8,
+  "failedCommandRecords": [
+    {
+      "family": "kimi",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "fe1269859a6e1a6b76cb25444fdec3fb51da4062690e266159719ded4a77d9ad",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.536,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 1,
+        "durationSeconds": 7.748,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    }
+  ],
+  "notes": [
+    "Kimi hidden replay failure is expected failed-solver evidence, not promoted replay evidence.",
+    "Provider-internal stream chunks/session JSONL were not exposed."
+  ]
+}

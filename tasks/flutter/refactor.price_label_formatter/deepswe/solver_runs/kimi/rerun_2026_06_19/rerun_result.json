@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "family": "kimi",
+  "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+  "createdDate": "2026-06-19",
+  "workspaceSnapshotPath": "workspace_snapshot",
+  "snapshotRestrictedPathHits": [],
+  "snapshotFiles": [
+    {
+      "path": "instruction.md",
+      "sha256": "f2df445cdaf920ee728aab43b58c00d51189d5b9726911b566641c016b35cd4b"
+    },
+    {
+      "path": "lib/cart_line_price_row.dart",
+      "sha256": "f5ef179d15bcceabb6cda97440a65aa45297eabb5ee3ffd2ecdc9c6edb1799d5"
+    },
+    {
+      "path": "lib/checkout_price_summary.dart",
+      "sha256": "9e76bbadccb113cbb734d8154d322fe47552e0ea24d17c8ecc0607f52a591e8f"
+    },
+    {
+      "path": "lib/price_label_formatter.dart",
+      "sha256": "26a4d6fde4961469c5ddbea7901990fd923a63159a4ddbbbfd09922925484973"
+    },
+    {
+      "path": "lib/product_price_tile.dart",
+      "sha256": "46540443acc71dd6f55ae176ccbfb88961afb786c2a51d8a5f1008a16524f0a9"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "a92e587d5c21cd48e620b475b2ed83267d0900779a3f643a3a3a96ab197a08f9"
+    },
+    {
+      "path": "test/price_labels_test.dart",
+      "sha256": "85361eff54a9a8812d714fa69f2c3b5a68290433a93c607b35e916041163898c"
+    }
+  ],
+  "solverReportPresent": false,
+  "patchPath": "solver.patch",
+  "patchSha256": "fe1269859a6e1a6b76cb25444fdec3fb51da4062690e266159719ded4a77d9ad",
+  "publicExitCode": 0,
+  "hiddenExitCode": 1,
+  "publicPassed": true,
+  "hiddenPassedAfterInjection": false,
+  "publicLog": "public_results.log",
+  "hiddenLog": "hidden_results.log",
+  "hiddenLogClassification": "restricted/evaluator-only",
+  "notes": [
+    "workspace snapshot was captured before hidden test injection",
+    "hidden tests were injected only into a separate grading workspace"
+  ],
+  "trajectoryArtifacts": {
+    "input": "trajectory/subagent_input.md",
+    "output": "trajectory/subagent_output.md",
+    "meta": "trajectory/subagent_meta.json",
+    "sessionJsonl": null
+  },
+  "providerSessionJsonlCaptured": false,
+  "subagentRunId": "f2ed0622",
+  "subagentIndex": "coder_1",
+  "subagentDurationMs": 63104,
+  "subagentUsage": {
+    "input": 47431,
+    "output": 3471,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "cost": 0,
+    "turns": 6
+  },
+  "pendingEvidence": [
+    "provider-internal stream chunks/session JSONL not exposed for this run"
+  ]
+}

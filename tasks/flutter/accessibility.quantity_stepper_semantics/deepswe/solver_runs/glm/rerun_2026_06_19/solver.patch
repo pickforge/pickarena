@@ -1,0 +1,61 @@
+diff --git a/lib/quantity_stepper.dart b/lib/quantity_stepper.dart
+index 41373e9..411b0e4 100644
+--- a/lib/quantity_stepper.dart
++++ b/lib/quantity_stepper.dart
+@@ -18,23 +18,45 @@ class QuantityStepper extends StatelessWidget {
+   final int max;
+   final ValueChanged<int> onChanged;
+ 
++  bool get _canDecrement => value > min;
++  bool get _canIncrement => value < max;
++
+   @override
+   Widget build(BuildContext context) {
+     return Row(
+       mainAxisSize: MainAxisSize.min,
+       children: <Widget>[
+-        IconButton(
+-          key: decrementButtonKey,
+-          icon: const Icon(Icons.remove),
+-          onPressed: () => value > min ? onChanged(value - 1) : null,
++        Semantics(
++          label: 'Decrease quantity',
++          button: true,
++          enabled: _canDecrement,
++          onTap: _canDecrement ? () => onChanged(value - 1) : null,
++          excludeSemantics: true,
++          child: IconButton(
++            key: decrementButtonKey,
++            icon: const Icon(Icons.remove),
++            onPressed: _canDecrement ? () => onChanged(value - 1) : null,
++          ),
++        ),
++        Semantics(
++          label: 'Quantity',
++          value: '$value',
++          excludeSemantics: true,
++          child: Text('$value', key: valueTextKey),
+         ),
+-        Text('$value', key: valueTextKey),
+-        IconButton(
+-          key: incrementButtonKey,
+-          icon: const Icon(Icons.add),
+-          onPressed: () => value < max ? onChanged(value + 1) : null,
++        Semantics(
++          label: 'Increase quantity',
++          button: true,
++          enabled: _canIncrement,
++          onTap: _canIncrement ? () => onChanged(value + 1) : null,
++          excludeSemantics: true,
++          child: IconButton(
++            key: incrementButtonKey,
++            icon: const Icon(Icons.add),
++            onPressed: _canIncrement ? () => onChanged(value + 1) : null,
++          ),
+         ),
+       ],
+     );
+   }
+-}
++}
+\ No newline at end of file

@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ui.action_bar_overflow",
+  "createdDate": "2026-06-19",
+  "target": "gpt",
+  "kind": "solver",
+  "expectedPass": true,
+  "passCount": 10,
+  "failCount": 0,
+  "expectationOk": true,
+  "patchSha256": "c0c2136d7ab897542e5284540c9995f88926c2f07a7c931da5db1233b5326816",
+  "runs": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 7.619,
+      "logPath": "gpt_run_01.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.547,
+      "logPath": "gpt_run_02.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.502,
+      "logPath": "gpt_run_03.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 4,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.504,
+      "logPath": "gpt_run_04.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 5,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.51,
+      "logPath": "gpt_run_05.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 6,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.509,
+      "logPath": "gpt_run_06.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 7,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.51,
+      "logPath": "gpt_run_07.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 8,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.487,
+      "logPath": "gpt_run_08.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 9,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.501,
+      "logPath": "gpt_run_09.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 10,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.474,
+      "logPath": "gpt_run_10.log",
+      "logClassification": "restricted/evaluator-only"
+    }
+  ],
+  "rawRunLogClassification": "restricted/evaluator-only"
+}

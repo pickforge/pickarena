@@ -1,0 +1,96 @@
+schemaVersion: 1
+id: ui.action_bar_overflow
+version: 1
+category: widget_testing
+track: agentic
+tags:
+  - ui
+  - accessibility
+  - testing
+  - bugfix
+difficulty: medium
+platformRequirements:
+  - linux
+timeoutSeconds: 900
+release:
+  corpus: private_official
+  status: active
+network: false
+resources:
+  cpus: 2
+  memory_mb: 8192
+  max_processes: 64
+  max_output_bytes: 1048576
+generatedCodePath: lib/responsive_action_bar.dart
+isFlutter: true
+instructionPath: instruction.md
+workspace:
+  root: baseline
+  files:
+    pubspec.yaml: pubspec.yaml
+    lib/responsive_action_bar.dart: lib/responsive_action_bar.dart
+    test/responsive_action_bar_test.dart: test/responsive_action_bar_test.dart
+hiddenVerifiers:
+  - id: action_bar_overflow_hidden
+    testPath: test/_hidden/action_bar_overflow_hidden_test.dart
+    root: hidden_tests
+    files:
+      test/_hidden/action_bar_overflow_hidden_test.dart: test/_hidden/action_bar_overflow_hidden_test.dart
+reference:
+  type: files
+  root: solution
+  files:
+    lib/responsive_action_bar.dart: lib/responsive_action_bar.dart
+requiredNegativeCaseKinds:
+  - noop
+  - api_breaking
+  - overfit
+negativeCases:
+  - id: noop
+    kind: noop
+    description: Leaves every action inline so compact layouts overflow or lose reachability.
+    root: negative_cases/noop
+    files:
+      lib/responsive_action_bar.dart: lib/responsive_action_bar.dart
+  - id: api_breaking
+    kind: api_breaking
+    description: Breaks the public ResponsiveActionBar API or static keys.
+    root: negative_cases/api_breaking
+    files:
+      lib/responsive_action_bar.dart: lib/responsive_action_bar.dart
+  - id: overfit_public_values
+    kind: overfit
+    description: Special-cases the public widths, ids, or labels instead of fixing responsive overflow generally.
+    root: negative_cases/overfit
+    files:
+      lib/responsive_action_bar.dart: lib/responsive_action_bar.dart
+  - id: primary_hidden
+    kind: custom
+    description: Hides or moves the primary CTA into overflow at compact widths.
+    root: negative_cases/primary_hidden
+    files:
+      lib/responsive_action_bar.dart: lib/responsive_action_bar.dart
+  - id: priority_ignored
+    kind: custom
+    description: Collapses actions by input/end order instead of the declared priority and tie policy.
+    root: negative_cases/priority_ignored
+    files:
+      lib/responsive_action_bar.dart: lib/responsive_action_bar.dart
+  - id: fake_overflow_callbacks
+    kind: custom
+    description: Renders overflow items but does not invoke the original callbacks exactly once.
+    root: negative_cases/fake_overflow_callbacks
+    files:
+      lib/responsive_action_bar.dart: lib/responsive_action_bar.dart
+  - id: text_scale_regression
+    kind: custom
+    description: Clamps or bypasses ambient text scaling to avoid responsive layout pressure.
+    root: negative_cases/text_scale_regression
+    files:
+      lib/responsive_action_bar.dart: lib/responsive_action_bar.dart
+  - id: deleted_or_weakened_public_test
+    kind: custom
+    description: Replaces the public widget tests with a trivial always-passing test.
+    root: negative_cases/deleted_or_weakened_public_test
+    files:
+      test/responsive_action_bar_test.dart: test/responsive_action_bar_test.dart

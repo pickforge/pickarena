@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "taskVersion": 1,
+  "createdDate": "2026-06-19",
+  "status": "clean_replay_verified_deepswe_pending",
+  "deepSWEComplete": false,
+  "replayVerified": true,
+  "workspaceIsolationVerified": false,
+  "durationCostTokenCaptured": false,
+  "reason": "Clean patch replay now verified for recorded solver patches; DeepSWE completion remains pending on workspace-isolation provenance, trajectory, leakage, flake, and telemetry evidence.",
+  "sourceEvidence": {
+    "admissionReport": "tasks/flutter/async.refresh_deduplicator/qa/admission_report.json",
+    "v1plusReport": "tasks/flutter/async.refresh_deduplicator/qa/v1plus_report.md"
+  },
+  "admissionEvidence": {
+    "status": "admitted",
+    "generatedAt": "2026-06-18T15:03:18.234774Z",
+    "gitCommit": "7e84e175f9bfcdafa881eb8484074e8282bded7c",
+    "gitDirty": true,
+    "dartVersion": "3.11.4",
+    "flutterVersion": "3.41.6",
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "requiredNegativeCaseKindsCovered": true,
+    "promptSafeContextLeakFree": true,
+    "hiddenFlakeRuns": 3
+  },
+  "workspace": {
+    "baselineRoot": "tasks/flutter/async.refresh_deduplicator/baseline",
+    "generatedCodePath": "lib/feed_refresh_controller.dart",
+    "publicTestPath": "test/feed_refresh_controller_test.dart",
+    "hiddenVerifierPath": "test/_hidden/feed_refresh_controller_hidden_test.dart"
+  },
+  "hiddenVerifierDigests": {
+    "refresh_deduplicator_hidden": "8a67039538e9f9598542f7eba93e911e4d9c05582a2d2ad3d61dbc107c2906be"
+  },
+  "dependencySnapshot": {
+    "pubspecYamlSha256": "1a77a2d12be10b5c49655dbf690c7aca5593a6d934b523763549077517314f4e",
+    "pubspecLockSha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4"
+  },
+  "solverRuns": [
+    {
+      "family": "kimi",
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "summaryPath": "solver_runs/kimi/summary.md",
+      "publicPassed": 2,
+      "publicTotal": 2,
+      "hiddenPassedAfterInjection": 6,
+      "hiddenTotalAfterInjection": 6,
+      "patchDigest": "e95cc2e18db193d0bb821430229ecffc9a41724421587b52aaed674b0013f88d",
+      "cleanReplayVerified": true,
+      "publicReplayLog": "solver_runs/kimi/public_results.log",
+      "hiddenReplayLog": "solver_runs/kimi/hidden_results.log",
+      "replayResultPath": "solver_runs/kimi/replay_result.json"
+    },
+    {
+      "family": "minimax",
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "summaryPath": "solver_runs/minimax/summary.md",
+      "publicPassed": 2,
+      "publicTotal": 2,
+      "hiddenPassedAfterInjection": 6,
+      "hiddenTotalAfterInjection": 6,
+      "patchDigest": "4143d14f8fd76e6a5d9e8d1ad2a5286590bd3c6afd1b538607d7d4e4667a7573",
+      "cleanReplayVerified": true,
+      "publicReplayLog": "solver_runs/minimax/public_results.log",
+      "hiddenReplayLog": "solver_runs/minimax/hidden_results.log",
+      "replayResultPath": "solver_runs/minimax/replay_result.json"
+    }
+  ],
+  "pendingEvidence": [
+    "provider-internal stream chunks beyond captured subagent session JSONL",
+    "broader performance sampling beyond single measured command pass",
+    "clean committed provenance run with gitDirty=false",
+    "authored_by provenance is not durably recorded"
+  ],
+  "freshPreHiddenSnapshotReruns": [
+    {
+      "family": "kimi",
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "workspaceSnapshotPath": "solver_runs/kimi/rerun_2026_06_19/workspace_snapshot",
+      "snapshotRestrictedPathHits": [],
+      "patchPath": "solver_runs/kimi/rerun_2026_06_19/solver.patch",
+      "patchSha256": "a903db717817a48c5049f1a0f9ad202b5ca6dab26f90f2c6e866788121310463",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "subagentMeta": "solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_meta.json"
+    },
+    {
+      "family": "minimax",
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "workspaceSnapshotPath": "solver_runs/minimax/rerun_2026_06_19/workspace_snapshot",
+      "snapshotRestrictedPathHits": [],
+      "patchPath": "solver_runs/minimax/rerun_2026_06_19/solver.patch",
+      "patchSha256": "5ed7076a6d6b06e0a1643b8d106a135bc12aea829220b6f01e062f5a3befa07d",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "subagentMeta": "solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_meta.json"
+    },
+    {
+      "family": "gpt",
+      "model": "openai-codex/gpt-5.5:xhigh",
+      "workspaceSnapshotPath": "solver_runs/gpt/rerun_2026_06_19/workspace_snapshot",
+      "snapshotRestrictedPathHits": [],
+      "patchPath": "solver_runs/gpt/rerun_2026_06_19/solver.patch",
+      "patchSha256": "b7930dc9b9c9a1f816cc1c25717562ac487500fdd91ccbbfc3585e48c8900feb",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "subagentMeta": "solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_meta.json"
+    }
+  ],
+  "preHiddenWorkspaceSnapshotsVerified": true,
+  "evidenceNotes": [
+    "fresh post-solve, pre-hidden-injection solver workspace snapshots and subagent session JSONL transcripts captured for Kimi, MiniMax, and GPT reruns; provider-internal stream chunks remain pending"
+  ],
+  "commandTelemetry": {
+    "resultPath": "command_telemetry/command_telemetry_result.json",
+    "passed": true,
+    "errorCount": 0,
+    "recordCount": 7
+  },
+  "freshRerunSessionTranscripts": [
+    {
+      "family": "kimi",
+      "path": "solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_session.jsonl",
+      "bytes": 46245,
+      "sha256": "c3d6241a50a503ac02d696e0db00142d192c30d8de4db7b03c6328fc326c100c"
+    },
+    {
+      "family": "minimax",
+      "path": "solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_session.jsonl",
+      "bytes": 49217,
+      "sha256": "4fc6743b25c4d4c7dc6100bc5441fba4fc594f26e5dc43ecfc7002865c83a165"
+    },
+    {
+      "family": "gpt",
+      "path": "solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_session.jsonl",
+      "bytes": 87243,
+      "sha256": "8f05e44720f05f706b15c87708f5e87aceca4f2e51c5d386b66ef1788ad33611"
+    }
+  ],
+  "hiddenFlakeLoop10": {
+    "resultPath": "flake_runs_10/flake_loop_10_result.json",
+    "runsPerTarget": 10,
+    "targetCount": 5,
+    "passed": true
+  },
+  "solverCountFreshRerun": 3,
+  "checklists": {
+    "promptVerifierBijection": "prompt_verifier_bijection.md",
+    "f2p": "f2p_checklist.md",
+    "p2p": "p2p_checklist.md"
+  }
+}

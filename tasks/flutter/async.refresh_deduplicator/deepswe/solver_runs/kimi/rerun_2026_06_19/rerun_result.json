@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "family": "kimi",
+  "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+  "createdDate": "2026-06-19",
+  "workspaceSnapshotPath": "workspace_snapshot",
+  "snapshotRestrictedPathHits": [],
+  "snapshotFiles": [
+    {
+      "path": "instruction.md",
+      "sha256": "6fbd180c2c31e28dcacd5577c5651060dc15a72ddf9d46b42f3d08deab56e336"
+    },
+    {
+      "path": "lib/feed_refresh_controller.dart",
+      "sha256": "d6263d16df23a1a1f2a3b2a60b6ec5f278175f813b44648fef0e3a313a27100d"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "acb58d1eb58b7b381ad123dcc85b87ce8618a5a7b225bf9aca81be8399431f55"
+    },
+    {
+      "path": "solver_report.md",
+      "sha256": "0ddd5729f20d4f123a4c301acf9d2dba275255dbf1fe0cac63e62ee78554a775"
+    },
+    {
+      "path": "test/feed_refresh_controller_test.dart",
+      "sha256": "e9c365a2b61000317dc70bf68c5d87b7a091c2d8a5823e441f081636eb4bd587"
+    }
+  ],
+  "patchPath": "solver.patch",
+  "patchSha256": "a903db717817a48c5049f1a0f9ad202b5ca6dab26f90f2c6e866788121310463",
+  "publicExitCode": 0,
+  "hiddenExitCode": 0,
+  "publicPassed": true,
+  "hiddenPassedAfterInjection": true,
+  "publicLog": "public_results.log",
+  "hiddenLog": "hidden_results.log",
+  "hiddenLogClassification": "restricted/evaluator-only",
+  "notes": [
+    "workspace snapshot was captured before hidden test injection",
+    "hidden tests were injected only into a separate grading workspace"
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "family": "opus",
+  "model": "anthropic/claude-opus-4-8:xhigh",
+  "createdDate": "2026-06-19",
+  "workspaceSnapshotPath": "workspace_snapshot",
+  "snapshotRestrictedPathHits": [],
+  "snapshotFiles": [
+    {
+      "path": "instruction.md",
+      "sha256": "ccae8e203e824cb41fd9388d918bdd81c36719242b1f1c47de7a99a89ba4e959"
+    },
+    {
+      "path": "lib/quantity_stepper.dart",
+      "sha256": "855bb4a5bbb08837b6f56b4a8f2f119da38bbf26f99c0db250ff30a33946ea22"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "5514d26310aa94912d018f5fe47a8fe7af6d2ea23183bce9434ce23e124bbd61"
+    },
+    {
+      "path": "solver_report.md",
+      "sha256": "c27238df0deee91fb577dbcd19652ae57a9eed906561979e7de2ffee2f90341a"
+    },
+    {
+      "path": "test/quantity_stepper_test.dart",
+      "sha256": "9bdb00413936c1d5501b09171217be339b1748eabd15ee3f7c24ad2ca63d0200"
+    }
+  ],
+  "solverReportPresent": true,
+  "patchPath": "solver.patch",
+  "patchSha256": "64f5fbc210e6f62b1548b91d4137461f0a2e341e3d66906c4f367a7576cff5fb",
+  "publicExitCode": 0,
+  "hiddenExitCode": 0,
+  "publicPassed": true,
+  "hiddenPassedAfterInjection": true,
+  "publicLog": "public_results.log",
+  "hiddenLog": "hidden_results.log",
+  "hiddenLogClassification": "restricted/evaluator-only",
+  "notes": [
+    "workspace snapshot was captured before hidden test injection",
+    "hidden tests were injected only into a separate grading workspace"
+  ],
+  "trajectoryArtifacts": {
+    "input": "trajectory/subagent_input.md",
+    "output": "trajectory/subagent_output.md",
+    "meta": "trajectory/subagent_meta.json",
+    "sessionJsonl": null
+  },
+  "providerSessionJsonlCaptured": false,
+  "subagentRunId": "90f0896e",
+  "subagentIndex": "0",
+  "subagentDurationMs": 123104,
+  "subagentUsage": {
+    "input": 14,
+    "output": 8989,
+    "cacheRead": 43250,
+    "cacheWrite": 9409,
+    "cost": 0.30522625000000003,
+    "turns": 7
+  },
+  "pendingEvidence": [
+    "provider-internal stream chunks/session JSONL not exposed for this run"
+  ]
+}

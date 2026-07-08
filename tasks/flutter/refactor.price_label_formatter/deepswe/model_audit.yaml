@@ -1,0 +1,92 @@
+schemaVersion: 1
+taskId: refactor.price_label_formatter
+createdDate: '2026-06-19'
+deep_swe_complete: false
+replay_verified: true
+workspace_isolation_verified: false
+duration_cost_token_captured: true
+provider_internal_stream_chunks_captured: false
+solvers:
+- family: gpt
+  model: openai-codex/gpt-5.5:xhigh
+  durable_patch: true
+  patch_sha256: 00136bd4275048283bfbe07386b36ef1d60095bfd4284ef9446912df36f18164
+  public_passed: true
+  hidden_passed_after_injection: true
+  clean_replay_verified: true
+  promoted: true
+  subagent_duration_ms: 152527
+  usage:
+    input: 32468
+    output: 6016
+    cacheRead: 145920
+    cacheWrite: 0
+    cost: 0.41578000000000004
+    turns: 15
+- family: minimax
+  model: ollama/minimax-m3:cloud:xhigh
+  durable_patch: true
+  patch_sha256: 115ccce4428c9805572aa8151b3cbaa6399f1f74e2ec0329ea9bfee744882f74
+  public_passed: true
+  hidden_passed_after_injection: true
+  clean_replay_verified: true
+  promoted: true
+  subagent_duration_ms: 88135
+  usage:
+    input: 18750
+    output: 4459
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 18
+- family: glm
+  model: ollama/glm-5.2:cloud:xhigh
+  durable_patch: true
+  patch_sha256: 9ebfdeb6285c5207e9380b8e3075b27af87cf63ea6165a142f9df64b61393d5f
+  public_passed: true
+  hidden_passed_after_injection: true
+  clean_replay_verified: true
+  promoted: true
+  subagent_duration_ms: 42345
+  usage:
+    input: 32034
+    output: 2718
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 6
+- family: kimi
+  model: ollama/kimi-k2.7-code:cloud:xhigh
+  durable_patch: true
+  patch_sha256: fe1269859a6e1a6b76cb25444fdec3fb51da4062690e266159719ded4a77d9ad
+  public_passed: true
+  hidden_passed_after_injection: false
+  clean_replay_verified: false
+  promoted: false
+  subagent_duration_ms: 63104
+  usage:
+    input: 47431
+    output: 3471
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 6
+passing_fresh_solver_families:
+- gpt
+- minimax
+- glm
+failed_fresh_solver_families:
+- kimi
+checks:
+  qa_repetition_passed: true
+  hidden_flake_loop_10_passed: true
+  solver_facing_leakage_scan_passed: true
+checklists:
+  prompt_verifier_bijection: prompt_verifier_bijection.md
+  f2p: f2p_checklist.md
+  p2p: p2p_checklist.md
+pending:
+- provider-internal stream chunks/session JSONL not exposed
+- clean committed provenance / gitDirty=false run
+- authored-by provenance unknown
+- strong workspace-isolation proof

@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ui.action_bar_overflow",
+  "createdDate": "2026-06-19",
+  "target": "baseline",
+  "kind": "baseline",
+  "expectedPass": false,
+  "passCount": 0,
+  "failCount": 10,
+  "expectationOk": true,
+  "patchSha256": "4cd0ada7e4aebc2ae63846f9113b557bd0905f58b330d2f4228cb873ca6a3ef6",
+  "runs": [
+    {
+      "run": 1,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 7.584,
+      "logPath": "baseline_run_01.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 2,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.47,
+      "logPath": "baseline_run_02.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 3,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.496,
+      "logPath": "baseline_run_03.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 4,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.417,
+      "logPath": "baseline_run_04.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 5,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.518,
+      "logPath": "baseline_run_05.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 6,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.436,
+      "logPath": "baseline_run_06.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 7,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.474,
+      "logPath": "baseline_run_07.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 8,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.419,
+      "logPath": "baseline_run_08.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 9,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.462,
+      "logPath": "baseline_run_09.log",
+      "logClassification": "restricted/evaluator-only"
+    },
+    {
+      "run": 10,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.422,
+      "logPath": "baseline_run_10.log",
+      "logClassification": "restricted/evaluator-only"
+    }
+  ],
+  "rawRunLogClassification": "restricted/evaluator-only"
+}

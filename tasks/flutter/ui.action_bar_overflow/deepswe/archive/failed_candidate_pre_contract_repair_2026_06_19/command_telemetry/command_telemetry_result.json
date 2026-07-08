@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ui.action_bar_overflow",
+  "createdDate": "2026-06-19",
+  "durationCostTokenCaptured": true,
+  "providerInternalStreamChunksCaptured": false,
+  "subagentTelemetry": {
+    "gpt": {
+      "model": "openai-codex/gpt-5.5:xhigh",
+      "durationMs": 248725,
+      "usage": {
+        "input": 26862,
+        "output": 12019,
+        "cacheRead": 114688,
+        "cacheWrite": 0,
+        "cost": 0.552224,
+        "turns": 9
+      },
+      "runId": "0100dfc1"
+    },
+    "glm": {
+      "model": "ollama/glm-5.2:cloud:xhigh",
+      "durationMs": 383698,
+      "usage": {
+        "input": 397221,
+        "output": 21022,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 22
+      },
+      "runId": "0100dfc1"
+    },
+    "opus": {
+      "model": "anthropic/claude-opus-4-8:xhigh",
+      "durationMs": 764740,
+      "usage": {
+        "input": 38,
+        "output": 33125,
+        "cacheRead": 234261,
+        "cacheWrite": 21055,
+        "cost": 1.0770392500000001,
+        "turns": 19
+      },
+      "runId": "0100dfc1"
+    },
+    "minimax": {
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "durationMs": 1076290,
+      "usage": {
+        "input": 1014840,
+        "output": 54494,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 48
+      },
+      "runId": "0100dfc1"
+    },
+    "kimi": {
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "durationMs": 308670,
+      "usage": {
+        "input": 601140,
+        "output": 32148,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 18
+      },
+      "runId": "0100dfc1"
+    }
+  },
+  "commandRecords": [
+    {
+      "family": "gpt",
+      "mode": "public",
+      "classification": "solver-facing",
+      "patchSha256": "d76c185ed99b457eef01be06d8fef2e567eef0c86a92c80fd8337d1477699a9a",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.266,
+        "log": "gpt_public_pub_get.log"
+      },
+      "test": {
+        "command": "flutter test test/responsive_action_bar_test.dart",
+        "exitCode": 0,
+        "durationSeconds": 8.115,
+        "log": "gpt_public_replay.log"
+      }
+    },
+    {
+      "family": "gpt",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "d76c185ed99b457eef01be06d8fef2e567eef0c86a92c80fd8337d1477699a9a",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.259,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 1,
+        "durationSeconds": 8.626,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    },
+    {
+      "family": "glm",
+      "mode": "public",
+      "classification": "solver-facing",
+      "patchSha256": "e840d8a60daeb38debb2131289239048dc9c933fda468525cc28ae2c81d97d96",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.306,
+        "log": "glm_public_pub_get.log"
+      },
+      "test": {
+        "command": "flutter test test/responsive_action_bar_test.dart",
+        "exitCode": 0,
+        "durationSeconds": 7.97,
+        "log": "glm_public_replay.log"
+      }
+    },
+    {
+      "family": "glm",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "e840d8a60daeb38debb2131289239048dc9c933fda468525cc28ae2c81d97d96",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.258,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 1,
+        "durationSeconds": 8.92,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    },
+    {
+      "family": "opus",
+      "mode": "public",
+      "classification": "solver-facing",
+      "patchSha256": "8a10bb0463741a2a7912194e7ab9636feae8e3d5f5f4528e94585f0aef287cfa",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.303,
+        "log": "opus_public_pub_get.log"
+      },
+      "test": {
+        "command": "flutter test test/responsive_action_bar_test.dart",
+        "exitCode": 0,
+        "durationSeconds": 8.502,
+        "log": "opus_public_replay.log"
+      }
+    },
+    {
+      "family": "opus",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "8a10bb0463741a2a7912194e7ab9636feae8e3d5f5f4528e94585f0aef287cfa",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.276,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 1,
+        "durationSeconds": 9.172,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    },
+    {
+      "family": "minimax",
+      "mode": "public",
+      "classification": "solver-facing",
+      "patchSha256": "fa834b0667dc135e384b1b4ac39f489d3f34ebaed3f9fa4b3d24c405e580d2d4",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.272,
+        "log": "minimax_public_pub_get.log"
+      },
+      "test": {
+        "command": "flutter test test/responsive_action_bar_test.dart",
+        "exitCode": 0,
+        "durationSeconds": 8.034,
+        "log": "minimax_public_replay.log"
+      }
+    },
+    {
+      "family": "minimax",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "fa834b0667dc135e384b1b4ac39f489d3f34ebaed3f9fa4b3d24c405e580d2d4",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.26,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 1,
+        "durationSeconds": 8.573,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    },
+    {
+      "family": "kimi",
+      "mode": "public",
+      "classification": "solver-facing",
+      "patchSha256": "f727b867e7b93e4dd72059e76c10ab707f54eab03dcb8cc99cbf112c4e76df92",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.274,
+        "log": "kimi_public_pub_get.log"
+      },
+      "test": {
+        "command": "flutter test test/responsive_action_bar_test.dart",
+        "exitCode": 0,
+        "durationSeconds": 8.02,
+        "log": "kimi_public_replay.log"
+      }
+    },
+    {
+      "family": "kimi",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "f727b867e7b93e4dd72059e76c10ab707f54eab03dcb8cc99cbf112c4e76df92",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.257,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 1,
+        "durationSeconds": 8.507,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    }
+  ],
+  "hiddenLogsRestricted": true,
+  "notes": [
+    "All five fresh solver patches pass public replay and fail hidden replay; this is a failed-candidate slice, not promoted DeepSWE evidence.",
+    "command durations were measured locally for public and hidden replay commands",
+    "subagent token/cost metadata was copied from Pi subagent meta artifacts",
+    "provider-internal stream chunks/session JSONL were not exposed for these runs"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "solver": "minimax",
+  "patchSha256": "4143d14f8fd76e6a5d9e8d1ad2a5286590bd3c6afd1b538607d7d4e4667a7573",
+  "gitApplyCheckPassed": true,
+  "publicTestCommand": "flutter test test/feed_refresh_controller_test.dart",
+  "publicExitCode": 0,
+  "publicPassed": true,
+  "hiddenTestCommand": "flutter test test/_hidden/feed_refresh_controller_hidden_test.dart",
+  "hiddenExitCode": 0,
+  "hiddenPassed": true,
+  "cleanReplayVerified": true,
+  "workspaceIsolationNote": "Staging and grading used separate fresh baseline copies. Original solver workspace was sanitized at solve time per v1plus_report, but later hidden tests were injected for evaluation; full raw solver workspace isolation proof remains pending."
+}

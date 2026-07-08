@@ -1,0 +1,58 @@
+diff --git a/lib/quantity_stepper.dart b/lib/quantity_stepper.dart
+index 41373e9..79530d6 100644
+--- a/lib/quantity_stepper.dart
++++ b/lib/quantity_stepper.dart
+@@ -20,19 +20,46 @@ class QuantityStepper extends StatelessWidget {
+ 
+   @override
+   Widget build(BuildContext context) {
++    final canDecrement = value > min;
++    final canIncrement = value < max;
++
+     return Row(
+       mainAxisSize: MainAxisSize.min,
+       children: <Widget>[
+-        IconButton(
++        Semantics(
+           key: decrementButtonKey,
+-          icon: const Icon(Icons.remove),
+-          onPressed: () => value > min ? onChanged(value - 1) : null,
++          container: true,
++          label: 'Decrease quantity',
++          button: true,
++          enabled: canDecrement,
++          onTap: canDecrement ? () => onChanged(value - 1) : null,
++          child: ExcludeSemantics(
++            child: IconButton(
++              icon: const Icon(Icons.remove),
++              onPressed: canDecrement ? () => onChanged(value - 1) : null,
++            ),
++          ),
++        ),
++        Semantics(
++          key: valueTextKey,
++          container: true,
++          label: 'Quantity',
++          value: '$value',
++          child: ExcludeSemantics(child: Text('$value')),
+         ),
+-        Text('$value', key: valueTextKey),
+-        IconButton(
++        Semantics(
+           key: incrementButtonKey,
+-          icon: const Icon(Icons.add),
+-          onPressed: () => value < max ? onChanged(value + 1) : null,
++          container: true,
++          label: 'Increase quantity',
++          button: true,
++          enabled: canIncrement,
++          onTap: canIncrement ? () => onChanged(value + 1) : null,
++          child: ExcludeSemantics(
++            child: IconButton(
++              icon: const Icon(Icons.add),
++              onPressed: canIncrement ? () => onChanged(value + 1) : null,
++            ),
++          ),
+         ),
+       ],
+     );

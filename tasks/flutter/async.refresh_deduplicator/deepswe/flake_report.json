@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "taskVersion": 1,
+  "createdDate": "2026-06-19",
+  "status": "v1plus_flake_clean_deepswe_pending",
+  "deepSWEComplete": false,
+  "deepSWEFlakeVerified": true,
+  "currentEvidence": {
+    "source": "tasks/flutter/async.refresh_deduplicator/qa/admission_report.json",
+    "scope": "Original admission report evidence only; additional DeepSWE replay, full task-QA repetition, command telemetry, and 10-run hidden-loop evidence is recorded in sibling fields.",
+    "hiddenFlakeRuns": 3,
+    "hiddenFlakeFailures": 0,
+    "flakeRate": 0.0,
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "infrastructureErrorCount": 0,
+    "disagreementCount": 3
+  },
+  "limitations": [
+    "Admission report itself records only three hidden flake runs; stronger 5-run and 10-run loops are recorded separately in this file.",
+    "Full task QA repetition is recorded for five runs with hidden flake runs set to 5, but clean committed provenance remains pending.",
+    "Command wall-clock telemetry is recorded for one full QA run and fresh rerun public/hidden replay commands across Kimi, MiniMax, and GPT; broader performance sampling remains pending.",
+    "10-run hidden verifier loop recorded for baseline expected-failure, reference, Kimi fresh rerun, MiniMax fresh rerun, and GPT fresh rerun."
+  ],
+  "deepSWETarget": {
+    "minimumReferenceHiddenRuns": 5,
+    "preferredAsyncHiddenRuns": 10,
+    "solverPatchHiddenRunsPerAcceptedPatch": 5,
+    "baselineFailureRuns": 5,
+    "fullPublicAndNegativeSuiteRepeated": "pending"
+  },
+  "pending": [
+    "broader performance sampling beyond single measured command pass",
+    "clean committed provenance run with gitDirty=false"
+  ],
+  "hiddenReplayFlakeLoop": {
+    "resultPath": "flake_runs/flake_loop_result.json",
+    "runsPerTarget": 5,
+    "baselineExpectedFailureVerified": true,
+    "referenceHiddenVerified": true,
+    "kimiReplayHiddenVerified": true,
+    "minimaxReplayHiddenVerified": true,
+    "passed": true
+  },
+  "fullTaskQaRepetition": {
+    "resultPath": "qa_repetition/qa_repetition_result.json",
+    "runs": 5,
+    "hiddenFlakeRunsPerQaRun": 5,
+    "passed": true
+  },
+  "restrictedArtifacts": [
+    {
+      "pathGlob": "flake_runs/*_run_*.log",
+      "classification": "restricted/evaluator-only hidden verifier transcripts",
+      "solverFacing": false
+    },
+    {
+      "pathGlob": "flake_runs_10/*_run_*.log",
+      "classification": "restricted/evaluator-only hidden verifier transcripts",
+      "solverFacing": false
+    },
+    {
+      "pathGlob": "command_telemetry/gpt_fresh_rerun_hidden_replay.log",
+      "classification": "restricted/evaluator-only hidden verifier transcript",
+      "solverFacing": false
+    },
+    {
+      "pathGlob": "flake_runs_10/gpt_fresh_rerun_run_*.log",
+      "classification": "restricted/evaluator-only hidden verifier transcripts",
+      "solverFacing": false
+    }
+  ],
+  "hiddenReplayFlakeLoop10": {
+    "resultPath": "flake_runs_10/flake_loop_10_result.json",
+    "runsPerTarget": 10,
+    "baselineExpectedFailureVerified": true,
+    "referenceHiddenVerified": true,
+    "kimiFreshRerunHiddenVerified": true,
+    "minimaxFreshRerunHiddenVerified": true,
+    "passed": true,
+    "gptFreshRerunHiddenVerified": true,
+    "targetCount": 5
+  },
+  "commandTelemetry": {
+    "resultPath": "command_telemetry/command_telemetry_result.json",
+    "recordCount": 7,
+    "errorCount": 0,
+    "passed": true
+  }
+}

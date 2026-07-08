@@ -1,0 +1,177 @@
+diff --git a/lib/responsive_action_bar.dart b/lib/responsive_action_bar.dart
+index c6d9dde..917f4da 100644
+--- a/lib/responsive_action_bar.dart
++++ b/lib/responsive_action_bar.dart
+@@ -39,36 +39,122 @@ class ResponsiveActionBar extends StatelessWidget {
+   final List<ResponsiveActionBarAction> actions;
+   final String overflowTooltip;
+ 
++  /// Nominal per-control widths (in dp at text scale 1.0). These are layout
++  /// budgets only; they intentionally do not depend on measuring label text, so
++  /// a wide bar never moves an action to overflow merely because its label is
++  /// long. Inline action labels may ellipsize within their allotted slot.
++  static const double _actionSlotWidth = 150.0;
++  static const double _primaryWidth = 130.0;
++  static const double _overflowWidth = 56.0;
++
+   @override
+   Widget build(BuildContext context) {
+     return LayoutBuilder(
+       builder: (context, constraints) {
+-        final split = _splitActions(constraints.maxWidth);
+-        return Row(
+-          children: <Widget>[
+-            for (final action in split.inline)
+-              Flexible(child: _ActionButton(action: action)),
+-            if (split.overflow.isNotEmpty)
+-              _OverflowMenu(actions: split.overflow, tooltip: overflowTooltip),
+-            const Spacer(),
+-            Flexible(
+-              child: FilledButton(
+-                key: primaryButtonKey,
+-                onPressed: onPrimaryPressed,
+-                child: Text(primaryLabel, overflow: TextOverflow.ellipsis),
++        final textScale = _textScaleOf(context);
++        final split = _splitActions(constraints.maxWidth, textScale);
++
++        final children = <Widget>[];
++        for (final action in split.inline) {
++          children.add(
++            SizedBox(
++              width: _actionSlotWidth * textScale,
++              child: _ActionButton(action: action),
++            ),
++          );
++        }
++        if (split.overflow.isNotEmpty) {
++          children.add(
++            _OverflowMenu(actions: split.overflow, tooltip: overflowTooltip),
++          );
++        }
++        children.add(const Spacer());
++        children.add(
++          SizedBox(
++            width: _primaryWidth * textScale,
++            child: FilledButton(
++              key: primaryButtonKey,
++              onPressed: onPrimaryPressed,
++              child: Text(
++                primaryLabel,
++                overflow: TextOverflow.ellipsis,
++                maxLines: 1,
+               ),
+             ),
+-          ],
++          ),
+         );
++
++        return Row(children: children);
+       },
+     );
+   }
+ 
+-  _ActionSplit _splitActions(double _) {
+-    return _ActionSplit(actions, const <ResponsiveActionBarAction>[]);
++  /// Splits the actions into inline + overflow sets.
++  ///
++  /// Actions are first stably ordered by ascending [ResponsiveActionBarAction
++  /// .priority] (ties preserve original input order). Then the largest prefix
++  /// that fits within [maxWidth] alongside the primary CTA (and the overflow
++  /// control, when any actions remain) is kept inline; the rest go to overflow.
++  _ActionSplit _splitActions(double maxWidth, double textScale) {
++    if (actions.isEmpty) {
++      return const _ActionSplit(<ResponsiveActionBarAction>[], []);
++    }
++
++    final ordered = _stableByPriority(actions);
++    final slot = _actionSlotWidth * textScale;
++    final primary = _primaryWidth * textScale;
++    final overflow = _overflowWidth * textScale;
++    final n = ordered.length;
++
++    // Pick the largest inline count that fits. When all actions fit, no
++    // overflow control is needed. This naturally handles infinite widths
++    // (everything stays inline) and yields progressive partial splits.
++    var inlineCount = 0;
++    for (var candidate = n; candidate >= 1; candidate--) {
++      final needed =
++          candidate * slot + primary + (candidate < n ? overflow : 0.0);
++      if (needed <= maxWidth) {
++        inlineCount = candidate;
++        break;
++      }
++    }
++
++    return _ActionSplit(
++      ordered.sublist(0, inlineCount),
++      ordered.sublist(inlineCount),
++    );
++  }
++
++  /// Stable ordering by ascending priority, preserving input order on ties.
++  static List<ResponsiveActionBarAction> _stableByPriority(
++    List<ResponsiveActionBarAction> source,
++  ) {
++    final indexed = <_IndexedAction>[];
++    for (var i = 0; i < source.length; i++) {
++      indexed.add(_IndexedAction(i, source[i]));
++    }
++    indexed.sort((a, b) {
++      final byPriority = a.action.priority.compareTo(b.action.priority);
++      if (byPriority != 0) return byPriority;
++      return a.index.compareTo(b.index);
++    });
++    return [for (final entry in indexed) entry.action];
++  }
++
++  static double _textScaleOf(BuildContext context) {
++    final scaler = MediaQuery.textScalerOf(context);
++    // Approximate the linear factor; for the default scaler this is 1.0.
++    return scaler.scale(100.0) / 100.0;
+   }
+ }
+ 
++class _IndexedAction {
++  const _IndexedAction(this.index, this.action);
++
++  final int index;
++  final ResponsiveActionBarAction action;
++}
++
+ class _ActionButton extends StatelessWidget {
+   const _ActionButton({required this.action});
+ 
+@@ -76,11 +162,23 @@ class _ActionButton extends StatelessWidget {
+ 
+   @override
+   Widget build(BuildContext context) {
+-    return TextButton.icon(
++    return TextButton(
+       key: ResponsiveActionBar.actionButtonKey(action.id),
+       onPressed: action.onPressed,
+-      icon: Icon(action.icon),
+-      label: Text(action.label, overflow: TextOverflow.ellipsis),
++      child: Row(
++        mainAxisSize: MainAxisSize.min,
++        children: <Widget>[
++          Icon(action.icon),
++          const SizedBox(width: 4),
++          Flexible(
++            child: Text(
++              action.label,
++              overflow: TextOverflow.ellipsis,
++              maxLines: 1,
++            ),
++          ),
++        ],
++      ),
+     );
+   }
+ }
+@@ -133,4 +231,4 @@ class _ActionSplit {
+ 
+   final List<ResponsiveActionBarAction> inline;
+   final List<ResponsiveActionBarAction> overflow;
+-}
++}
+\ No newline at end of file

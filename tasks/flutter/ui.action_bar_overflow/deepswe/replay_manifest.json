@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ui.action_bar_overflow",
+  "createdDate": "2026-06-19",
+  "status": "contract-repaired-replay-verified-incomplete-provenance",
+  "deepSWEComplete": false,
+  "replayVerified": true,
+  "workspaceIsolationVerified": false,
+  "durationCostTokenCaptured": true,
+  "providerInternalStreamChunksCaptured": false,
+  "cleanCommittedProvenance": false,
+  "authoredByProvenance": "unknown",
+  "failedCandidate": false,
+  "archive": {
+    "preContractRepairFailedCandidate": "archive/failed_candidate_pre_contract_repair_2026_06_19"
+  },
+  "freshSolverReruns": {
+    "gpt": {
+      "model": "openai-codex/gpt-5.5:xhigh",
+      "patchSha256": "c0c2136d7ab897542e5284540c9995f88926c2f07a7c931da5db1233b5326816",
+      "generatedCodeSha256": "c0c2136d7ab897542e5284540c9995f88926c2f07a7c931da5db1233b5326816",
+      "solverPatchFileSha256": "4b8d1986c955d807a78c24fab03168552a83586b2fd3c6647a1a5e4011134a65",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "cleanReplayVerified": true,
+      "promoted": true,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "rerunResultPath": "solver_runs/gpt/rerun_2026_06_19/rerun_result.json",
+      "workspaceSnapshotPath": "solver_runs/gpt/rerun_2026_06_19/workspace_snapshot",
+      "subagentRunId": "cf75c215",
+      "subagentIndex": "coder_0",
+      "subagentDurationMs": 234250,
+      "subagentUsage": {
+        "input": 24181,
+        "output": 11065,
+        "cacheRead": 126464,
+        "cacheWrite": 0,
+        "cost": 0.516087,
+        "turns": 10
+      },
+      "trajectoryArtifacts": {
+        "input": "solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_input.md",
+        "output": "solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_output.md",
+        "meta": "solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    },
+    "glm": {
+      "model": "ollama/glm-5.2:cloud:xhigh",
+      "patchSha256": "fa8ecb4c137c234d636a82013a07805c6a7d554c02b7ae636182cff464edb67a",
+      "generatedCodeSha256": "fa8ecb4c137c234d636a82013a07805c6a7d554c02b7ae636182cff464edb67a",
+      "solverPatchFileSha256": "9a10c73d452d3c30694d207e4afc2d8286293fa13f5711418b55711d459891fc",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": false,
+      "cleanReplayVerified": false,
+      "promoted": false,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "rerunResultPath": "solver_runs/glm/rerun_2026_06_19/rerun_result.json",
+      "workspaceSnapshotPath": "solver_runs/glm/rerun_2026_06_19/workspace_snapshot",
+      "subagentRunId": "cf75c215",
+      "subagentIndex": "coder_1",
+      "subagentDurationMs": 277498,
+      "subagentUsage": {
+        "input": 103549,
+        "output": 20611,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 7
+      },
+      "trajectoryArtifacts": {
+        "input": "solver_runs/glm/rerun_2026_06_19/trajectory/subagent_input.md",
+        "output": "solver_runs/glm/rerun_2026_06_19/trajectory/subagent_output.md",
+        "meta": "solver_runs/glm/rerun_2026_06_19/trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    },
+    "minimax": {
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "patchSha256": "de079f24ce175c8041b97c711baf6bdd6035098e267cf9d5fe50b07792ca75a7",
+      "generatedCodeSha256": "de079f24ce175c8041b97c711baf6bdd6035098e267cf9d5fe50b07792ca75a7",
+      "solverPatchFileSha256": "206b2b78c2ad1a8e756630be1c5b28be048fd399be08432ab1fd60dd3566a7c5",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "cleanReplayVerified": true,
+      "promoted": true,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "rerunResultPath": "solver_runs/minimax/rerun_2026_06_19/rerun_result.json",
+      "workspaceSnapshotPath": "solver_runs/minimax/rerun_2026_06_19/workspace_snapshot",
+      "subagentRunId": "cf75c215",
+      "subagentIndex": "coder_3",
+      "subagentDurationMs": 518440,
+      "subagentUsage": {
+        "input": 809257,
+        "output": 38472,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 27
+      },
+      "trajectoryArtifacts": {
+        "input": "solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_input.md",
+        "output": "solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_output.md",
+        "meta": "solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    },
+    "kimi": {
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "patchSha256": "465d100194fd24d51c1b3fe36134156b73e939c04243d9566ed726fdc685e3d9",
+      "generatedCodeSha256": "465d100194fd24d51c1b3fe36134156b73e939c04243d9566ed726fdc685e3d9",
+      "solverPatchFileSha256": "066e75fbb2b277fcb97572810e9e1cdb39fc2459a1a2e6151794253906bcb83f",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "cleanReplayVerified": true,
+      "promoted": true,
+      "workspaceSnapshotRestrictedPathHits": [],
+      "rerunResultPath": "solver_runs/kimi/rerun_2026_06_19/rerun_result.json",
+      "workspaceSnapshotPath": "solver_runs/kimi/rerun_2026_06_19/workspace_snapshot",
+      "subagentRunId": "cf75c215",
+      "subagentIndex": "coder_4",
+      "subagentDurationMs": 83339,
+      "subagentUsage": {
+        "input": 93978,
+        "output": 8685,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 8
+      },
+      "trajectoryArtifacts": {
+        "input": "solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_input.md",
+        "output": "solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_output.md",
+        "meta": "solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_meta.json",
+        "sessionJsonl": null
+      }
+    }
+  },
+  "passingFreshSolverFamilies": [
+    "gpt",
+    "minimax",
+    "kimi"
+  ],
+  "failedFreshSolverFamilies": [
+    "glm"
+  ],
+  "abortedFreshSolverFamilies": [
+    "opus"
+  ],
+  "abortedFreshSolverDetails": {
+    "opus": {
+      "model": "anthropic/claude-opus-4-8:xhigh",
+      "status": "aborted/unavailable",
+      "activeSolverRunCreated": false,
+      "runId": "cf75c215",
+      "subagentIndex": "coder_2",
+      "exitCode": 1,
+      "durationMs": 1038638,
+      "usage": {
+        "input": 34,
+        "output": 18634,
+        "cacheRead": 197319,
+        "cacheWrite": 15078,
+        "cost": 0.6589170000000002,
+        "turns": 17
+      },
+      "error": "This operation was aborted\n\n[stall-watchdog-retry] provider returned error; treating stalled provider stream as retryable.",
+      "subagentTelemetryAvailable": true
+    }
+  },
+  "solverCountFreshRerun": 4,
+  "solverCountCleanReplayVerified": 3,
+  "flakeLoop10": {
+    "path": "flake_runs_10/flake_loop_10_result.json",
+    "passed": true,
+    "runsPerTarget": 10,
+    "targetCount": 6,
+    "targets": {
+      "baseline": {
+        "expectedPass": false,
+        "passCount": 0,
+        "failCount": 10,
+        "expectationOk": true,
+        "summaryPath": "flake_runs_10/baseline_summary.json"
+      },
+      "reference": {
+        "expectedPass": true,
+        "passCount": 10,
+        "failCount": 0,
+        "expectationOk": true,
+        "summaryPath": "flake_runs_10/reference_summary.json"
+      },
+      "gpt": {
+        "expectedPass": true,
+        "passCount": 10,
+        "failCount": 0,
+        "expectationOk": true,
+        "summaryPath": "flake_runs_10/gpt_summary.json"
+      },
+      "minimax": {
+        "expectedPass": true,
+        "passCount": 10,
+        "failCount": 0,
+        "expectationOk": true,
+        "summaryPath": "flake_runs_10/minimax_summary.json"
+      },
+      "kimi": {
+        "expectedPass": true,
+        "passCount": 10,
+        "failCount": 0,
+        "expectationOk": true,
+        "summaryPath": "flake_runs_10/kimi_summary.json"
+      },
+      "glm": {
+        "expectedPass": false,
+        "passCount": 0,
+        "failCount": 10,
+        "expectationOk": true,
+        "summaryPath": "flake_runs_10/glm_summary.json"
+      }
+    }
+  },
+  "fullTaskQaRepetition": {
+    "path": "qa_repetition/qa_repetition_result.json",
+    "passed": true,
+    "runsRequested": 5,
+    "hiddenFlakeRuns": 5
+  },
+  "commandTelemetry": {
+    "path": "command_telemetry/command_telemetry_result.json",
+    "commandDurationCaptured": true,
+    "durationCostTokenCaptured": true,
+    "providerInternalStreamChunksCaptured": false,
+    "subagentTokenCostMetadataAvailable": true
+  },
+  "leakageAudit": {
+    "path": "leakage_scan_result.json",
+    "solverFacingScanPassed": true,
+    "findingCount": 0
+  },
+  "restrictedArtifacts": [
+    "solver_runs/*/rerun_2026_06_19/hidden_*.log",
+    "command_telemetry/*_hidden_*.log",
+    "flake_runs_10/*_run_*.log",
+    "qa_repetition/run_*.log",
+    "f2p_checklist.md",
+    "prompt_verifier_bijection.md",
+    "archive/**"
+  ],
+  "notes": [
+    "Public replay logs are solver-facing; hidden replay logs are restricted evaluator-only.",
+    "Opus was aborted/unavailable and has no active solver run.",
+    "Fresh repair subagent duration/cost/token metadata is captured for active gpt/glm/minimax/kimi; aborted opus metadata is recorded only as top-level aborted solver telemetry.",
+    "Provider-internal stream chunks/session JSONL are still not captured.",
+    "DeepSWE remains incomplete because workspace isolation, clean committed provenance, provider stream chunks, and authored-by provenance are not fully captured."
+  ]
+}

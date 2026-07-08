@@ -50,6 +50,44 @@ void main() {
   );
 
   test(
+    'sandbox temp environment points at sandbox tmpfs',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_bwrap_temp_policy_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final workDir = Directory(p.join(root.path, 'work'))..createSync();
+      final hostTmp = Directory(p.join(root.path, 'host-tmp'))
+        ..createSync(recursive: true);
+
+      final spec =
+          await const BubblewrapGeneratedCodeSandbox(
+            bwrapExecutable: 'bwrap-test',
+          ).wrapProcess(
+            executable: '/usr/bin/env',
+            arguments: const ['true'],
+            workingDirectory: workDir.path,
+            environment: {
+              'PATH': '/usr/bin:/bin',
+              'TMPDIR': hostTmp.path,
+              'TMP': hostTmp.path,
+              'TEMP': hostTmp.path,
+            },
+            allowInternet: false,
+            resourceLimits: null,
+          );
+
+      expect(spec.environment['TMPDIR'], '/tmp');
+      expect(spec.environment['TMP'], '/tmp');
+      expect(spec.environment['TEMP'], '/tmp');
+      expect(spec.arguments, containsAllInOrder(['--tmpfs', '/tmp']));
+    },
+    skip: Platform.isLinux ? false : 'Bubblewrap is Linux-only',
+  );
+
+  test(
     'network-allowed policy uses workdir-local pub cache',
     () async {
       final root = await Directory.systemTemp.createTemp(

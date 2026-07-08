@@ -34,7 +34,10 @@ typedef HeadlessCliProviderBuilder =
     ModelProvider Function(HeadlessCliProviderConfig config, String? apiKey);
 typedef HeadlessCliTaskRegistryBuilder = TaskRegistry Function();
 typedef HeadlessCliAgentHarnessBuilder =
-    List<AgentHarness> Function(HeadlessCliConfig config);
+    List<AgentHarness> Function(
+      HeadlessCliConfig config,
+      GeneratedCodeSandbox? generatedCodeSandbox,
+    );
 typedef HeadlessCliGeneratedCodeSandboxBuilder =
     Future<GeneratedCodeSandbox?> Function(HeadlessCliConfig config);
 
@@ -122,7 +125,10 @@ Future<int> runHeadlessCli(
           for (final provider in cliConfig.providers)
             provider.id: provider.models,
         },
-        agentHarnesses: dependencies.agentHarnessBuilder(cliConfig),
+        agentHarnesses: dependencies.agentHarnessBuilder(
+          cliConfig,
+          generatedCodeSandbox,
+        ),
         evaluatorConfig: evaluatorConfig,
         evaluatorWeights: cliConfig.evaluatorWeights,
         workdirManager: WorkdirManager(
@@ -351,7 +357,10 @@ ModelProvider _defaultProviderBuilder(
   }
 }
 
-List<AgentHarness> _defaultAgentHarnessBuilder(HeadlessCliConfig config) {
+List<AgentHarness> _defaultAgentHarnessBuilder(
+  HeadlessCliConfig config,
+  GeneratedCodeSandbox? generatedCodeSandbox,
+) {
   final hasDroidProvider = config.providers.any(
     (provider) => provider.id == 'droid' || provider.type == 'droid',
   );
@@ -359,6 +368,7 @@ List<AgentHarness> _defaultAgentHarnessBuilder(HeadlessCliConfig config) {
       ? [
           DroidAgentHarness(
             deniedEnvironmentKeys: _configuredApiKeyEnvNames(config),
+            generatedCodeSandbox: generatedCodeSandbox,
           ),
         ]
       : const [];

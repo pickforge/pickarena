@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
@@ -12,6 +14,7 @@ import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/evaluators/hidden_test_evaluator.dart';
 import 'package:dart_arena/evaluators/test_evaluator.dart';
 import 'package:dart_arena/runner/evaluator_resource_limits.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
 import 'package:dart_arena/runner/resource_enforcement_policy.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
@@ -35,6 +38,7 @@ class TaskQaReport {
     required this.baselineHiddenResults,
     required this.referencePublicResults,
     required this.referenceHiddenResults,
+    this.runtimeIsolation = const TaskQaRuntimeIsolationReport(),
   });
 
   final String taskId;
@@ -50,6 +54,7 @@ class TaskQaReport {
   final List<EvaluationResult> baselineHiddenResults;
   final List<EvaluationResult> referencePublicResults;
   final List<EvaluationResult> referenceHiddenResults;
+  final TaskQaRuntimeIsolationReport runtimeIsolation;
 
   bool get referencePassed => referencePublicPassed && referenceHiddenPassed;
 
@@ -163,6 +168,168 @@ class TaskQaVerifierQualityAudit {
   };
 }
 
+class TaskQaRuntimeIsolationReport {
+  const TaskQaRuntimeIsolationReport({
+    this.generatedCodeSandboxRequired = false,
+    this.generatedCodeSandboxEnforced = false,
+    this.generatedCodeSandboxBackend = bubblewrapGeneratedCodeSandboxBackend,
+    this.workspaces = const [],
+  });
+
+  final bool generatedCodeSandboxRequired;
+  final bool generatedCodeSandboxEnforced;
+  final String generatedCodeSandboxBackend;
+  final List<TaskQaWorkspaceIsolationEvidence> workspaces;
+
+  int get workspaceCount => workspaces.length;
+  bool get workspaceEvidenceCollected => workspaces.isNotEmpty;
+  int get visibleFileCount => workspaces.fold(
+    0,
+    (count, workspace) => count + workspace.visibleFileCount,
+  );
+  int get visibleBytes =>
+      workspaces.fold(0, (count, workspace) => count + workspace.visibleBytes);
+  int get restrictedPathCount => workspaces.fold(
+    0,
+    (count, workspace) => count + workspace.restrictedPathCount,
+  );
+  int get symlinkCount =>
+      workspaces.fold(0, (count, workspace) => count + workspace.symlinkCount);
+  int get unreadableFileCount => workspaces.fold(
+    0,
+    (count, workspace) => count + workspace.unreadableFileCount,
+  );
+  bool get workdirsUnderRunsRoot =>
+      workspaces.every((workspace) => workspace.workdirUnderRunsRoot);
+  bool get rootConfined =>
+      workspaces.every((workspace) => workspace.rootConfined);
+  bool get relativePathsOnly =>
+      workspaces.every((workspace) => workspace.relativePathsOnly);
+  bool get restrictedPathsAbsent =>
+      workspaces.every((workspace) => workspace.restrictedPathsAbsent);
+  bool get symlinksFollowed =>
+      workspaces.any((workspace) => workspace.symlinksFollowed);
+
+  String? get combinedVisibleManifestSha256 {
+    if (workspaces.isEmpty) return null;
+    final entries = [
+      for (final workspace in workspaces)
+        [
+          workspace.role,
+          workspace.index,
+          workspace.visibleManifestSha256,
+          workspace.visibleFileCount,
+          workspace.visibleBytes,
+          workspace.restrictedPathCount,
+          workspace.symlinkCount,
+          workspace.unreadableFileCount,
+          workspace.workdirUnderRunsRoot,
+          workspace.rootConfined,
+          workspace.relativePathsOnly,
+          workspace.restrictedPathsAbsent,
+          workspace.symlinksFollowed,
+        ].join('\u0000'),
+    ];
+    return sha256.convert(utf8.encode(entries.join('\n'))).toString();
+  }
+
+  Map<String, Object?> toJson() => {
+    'generatedCodeSandbox': {
+      'required': generatedCodeSandboxRequired,
+      'enforced': generatedCodeSandboxEnforced,
+      'backend': generatedCodeSandboxBackend,
+    },
+    'workspaceEvidence': {
+      'snapshotStage': 'pre_tool_execution',
+      'workspaceCount': workspaceCount,
+      'visibleFileCount': visibleFileCount,
+      'visibleBytes': visibleBytes,
+      'combinedVisibleManifestSha256': combinedVisibleManifestSha256,
+      'restrictedPathCount': restrictedPathCount,
+      'symlinkCount': symlinkCount,
+      'unreadableFileCount': unreadableFileCount,
+      'pathGuards': {
+        'workdirsUnderRunsRoot': workdirsUnderRunsRoot,
+        'rootConfined': rootConfined,
+        'relativePathsOnly': relativePathsOnly,
+        'restrictedPathsAbsent': restrictedPathsAbsent,
+        'symlinksFollowed': symlinksFollowed,
+      },
+      'workspaces': [for (final workspace in workspaces) workspace.toJson()],
+    },
+  };
+}
+
+class TaskQaWorkspaceIsolationEvidence {
+  const TaskQaWorkspaceIsolationEvidence({
+    required this.role,
+    required this.index,
+    required this.visibleFileCount,
+    required this.visibleBytes,
+    required this.visibleManifestSha256,
+    required this.workdirUnderRunsRoot,
+    required this.rootConfined,
+    required this.relativePathsOnly,
+    required this.restrictedPathsAbsent,
+    required this.restrictedPathCount,
+    required this.symlinkCount,
+    required this.unreadableFileCount,
+    required this.symlinksFollowed,
+  });
+
+  factory TaskQaWorkspaceIsolationEvidence.fromWorkdirEvidence({
+    required String role,
+    required int index,
+    required WorkdirIsolationEvidence evidence,
+  }) {
+    return TaskQaWorkspaceIsolationEvidence(
+      role: role,
+      index: index,
+      visibleFileCount: evidence.visibleFileCount,
+      visibleBytes: evidence.visibleBytes,
+      visibleManifestSha256: evidence.visibleManifestSha256,
+      workdirUnderRunsRoot: evidence.workdirUnderRunsRoot,
+      rootConfined: evidence.rootConfined,
+      relativePathsOnly: evidence.relativePathsOnly,
+      restrictedPathsAbsent: evidence.restrictedPathsAbsent,
+      restrictedPathCount: evidence.restrictedPathCount,
+      symlinkCount: evidence.symlinkCount,
+      unreadableFileCount: evidence.unreadableFileCount,
+      symlinksFollowed: evidence.symlinksFollowed,
+    );
+  }
+
+  final String role;
+  final int index;
+  final int visibleFileCount;
+  final int visibleBytes;
+  final String visibleManifestSha256;
+  final bool workdirUnderRunsRoot;
+  final bool rootConfined;
+  final bool relativePathsOnly;
+  final bool restrictedPathsAbsent;
+  final int restrictedPathCount;
+  final int symlinkCount;
+  final int unreadableFileCount;
+  final bool symlinksFollowed;
+
+  Map<String, Object?> toJson() => {
+    'role': role,
+    'index': index,
+    'visibleFileCount': visibleFileCount,
+    'visibleBytes': visibleBytes,
+    'visibleManifestSha256': visibleManifestSha256,
+    'workdirUnderRunsRoot': workdirUnderRunsRoot,
+    'rootConfined': rootConfined,
+    'relativePathsOnly': relativePathsOnly,
+    'restrictedPathsAbsent': restrictedPathsAbsent,
+    'restrictedPathCount': restrictedPathCount,
+    'symlinkCount': symlinkCount,
+    'unreadableFileCount': unreadableFileCount,
+    'symlinksFollowed': symlinksFollowed,
+  };
+}
+
 class TaskQaNegativeCaseReport {
   const TaskQaNegativeCaseReport({
     required this.id,
@@ -258,6 +425,8 @@ class TaskQaRunner {
     this.requireNegativeCases = false,
     this.evaluatorTimeout = const Duration(minutes: 2),
     this.allowReentrantFlutterTool = false,
+    this.generatedCodeSandboxRequired = false,
+    this.generatedCodeSandbox,
   });
 
   final WorkdirManager workdirManager;
@@ -266,8 +435,16 @@ class TaskQaRunner {
   final bool requireNegativeCases;
   final Duration? evaluatorTimeout;
   final bool allowReentrantFlutterTool;
+  final bool generatedCodeSandboxRequired;
+  final GeneratedCodeSandbox? generatedCodeSandbox;
 
   Future<TaskQaReport> run(BenchmarkTask task) async {
+    if (generatedCodeSandboxRequired && generatedCodeSandbox == null) {
+      throw StateError(
+        'Generated-code sandbox is required, but no sandbox backend was '
+        'configured.',
+      );
+    }
     await task.ensureLoaded();
 
     final failureMessages = <String>[];
@@ -312,6 +489,8 @@ class TaskQaRunner {
       }
     }
 
+    final workspaceEvidence = <TaskQaWorkspaceIsolationEvidence>[];
+
     final baselineHiddenResults = <EvaluationResult>[];
     var baselineHiddenFailed = false;
     if (task.hiddenVerifiers.isNotEmpty) {
@@ -324,10 +503,21 @@ class TaskQaRunner {
         generatedCode: null,
         generatedCodePath: task.generatedCodePath,
       );
+      workspaceEvidence.add(
+        await _collectWorkspaceEvidence(
+          role: 'baseline',
+          index: 0,
+          workDir: baselineDir,
+        ),
+      );
       final prep = await workdirManager.prepare(
         baselineDir,
         isFlutter: task.isFlutter,
         allowInternet: task.allowInternet,
+        generatedCodeSandbox: generatedCodeSandbox,
+        maxCpuCores: generatedCodeSandbox == null
+            ? null
+            : task.effectiveResourceLimits.cpus,
       );
       if (prep is PrepareFailed) {
         failureMessages.add('Baseline prepare failed: ${prep.stderr}');
@@ -363,11 +553,22 @@ class TaskQaRunner {
       } on Object catch (e) {
         failureMessages.add('Reference solution failed to apply: $e');
       }
+      workspaceEvidence.add(
+        await _collectWorkspaceEvidence(
+          role: 'reference',
+          index: 0,
+          workDir: referenceDir,
+        ),
+      );
 
       final prep = await workdirManager.prepare(
         referenceDir,
         isFlutter: task.isFlutter,
         allowInternet: task.allowInternet,
+        generatedCodeSandbox: generatedCodeSandbox,
+        maxCpuCores: generatedCodeSandbox == null
+            ? null
+            : task.effectiveResourceLimits.cpus,
       );
       if (prep is PrepareFailed) {
         failureMessages.add('Reference prepare failed: ${prep.stderr}');
@@ -409,8 +610,14 @@ class TaskQaRunner {
     }
 
     final negativeCaseReports = <TaskQaNegativeCaseReport>[];
-    for (final negativeCase in task.negativeCases) {
-      final report = await _runNegativeCase(task, negativeCase);
+    for (var i = 0; i < task.negativeCases.length; i++) {
+      final negativeCase = task.negativeCases[i];
+      final report = await _runNegativeCase(
+        task,
+        negativeCase,
+        index: i,
+        workspaceEvidence: workspaceEvidence,
+      );
       negativeCaseReports.add(report);
       if (!report.preparePassed) {
         failureMessages.add(
@@ -422,6 +629,22 @@ class TaskQaRunner {
           'Negative case ${negativeCase.id} was accepted by verifiers.',
         );
       }
+    }
+
+    final runtimeIsolation = TaskQaRuntimeIsolationReport(
+      generatedCodeSandboxRequired: generatedCodeSandboxRequired,
+      generatedCodeSandboxEnforced: generatedCodeSandbox != null,
+      generatedCodeSandboxBackend:
+          generatedCodeSandbox?.backend ??
+          bubblewrapGeneratedCodeSandboxBackend,
+      workspaces: List.unmodifiable(workspaceEvidence),
+    );
+    if (!runtimeIsolation.restrictedPathsAbsent) {
+      failureMessages.add(
+        'Workspace isolation evidence found '
+        '${runtimeIsolation.restrictedPathCount} restricted path(s) in '
+        'solver workspaces.',
+      );
     }
 
     return TaskQaReport(
@@ -438,13 +661,16 @@ class TaskQaRunner {
       baselineHiddenResults: List.unmodifiable(baselineHiddenResults),
       referencePublicResults: List.unmodifiable(referencePublicResults),
       referenceHiddenResults: List.unmodifiable(referenceHiddenResults),
+      runtimeIsolation: runtimeIsolation,
     );
   }
 
   Future<TaskQaNegativeCaseReport> _runNegativeCase(
     BenchmarkTask task,
-    TaskNegativeCase negativeCase,
-  ) async {
+    TaskNegativeCase negativeCase, {
+    required int index,
+    required List<TaskQaWorkspaceIsolationEvidence> workspaceEvidence,
+  }) async {
     final dir = await workdirManager.createTaskWorkdir(
       runId: 'qa-negative-${task.id}-${negativeCase.id}',
       providerId: 'task_qa',
@@ -454,9 +680,23 @@ class TaskQaRunner {
       generatedCode: null,
       generatedCodePath: task.generatedCodePath,
     );
+    var evidenceCollected = false;
+    Future<void> collectEvidence() async {
+      if (evidenceCollected) return;
+      workspaceEvidence.add(
+        await _collectWorkspaceEvidence(
+          role: 'negative_case',
+          index: index,
+          workDir: dir,
+        ),
+      );
+      evidenceCollected = true;
+    }
+
     try {
       await applyReferenceSolution(dir, negativeCase.solution);
     } on Object catch (e) {
+      await collectEvidence();
       return TaskQaNegativeCaseReport(
         id: negativeCase.id,
         description: negativeCase.description,
@@ -470,10 +710,15 @@ class TaskQaRunner {
       );
     }
 
+    await collectEvidence();
     final prep = await workdirManager.prepare(
       dir,
       isFlutter: task.isFlutter,
       allowInternet: task.allowInternet,
+      generatedCodeSandbox: generatedCodeSandbox,
+      maxCpuCores: generatedCodeSandbox == null
+          ? null
+          : task.effectiveResourceLimits.cpus,
     );
     if (prep is PrepareFailed) {
       return TaskQaNegativeCaseReport(
@@ -513,6 +758,21 @@ class TaskQaRunner {
       hiddenPassed: hiddenResults.every((r) => r.passed),
       publicResults: List.unmodifiable(publicResults),
       hiddenResults: List.unmodifiable(hiddenResults),
+    );
+  }
+
+  Future<TaskQaWorkspaceIsolationEvidence> _collectWorkspaceEvidence({
+    required String role,
+    required int index,
+    required Directory workDir,
+  }) async {
+    final evidence = await workdirManager.collectWorkspaceIsolationEvidence(
+      workDir,
+    );
+    return TaskQaWorkspaceIsolationEvidence.fromWorkdirEvidence(
+      role: role,
+      index: index,
+      evidence: evidence,
     );
   }
 
@@ -567,6 +827,7 @@ class TaskQaRunner {
             previousResults: results,
             deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
             allowReentrantFlutterTool: allowReentrantFlutterTool,
+            generatedCodeSandbox: generatedCodeSandbox,
           ),
         ),
       );
@@ -740,6 +1001,14 @@ Map<String, Object?> taskQaAdmissionReportJson({
     'requiredNegativeCaseKindsCovered': report.requiredNegativeCaseKindsCovered,
     'hiddenFlakeRuns': report.hiddenFlakeRuns,
     'promptSafeContextLeakFree': report.promptSafety.passed,
+    'generatedCodeSandboxRequired':
+        report.runtimeIsolation.generatedCodeSandboxRequired,
+    'generatedCodeSandboxEnforced':
+        report.runtimeIsolation.generatedCodeSandboxEnforced,
+    'workspaceEvidenceCollected':
+        report.runtimeIsolation.workspaceEvidenceCollected,
+    'workspaceRestrictedPathsAbsent':
+        report.runtimeIsolation.restrictedPathsAbsent,
   };
   _addNegativeKindCheck(
     checks,
@@ -782,6 +1051,7 @@ Map<String, Object?> taskQaAdmissionReportJson({
       'resources': task.effectiveResourceLimits.toJson(),
       'resourceEnforcement': taskResourceEnforcementJson(),
     },
+    'runtimeIsolation': report.runtimeIsolation.toJson(),
     'status': taskQaAdmissionPassed(report) ? 'admitted' : 'rejected',
     if (generatedAt != null) 'generatedAt': generatedAt.toIso8601String(),
     'checks': checks,

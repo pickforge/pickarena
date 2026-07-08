@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "family": "gpt",
+  "model": "openai-codex/gpt-5.5:xhigh",
+  "createdDate": "2026-06-19",
+  "workspaceSnapshotPath": "workspace_snapshot",
+  "snapshotRestrictedPathHits": [],
+  "snapshotFiles": [
+    {
+      "path": "instruction.md",
+      "sha256": "f2df445cdaf920ee728aab43b58c00d51189d5b9726911b566641c016b35cd4b"
+    },
+    {
+      "path": "lib/cart_line_price_row.dart",
+      "sha256": "f34743397280bce7b834a7c7a86c298fb69175fcd568be5d8c831fd46e35d048"
+    },
+    {
+      "path": "lib/checkout_price_summary.dart",
+      "sha256": "cbcc9259e847f4e4e1cc0e231bd62bff624b7063761cdc50c58f33256c44f15b"
+    },
+    {
+      "path": "lib/price_label_formatter.dart",
+      "sha256": "269bf17cd007a773ac01316eeebd0238d2a2ec6287c26e85cd549fa803600cb2"
+    },
+    {
+      "path": "lib/product_price_tile.dart",
+      "sha256": "1fdcccf6f29706bba582aa4e253922fb8bf9a009113ce8db4f2c7ace4698e309"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "a92e587d5c21cd48e620b475b2ed83267d0900779a3f643a3a3a96ab197a08f9"
+    },
+    {
+      "path": "solver_report.md",
+      "sha256": "f249bdd230833577e986a3d928177bfbaa34f47d6eea2a9db82971ce7376133c"
+    },
+    {
+      "path": "test/price_labels_test.dart",
+      "sha256": "85361eff54a9a8812d714fa69f2c3b5a68290433a93c607b35e916041163898c"
+    }
+  ],
+  "solverReportPresent": true,
+  "patchPath": "solver.patch",
+  "patchSha256": "00136bd4275048283bfbe07386b36ef1d60095bfd4284ef9446912df36f18164",
+  "publicExitCode": 0,
+  "hiddenExitCode": 0,
+  "publicPassed": true,
+  "hiddenPassedAfterInjection": true,
+  "publicLog": "public_results.log",
+  "hiddenLog": "hidden_results.log",
+  "hiddenLogClassification": "restricted/evaluator-only",
+  "notes": [
+    "workspace snapshot was captured before hidden test injection",
+    "hidden tests were injected only into a separate grading workspace"
+  ],
+  "trajectoryArtifacts": {
+    "input": "trajectory/subagent_input.md",
+    "output": "trajectory/subagent_output.md",
+    "meta": "trajectory/subagent_meta.json",
+    "sessionJsonl": null
+  },
+  "providerSessionJsonlCaptured": false,
+  "subagentRunId": "f2ed0622",
+  "subagentIndex": "coder_0",
+  "subagentDurationMs": 152527,
+  "subagentUsage": {
+    "input": 32468,
+    "output": 6016,
+    "cacheRead": 145920,
+    "cacheWrite": 0,
+    "cost": 0.41578000000000004,
+    "turns": 15
+  },
+  "pendingEvidence": [
+    "provider-internal stream chunks/session JSONL not exposed for this run"
+  ]
+}

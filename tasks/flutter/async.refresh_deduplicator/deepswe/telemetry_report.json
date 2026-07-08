@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "createdDate": "2026-06-19",
+  "scope": "solver subagent prompt/output/usage metadata copied from pi subagent artifacts",
+  "solverRuns": [
+    {
+      "family": "kimi",
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "runId": "54e66617",
+      "subagentIndex": 0,
+      "durationMs": 42691,
+      "usage": {
+        "input": 42252,
+        "output": 4227,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 5
+      },
+      "toolCount": 7,
+      "timestamp": 1781867281588,
+      "sourceArtifacts": {
+        "input": "solver_runs/kimi/trajectory/subagent_input.md",
+        "output": "solver_runs/kimi/trajectory/subagent_output.md",
+        "meta": "solver_runs/kimi/trajectory/subagent_meta.json"
+      }
+    },
+    {
+      "family": "minimax",
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "runId": "54e66617",
+      "subagentIndex": 1,
+      "durationMs": 652764,
+      "usage": {
+        "input": 0,
+        "output": 16615,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 15
+      },
+      "toolCount": 14,
+      "timestamp": 1781867891667,
+      "sourceArtifacts": {
+        "input": "solver_runs/minimax/trajectory/subagent_input.md",
+        "output": "solver_runs/minimax/trajectory/subagent_output.md",
+        "meta": "solver_runs/minimax/trajectory/subagent_meta.json"
+      }
+    }
+  ],
+  "capturedFields": [
+    "model",
+    "durationMs",
+    "usage.input",
+    "usage.output",
+    "usage.cacheRead",
+    "usage.cacheWrite",
+    "usage.cost",
+    "usage.turns",
+    "toolCount",
+    "timestamp",
+    "freshRerunSolverRuns"
+  ],
+  "limitations": [
+    "Fresh rerun subagent session JSONL transcripts are captured; provider-internal stream chunks are still not separately exported.",
+    "MiniMax input token count is recorded exactly as reported by the subagent metadata.",
+    "usage.cost is copied exactly from subagent metadata; cost value 0 for Ollama cloud models is not independently verified billing spend.",
+    "Command wall-clock telemetry is captured for one full QA run and fresh rerun public/hidden replay commands; broader performance sampling remains pending."
+  ],
+  "deepSWEComplete": false,
+  "freshRerunSolverRuns": [
+    {
+      "family": "kimi",
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "runId": "2c8d8e17",
+      "subagentIndex": 0,
+      "durationMs": 57822,
+      "usage": {
+        "input": 72902,
+        "output": 6038,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 7
+      },
+      "toolCount": 9,
+      "timestamp": 1781876968536,
+      "workspaceSnapshotPath": "solver_runs/kimi/rerun_2026_06_19/workspace_snapshot",
+      "snapshotRestrictedPathHits": [],
+      "patchPath": "solver_runs/kimi/rerun_2026_06_19/solver.patch",
+      "patchSha256": "a903db717817a48c5049f1a0f9ad202b5ca6dab26f90f2c6e866788121310463",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "sourceArtifacts": {
+        "input": "solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_input.md",
+        "output": "solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_output.md",
+        "meta": "solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_meta.json"
+      }
+    },
+    {
+      "family": "minimax",
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "runId": "2c8d8e17",
+      "subagentIndex": 1,
+      "durationMs": 217846,
+      "usage": {
+        "input": 0,
+        "output": 7088,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 11
+      },
+      "toolCount": 10,
+      "timestamp": 1781877128566,
+      "workspaceSnapshotPath": "solver_runs/minimax/rerun_2026_06_19/workspace_snapshot",
+      "snapshotRestrictedPathHits": [],
+      "patchPath": "solver_runs/minimax/rerun_2026_06_19/solver.patch",
+      "patchSha256": "5ed7076a6d6b06e0a1643b8d106a135bc12aea829220b6f01e062f5a3befa07d",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "sourceArtifacts": {
+        "input": "solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_input.md",
+        "output": "solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_output.md",
+        "meta": "solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_meta.json"
+      }
+    },
+    {
+      "family": "gpt",
+      "model": "openai-codex/gpt-5.5:xhigh",
+      "runId": "9e72b221",
+      "subagentIndex": 0,
+      "durationMs": 152440,
+      "usage": {
+        "input": 25051,
+        "output": 6724,
+        "cacheRead": 42496,
+        "cacheWrite": 0,
+        "cost": 0.348223,
+        "turns": 7
+      },
+      "toolCount": 10,
+      "timestamp": 1781879221221,
+      "workspaceSnapshotPath": "solver_runs/gpt/rerun_2026_06_19/workspace_snapshot",
+      "snapshotRestrictedPathHits": [],
+      "patchPath": "solver_runs/gpt/rerun_2026_06_19/solver.patch",
+      "patchSha256": "b7930dc9b9c9a1f816cc1c25717562ac487500fdd91ccbbfc3585e48c8900feb",
+      "publicPassed": true,
+      "hiddenPassedAfterInjection": true,
+      "sourceArtifacts": {
+        "input": "solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_input.md",
+        "output": "solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_output.md",
+        "meta": "solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_meta.json"
+      }
+    }
+  ],
+  "commandTelemetry": {
+    "resultPath": "command_telemetry/command_telemetry_result.json",
+    "passed": true,
+    "recordCount": 7,
+    "errorCount": 0
+  },
+  "freshRerunSessionTranscripts": [
+    {
+      "family": "kimi",
+      "path": "solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_session.jsonl",
+      "bytes": 46245,
+      "sha256": "c3d6241a50a503ac02d696e0db00142d192c30d8de4db7b03c6328fc326c100c"
+    },
+    {
+      "family": "minimax",
+      "path": "solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_session.jsonl",
+      "bytes": 49217,
+      "sha256": "4fc6743b25c4d4c7dc6100bc5441fba4fc594f26e5dc43ecfc7002865c83a165"
+    },
+    {
+      "family": "gpt",
+      "path": "solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_session.jsonl",
+      "bytes": 87243,
+      "sha256": "8f05e44720f05f706b15c87708f5e87aceca4f2e51c5d386b66ef1788ad33611"
+    }
+  ]
+}

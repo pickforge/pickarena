@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ui.action_bar_overflow",
+  "createdDate": "2026-06-19",
+  "deepSWEFlakeVerified": false,
+  "failedCandidateFlakeEvidence": true,
+  "deepSWEComplete": false,
+  "hiddenReplayFlakeLoop10": {
+    "path": "flake_runs_10/flake_loop_10_result.json",
+    "passed": true,
+    "runsPerTarget": 10,
+    "targets": {
+      "baseline_expected_failure": {
+        "expected": "fail",
+        "passCount": 0,
+        "failCount": 10,
+        "passedExpectation": true
+      },
+      "reference_solution": {
+        "expected": "pass",
+        "passCount": 10,
+        "failCount": 0,
+        "passedExpectation": true
+      },
+      "gpt_failed_rerun": {
+        "expected": "fail",
+        "passCount": 0,
+        "failCount": 10,
+        "passedExpectation": true
+      },
+      "glm_failed_rerun": {
+        "expected": "fail",
+        "passCount": 0,
+        "failCount": 10,
+        "passedExpectation": true
+      },
+      "opus_failed_rerun": {
+        "expected": "fail",
+        "passCount": 0,
+        "failCount": 10,
+        "passedExpectation": true
+      },
+      "minimax_failed_rerun": {
+        "expected": "fail",
+        "passCount": 0,
+        "failCount": 10,
+        "passedExpectation": true
+      },
+      "kimi_failed_rerun": {
+        "expected": "fail",
+        "passCount": 0,
+        "failCount": 10,
+        "passedExpectation": true
+      }
+    }
+  },
+  "fullTaskQaRepetition": {
+    "path": "qa_repetition/qa_repetition_result.json",
+    "passed": true,
+    "runsRequested": 5,
+    "hiddenFlakeRuns": 5
+  },
+  "notes": [
+    "All five fresh solver families are intentionally classified as failed solver evidence; each failed hidden replay 10/10.",
+    "Raw hidden logs are restricted evaluator-only."
+  ]
+}

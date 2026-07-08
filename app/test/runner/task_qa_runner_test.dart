@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/core/benchmark_task.dart';
@@ -9,6 +10,7 @@ import 'package:dart_arena/core/task_verifier.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/evaluators/hidden_test_evaluator.dart';
 import 'package:dart_arena/evaluators/test_evaluator.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/task_qa_runner.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/tasks/bug_fix/async_race_condition.dart';
@@ -187,6 +189,68 @@ void main() {
     timeout: const Timeout(Duration(minutes: 2)),
   );
 
+  test(
+    'required generated-code sandbox fails before creating workdirs',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'task_qa_required_sandbox_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      await expectLater(
+        TaskQaRunner(
+          workdirManager: WorkdirManager(root: root),
+          generatedCodeSandboxRequired: true,
+        ).run(_NegativeQaTask()),
+        throwsStateError,
+      );
+      expect(Directory(p.join(root.path, 'runs')).existsSync(), isFalse);
+    },
+  );
+
+  test(
+    'required generated-code sandbox is recorded in runtime evidence',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'task_qa_recording_sandbox_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final sandbox = _RecordingGeneratedCodeSandbox();
+
+      final task = _NegativeQaTask();
+      final report = await TaskQaRunner(
+        workdirManager: WorkdirManager(root: root),
+        requiredHiddenFlakeRuns: 1,
+        requireNegativeCases: true,
+        generatedCodeSandboxRequired: true,
+        generatedCodeSandbox: sandbox,
+      ).run(task);
+      final runtimeJson = report.runtimeIsolation.toJson();
+      final workspaceEvidence =
+          runtimeJson['workspaceEvidence']! as Map<String, Object?>;
+      final admission = taskQaAdmissionReportJson(task: task, report: report);
+      final runtimeText = jsonEncode(admission['runtimeIsolation']);
+
+      expect(sandbox.calls, isNotEmpty);
+      expect(runtimeJson['generatedCodeSandbox'], {
+        'required': true,
+        'enforced': true,
+        'backend': 'test-sandbox',
+      });
+      expect(workspaceEvidence['workspaceCount'], 4);
+      expect(report.runtimeIsolation.workspaceCount, 4);
+      expect(report.runtimeIsolation.restrictedPathCount, 0);
+      expect(runtimeText, isNot(contains(root.path)));
+      expect(runtimeText, isNot(contains(Directory.systemTemp.path)));
+      expect(report.failureMessages, isEmpty);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
   test('empty negative case reports are not considered rejected', () {
     const report = TaskQaReport(
       taskId: 'task',
@@ -300,6 +364,59 @@ void main() {
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );
+}
+
+class _RecordingGeneratedCodeSandbox extends GeneratedCodeSandbox {
+  final calls = <_SandboxCall>[];
+
+  @override
+  String get backend => 'test-sandbox';
+
+  @override
+  Future<SandboxedProcessStart> wrapProcess({
+    required String executable,
+    required List<String> arguments,
+    required String workingDirectory,
+    required Map<String, String> environment,
+    required bool allowInternet,
+    SandboxResourceLimits? resourceLimits,
+    Iterable<String> extraReadOnlyPaths = const [],
+  }) async {
+    calls.add(
+      _SandboxCall(
+        executable: executable,
+        arguments: List.unmodifiable(arguments),
+        workingDirectory: workingDirectory,
+        allowInternet: allowInternet,
+        resourceLimits: resourceLimits,
+        extraReadOnlyPaths: List.unmodifiable(extraReadOnlyPaths),
+      ),
+    );
+    return SandboxedProcessStart(
+      executable: executable,
+      arguments: arguments,
+      workingDirectory: workingDirectory,
+      environment: environment,
+    );
+  }
+}
+
+class _SandboxCall {
+  const _SandboxCall({
+    required this.executable,
+    required this.arguments,
+    required this.workingDirectory,
+    required this.allowInternet,
+    required this.resourceLimits,
+    required this.extraReadOnlyPaths,
+  });
+
+  final String executable;
+  final List<String> arguments;
+  final String workingDirectory;
+  final bool allowInternet;
+  final SandboxResourceLimits? resourceLimits;
+  final List<String> extraReadOnlyPaths;
 }
 
 class _NegativeQaTask extends BenchmarkTask {

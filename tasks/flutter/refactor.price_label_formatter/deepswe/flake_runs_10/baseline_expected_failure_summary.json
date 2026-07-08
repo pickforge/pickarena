@@ -1,0 +1,81 @@
+{
+  "target": "baseline_expected_failure",
+  "expected": "fail",
+  "pubGetExitCode": 0,
+  "pubGetDurationSeconds": 0.505,
+  "passCount": 0,
+  "failCount": 10,
+  "passedExpectation": true,
+  "runs": [
+    {
+      "run": 1,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 8.072,
+      "log": "baseline_expected_failure_run_01.log"
+    },
+    {
+      "run": 2,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.44,
+      "log": "baseline_expected_failure_run_02.log"
+    },
+    {
+      "run": 3,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.48,
+      "log": "baseline_expected_failure_run_03.log"
+    },
+    {
+      "run": 4,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.435,
+      "log": "baseline_expected_failure_run_04.log"
+    },
+    {
+      "run": 5,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.531,
+      "log": "baseline_expected_failure_run_05.log"
+    },
+    {
+      "run": 6,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.507,
+      "log": "baseline_expected_failure_run_06.log"
+    },
+    {
+      "run": 7,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.468,
+      "log": "baseline_expected_failure_run_07.log"
+    },
+    {
+      "run": 8,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.455,
+      "log": "baseline_expected_failure_run_08.log"
+    },
+    {
+      "run": 9,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.484,
+      "log": "baseline_expected_failure_run_09.log"
+    },
+    {
+      "run": 10,
+      "exitCode": 1,
+      "passed": false,
+      "durationSeconds": 2.48,
+      "log": "baseline_expected_failure_run_10.log"
+    }
+  ]
+}

@@ -1,0 +1,773 @@
+{
+  "schemaVersion": 1,
+  "taskId": "refactor.price_label_formatter",
+  "taskVersion": 1,
+  "category": "refactor",
+  "difficulty": "medium",
+  "track": "agentic",
+  "tags": [
+    "refactor",
+    "testing",
+    "ui"
+  ],
+  "release": {
+    "corpus": "private_official",
+    "status": "active"
+  },
+  "admission": {
+    "tool": {
+      "name": "dart_arena_task_qa"
+    },
+    "evaluator": {
+      "schemaVersion": 1,
+      "version": "2026-05-31-master-spec"
+    },
+    "environment": {
+      "dartVersion": "3.11.4 (stable) (Tue Mar 24 01:02:20 2026 -0700) on \"linux_x64\"",
+      "dependencySnapshot": {
+        "status": "present",
+        "files": {
+          "pubspec.yaml": {
+            "sha256": "1a77a2d12be10b5c49655dbf690c7aca5593a6d934b523763549077517314f4e",
+            "bytes": 6336
+          },
+          "pubspec.lock": {
+            "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
+            "bytes": 29033
+          }
+        }
+      },
+      "flutterVersion": "3.41.6",
+      "gitCommit": "68321eeaff3fbf5a1bfee2893c2fab3b0b446d0a",
+      "gitDirty": true,
+      "hostPlatform": "linux",
+      "locale": "C.UTF-8",
+      "operatingSystemVersion": "Linux 7.1.3-1-cachyos #1 SMP PREEMPT_DYNAMIC Mon, 06 Jul 2026 19:44:10 +0000"
+    }
+  },
+  "executionPolicy": {
+    "allowInternet": false,
+    "resources": {
+      "cpus": 2,
+      "memoryMb": 8192,
+      "maxProcesses": 64,
+      "maxOutputBytes": 1048576
+    },
+    "resourceEnforcement": {
+      "cpus": {
+        "enforced": true,
+        "mechanism": "systemdCpuQuota",
+        "kernelEnforced": true
+      },
+      "memoryMb": {
+        "enforced": true,
+        "mechanism": "rssPolling",
+        "kernelEnforced": false
+      },
+      "maxProcesses": {
+        "enforced": true,
+        "mechanism": "processTreePolling",
+        "kernelEnforced": false
+      },
+      "maxOutputBytes": {
+        "enforced": true,
+        "mechanism": "boundedOutputCapture",
+        "kernelEnforced": false
+      }
+    }
+  },
+  "runtimeIsolation": {
+    "generatedCodeSandbox": {
+      "required": true,
+      "enforced": true,
+      "backend": "bubblewrap"
+    },
+    "workspaceEvidence": {
+      "snapshotStage": "pre_tool_execution",
+      "workspaceCount": 8,
+      "visibleFileCount": 48,
+      "visibleBytes": 62236,
+      "combinedVisibleManifestSha256": "9673d15cc5e38ac3f22598f8666e696225c48cc98bf74c070b22d13a92ace1ca",
+      "restrictedPathCount": 0,
+      "symlinkCount": 0,
+      "unreadableFileCount": 0,
+      "pathGuards": {
+        "workdirsUnderRunsRoot": true,
+        "rootConfined": true,
+        "relativePathsOnly": true,
+        "restrictedPathsAbsent": true,
+        "symlinksFollowed": false
+      },
+      "workspaces": [
+        {
+          "role": "baseline",
+          "index": 0,
+          "visibleFileCount": 6,
+          "visibleBytes": 8400,
+          "visibleManifestSha256": "d212268a57d1c2b48b39eb6d36ec20bb7d89656fdf3ffb6de2b6e5ceb6eb8e38",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "reference",
+          "index": 0,
+          "visibleFileCount": 6,
+          "visibleBytes": 7533,
+          "visibleManifestSha256": "7e7376edfec8e87d92cd5790588ac1d64d211c9a40e6ce965f5e8aecec1e236a",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 0,
+          "visibleFileCount": 6,
+          "visibleBytes": 8400,
+          "visibleManifestSha256": "d212268a57d1c2b48b39eb6d36ec20bb7d89656fdf3ffb6de2b6e5ceb6eb8e38",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 1,
+          "visibleFileCount": 6,
+          "visibleBytes": 7845,
+          "visibleManifestSha256": "7ad40db4654d4bab5939d142d235595fe412ccd0d73717e8082032ccd0f580b5",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 2,
+          "visibleFileCount": 6,
+          "visibleBytes": 7783,
+          "visibleManifestSha256": "f6c381f41a8169df8414fefb64ad4da507ecabecc4d164686703acd33bf6a4cb",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 3,
+          "visibleFileCount": 6,
+          "visibleBytes": 8764,
+          "visibleManifestSha256": "2826c8daa78449fe7d7475b84a939536352c6f3f0463ea1d9c3954df10f6ab5d",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 4,
+          "visibleFileCount": 6,
+          "visibleBytes": 7547,
+          "visibleManifestSha256": "065143abf4e0357ef32a39dcfb3af3119b80def2f4dea5d035e41707a53598a9",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 5,
+          "visibleFileCount": 6,
+          "visibleBytes": 5964,
+          "visibleManifestSha256": "6db46f9bef850290cd9d812db49644a168c0ef374167292003ba9ad25bdd2873",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        }
+      ]
+    }
+  },
+  "status": "admitted",
+  "generatedAt": "2026-07-08T20:16:22.780483Z",
+  "checks": {
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "requiredNegativeCaseKindsCovered": true,
+    "hiddenFlakeRuns": 3,
+    "promptSafeContextLeakFree": true,
+    "generatedCodeSandboxRequired": true,
+    "generatedCodeSandboxEnforced": true,
+    "workspaceEvidenceCollected": true,
+    "workspaceRestrictedPathsAbsent": true,
+    "noopRejected": true,
+    "apiBreakingRejected": true,
+    "overfitRejected": true
+  },
+  "hiddenVerifierDigests": {
+    "price_label_formatter_hidden": "a524c00066131b832f41cb859d691e729422b21d4de014f819436759f2b8dae4"
+  },
+  "verifierQualityAudit": {
+    "falsePositiveCount": 0,
+    "falseNegativeCount": 0,
+    "disagreementCount": 1,
+    "infrastructureErrorCount": 0,
+    "flakeRunCount": 3,
+    "flakeFailureCount": 0,
+    "flakeRate": 0.0,
+    "negativeCaseCount": 6,
+    "acceptedNegativeCaseCount": 0,
+    "referencePublicFailureCount": 0,
+    "referenceHiddenFailureCount": 0
+  },
+  "promptSafety": {
+    "target_context_present": true,
+    "public_test_context_present": true,
+    "public_test_context_required": true,
+    "implementation_bodies_omitted": true,
+    "hidden_verifier_leak_free": true,
+    "reference_leak_free": true,
+    "required_negative_case_kinds": [
+      "api_breaking",
+      "noop",
+      "overfit"
+    ],
+    "present_negative_case_kinds": [
+      "api_breaking",
+      "custom",
+      "noop",
+      "overfit"
+    ],
+    "missing_negative_case_kinds": [],
+    "passed": true
+  },
+  "negativeCases": [
+    {
+      "id": "noop",
+      "description": "Leaves the incomplete formatter and duplicated widget helpers unchanged.",
+      "kind": "noop",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 11.6s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.5s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "6/6 tests passed",
+          "details": {
+            "total": 6,
+            "passed": 6,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 15,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "price_label_formatter_hidden",
+          "passed": false,
+          "score": 0.5,
+          "rationale": "10/20 hidden tests passed",
+          "details": {
+            "total": 20,
+            "passed": 10,
+            "failed": 6,
+            "errored": 4,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 4,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 5,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 6,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 7,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 8,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 9,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 10,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/price_label_formatter_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/price_label_formatter_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api_breaking",
+      "description": "Renames the public ProductPriceTile price key and price parameter.",
+      "kind": "api_breaking",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "analysis errors present",
+          "details": {
+            "exitCode": 1,
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \n\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:19:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:19:56 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:24:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:32:15 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:34:11 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:41:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:48:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:48:53 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:52:55 • undefined_getter\n\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n9 issues found. (ran in 11.1s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "errors=9 warnings=0 infos=0",
+          "details": {
+            "errors": 9,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 1,
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \n\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:19:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:19:56 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:24:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:32:15 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:34:11 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:41:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:48:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:48:53 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:52:55 • undefined_getter\n\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n9 issues found. (ran in 2.2s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "blocked by compile",
+          "details": {
+            "blocked": true,
+            "blocked_by": "compile",
+            "blocked_by_rationale": "analysis errors present",
+            "skipped": true,
+            "reason": "blocked by compile"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 15,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "overfit_public_values",
+      "description": "Routes widgets through a formatter that only handles the public example values.",
+      "kind": "overfit",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 11.4s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.3s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "6/6 tests passed",
+          "details": {
+            "total": 6,
+            "passed": 6,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.17377394345044514,
+          "rationale": "changed_lines=35",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 36,
+            "changed_lines": 35,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "unused_formatter",
+      "description": "Completes the formatter but leaves widgets on their private helpers.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 11.2s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.2s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "6/6 tests passed",
+          "details": {
+            "total": 6,
+            "passed": 6,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": false,
+          "score": 0.2592402606458915,
+          "rationale": "changed_lines=27",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 28,
+            "changed_lines": 27,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "behavior_changing_currency",
+      "description": "Centralizes formatting but changes the customer-facing labels.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 11.2s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.2s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.3333333333333333,
+          "rationale": "2/6 tests passed",
+          "details": {
+            "total": 6,
+            "passed": 2,
+            "failed": 0,
+            "errored": 4,
+            "failures": [
+              {
+                "name": "product tile shows a sale price with compare-at",
+                "message": "Test failed. See exception logs above.\nThe test description was: product tile shows a sale price with compare-at"
+              },
+              {
+                "name": "product tile shows a sale price with compare-at",
+                "message": "error"
+              },
+              {
+                "name": "product tile shows Free for a zero price",
+                "message": "Test failed. See exception logs above.\nThe test description was: product tile shows Free for a zero price"
+              },
+              {
+                "name": "product tile shows Free for a zero price",
+                "message": "error"
+              },
+              {
+                "name": "cart line row shows quantity, unit price, and line total",
+                "message": "Test failed. See exception logs above.\nThe test description was: cart line row shows quantity, unit price, and line total"
+              },
+              {
+                "name": "cart line row shows quantity, unit price, and line total",
+                "message": "error"
+              },
+              {
+                "name": "checkout summary shows subtotal, shipping, and total",
+                "message": "Test failed. See exception logs above.\nThe test description was: checkout summary shows subtotal, shipping, and total"
+              },
+              {
+                "name": "checkout summary shows subtotal, shipping, and total",
+                "message": "error"
+              }
+            ],
+            "exit_code": 1,
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 0.5769498103804866,
+          "rationale": "changed_lines=11",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 22,
+            "changed_lines": 11,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "deleted_or_weakened_public_test",
+      "description": "Replaces the public tests with a trivial always-passing test.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "analysis errors present",
+          "details": {
+            "exitCode": -9,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      ",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 10.7s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "blocked by compile",
+          "details": {
+            "blocked": true,
+            "blocked_by": "compile",
+            "blocked_by_rationale": "analysis errors present",
+            "skipped": true,
+            "reason": "blocked by compile"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 15,
+            "new_lines": 15,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    }
+  ],
+  "failureMessages": []
+}

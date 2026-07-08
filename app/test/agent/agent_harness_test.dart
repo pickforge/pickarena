@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/agent/droid_agent_harness.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -61,6 +63,95 @@ void main() {
     },
   );
 
+  test(
+    'DroidAgentHarness wraps default runner with generated code sandbox metadata',
+    () async {
+      final workspace = await Directory.systemTemp.createTemp(
+        'droid_agent_sandbox_',
+      );
+      addTearDown(() async {
+        if (await workspace.exists()) await workspace.delete(recursive: true);
+      });
+
+      final script = File(p.join(workspace.path, 'fake_droid_sandbox.sh'));
+      await script.writeAsString(r'''
+#!/bin/sh
+printf '%s' "$DROID_SANDBOX_MARKER" > sandbox-marker.txt
+''');
+      final chmod = await Process.run('chmod', ['+x', script.path]);
+      expect(chmod.exitCode, 0);
+
+      final sandbox = _RecordingGeneratedCodeSandbox();
+      final harness = DroidAgentHarness(
+        droidPath: script.path,
+        generatedCodeSandbox: sandbox,
+      );
+      final result = await harness.run(
+        workspace: workspace,
+        instruction: 'use sandbox marker',
+        modelId: 'gpt-5.5',
+        timeout: const Duration(seconds: 2),
+      );
+
+      expect(
+        result.succeeded,
+        isTrue,
+        reason:
+            'stdout=${result.stdoutPreview} stderr=${result.stderrPreview} '
+            'metadata=${result.metadata}',
+      );
+      expect(sandbox.seenExecutable, script.path);
+      expect(sandbox.seenArguments, containsAllInOrder(['exec', '--auto']));
+      expect(sandbox.seenArguments, containsAllInOrder(['--model', 'gpt-5.5']));
+      expect(sandbox.seenArguments?.last, contains('use sandbox marker'));
+      expect(sandbox.seenWorkingDirectory, workspace.path);
+      expect(sandbox.seenAllowInternet, isTrue);
+      expect(sandbox.seenResourceLimits, isNull);
+      final home =
+          Platform.environment['HOME'] ??
+          Platform.environment['USERPROFILE'] ??
+          '';
+      final expectedFactoryPaths = [
+        for (final name in const [
+          'settings.json',
+          'auth.v2.file',
+          'auth.v2.key',
+        ])
+          if (File(p.join(home, '.factory', name)).existsSync())
+            p.join(home, '.factory', name),
+      ];
+      expect(sandbox.seenExtraReadOnlyPaths, expectedFactoryPaths);
+      expect(
+        await File(p.join(workspace.path, 'sandbox-marker.txt')).readAsString(),
+        'fake-sandbox',
+      );
+      expect(result.metadata['runtimeBoundary'], {
+        'enforced': true,
+        'backend': 'fake-backend',
+      });
+      for (final key in const [
+        'args',
+        'arguments',
+        'command',
+        'instruction',
+        'prompt',
+        'model',
+        'modelId',
+        'environment',
+        'wrappedExecutable',
+        'bwrapArgs',
+        'workingDirectory',
+      ]) {
+        expect(result.metadata, isNot(contains(key)));
+      }
+      final encodedMetadata = jsonEncode(result.metadata);
+      expect(encodedMetadata, isNot(contains('use sandbox marker')));
+      expect(encodedMetadata, isNot(contains('gpt-5.5')));
+      expect(encodedMetadata, isNot(contains('DROID_SANDBOX_MARKER')));
+    },
+    skip: Platform.isWindows ? 'POSIX shell script test' : false,
+  );
+
   test('DroidAgentHarness bounds stdout and stderr previews', () async {
     final workspace = await Directory.systemTemp.createTemp(
       'droid_agent_trim_',
@@ -104,6 +195,8 @@ void main() {
       final script = File(p.join(workspace.path, 'fake_droid_env.sh'));
       await script.writeAsString('''
 #!/bin/sh
+pwd > cwd.txt
+printf '%s\n' "\$PWD" > pwd.txt
 env > env.txt
 ''');
       final chmod = await Process.run('chmod', ['+x', script.path]);
@@ -119,6 +212,15 @@ env > env.txt
       );
 
       expect(result.succeeded, isTrue);
+      expect(result.metadata, isNot(contains('runtimeBoundary')));
+      expect(
+        (await File(p.join(workspace.path, 'cwd.txt')).readAsString()).trim(),
+        workspace.path,
+      );
+      expect(
+        (await File(p.join(workspace.path, 'pwd.txt')).readAsString()).trim(),
+        workspace.path,
+      );
       final env = await File(p.join(workspace.path, 'env.txt')).readAsString();
       expect(
         env.split('\n').where((line) => line.startsWith('HOME=')),
@@ -179,6 +281,62 @@ printf changed > marker.txt
       expect(pwd.trim(), isNot(workspace.path));
     },
     skip: Platform.isWindows ? 'POSIX shell script test' : false,
+  );
+
+  test(
+    'DroidAgentHarness Bubblewrap probe blocks host file reads',
+    () async {
+      await _skipUnlessBubblewrapAvailable();
+      final root = await Directory.systemTemp.createTemp('droid_agent_bwrap_');
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final workspace = Directory(p.join(root.path, 'workspace'));
+      await workspace.create();
+      final hostSecret = File(p.join(root.path, 'host-secret.txt'));
+      await hostSecret.writeAsString('secret-token-value');
+
+      final script = File(p.join(workspace.path, 'fake_droid_bwrap.sh'));
+      await script.writeAsString('''
+#!/bin/sh
+if cat ${_shellSingleQuoted(hostSecret.path)} >/dev/null 2>&1; then
+  echo host secret readable >&2
+  exit 7
+fi
+printf ok > workdir-write.txt
+''');
+      final chmod = await Process.run('chmod', ['+x', script.path]);
+      expect(chmod.exitCode, 0);
+
+      final harness = DroidAgentHarness(
+        droidPath: script.path,
+        generatedCodeSandbox: const BubblewrapGeneratedCodeSandbox(),
+      );
+      final result = await harness.run(
+        workspace: workspace,
+        instruction: 'write inside workspace',
+        modelId: 'm',
+        timeout: const Duration(seconds: 5),
+      );
+
+      expect(
+        result.succeeded,
+        isTrue,
+        reason:
+            'stdout=${result.stdoutPreview} stderr=${result.stderrPreview} '
+            'metadata=${result.metadata}',
+      );
+      expect(result.stderrPreview, isNot(contains('host secret readable')));
+      expect(
+        await File(p.join(workspace.path, 'workdir-write.txt')).readAsString(),
+        'ok',
+      );
+      expect(result.metadata['runtimeBoundary'], {
+        'enforced': true,
+        'backend': bubblewrapGeneratedCodeSandboxBackend,
+      });
+    },
+    skip: Platform.isLinux ? false : 'Bubblewrap is Linux-only',
   );
 
   test(
@@ -268,6 +426,55 @@ done
     timeout: const Timeout(Duration(seconds: 8)),
   );
 }
+
+class _RecordingGeneratedCodeSandbox extends GeneratedCodeSandbox {
+  String? seenExecutable;
+  List<String>? seenArguments;
+  String? seenWorkingDirectory;
+  Map<String, String>? seenEnvironment;
+  bool? seenAllowInternet;
+  SandboxResourceLimits? seenResourceLimits;
+  List<String>? seenExtraReadOnlyPaths;
+
+  @override
+  String get backend => 'fake-backend';
+
+  @override
+  Future<SandboxedProcessStart> wrapProcess({
+    required String executable,
+    required List<String> arguments,
+    required String workingDirectory,
+    required Map<String, String> environment,
+    required bool allowInternet,
+    SandboxResourceLimits? resourceLimits,
+    Iterable<String> extraReadOnlyPaths = const [],
+  }) async {
+    seenExecutable = executable;
+    seenArguments = List.unmodifiable(arguments);
+    seenWorkingDirectory = workingDirectory;
+    seenEnvironment = Map.unmodifiable(environment);
+    seenAllowInternet = allowInternet;
+    seenResourceLimits = resourceLimits;
+    seenExtraReadOnlyPaths = List.unmodifiable(extraReadOnlyPaths);
+    return SandboxedProcessStart(
+      executable: executable,
+      arguments: arguments,
+      workingDirectory: workingDirectory,
+      environment: {...environment, 'DROID_SANDBOX_MARKER': 'fake-sandbox'},
+    );
+  }
+}
+
+Future<void> _skipUnlessBubblewrapAvailable() async {
+  try {
+    await BubblewrapGeneratedCodeSandbox.ensureAvailable();
+  } on Object catch (error) {
+    markTestSkipped(error.toString());
+  }
+}
+
+String _shellSingleQuoted(String value) =>
+    "'${value.replaceAll("'", "'\"'\"'")}'";
 
 Future<bool> _pidIsRunning(int pid) async {
   final result = await Process.run('ps', ['-p', '$pid', '-o', 'stat=']);

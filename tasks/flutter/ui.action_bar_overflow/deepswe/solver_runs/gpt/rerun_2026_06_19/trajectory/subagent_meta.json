@@ -1,0 +1,36 @@
+{
+  "runId": "cf75c215",
+  "agent": "coder",
+  "task": "Fresh public-only solver attempt for PickArena task `ui.action_bar_overflow` after public-contract hardening.\n\nWorkspace: current directory only. Do not read or reference any files outside this workspace. Hidden tests/solutions/negative cases are unavailable and must not be searched for.\n\nRead `instruction.md`, inspect the package, implement the task by editing only `lib/responsive_action_bar.dart`, then run public validation:\n- `flutter test test/responsive_action_bar_test.dart`\n\nWrite `solver_report.md` summarizing approach, changed files, tests run, and any risks. Do not include hidden-test speculation beyond generic uncertainty. Do not stage/commit.",
+  "exitCode": 0,
+  "usage": {
+    "input": 24181,
+    "output": 11065,
+    "cacheRead": 126464,
+    "cacheWrite": 0,
+    "cost": 0.516087,
+    "turns": 10
+  },
+  "model": "openai-codex/gpt-5.5:xhigh",
+  "attemptedModels": [
+    "openai-codex/gpt-5.5:xhigh"
+  ],
+  "modelAttempts": [
+    {
+      "model": "openai-codex/gpt-5.5:xhigh",
+      "success": true,
+      "exitCode": 0,
+      "usage": {
+        "input": 24181,
+        "output": 11065,
+        "cacheRead": 126464,
+        "cacheWrite": 0,
+        "cost": 0.516087,
+        "turns": 10
+      }
+    }
+  ],
+  "durationMs": 234250,
+  "toolCount": 13,
+  "timestamp": 1781905965535
+}

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "family": "glm",
+  "model": "ollama/glm-5.2:cloud:xhigh",
+  "createdDate": "2026-06-19",
+  "workspaceSnapshotPath": "workspace_snapshot",
+  "snapshotRestrictedPathHits": [],
+  "snapshotFiles": [
+    {
+      "path": "instruction.md",
+      "sha256": "0bef1b5eff0e0f2f5f2cab64484ef3050f6a5a3c4507c28ca3b5dcf73208b869"
+    },
+    {
+      "path": "lib/responsive_action_bar.dart",
+      "sha256": "18b38f6b8af3472cd37ba62964e5216506b40411a9c0842d48a24276666d37c7"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "590e1e67f61be0a8b3ec8aafd4b88c7cf9ff5f5cb72d133b15025269cd3ca2ba"
+    },
+    {
+      "path": "solver_report.md",
+      "sha256": "37b4a334dac23f1b16da33c713f891ed406d4ec4b382caecf5258ef32e4d590a"
+    },
+    {
+      "path": "test/responsive_action_bar_test.dart",
+      "sha256": "0670be20e1c14523f9ced5ed5e04f26d740f9fcf9b62949a06dff7c3c523c851"
+    }
+  ],
+  "solverReportPresent": true,
+  "patchPath": "solver.patch",
+  "patchSha256": "e840d8a60daeb38debb2131289239048dc9c933fda468525cc28ae2c81d97d96",
+  "publicExitCode": 0,
+  "hiddenExitCode": 1,
+  "publicPassed": true,
+  "hiddenPassedAfterInjection": false,
+  "publicLog": "public_results.log",
+  "hiddenLog": "hidden_results.log",
+  "hiddenLogClassification": "restricted/evaluator-only",
+  "notes": [
+    "workspace snapshot was captured before hidden test injection",
+    "hidden tests were injected only into a separate grading workspace"
+  ],
+  "trajectoryArtifacts": {
+    "input": "trajectory/subagent_input.md",
+    "output": "trajectory/subagent_output.md",
+    "meta": "trajectory/subagent_meta.json",
+    "sessionJsonl": null
+  },
+  "providerSessionJsonlCaptured": false,
+  "subagentRunId": "0100dfc1",
+  "subagentIndex": "1",
+  "subagentDurationMs": 383698,
+  "subagentUsage": {
+    "input": 397221,
+    "output": 21022,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "cost": 0,
+    "turns": 22
+  },
+  "pendingEvidence": [
+    "provider-internal stream chunks/session JSONL not exposed for this run"
+  ]
+}

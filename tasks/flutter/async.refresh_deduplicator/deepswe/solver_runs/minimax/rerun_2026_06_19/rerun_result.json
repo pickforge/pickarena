@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "family": "minimax",
+  "model": "ollama/minimax-m3:cloud:xhigh",
+  "createdDate": "2026-06-19",
+  "workspaceSnapshotPath": "workspace_snapshot",
+  "snapshotRestrictedPathHits": [],
+  "snapshotFiles": [
+    {
+      "path": "instruction.md",
+      "sha256": "6fbd180c2c31e28dcacd5577c5651060dc15a72ddf9d46b42f3d08deab56e336"
+    },
+    {
+      "path": "lib/feed_refresh_controller.dart",
+      "sha256": "b52f56c7720f840dea4d72506084e6b799a94e35feb9cf1e5eb4dd1f7f1b545b"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "acb58d1eb58b7b381ad123dcc85b87ce8618a5a7b225bf9aca81be8399431f55"
+    },
+    {
+      "path": "solver_report.md",
+      "sha256": "5a13f42a57e1bebdfaf55770cdd568beb8dc37601666ae32f5ebddb72c951d7a"
+    },
+    {
+      "path": "test/feed_refresh_controller_test.dart",
+      "sha256": "e9c365a2b61000317dc70bf68c5d87b7a091c2d8a5823e441f081636eb4bd587"
+    }
+  ],
+  "patchPath": "solver.patch",
+  "patchSha256": "5ed7076a6d6b06e0a1643b8d106a135bc12aea829220b6f01e062f5a3befa07d",
+  "publicExitCode": 0,
+  "hiddenExitCode": 0,
+  "publicPassed": true,
+  "hiddenPassedAfterInjection": true,
+  "publicLog": "public_results.log",
+  "hiddenLog": "hidden_results.log",
+  "hiddenLogClassification": "restricted/evaluator-only",
+  "notes": [
+    "workspace snapshot was captured before hidden test injection",
+    "hidden tests were injected only into a separate grading workspace"
+  ]
+}

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/providers/factory_custom_model_environment.dart';
+import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 import 'package:path/path.dart' as p;
 
@@ -20,11 +21,13 @@ class DroidAgentHarness implements AgentHarness {
     DroidAgentProcessRunner? runner,
     String? droidPath,
     Iterable<String> deniedEnvironmentKeys = const [],
+    GeneratedCodeSandbox? generatedCodeSandbox,
     int maxPreviewChars = 16 * 1024,
     int maxProcessOutputChars = 1024 * 1024,
   }) : _runner = runner,
        _exe = droidPath ?? _findDroid(),
        _deniedEnvironmentKeys = Set.unmodifiable(deniedEnvironmentKeys),
+       _generatedCodeSandbox = generatedCodeSandbox,
        _maxPreviewChars = maxPreviewChars,
        _maxProcessOutputChars = maxProcessOutputChars,
        assert(maxPreviewChars > 0),
@@ -33,6 +36,7 @@ class DroidAgentHarness implements AgentHarness {
   final DroidAgentProcessRunner? _runner;
   final String _exe;
   final Set<String> _deniedEnvironmentKeys;
+  final GeneratedCodeSandbox? _generatedCodeSandbox;
   final int _maxPreviewChars;
   final int _maxProcessOutputChars;
   static const int _maxDirectWorkingDirectoryPathChars = 160;
@@ -68,6 +72,7 @@ class DroidAgentHarness implements AgentHarness {
             deniedKeys,
             factoryCustomModelEnvironmentReferences(modelId),
             _maxProcessOutputChars,
+            _generatedCodeSandbox,
           )
         : await _runner(_exe, args, workspace, timeout);
     return _boundedResult(result);
@@ -115,6 +120,25 @@ $instruction
     return 'droid';
   }
 
+  static const _factoryConfigFileNames = [
+    'settings.json',
+    'auth.v2.file',
+    'auth.v2.key',
+  ];
+
+  static List<String> _factoryConfigReadOnlyPaths() {
+    final home =
+        Platform.environment['HOME'] ??
+        Platform.environment['USERPROFILE'] ??
+        '';
+    if (home.isEmpty) return const [];
+    return [
+      for (final name in _factoryConfigFileNames)
+        if (File(p.join(home, '.factory', name)).existsSync())
+          p.join(home, '.factory', name),
+    ];
+  }
+
   static Future<AgentRunResult> _defaultRunner(
     String exe,
     List<String> args,
@@ -123,6 +147,7 @@ $instruction
     Iterable<String> deniedEnvironmentKeys,
     Iterable<String> allowedSensitiveEnvironmentKeys,
     int maxProcessOutputChars,
+    GeneratedCodeSandbox? generatedCodeSandbox,
   ) async {
     final sw = Stopwatch()..start();
     final cwdProxy = await _createWorkingDirectoryProxy(workspace);
@@ -136,12 +161,28 @@ $instruction
     }
     late final Process process;
     try {
+      final processStart = generatedCodeSandbox == null
+          ? SandboxedProcessStart(
+              executable: exe,
+              arguments: args,
+              workingDirectory: workingDirectory.path,
+              environment: environment,
+            )
+          : await generatedCodeSandbox.wrapProcess(
+              executable: exe,
+              arguments: args,
+              workingDirectory: workingDirectory.path,
+              environment: environment,
+              allowInternet: true,
+              resourceLimits: null,
+              extraReadOnlyPaths: _factoryConfigReadOnlyPaths(),
+            );
       process = await Process.start(
-        exe,
-        args,
-        workingDirectory: workingDirectory.path,
+        processStart.executable,
+        processStart.arguments,
+        workingDirectory: processStart.workingDirectory,
         runInShell: false,
-        environment: environment,
+        environment: processStart.environment,
         includeParentEnvironment: false,
       );
     } on Object {
@@ -231,6 +272,11 @@ $instruction
           'argc': args.length,
           'workspace': workspace.path,
           if (cwdProxy != null) 'cwd_proxy_used': true,
+          if (generatedCodeSandbox != null)
+            'runtimeBoundary': {
+              'enforced': true,
+              'backend': generatedCodeSandbox.backend,
+            },
           if (outputLimitHit) 'output_limit_exceeded': true,
           if (outputLimitHit) 'max_output_chars': maxProcessOutputChars,
         },

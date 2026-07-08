@@ -1,0 +1,585 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "taskVersion": 1,
+  "category": "bugFix",
+  "difficulty": "medium",
+  "track": "agentic",
+  "tags": [
+    "bugfix",
+    "state_bloc",
+    "testing"
+  ],
+  "release": {
+    "corpus": "private_official",
+    "status": "active"
+  },
+  "admission": {
+    "tool": {
+      "name": "dart_arena_task_qa"
+    },
+    "evaluator": {
+      "schemaVersion": 1,
+      "version": "2026-05-31-master-spec"
+    },
+    "environment": {
+      "dartVersion": "3.11.4 (stable) (Tue Mar 24 01:02:20 2026 -0700) on \"linux_x64\"",
+      "dependencySnapshot": {
+        "status": "present",
+        "files": {
+          "pubspec.yaml": {
+            "sha256": "1a77a2d12be10b5c49655dbf690c7aca5593a6d934b523763549077517314f4e",
+            "bytes": 6336
+          },
+          "pubspec.lock": {
+            "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
+            "bytes": 29033
+          }
+        }
+      },
+      "flutterVersion": "3.41.6",
+      "gitCommit": "68321eeaff3fbf5a1bfee2893c2fab3b0b446d0a",
+      "gitDirty": true,
+      "hostPlatform": "linux",
+      "locale": "C.UTF-8",
+      "operatingSystemVersion": "Linux 7.1.3-1-cachyos #1 SMP PREEMPT_DYNAMIC Mon, 06 Jul 2026 19:44:10 +0000"
+    }
+  },
+  "executionPolicy": {
+    "allowInternet": false,
+    "resources": {
+      "cpus": 2,
+      "memoryMb": 8192,
+      "maxProcesses": 64,
+      "maxOutputBytes": 1048576
+    },
+    "resourceEnforcement": {
+      "cpus": {
+        "enforced": true,
+        "mechanism": "systemdCpuQuota",
+        "kernelEnforced": true
+      },
+      "memoryMb": {
+        "enforced": true,
+        "mechanism": "rssPolling",
+        "kernelEnforced": false
+      },
+      "maxProcesses": {
+        "enforced": true,
+        "mechanism": "processTreePolling",
+        "kernelEnforced": false
+      },
+      "maxOutputBytes": {
+        "enforced": true,
+        "mechanism": "boundedOutputCapture",
+        "kernelEnforced": false
+      }
+    }
+  },
+  "runtimeIsolation": {
+    "generatedCodeSandbox": {
+      "required": true,
+      "enforced": true,
+      "backend": "bubblewrap"
+    },
+    "workspaceEvidence": {
+      "snapshotStage": "pre_tool_execution",
+      "workspaceCount": 6,
+      "visibleFileCount": 18,
+      "visibleBytes": 20763,
+      "combinedVisibleManifestSha256": "485ae502060007ea0fe48dfdd70f2090d1465347ea551bfa53aa1c285d781c60",
+      "restrictedPathCount": 0,
+      "symlinkCount": 0,
+      "unreadableFileCount": 0,
+      "pathGuards": {
+        "workdirsUnderRunsRoot": true,
+        "rootConfined": true,
+        "relativePathsOnly": true,
+        "restrictedPathsAbsent": true,
+        "symlinksFollowed": false
+      },
+      "workspaces": [
+        {
+          "role": "baseline",
+          "index": 0,
+          "visibleFileCount": 3,
+          "visibleBytes": 3586,
+          "visibleManifestSha256": "358ac1aba683aad3f5cf85fa5bc92496abd9b1c56f53c5ac25822ccc7ef1dd39",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "reference",
+          "index": 0,
+          "visibleFileCount": 3,
+          "visibleBytes": 3796,
+          "visibleManifestSha256": "0733827d6ea696d6f584d4767760211ac5d32c596fc92ad8ed7380a95ec93373",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 0,
+          "visibleFileCount": 3,
+          "visibleBytes": 3586,
+          "visibleManifestSha256": "358ac1aba683aad3f5cf85fa5bc92496abd9b1c56f53c5ac25822ccc7ef1dd39",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 1,
+          "visibleFileCount": 3,
+          "visibleBytes": 3925,
+          "visibleManifestSha256": "b1735f9ace0257dbb8d2ffe8f9d3ec5ad2dc9d3b6003ac8dee9f2be834c8e85c",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 2,
+          "visibleFileCount": 3,
+          "visibleBytes": 3697,
+          "visibleManifestSha256": "0bc01f12c2523c50984db7844e928740d918b2305babf75797febbd9b4ce3be9",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        },
+        {
+          "role": "negative_case",
+          "index": 3,
+          "visibleFileCount": 3,
+          "visibleBytes": 2173,
+          "visibleManifestSha256": "3ca2502a9870eda2b4ebd6194c8941c94aebf0cdc3626e91690ca897147868a9",
+          "workdirUnderRunsRoot": true,
+          "rootConfined": true,
+          "relativePathsOnly": true,
+          "restrictedPathsAbsent": true,
+          "restrictedPathCount": 0,
+          "symlinkCount": 0,
+          "unreadableFileCount": 0,
+          "symlinksFollowed": false
+        }
+      ]
+    }
+  },
+  "status": "admitted",
+  "generatedAt": "2026-07-08T20:21:57.304910Z",
+  "checks": {
+    "baselineHiddenFailed": true,
+    "referencePublicPassed": true,
+    "referenceHiddenPassed": true,
+    "negativeCasesRejected": true,
+    "requiredNegativeCaseKindsCovered": true,
+    "hiddenFlakeRuns": 3,
+    "promptSafeContextLeakFree": true,
+    "generatedCodeSandboxRequired": true,
+    "generatedCodeSandboxEnforced": true,
+    "workspaceEvidenceCollected": true,
+    "workspaceRestrictedPathsAbsent": true,
+    "noopRejected": true,
+    "apiBreakingRejected": true,
+    "overfitRejected": true
+  },
+  "hiddenVerifierDigests": {
+    "refresh_deduplicator_hidden": "8a67039538e9f9598542f7eba93e911e4d9c05582a2d2ad3d61dbc107c2906be"
+  },
+  "verifierQualityAudit": {
+    "falsePositiveCount": 0,
+    "falseNegativeCount": 0,
+    "disagreementCount": 2,
+    "infrastructureErrorCount": 0,
+    "flakeRunCount": 3,
+    "flakeFailureCount": 0,
+    "flakeRate": 0.0,
+    "negativeCaseCount": 4,
+    "acceptedNegativeCaseCount": 0,
+    "referencePublicFailureCount": 0,
+    "referenceHiddenFailureCount": 0
+  },
+  "promptSafety": {
+    "target_context_present": true,
+    "public_test_context_present": true,
+    "public_test_context_required": true,
+    "implementation_bodies_omitted": true,
+    "hidden_verifier_leak_free": true,
+    "reference_leak_free": true,
+    "required_negative_case_kinds": [
+      "api_breaking",
+      "noop",
+      "overfit"
+    ],
+    "present_negative_case_kinds": [
+      "api_breaking",
+      "custom",
+      "noop",
+      "overfit"
+    ],
+    "missing_negative_case_kinds": [],
+    "passed": true
+  },
+  "negativeCases": [
+    {
+      "id": "noop",
+      "description": "Leaves the duplicate-refresh and stale-overwrite behavior unchanged.",
+      "kind": "noop",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "analysis errors present",
+          "details": {
+            "exitCode": -9,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      ",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 11.2s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "blocked by compile",
+          "details": {
+            "blocked": true,
+            "blocked_by": "compile",
+            "blocked_by_rationale": "analysis errors present",
+            "skipped": true,
+            "reason": "blocked by compile"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 72,
+            "new_lines": 72,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "api_breaking",
+      "description": "Renames the public FeedRefreshController API.",
+      "kind": "api_breaking",
+      "prepare_passed": true,
+      "public_passed": false,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "analysis errors present",
+          "details": {
+            "exitCode": 1,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \n\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:22:31 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:31:23 • undefined_getter\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:39:36 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:44:23 • undefined_getter\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:53:23 • undefined_getter\n\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n5 issues found. (ran in 11.6s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "errors=5 warnings=0 infos=0",
+          "details": {
+            "errors": 5,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 1,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \n\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:22:31 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:31:23 • undefined_getter\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:39:36 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:44:23 • undefined_getter\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:53:23 • undefined_getter\n\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n5 issues found. (ran in 10.9s)\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "blocked by compile",
+          "details": {
+            "blocked": true,
+            "blocked_by": "compile",
+            "blocked_by_rationale": "analysis errors present",
+            "skipped": true,
+            "reason": "blocked by compile"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 0.3166367693790533,
+          "rationale": "changed_lines=23",
+          "details": {
+            "original_lines": 72,
+            "new_lines": 79,
+            "changed_lines": 23,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": []
+    },
+    {
+      "id": "overfit_collapse_all",
+      "description": "Collapses every in-flight request so forceRefresh and stale ordering fail.",
+      "kind": "overfit",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 11.8s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 10.8s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "2/2 tests passed",
+          "details": {
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 0.6703200460356393,
+          "rationale": "changed_lines=8",
+          "details": {
+            "original_lines": 72,
+            "new_lines": 78,
+            "changed_lines": 8,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "refresh_deduplicator_hidden",
+          "passed": false,
+          "score": 0.5,
+          "rationale": "3/6 hidden tests passed",
+          "details": {
+            "total": 6,
+            "passed": 3,
+            "failed": 1,
+            "errored": 2,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/feed_refresh_controller_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/feed_refresh_controller_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "deleted_or_weakened_public_test",
+      "description": "Replaces the public test with a trivial always-passing test.",
+      "kind": "custom",
+      "prepare_passed": true,
+      "public_passed": true,
+      "hidden_passed": false,
+      "rejected": true,
+      "public_results": [
+        {
+          "evaluator_id": "compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
+          "details": {
+            "exitCode": 0,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 11.8s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "analyze",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "errors=0 warnings=0 infos=0",
+          "details": {
+            "errors": 0,
+            "warnings": 0,
+            "infos": 0,
+            "exit_code": 0,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 10.8s)\n",
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "test",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "1/1 tests passed",
+          "details": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "tool": "flutter"
+          }
+        },
+        {
+          "evaluator_id": "diff_size",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "changed_lines=0",
+          "details": {
+            "original_lines": 72,
+            "new_lines": 72,
+            "changed_lines": 0,
+            "score_k": 20
+          }
+        }
+      ],
+      "hidden_results": [
+        {
+          "evaluator_id": "refresh_deduplicator_hidden",
+          "passed": false,
+          "score": 0.3333333333333333,
+          "rationale": "2/6 hidden tests passed",
+          "details": {
+            "total": 6,
+            "passed": 2,
+            "failed": 3,
+            "errored": 1,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 4,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/feed_refresh_controller_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/feed_refresh_controller_hidden_test.dart"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "failureMessages": []
+}

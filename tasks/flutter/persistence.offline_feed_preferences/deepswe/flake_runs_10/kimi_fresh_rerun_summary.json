@@ -1,0 +1,81 @@
+{
+  "target": "kimi_fresh_rerun",
+  "expected": "pass",
+  "pubGetExitCode": 0,
+  "pubGetDurationSeconds": 0.696,
+  "passCount": 10,
+  "failCount": 0,
+  "passedExpectation": true,
+  "runs": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 9.698,
+      "log": "kimi_fresh_rerun_run_01.log"
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.255,
+      "log": "kimi_fresh_rerun_run_02.log"
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.895,
+      "log": "kimi_fresh_rerun_run_03.log"
+    },
+    {
+      "run": 4,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 2.167,
+      "log": "kimi_fresh_rerun_run_04.log"
+    },
+    {
+      "run": 5,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.858,
+      "log": "kimi_fresh_rerun_run_05.log"
+    },
+    {
+      "run": 6,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.84,
+      "log": "kimi_fresh_rerun_run_06.log"
+    },
+    {
+      "run": 7,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.794,
+      "log": "kimi_fresh_rerun_run_07.log"
+    },
+    {
+      "run": 8,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.747,
+      "log": "kimi_fresh_rerun_run_08.log"
+    },
+    {
+      "run": 9,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.678,
+      "log": "kimi_fresh_rerun_run_09.log"
+    },
+    {
+      "run": 10,
+      "exitCode": 0,
+      "passed": true,
+      "durationSeconds": 1.754,
+      "log": "kimi_fresh_rerun_run_10.log"
+    }
+  ]
+}

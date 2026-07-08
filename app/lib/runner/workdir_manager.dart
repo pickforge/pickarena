@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:dart_arena/core/path_safety.dart';
 import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/core/workspace_path.dart';
@@ -19,6 +21,48 @@ class PrepareOk extends PrepareResult {
 class PrepareFailed extends PrepareResult {
   const PrepareFailed(this.stderr);
   final String stderr;
+}
+
+class WorkdirIsolationEvidence {
+  const WorkdirIsolationEvidence({
+    required this.workdirUnderRunsRoot,
+    required this.rootConfined,
+    required this.relativePathsOnly,
+    required this.restrictedPathsAbsent,
+    required this.symlinksFollowed,
+    required this.restrictedPathCount,
+    required this.symlinkCount,
+    required this.unreadableFileCount,
+    required this.visibleFileCount,
+    required this.visibleBytes,
+    required this.visibleManifestSha256,
+  });
+
+  final bool workdirUnderRunsRoot;
+  final bool rootConfined;
+  final bool relativePathsOnly;
+  final bool restrictedPathsAbsent;
+  final bool symlinksFollowed;
+  final int restrictedPathCount;
+  final int symlinkCount;
+  final int unreadableFileCount;
+  final int visibleFileCount;
+  final int visibleBytes;
+  final String visibleManifestSha256;
+
+  Map<String, Object?> toJson() => {
+    'workdirUnderRunsRoot': workdirUnderRunsRoot,
+    'rootConfined': rootConfined,
+    'relativePathsOnly': relativePathsOnly,
+    'restrictedPathsAbsent': restrictedPathsAbsent,
+    'restrictedPathCount': restrictedPathCount,
+    'symlinkCount': symlinkCount,
+    'unreadableFileCount': unreadableFileCount,
+    'visibleFileCount': visibleFileCount,
+    'visibleBytes': visibleBytes,
+    'visibleManifestSha256': visibleManifestSha256,
+    'symlinksFollowed': symlinksFollowed,
+  };
 }
 
 typedef WorkdirCancellationCheck = void Function();
@@ -135,6 +179,91 @@ class WorkdirManager {
 
     await _initializeBaselineGit(dir);
     return dir;
+  }
+
+  Future<WorkdirIsolationEvidence> collectWorkspaceIsolationEvidence(
+    Directory workDir,
+  ) async {
+    final rootPath = p.normalize(p.absolute(root.path));
+    final runsRoot = p.normalize(p.join(rootPath, 'runs'));
+    final workDirPath = p.normalize(p.absolute(workDir.path));
+    final workdirUnderRunsRoot = p.isWithin(runsRoot, workDirPath);
+    var rootConfined = _isSameOrWithin(rootPath, workDirPath);
+    var relativePathsOnly = true;
+    var restrictedPathCount = 0;
+    var symlinkCount = 0;
+    var unreadableFileCount = 0;
+    var visibleFileCount = 0;
+    var visibleBytes = 0;
+    final manifestEntries = <String>[];
+
+    try {
+      await for (final entity in workDir.list(
+        recursive: true,
+        followLinks: false,
+      )) {
+        final entityPath = p.normalize(p.absolute(entity.path));
+        if (!_isSameOrWithin(workDirPath, entityPath)) {
+          rootConfined = false;
+        }
+        final relativePath = p.normalize(
+          p.relative(entityPath, from: workDirPath),
+        );
+        final normalizedRelativePath = relativePath.replaceAll('\\', '/');
+        if (p.isAbsolute(relativePath) ||
+            normalizedRelativePath == '.' ||
+            normalizedRelativePath.split('/').contains('..')) {
+          relativePathsOnly = false;
+        }
+
+        final restricted = _shouldExcludeWorkspacePath(normalizedRelativePath);
+        if (restricted) {
+          restrictedPathCount++;
+          continue;
+        }
+
+        if (entity is Link) {
+          symlinkCount++;
+          continue;
+        }
+
+        if (entity is File) {
+          try {
+            final bytes = await entity.readAsBytes();
+            final fileDigest = sha256.convert(bytes).toString();
+            manifestEntries.add(
+              '$normalizedRelativePath\u0000$fileDigest\u0000${bytes.length}',
+            );
+            visibleFileCount++;
+            visibleBytes += bytes.length;
+          } on FileSystemException {
+            unreadableFileCount++;
+          }
+        }
+      }
+    } on FileSystemException {
+      unreadableFileCount++;
+      rootConfined = false;
+    }
+
+    manifestEntries.sort();
+    final visibleManifestSha256 = sha256
+        .convert(utf8.encode(manifestEntries.join('\n')))
+        .toString();
+
+    return WorkdirIsolationEvidence(
+      workdirUnderRunsRoot: workdirUnderRunsRoot,
+      rootConfined: rootConfined,
+      relativePathsOnly: relativePathsOnly,
+      restrictedPathsAbsent: restrictedPathCount == 0,
+      symlinksFollowed: false,
+      restrictedPathCount: restrictedPathCount,
+      symlinkCount: symlinkCount,
+      unreadableFileCount: unreadableFileCount,
+      visibleFileCount: visibleFileCount,
+      visibleBytes: visibleBytes,
+      visibleManifestSha256: visibleManifestSha256,
+    );
   }
 
   Future<PrepareResult> prepare(
@@ -434,6 +563,10 @@ class WorkdirManager {
         await entity.copy(file.path);
       }
     }
+  }
+
+  bool _isSameOrWithin(String parent, String child) {
+    return p.equals(parent, child) || p.isWithin(parent, child);
   }
 
   bool _shouldExcludeWorkspacePath(String relativePath) {

@@ -1,0 +1,92 @@
+schemaVersion: 1
+taskId: persistence.offline_feed_preferences
+createdDate: '2026-06-19'
+deep_swe_complete: false
+replay_verified: true
+workspace_isolation_verified: false
+duration_cost_token_captured: true
+provider_internal_stream_chunks_captured: false
+solvers:
+- family: gpt
+  model: openai-codex/gpt-5.5:xhigh
+  durable_patch: true
+  patch_sha256: 884b00a17ad0d65bf2c209ed633828fbaded1af8c8d9ab59ac3bad1bf50b52a9
+  public_passed: true
+  hidden_passed_after_injection: true
+  clean_replay_verified: true
+  promoted: true
+  subagent_duration_ms: 108318
+  usage:
+    input: 14672
+    output: 4238
+    cacheRead: 69120
+    cacheWrite: 0
+    cost: 0.23506
+    turns: 9
+- family: minimax
+  model: ollama/minimax-m3:cloud:xhigh
+  durable_patch: true
+  patch_sha256: 2a1d3f4684cdffb6f93c145b3c95c041941a31d7dd1d1d0fba3b99a6953fe886
+  public_passed: true
+  hidden_passed_after_injection: true
+  clean_replay_verified: true
+  promoted: true
+  subagent_duration_ms: 128039
+  usage:
+    input: 0
+    output: 2439
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 12
+- family: glm
+  model: ollama/glm-5.2:cloud:xhigh
+  durable_patch: true
+  patch_sha256: 690154a33792bc3d89b3f4a828f408de8e00e0d15befda6b5c6098b59366e043
+  public_passed: true
+  hidden_passed_after_injection: true
+  clean_replay_verified: true
+  promoted: true
+  subagent_duration_ms: 47387
+  usage:
+    input: 16189
+    output: 1023
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 5
+- family: kimi
+  model: ollama/kimi-k2.7-code:cloud:xhigh
+  durable_patch: true
+  patch_sha256: 76fd293e5fb07520d85afce4257c773f2e5c6b1ec1d1be7957d6b3b8a510d057
+  public_passed: true
+  hidden_passed_after_injection: true
+  clean_replay_verified: true
+  promoted: true
+  subagent_duration_ms: 37927
+  usage:
+    input: 42127
+    output: 954
+    cacheRead: 0
+    cacheWrite: 0
+    cost: 0
+    turns: 6
+passing_fresh_solver_families:
+- gpt
+- minimax
+- glm
+- kimi
+failed_fresh_solver_families: []
+checks:
+  qa_repetition_passed: true
+  hidden_flake_loop_10_passed: true
+  solver_facing_leakage_scan_passed: true
+checklists:
+  prompt_verifier_bijection: prompt_verifier_bijection.md
+  f2p: f2p_checklist.md
+  p2p: p2p_checklist.md
+pending:
+- provider-internal stream chunks/session JSONL not exposed
+- clean committed provenance / gitDirty=false run
+- authored-by provenance unknown
+- strong workspace-isolation proof

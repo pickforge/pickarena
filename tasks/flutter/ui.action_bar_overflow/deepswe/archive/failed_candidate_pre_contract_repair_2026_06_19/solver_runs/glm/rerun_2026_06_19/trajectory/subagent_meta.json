@@ -1,0 +1,36 @@
+{
+  "runId": "0100dfc1",
+  "agent": "coder",
+  "task": "Fresh DeepSWE snapshot solver attempt for PickArena task `ui.action_bar_overflow`.\n\nYou are in a sanitized workspace containing only:\n- `instruction.md`\n- `pubspec.yaml`\n- `lib/responsive_action_bar.dart`\n- `test/responsive_action_bar_test.dart`\n\nDo not read outside this workspace. Do not search the original repository. Do not access hidden tests, solutions, negative cases, task.yaml, qa reports, deepswe artifacts, or authoring notes. Do not stage/commit/push/clean/delete.\n\nRead `instruction.md` and public tests. Modify only production files under `lib/` to satisfy the task. You may run `flutter pub get` and public tests only. Do not create or inspect any hidden-test path. Write a concise report to `solver_report.md` with changed behavior and commands run.",
+  "exitCode": 0,
+  "usage": {
+    "input": 397221,
+    "output": 21022,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "cost": 0,
+    "turns": 22
+  },
+  "model": "ollama/glm-5.2:cloud:xhigh",
+  "attemptedModels": [
+    "ollama/glm-5.2:cloud:xhigh"
+  ],
+  "modelAttempts": [
+    {
+      "model": "ollama/glm-5.2:cloud:xhigh",
+      "success": true,
+      "exitCode": 0,
+      "usage": {
+        "input": 397221,
+        "output": 21022,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 22
+      }
+    }
+  ],
+  "durationMs": 383698,
+  "toolCount": 24,
+  "timestamp": 1781888891814
+}

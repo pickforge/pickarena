@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "family": "gpt",
+  "model": "openai-codex/gpt-5.5:xhigh",
+  "createdDate": "2026-06-19",
+  "workspaceSnapshotPath": "workspace_snapshot",
+  "snapshotRestrictedPathHits": [],
+  "snapshotFiles": [
+    {
+      "path": "instruction.md",
+      "sha256": "6fbd180c2c31e28dcacd5577c5651060dc15a72ddf9d46b42f3d08deab56e336"
+    },
+    {
+      "path": "lib/feed_refresh_controller.dart",
+      "sha256": "6c056e9b2c1aa5ccd8c83b8ee094136dd3def6737fee9f7da5315f777c2843b1"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "bf807150d7e0c15435478d0a3142f1fd5c1d2637a0b952e380aecb449a474d9f"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "acb58d1eb58b7b381ad123dcc85b87ce8618a5a7b225bf9aca81be8399431f55"
+    },
+    {
+      "path": "solver_report.md",
+      "sha256": "fabbb16c3f0e5e23128c4605eea205200fd910723980c6667bb10d63a1fd8128"
+    },
+    {
+      "path": "test/feed_refresh_controller_test.dart",
+      "sha256": "e9c365a2b61000317dc70bf68c5d87b7a091c2d8a5823e441f081636eb4bd587"
+    }
+  ],
+  "patchPath": "solver.patch",
+  "patchSha256": "b7930dc9b9c9a1f816cc1c25717562ac487500fdd91ccbbfc3585e48c8900feb",
+  "publicExitCode": 0,
+  "hiddenExitCode": 0,
+  "publicPassed": true,
+  "hiddenPassedAfterInjection": true,
+  "publicLog": "public_results.log",
+  "hiddenLog": "hidden_results.log",
+  "hiddenLogClassification": "restricted/evaluator-only",
+  "notes": [
+    "workspace snapshot was captured before hidden test injection",
+    "hidden tests were injected only into a separate grading workspace"
+  ]
+}

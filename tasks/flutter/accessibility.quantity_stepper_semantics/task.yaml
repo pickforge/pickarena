@@ -1,0 +1,84 @@
+schemaVersion: 1
+id: accessibility.quantity_stepper_semantics
+version: 1
+category: widget_testing
+track: agentic
+tags:
+  - ui
+  - accessibility
+  - testing
+  - bugfix
+difficulty: medium
+platformRequirements:
+  - linux
+timeoutSeconds: 900
+release:
+  corpus: private_official
+  status: active
+network: false
+resources:
+  cpus: 2
+  memory_mb: 8192
+  max_processes: 64
+  max_output_bytes: 1048576
+generatedCodePath: lib/quantity_stepper.dart
+isFlutter: true
+instructionPath: instruction.md
+workspace:
+  root: baseline
+  files:
+    pubspec.yaml: pubspec.yaml
+    lib/quantity_stepper.dart: lib/quantity_stepper.dart
+    test/quantity_stepper_test.dart: test/quantity_stepper_test.dart
+hiddenVerifiers:
+  - id: quantity_stepper_semantics_hidden
+    testPath: test/_hidden/quantity_stepper_semantics_hidden_test.dart
+    root: hidden_tests
+    files:
+      test/_hidden/quantity_stepper_semantics_hidden_test.dart: test/_hidden/quantity_stepper_semantics_hidden_test.dart
+reference:
+  type: files
+  root: solution
+  files:
+    lib/quantity_stepper.dart: lib/quantity_stepper.dart
+requiredNegativeCaseKinds:
+  - noop
+  - api_breaking
+  - overfit
+negativeCases:
+  - id: noop
+    kind: noop
+    description: Leaves the quantity stepper visually working but inaccessible.
+    root: negative_cases/noop
+    files:
+      lib/quantity_stepper.dart: lib/quantity_stepper.dart
+  - id: api_breaking
+    kind: api_breaking
+    description: Breaks the public QuantityStepper API and static test keys.
+    root: negative_cases/api_breaking
+    files:
+      lib/quantity_stepper.dart: lib/quantity_stepper.dart
+  - id: overfit_public_values
+    kind: overfit
+    description: Special-cases only the public test range instead of fixing semantics generally.
+    root: negative_cases/overfit
+    files:
+      lib/quantity_stepper.dart: lib/quantity_stepper.dart
+  - id: deleted_or_weakened_public_test
+    kind: custom
+    description: Replaces the public widget tests with a trivial always-passing test.
+    root: negative_cases/deleted_or_weakened_public_test
+    files:
+      test/quantity_stepper_test.dart: test/quantity_stepper_test.dart
+  - id: fake_labels
+    kind: custom
+    description: Adds accessibility words as fake offstage labels instead of labeling the real controls.
+    root: negative_cases/fake_labels
+    files:
+      lib/quantity_stepper.dart: lib/quantity_stepper.dart
+  - id: fake_semantics_callback
+    kind: custom
+    description: Adds decorative semantics actions that do not invoke the real onChanged callback.
+    root: negative_cases/fake_semantics_callback
+    files:
+      lib/quantity_stepper.dart: lib/quantity_stepper.dart

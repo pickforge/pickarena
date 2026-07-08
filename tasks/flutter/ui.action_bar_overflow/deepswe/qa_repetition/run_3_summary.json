@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ui.action_bar_overflow",
+  "createdDate": "2026-06-19",
+  "run": 3,
+  "qaRepetitionRecord": {
+    "run": 3,
+    "exitCode": 0,
+    "durationSeconds": 268.836,
+    "status": "completed",
+    "admittedTaskCount": 1,
+    "rejectedTaskCount": 0
+  },
+  "admissionSummary": {
+    "schemaVersion": 1,
+    "status": "completed",
+    "generatedAt": "2026-06-19T22:20:34.357532Z",
+    "taskCount": 1,
+    "admittedTaskCount": 1,
+    "rejectedTaskCount": 0,
+    "reports": [
+      {
+        "taskId": "ui.action_bar_overflow",
+        "taskVersion": 1,
+        "track": "agentic",
+        "status": "admitted",
+        "failureCount": 0,
+        "reportPath": "tasks/task_ui.action_bar_overflow_6e0942fcfc07/admission_report.json"
+      }
+    ]
+  },
+  "admissionReportSummary": {
+    "sourcePath": "app/build/deepswe_action_bar_repair_qa_repetition/run_3/tasks/task_ui.action_bar_overflow_6e0942fcfc07/admission_report.json",
+    "sha256": "141f80fa0f9beefbef4aa93863c415ef023a2143a993a92139df9e55e969f836",
+    "schemaVersion": 1,
+    "taskId": "ui.action_bar_overflow",
+    "taskVersion": 1,
+    "status": "admitted",
+    "generatedAt": "2026-06-19T22:20:34.357532Z",
+    "checks": {
+      "baselineHiddenFailed": true,
+      "referencePublicPassed": true,
+      "referenceHiddenPassed": true,
+      "negativeCasesRejected": true,
+      "requiredNegativeCaseKindsCovered": true,
+      "hiddenFlakeRuns": 5,
+      "promptSafeContextLeakFree": true,
+      "noopRejected": true,
+      "apiBreakingRejected": true,
+      "overfitRejected": true
+    },
+    "failureMessageCount": 0,
+    "negativeCaseCount": 8,
+    "hiddenVerifierDigestCount": 1
+  },
+  "workdirCopied": false,
+  "rawRunLog": "run_3.log",
+  "rawRunLogClassification": "restricted/evaluator-only"
+}

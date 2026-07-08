@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "taskId": "refactor.price_label_formatter",
+  "createdDate": "2026-06-19",
+  "durationCostTokenCaptured": true,
+  "providerInternalStreamChunksCaptured": false,
+  "subagentTelemetry": {
+    "gpt": {
+      "model": "openai-codex/gpt-5.5:xhigh",
+      "durationMs": 152527,
+      "usage": {
+        "input": 32468,
+        "output": 6016,
+        "cacheRead": 145920,
+        "cacheWrite": 0,
+        "cost": 0.41578000000000004,
+        "turns": 15
+      },
+      "runId": "f2ed0622"
+    },
+    "minimax": {
+      "model": "ollama/minimax-m3:cloud:xhigh",
+      "durationMs": 88135,
+      "usage": {
+        "input": 18750,
+        "output": 4459,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 18
+      },
+      "runId": "f2ed0622"
+    },
+    "glm": {
+      "model": "ollama/glm-5.2:cloud:xhigh",
+      "durationMs": 42345,
+      "usage": {
+        "input": 32034,
+        "output": 2718,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 6
+      },
+      "runId": "9e788d86"
+    },
+    "kimi": {
+      "model": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "durationMs": 63104,
+      "usage": {
+        "input": 47431,
+        "output": 3471,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 6
+      },
+      "runId": "f2ed0622"
+    }
+  },
+  "commandRecords": [
+    {
+      "family": "gpt",
+      "mode": "public",
+      "classification": "solver-facing",
+      "patchSha256": "00136bd4275048283bfbe07386b36ef1d60095bfd4284ef9446912df36f18164",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.497,
+        "log": "gpt_public_pub_get.log"
+      },
+      "test": {
+        "command": "flutter test test/price_labels_test.dart",
+        "exitCode": 0,
+        "durationSeconds": 7.547,
+        "log": "gpt_public_replay.log"
+      }
+    },
+    {
+      "family": "gpt",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "00136bd4275048283bfbe07386b36ef1d60095bfd4284ef9446912df36f18164",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.479,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 0,
+        "durationSeconds": 7.665,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    },
+    {
+      "family": "minimax",
+      "mode": "public",
+      "classification": "solver-facing",
+      "patchSha256": "115ccce4428c9805572aa8151b3cbaa6399f1f74e2ec0329ea9bfee744882f74",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.495,
+        "log": "minimax_public_pub_get.log"
+      },
+      "test": {
+        "command": "flutter test test/price_labels_test.dart",
+        "exitCode": 0,
+        "durationSeconds": 7.705,
+        "log": "minimax_public_replay.log"
+      }
+    },
+    {
+      "family": "minimax",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "115ccce4428c9805572aa8151b3cbaa6399f1f74e2ec0329ea9bfee744882f74",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.494,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 0,
+        "durationSeconds": 7.669,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    },
+    {
+      "family": "glm",
+      "mode": "public",
+      "classification": "solver-facing",
+      "patchSha256": "9ebfdeb6285c5207e9380b8e3075b27af87cf63ea6165a142f9df64b61393d5f",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.506,
+        "log": "glm_public_pub_get.log"
+      },
+      "test": {
+        "command": "flutter test test/price_labels_test.dart",
+        "exitCode": 0,
+        "durationSeconds": 7.53,
+        "log": "glm_public_replay.log"
+      }
+    },
+    {
+      "family": "glm",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "9ebfdeb6285c5207e9380b8e3075b27af87cf63ea6165a142f9df64b61393d5f",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.489,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 0,
+        "durationSeconds": 7.612,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    },
+    {
+      "family": "kimi",
+      "mode": "public",
+      "classification": "solver-facing",
+      "patchSha256": "fe1269859a6e1a6b76cb25444fdec3fb51da4062690e266159719ded4a77d9ad",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.476,
+        "log": "kimi_public_pub_get.log"
+      },
+      "test": {
+        "command": "flutter test test/price_labels_test.dart",
+        "exitCode": 0,
+        "durationSeconds": 7.513,
+        "log": "kimi_public_replay.log"
+      }
+    },
+    {
+      "family": "kimi",
+      "mode": "hidden",
+      "classification": "restricted/evaluator-only",
+      "patchSha256": "fe1269859a6e1a6b76cb25444fdec3fb51da4062690e266159719ded4a77d9ad",
+      "pubGet": {
+        "command": "flutter pub get",
+        "exitCode": 0,
+        "durationSeconds": 0.536,
+        "log": "[restricted hidden pub-get log]"
+      },
+      "test": {
+        "command": "[restricted hidden replay command]",
+        "exitCode": 1,
+        "durationSeconds": 7.748,
+        "log": "[restricted hidden replay log]"
+      },
+      "redacted": true
+    }
+  ],
+  "hiddenLogsRestricted": true,
+  "notes": [
+    "command durations were measured locally for public and hidden replay commands",
+    "subagent token/cost metadata was copied from Pi subagent meta artifacts",
+    "provider-internal stream chunks/session JSONL were not exposed for these runs"
+  ]
+}

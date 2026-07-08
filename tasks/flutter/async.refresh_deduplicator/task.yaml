@@ -1,0 +1,71 @@
+schemaVersion: 1
+id: async.refresh_deduplicator
+version: 1
+category: bug_fix
+track: agentic
+tags:
+  - state_bloc
+  - testing
+  - bugfix
+difficulty: medium
+platformRequirements:
+  - linux
+timeoutSeconds: 900
+release:
+  corpus: private_official
+  status: active
+network: false
+resources:
+  cpus: 2
+  memory_mb: 8192
+  max_processes: 64
+  max_output_bytes: 1048576
+generatedCodePath: lib/feed_refresh_controller.dart
+isFlutter: true
+instructionPath: instruction.md
+workspace:
+  root: baseline
+  files:
+    pubspec.yaml: pubspec.yaml
+    lib/feed_refresh_controller.dart: lib/feed_refresh_controller.dart
+    test/feed_refresh_controller_test.dart: test/feed_refresh_controller_test.dart
+hiddenVerifiers:
+  - id: refresh_deduplicator_hidden
+    testPath: test/_hidden/feed_refresh_controller_hidden_test.dart
+    root: hidden_tests
+    files:
+      test/_hidden/feed_refresh_controller_hidden_test.dart: test/_hidden/feed_refresh_controller_hidden_test.dart
+reference:
+  type: files
+  root: solution
+  files:
+    lib/feed_refresh_controller.dart: lib/feed_refresh_controller.dart
+requiredNegativeCaseKinds:
+  - noop
+  - api_breaking
+  - overfit
+negativeCases:
+  - id: noop
+    kind: noop
+    description: Leaves the duplicate-refresh and stale-overwrite behavior unchanged.
+    root: negative_cases/noop
+    files:
+      lib/feed_refresh_controller.dart: lib/feed_refresh_controller.dart
+  - id: api_breaking
+    kind: api_breaking
+    description: Renames the public FeedRefreshController API.
+    root: negative_cases/api_breaking
+    files:
+      lib/feed_refresh_controller.dart: lib/feed_refresh_controller.dart
+  - id: overfit_collapse_all
+    kind: overfit
+    description: Collapses every in-flight request so forceRefresh and stale ordering fail.
+    root: negative_cases/overfit
+    files:
+      lib/feed_refresh_controller.dart: lib/feed_refresh_controller.dart
+  - id: deleted_or_weakened_public_test
+    kind: custom
+    description: Replaces the public test with a trivial always-passing test.
+    root: negative_cases/deleted_or_weakened_public_test
+    files:
+      test/feed_refresh_controller_test.dart: test/feed_refresh_controller_test.dart

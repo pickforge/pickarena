@@ -1,0 +1,111 @@
+diff --git a/lib/responsive_action_bar.dart b/lib/responsive_action_bar.dart
+index c6d9dde..066bf56 100644
+--- a/lib/responsive_action_bar.dart
++++ b/lib/responsive_action_bar.dart
+@@ -39,11 +39,18 @@ class ResponsiveActionBar extends StatelessWidget {
+   final List<ResponsiveActionBarAction> actions;
+   final String overflowTooltip;
+ 
++  static const double _kButtonGap = 8.0;
++  static const double _kIconLabelGap = 8.0;
++  static const double _kIconSize = 24.0;
++  static const double _kButtonHorizontalPadding = 12.0;
++  static const double _kMaxActionLabelWidth = 120.0;
++  static const double _kMaxPrimaryLabelWidth = 96.0;
++
+   @override
+   Widget build(BuildContext context) {
+     return LayoutBuilder(
+       builder: (context, constraints) {
+-        final split = _splitActions(constraints.maxWidth);
++        final split = _splitActions(context, constraints.maxWidth);
+         return Row(
+           children: <Widget>[
+             for (final action in split.inline)
+@@ -64,8 +71,70 @@ class ResponsiveActionBar extends StatelessWidget {
+     );
+   }
+ 
+-  _ActionSplit _splitActions(double _) {
+-    return _ActionSplit(actions, const <ResponsiveActionBarAction>[]);
++  _ActionSplit _splitActions(BuildContext context, double maxWidth) {
++    if (actions.isEmpty) {
++      return const _ActionSplit([], []);
++    }
++
++    final order = List<int>.generate(actions.length, (i) => i);
++    order.sort((a, b) {
++      final c = actions[a].priority.compareTo(actions[b].priority);
++      if (c != 0) return c;
++      return a.compareTo(b);
++    });
++    final sorted = <ResponsiveActionBarAction>[
++      for (final i in order) actions[i],
++    ];
++
++    if (maxWidth.isInfinite) {
++      return _ActionSplit(sorted, const <ResponsiveActionBarAction>[]);
++    }
++
++    final primaryWidth = _measurePrimaryWidth(context, primaryLabel);
++    var actionTotal = 0.0;
++    for (final action in sorted) {
++      actionTotal += _measureActionWidth(context, action);
++    }
++    final n = sorted.length;
++    final total = primaryWidth + actionTotal + (n + 1) * _kButtonGap;
++
++    if (total <= maxWidth) {
++      return _ActionSplit(sorted, const <ResponsiveActionBarAction>[]);
++    }
++    return _ActionSplit(const <ResponsiveActionBarAction>[], sorted);
++  }
++
++  double _measurePrimaryWidth(BuildContext context, String label) {
++    return _measureText(context, label, maxWidth: _kMaxPrimaryLabelWidth) +
++        _kButtonHorizontalPadding * 2;
++  }
++
++  double _measureActionWidth(
++      BuildContext context, ResponsiveActionBarAction action) {
++    final measured = _measureText(context, action.label,
++        maxWidth: _kMaxActionLabelWidth);
++    return measured +
++        _kButtonHorizontalPadding * 2 +
++        _kIconSize +
++        _kIconLabelGap;
++  }
++
++  double _measureText(BuildContext context, String text,
++      {double? maxWidth}) {
++    final scaler = MediaQuery.textScalerOf(context);
++    final theme = Theme.of(context);
++    final base = theme.textTheme.labelLarge;
++    final style = base ??
++        const TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
++    final painter = TextPainter(
++      text: TextSpan(text: text, style: style),
++      textDirection: TextDirection.ltr,
++      textScaler: scaler,
++      maxLines: 1,
++      ellipsis: '…',
++    );
++    painter.layout(maxWidth: maxWidth ?? double.infinity);
++    return painter.size.width;
+   }
+ }
+ 
+@@ -113,11 +182,12 @@ class _OverflowMenu extends StatelessWidget {
+         }
+ 
+         return Semantics(
+-          key: ResponsiveActionBar.overflowButtonKey,
++          excludeSemantics: true,
+           label: tooltip,
+           button: true,
+           onTap: toggleMenu,
+           child: IconButton(
++            key: ResponsiveActionBar.overflowButtonKey,
+             tooltip: tooltip,
+             icon: const Icon(Icons.more_horiz),
+             onPressed: toggleMenu,

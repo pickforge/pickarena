@@ -1,0 +1,509 @@
+{
+  "schemaVersion": 1,
+  "createdDate": "2026-06-19",
+  "scope": {
+    "name": "first-wave provenance gap audit",
+    "createdFromExistingDurableArtifactsOnly": true,
+    "taskOrder": [
+      "async.refresh_deduplicator",
+      "accessibility.quantity_stepper_semantics",
+      "refactor.price_label_formatter",
+      "persistence.offline_feed_preferences",
+      "ui.action_bar_overflow"
+    ],
+    "modelFamilies": {
+      "gpt": "openai-codex/gpt-5.5:xhigh",
+      "glm": "ollama/glm-5.2:cloud:xhigh",
+      "opus": "anthropic/claude-opus-4-8:xhigh",
+      "kimi": "ollama/kimi-k2.7-code:cloud:xhigh",
+      "minimax": "ollama/minimax-m3:cloud:xhigh"
+    }
+  },
+  "claim": {
+    "deepSWEComplete": false,
+    "provenanceComplete": false,
+    "workspaceIsolationVerified": false,
+    "providerInternalStreamChunksCaptured": false,
+    "cleanCommittedProvenance": false,
+    "authoredByProvenanceDurable": false,
+    "uiActionBarOverflowPromoted": true
+  },
+  "sourcePolicy": {
+    "sourceJsonYamlPaths": [
+      "docs/plans/2026-06-19-first-wave-workspace-isolation-audit.json",
+      "docs/plans/2026-06-19-first-wave-performance-sampling-audit.json",
+      "tasks/flutter/async.refresh_deduplicator/deepswe/replay_manifest.json",
+      "tasks/flutter/async.refresh_deduplicator/deepswe/model_audit.yaml",
+      "tasks/flutter/async.refresh_deduplicator/deepswe/telemetry_report.json",
+      "tasks/flutter/async.refresh_deduplicator/deepswe/command_telemetry/command_telemetry_result.json",
+      "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/replay_manifest.json",
+      "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/model_audit.yaml",
+      "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/telemetry_report.json",
+      "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/command_telemetry/command_telemetry_result.json",
+      "tasks/flutter/refactor.price_label_formatter/deepswe/replay_manifest.json",
+      "tasks/flutter/refactor.price_label_formatter/deepswe/model_audit.yaml",
+      "tasks/flutter/refactor.price_label_formatter/deepswe/telemetry_report.json",
+      "tasks/flutter/refactor.price_label_formatter/deepswe/command_telemetry/command_telemetry_result.json",
+      "tasks/flutter/persistence.offline_feed_preferences/deepswe/replay_manifest.json",
+      "tasks/flutter/persistence.offline_feed_preferences/deepswe/model_audit.yaml",
+      "tasks/flutter/persistence.offline_feed_preferences/deepswe/telemetry_report.json",
+      "tasks/flutter/persistence.offline_feed_preferences/deepswe/command_telemetry/command_telemetry_result.json",
+      "tasks/flutter/ui.action_bar_overflow/deepswe/replay_manifest.json",
+      "tasks/flutter/ui.action_bar_overflow/deepswe/telemetry_report.json",
+      "tasks/flutter/ui.action_bar_overflow/deepswe/command_telemetry/command_telemetry_result.json",
+      "tasks/flutter/ui.action_bar_overflow/deepswe/model_audit.yaml",
+      "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_meta.json",
+      "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/glm/rerun_2026_06_19/trajectory/subagent_meta.json",
+      "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_meta.json",
+      "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_meta.json"
+    ],
+    "readmeArtifactsReadCount": 5,
+    "sessionJsonlDigestRecordsAreCountsOnly": true,
+    "sessionJsonlContentsCopied": false,
+    "solverTranscriptContentsCopied": false,
+    "restrictedLogPathsCopied": false,
+    "restrictedChecklistContentsCopied": false,
+    "hiddenCommandStringsCopied": false,
+    "hiddenTestPathsCopied": false,
+    "tmpPathsCopied": false
+  },
+  "overall": {
+    "tasksAudited": 5,
+    "freshSolverRecords": 20,
+    "legacySolverRecords": 2,
+    "solverMetadataRecords": 23,
+    "uniqueRunIds": [
+      "13254af7",
+      "2c8d8e17",
+      "418a9192",
+      "54e66617",
+      "90f0896e",
+      "9e72b221",
+      "9e788d86",
+      "cf75c215",
+      "f2ed0622"
+    ],
+    "providerInternalStreamChunksCapturedCount": 0,
+    "cleanCommittedProvenanceCount": 0,
+    "admissionGitDirtyTrueCount": 5,
+    "authoredByKnownCount": 0,
+    "workspaceIsolationVerifiedCount": 0,
+    "sessionJsonlDigestRecords": 3,
+    "uiActionBarOverflowPassingFreshPublicHiddenSolverCount": 3,
+    "uiActionBarOverflowRequiredFreshPublicHiddenSolverCount": 3,
+    "failedCandidateSlices": [],
+    "workspaceIsolationEvidenceSource": "docs/plans/2026-06-19-first-wave-workspace-isolation-audit.json",
+    "performanceSamplingEvidenceSource": "docs/plans/2026-06-19-first-wave-performance-sampling-audit.json",
+    "uiActionBarOverflowPromotionThresholdMet": true,
+    "uiActionBarOverflowActiveFreshReplayRecordCount": 4,
+    "uiActionBarOverflowDurableSubagentMetadataRecordCount": 5,
+    "freshSolverRecordAccountingNote": "Counts active completed fresh reruns only: 3 async, 5 accessibility, 4 refactor, 4 persistence, and 4 contract-repaired action-bar reruns. The aborted Opus action-bar attempt is metadata-only, not a fresh replay record."
+  },
+  "tasks": [
+    {
+      "taskId": "async.refresh_deduplicator",
+      "sourceJsonYamlPaths": {
+        "replayManifest": "tasks/flutter/async.refresh_deduplicator/deepswe/replay_manifest.json",
+        "modelAudit": "tasks/flutter/async.refresh_deduplicator/deepswe/model_audit.yaml",
+        "telemetryReport": "tasks/flutter/async.refresh_deduplicator/deepswe/telemetry_report.json",
+        "commandTelemetry": "tasks/flutter/async.refresh_deduplicator/deepswe/command_telemetry/command_telemetry_result.json"
+      },
+      "deepSWEComplete": false,
+      "provenanceComplete": false,
+      "failedCandidate": false,
+      "replayVerified": true,
+      "workspaceIsolationVerified": false,
+      "solverRecords": {
+        "fresh": 3,
+        "legacy": 2,
+        "metadata": 5
+      },
+      "runGroups": [
+        {
+          "phase": "legacy",
+          "runId": "54e66617",
+          "families": [
+            {
+              "family": "kimi",
+              "model": "ollama/kimi-k2.7-code:cloud:xhigh"
+            },
+            {
+              "family": "minimax",
+              "model": "ollama/minimax-m3:cloud:xhigh"
+            }
+          ]
+        },
+        {
+          "phase": "fresh",
+          "runId": "2c8d8e17",
+          "families": [
+            {
+              "family": "kimi",
+              "model": "ollama/kimi-k2.7-code:cloud:xhigh"
+            },
+            {
+              "family": "minimax",
+              "model": "ollama/minimax-m3:cloud:xhigh"
+            }
+          ]
+        },
+        {
+          "phase": "fresh",
+          "runId": "9e72b221",
+          "families": [
+            {
+              "family": "gpt",
+              "model": "openai-codex/gpt-5.5:xhigh"
+            }
+          ]
+        }
+      ],
+      "provenance": {
+        "providerInternalStreamChunksCaptured": false,
+        "providerInternalStreamChunksCapturedCount": 0,
+        "cleanCommittedProvenance": false,
+        "admissionGitDirty": true,
+        "authoredByProvenanceDurable": false,
+        "authoredByKnown": false,
+        "workspaceIsolationVerified": false,
+        "runtimeWorkspaceIsolationVerified": false,
+        "sessionJsonlDigestRecords": 3
+      }
+    },
+    {
+      "taskId": "accessibility.quantity_stepper_semantics",
+      "sourceJsonYamlPaths": {
+        "replayManifest": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/replay_manifest.json",
+        "modelAudit": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/model_audit.yaml",
+        "telemetryReport": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/telemetry_report.json",
+        "commandTelemetry": "tasks/flutter/accessibility.quantity_stepper_semantics/deepswe/command_telemetry/command_telemetry_result.json"
+      },
+      "deepSWEComplete": false,
+      "provenanceComplete": false,
+      "failedCandidate": false,
+      "replayVerified": true,
+      "workspaceIsolationVerified": false,
+      "solverRecords": {
+        "fresh": 5,
+        "legacy": 0,
+        "metadata": 5
+      },
+      "runGroups": [
+        {
+          "phase": "fresh",
+          "runId": "418a9192",
+          "families": [
+            {
+              "family": "gpt",
+              "model": "openai-codex/gpt-5.5:xhigh"
+            },
+            {
+              "family": "glm",
+              "model": "ollama/glm-5.2:cloud:xhigh"
+            },
+            {
+              "family": "minimax",
+              "model": "ollama/minimax-m3:cloud:xhigh"
+            },
+            {
+              "family": "kimi",
+              "model": "ollama/kimi-k2.7-code:cloud:xhigh"
+            }
+          ]
+        },
+        {
+          "phase": "fresh",
+          "runId": "90f0896e",
+          "families": [
+            {
+              "family": "opus",
+              "model": "anthropic/claude-opus-4-8:xhigh"
+            }
+          ]
+        }
+      ],
+      "provenance": {
+        "providerInternalStreamChunksCaptured": false,
+        "providerInternalStreamChunksCapturedCount": 0,
+        "cleanCommittedProvenance": false,
+        "admissionGitDirty": true,
+        "authoredByProvenanceDurable": false,
+        "authoredByKnown": false,
+        "workspaceIsolationVerified": false,
+        "runtimeWorkspaceIsolationVerified": false,
+        "sessionJsonlDigestRecords": 0
+      }
+    },
+    {
+      "taskId": "refactor.price_label_formatter",
+      "sourceJsonYamlPaths": {
+        "replayManifest": "tasks/flutter/refactor.price_label_formatter/deepswe/replay_manifest.json",
+        "modelAudit": "tasks/flutter/refactor.price_label_formatter/deepswe/model_audit.yaml",
+        "telemetryReport": "tasks/flutter/refactor.price_label_formatter/deepswe/telemetry_report.json",
+        "commandTelemetry": "tasks/flutter/refactor.price_label_formatter/deepswe/command_telemetry/command_telemetry_result.json"
+      },
+      "deepSWEComplete": false,
+      "provenanceComplete": false,
+      "failedCandidate": false,
+      "replayVerified": true,
+      "workspaceIsolationVerified": false,
+      "solverRecords": {
+        "fresh": 4,
+        "legacy": 0,
+        "metadata": 4
+      },
+      "runGroups": [
+        {
+          "phase": "fresh",
+          "runId": "f2ed0622",
+          "families": [
+            {
+              "family": "gpt",
+              "model": "openai-codex/gpt-5.5:xhigh"
+            },
+            {
+              "family": "minimax",
+              "model": "ollama/minimax-m3:cloud:xhigh"
+            },
+            {
+              "family": "kimi",
+              "model": "ollama/kimi-k2.7-code:cloud:xhigh"
+            }
+          ]
+        },
+        {
+          "phase": "fresh",
+          "runId": "9e788d86",
+          "families": [
+            {
+              "family": "glm",
+              "model": "ollama/glm-5.2:cloud:xhigh"
+            }
+          ]
+        }
+      ],
+      "provenance": {
+        "providerInternalStreamChunksCaptured": false,
+        "providerInternalStreamChunksCapturedCount": 0,
+        "cleanCommittedProvenance": false,
+        "admissionGitDirty": true,
+        "authoredByProvenanceDurable": false,
+        "authoredByKnown": false,
+        "workspaceIsolationVerified": false,
+        "runtimeWorkspaceIsolationVerified": false,
+        "sessionJsonlDigestRecords": 0
+      }
+    },
+    {
+      "taskId": "persistence.offline_feed_preferences",
+      "sourceJsonYamlPaths": {
+        "replayManifest": "tasks/flutter/persistence.offline_feed_preferences/deepswe/replay_manifest.json",
+        "modelAudit": "tasks/flutter/persistence.offline_feed_preferences/deepswe/model_audit.yaml",
+        "telemetryReport": "tasks/flutter/persistence.offline_feed_preferences/deepswe/telemetry_report.json",
+        "commandTelemetry": "tasks/flutter/persistence.offline_feed_preferences/deepswe/command_telemetry/command_telemetry_result.json"
+      },
+      "deepSWEComplete": false,
+      "provenanceComplete": false,
+      "failedCandidate": false,
+      "replayVerified": true,
+      "workspaceIsolationVerified": false,
+      "solverRecords": {
+        "fresh": 4,
+        "legacy": 0,
+        "metadata": 4
+      },
+      "runGroups": [
+        {
+          "phase": "fresh",
+          "runId": "13254af7",
+          "families": [
+            {
+              "family": "gpt",
+              "model": "openai-codex/gpt-5.5:xhigh"
+            },
+            {
+              "family": "minimax",
+              "model": "ollama/minimax-m3:cloud:xhigh"
+            },
+            {
+              "family": "glm",
+              "model": "ollama/glm-5.2:cloud:xhigh"
+            },
+            {
+              "family": "kimi",
+              "model": "ollama/kimi-k2.7-code:cloud:xhigh"
+            }
+          ]
+        }
+      ],
+      "provenance": {
+        "providerInternalStreamChunksCaptured": false,
+        "providerInternalStreamChunksCapturedCount": 0,
+        "cleanCommittedProvenance": false,
+        "admissionGitDirty": true,
+        "authoredByProvenanceDurable": false,
+        "authoredByKnown": false,
+        "workspaceIsolationVerified": false,
+        "runtimeWorkspaceIsolationVerified": false,
+        "sessionJsonlDigestRecords": 0
+      }
+    },
+    {
+      "taskId": "ui.action_bar_overflow",
+      "sourceJsonYamlPaths": {
+        "replayManifest": "tasks/flutter/ui.action_bar_overflow/deepswe/replay_manifest.json",
+        "telemetryReport": "tasks/flutter/ui.action_bar_overflow/deepswe/telemetry_report.json",
+        "commandTelemetry": "tasks/flutter/ui.action_bar_overflow/deepswe/command_telemetry/command_telemetry_result.json",
+        "modelAudit": "tasks/flutter/ui.action_bar_overflow/deepswe/model_audit.yaml",
+        "subagentMeta": {
+          "gpt": "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/gpt/rerun_2026_06_19/trajectory/subagent_meta.json",
+          "glm": "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/glm/rerun_2026_06_19/trajectory/subagent_meta.json",
+          "minimax": "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/minimax/rerun_2026_06_19/trajectory/subagent_meta.json",
+          "kimi": "tasks/flutter/ui.action_bar_overflow/deepswe/solver_runs/kimi/rerun_2026_06_19/trajectory/subagent_meta.json"
+        }
+      },
+      "deepSWEComplete": false,
+      "provenanceComplete": false,
+      "failedCandidate": false,
+      "replayVerified": true,
+      "workspaceIsolationVerified": false,
+      "solverRecords": {
+        "fresh": 4,
+        "legacy": 0,
+        "metadata": 5,
+        "durableSubagentMetadataAvailable": true,
+        "activeCompletedRepairMetadata": 4,
+        "abortedMetadataOnly": 1
+      },
+      "runGroups": [
+        {
+          "phase": "fresh",
+          "runId": "cf75c215",
+          "families": [
+            {
+              "family": "gpt",
+              "model": "openai-codex/gpt-5.5:xhigh"
+            },
+            {
+              "family": "glm",
+              "model": "ollama/glm-5.2:cloud:xhigh"
+            },
+            {
+              "family": "minimax",
+              "model": "ollama/minimax-m3:cloud:xhigh"
+            },
+            {
+              "family": "kimi",
+              "model": "ollama/kimi-k2.7-code:cloud:xhigh"
+            }
+          ]
+        },
+        {
+          "phase": "aborted",
+          "runId": "cf75c215",
+          "families": [
+            {
+              "family": "opus",
+              "model": "anthropic/claude-opus-4-8:xhigh",
+              "status": "aborted/unavailable"
+            }
+          ],
+          "activeSolverRunCreated": false
+        }
+      ],
+      "provenance": {
+        "providerInternalStreamChunksCaptured": false,
+        "providerInternalStreamChunksCapturedCount": 0,
+        "cleanCommittedProvenance": false,
+        "admissionGitDirty": true,
+        "authoredByProvenanceDurable": false,
+        "authoredByKnown": false,
+        "workspaceIsolationVerified": false,
+        "runtimeWorkspaceIsolationVerified": false,
+        "sessionJsonlDigestRecords": 0
+      },
+      "promotionGate": {
+        "promoted": true,
+        "thresholdMet": true,
+        "passingFreshPublicHiddenSolverCount": 3,
+        "requiredFreshPublicHiddenSolverCount": 3
+      },
+      "activeSolverEvidence": {
+        "passingFreshPublicHiddenSolverFamilies": [
+          "gpt",
+          "minimax",
+          "kimi"
+        ],
+        "failedFreshPublicHiddenSolverFamilies": [
+          "glm"
+        ],
+        "abortedFreshSolverFamilies": [
+          "opus"
+        ],
+        "durableRunIdsAvailable": true,
+        "subagentDurationTokenCostMetadataAvailable": true,
+        "durableRunId": "cf75c215",
+        "activeSubagentMetadataFamilies": [
+          "gpt",
+          "glm",
+          "minimax",
+          "kimi"
+        ],
+        "abortedSubagentMetadataFamilies": [
+          "opus"
+        ],
+        "providerInternalStreamChunksCaptured": false
+      }
+    }
+  ],
+  "blockers": [
+    {
+      "id": "provider_stream_session_gap",
+      "classification": "requires provider/tool export support",
+      "appliesTo": [
+        "async.refresh_deduplicator",
+        "accessibility.quantity_stepper_semantics",
+        "refactor.price_label_formatter",
+        "persistence.offline_feed_preferences",
+        "ui.action_bar_overflow"
+      ],
+      "resolved": false
+    },
+    {
+      "id": "clean_git_dirty_false_gap",
+      "classification": "requires user approval to stage/commit and rerun from clean committed state",
+      "appliesTo": [
+        "async.refresh_deduplicator",
+        "accessibility.quantity_stepper_semantics",
+        "refactor.price_label_formatter",
+        "persistence.offline_feed_preferences",
+        "ui.action_bar_overflow"
+      ],
+      "resolved": false
+    },
+    {
+      "id": "authored_by_provenance_gap",
+      "classification": "requires durable source/user-provided provenance; do not infer",
+      "appliesTo": [
+        "async.refresh_deduplicator",
+        "accessibility.quantity_stepper_semantics",
+        "refactor.price_label_formatter",
+        "persistence.offline_feed_preferences",
+        "ui.action_bar_overflow"
+      ],
+      "resolved": false
+    },
+    {
+      "id": "runtime_workspace_isolation_gap",
+      "classification": "artifact-scope only; needs runtime/tool-level proof",
+      "appliesTo": [
+        "async.refresh_deduplicator",
+        "accessibility.quantity_stepper_semantics",
+        "refactor.price_label_formatter",
+        "persistence.offline_feed_preferences",
+        "ui.action_bar_overflow"
+      ],
+      "resolved": false
+    }
+  ]
+}

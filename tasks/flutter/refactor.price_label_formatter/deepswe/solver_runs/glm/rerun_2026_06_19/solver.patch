@@ -1,0 +1,219 @@
+diff --git a/lib/cart_line_price_row.dart b/lib/cart_line_price_row.dart
+index 47b2cd4..e23fef4 100644
+--- a/lib/cart_line_price_row.dart
++++ b/lib/cart_line_price_row.dart
+@@ -5,8 +5,7 @@ import 'price_label_formatter.dart';
+ /// Shows one cart line: the item name, the quantity, the unit price, and the
+ /// computed line total.
+ ///
+-/// Prices are currently produced by a private helper duplicated across the
+-/// product, cart, and checkout widgets. The injected [formatter] is ignored.
++/// Prices are produced entirely by the injected [formatter].
+ class CartLinePriceRow extends StatelessWidget {
+   const CartLinePriceRow({
+     super.key,
+@@ -26,28 +25,17 @@ class CartLinePriceRow extends StatelessWidget {
+   final int unitPriceCents;
+   final PriceLabelFormatter formatter;
+ 
+-  String _formatCents(int cents) {
+-    if (cents == 0) {
+-      return 'Free';
+-    }
+-    final dollars = cents ~/ 100;
+-    final remainder = cents % 100;
+-    if (remainder == 0) {
+-      return '\$$dollars';
+-    }
+-    return '\$$dollars.${remainder.toString().padLeft(2, '0')}';
+-  }
+-
+   @override
+   Widget build(BuildContext context) {
++    final lineTotalCents = quantity * unitPriceCents;
+     return Row(
+       mainAxisSize: MainAxisSize.min,
+       children: <Widget>[
+         Text(name, key: nameTextKey),
+         Text('Qty: $quantity', key: quantityTextKey),
+-        Text(_formatCents(unitPriceCents), key: unitPriceTextKey),
+-        Text(_formatCents(quantity * unitPriceCents), key: lineTotalTextKey),
++        Text(formatter.formatCents(unitPriceCents), key: unitPriceTextKey),
++        Text(formatter.formatCents(lineTotalCents), key: lineTotalTextKey),
+       ],
+     );
+   }
+-}
++}
+\ No newline at end of file
+diff --git a/lib/checkout_price_summary.dart b/lib/checkout_price_summary.dart
+index 6a09c89..e05a0ba 100644
+--- a/lib/checkout_price_summary.dart
++++ b/lib/checkout_price_summary.dart
+@@ -4,8 +4,7 @@ import 'price_label_formatter.dart';
+ 
+ /// Shows a checkout summary: subtotal, shipping, and total.
+ ///
+-/// Prices are currently produced by a private helper duplicated across the
+-/// product, cart, and checkout widgets. The injected [formatter] is ignored.
++/// Prices are produced entirely by the injected [formatter].
+ class CheckoutPriceSummary extends StatelessWidget {
+   const CheckoutPriceSummary({
+     super.key,
+@@ -24,28 +23,16 @@ class CheckoutPriceSummary extends StatelessWidget {
+   final int totalCents;
+   final PriceLabelFormatter formatter;
+ 
+-  String _formatCents(int cents) {
+-    if (cents == 0) {
+-      return 'Free';
+-    }
+-    final dollars = cents ~/ 100;
+-    final remainder = cents % 100;
+-    if (remainder == 0) {
+-      return '\$$dollars';
+-    }
+-    return '\$$dollars.${remainder.toString().padLeft(2, '0')}';
+-  }
+-
+   @override
+   Widget build(BuildContext context) {
+     return Column(
+       crossAxisAlignment: CrossAxisAlignment.start,
+       mainAxisSize: MainAxisSize.min,
+       children: <Widget>[
+-        Text(_formatCents(subtotalCents), key: subtotalTextKey),
+-        Text(_formatCents(shippingCents), key: shippingTextKey),
+-        Text(_formatCents(totalCents), key: totalTextKey),
++        Text(formatter.formatCents(subtotalCents), key: subtotalTextKey),
++        Text(formatter.formatCents(shippingCents), key: shippingTextKey),
++        Text(formatter.formatCents(totalCents), key: totalTextKey),
+       ],
+     );
+   }
+-}
++}
+\ No newline at end of file
+diff --git a/lib/price_label_formatter.dart b/lib/price_label_formatter.dart
+index ae6c832..9c0b736 100644
+--- a/lib/price_label_formatter.dart
++++ b/lib/price_label_formatter.dart
+@@ -2,13 +2,49 @@
+ class PriceLabelFormatter {
+   const PriceLabelFormatter();
+ 
++  /// Formats [cents] into a customer-facing price label.
++  ///
++  /// Rules:
++  /// - `0` renders as `Free`.
++  /// - Whole-dollar amounts omit the `.00` (e.g. `2100` -> `$21`).
++  /// - Non-whole amounts always show exactly two cent digits.
++  /// - Thousands are grouped with commas.
+   String formatCents(int cents) {
++    if (cents == 0) {
++      return 'Free';
++    }
+     final dollars = cents ~/ 100;
+     final remainder = cents % 100;
+-    return '\$$dollars.${remainder.toString().padLeft(2, '0')}';
++    if (remainder == 0) {
++      return '\$${_groupWithCommas(dollars)}';
++    }
++    return '\$${_groupWithCommas(dollars)}.${remainder.toString().padLeft(2, '0')}';
+   }
+ 
++  /// Formats a sale label. Returns `<current> (was <compare-at>)` only when
++  /// [compareAtCents] is strictly greater than [priceCents]; otherwise it
++  /// returns the current price only.
+   String formatSaleLabel({required int priceCents, int? compareAtCents}) {
+-    return formatCents(priceCents);
++    final current = formatCents(priceCents);
++    if (compareAtCents != null && compareAtCents > priceCents) {
++      return '$current (was ${formatCents(compareAtCents)})';
++    }
++    return current;
+   }
+-}
++
++  /// Groups an integer with commas every three digits from the right.
++  String _groupWithCommas(int value) {
++    if (value < 1000) {
++      return value.toString();
++    }
++    final digits = value.toString();
++    final buffer = StringBuffer();
++    for (var i = 0; i < digits.length; i++) {
++      if (i > 0 && (digits.length - i) % 3 == 0) {
++        buffer.write(',');
++      }
++      buffer.write(digits[i]);
++    }
++    return buffer.toString();
++  }
++}
+\ No newline at end of file
+diff --git a/lib/product_price_tile.dart b/lib/product_price_tile.dart
+index 25151c4..7425412 100644
+--- a/lib/product_price_tile.dart
++++ b/lib/product_price_tile.dart
+@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
+ 
+ import 'price_label_formatter.dart';
+ 
+-/// Shows a product title and its price, optionally with a strikethrough-style
+-/// "was" compare-at price for items on sale.
++/// Shows a product title and its price, optionally with a "was" compare-at
++/// price for items on sale.
+ ///
+-/// The price label is currently produced by a private helper duplicated across
+-/// the product, cart, and checkout widgets. The injected [formatter] is ignored.
++/// The price label is produced entirely by the injected [formatter].
+ class ProductPriceTile extends StatelessWidget {
+   const ProductPriceTile({
+     super.key,
+@@ -24,27 +23,6 @@ class ProductPriceTile extends StatelessWidget {
+   final int? compareAtCents;
+   final PriceLabelFormatter formatter;
+ 
+-  String _formatCents(int cents) {
+-    if (cents == 0) {
+-      return 'Free';
+-    }
+-    final dollars = cents ~/ 100;
+-    final remainder = cents % 100;
+-    if (remainder == 0) {
+-      return '\$$dollars';
+-    }
+-    return '\$$dollars.${remainder.toString().padLeft(2, '0')}';
+-  }
+-
+-  String _formatSaleLabel() {
+-    final current = _formatCents(priceCents);
+-    final compareAt = compareAtCents;
+-    if (compareAt != null && compareAt > priceCents) {
+-      return '$current (was ${_formatCents(compareAt)})';
+-    }
+-    return current;
+-  }
+-
+   @override
+   Widget build(BuildContext context) {
+     return Column(
+@@ -52,8 +30,14 @@ class ProductPriceTile extends StatelessWidget {
+       mainAxisSize: MainAxisSize.min,
+       children: <Widget>[
+         Text(title, key: titleTextKey),
+-        Text(_formatSaleLabel(), key: priceTextKey),
++        Text(
++          formatter.formatSaleLabel(
++            priceCents: priceCents,
++            compareAtCents: compareAtCents,
++          ),
++          key: priceTextKey,
++        ),
+       ],
+     );
+   }
+-}
++}
+\ No newline at end of file

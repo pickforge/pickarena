@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "taskId": "async.refresh_deduplicator",
+  "solver": "kimi",
+  "patchSha256": "e95cc2e18db193d0bb821430229ecffc9a41724421587b52aaed674b0013f88d",
+  "gitApplyCheckPassed": true,
+  "publicTestCommand": "flutter test test/feed_refresh_controller_test.dart",
+  "publicExitCode": 0,
+  "publicPassed": true,
+  "hiddenTestCommand": "flutter test test/_hidden/feed_refresh_controller_hidden_test.dart",
+  "hiddenExitCode": 0,
+  "hiddenPassed": true,
+  "cleanReplayVerified": true,
+  "workspaceIsolationNote": "Staging and grading used separate fresh baseline copies. Original solver workspace was sanitized at solve time per v1plus_report, but later hidden tests were injected for evaluation; full raw solver workspace isolation proof remains pending."
+}
