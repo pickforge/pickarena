@@ -111,11 +111,16 @@ printf '%s' "$DROID_SANDBOX_MARKER" > sandbox-marker.txt
           Platform.environment['HOME'] ??
           Platform.environment['USERPROFILE'] ??
           '';
-      final factoryDir = Directory(p.join(home, '.factory'));
-      expect(
-        sandbox.seenExtraReadOnlyPaths,
-        factoryDir.existsSync() ? [factoryDir.path] : isEmpty,
-      );
+      final expectedFactoryPaths = [
+        for (final name in const [
+          'settings.json',
+          'auth.v2.file',
+          'auth.v2.key',
+        ])
+          if (File(p.join(home, '.factory', name)).existsSync())
+            p.join(home, '.factory', name),
+      ];
+      expect(sandbox.seenExtraReadOnlyPaths, expectedFactoryPaths);
       expect(
         await File(p.join(workspace.path, 'sandbox-marker.txt')).readAsString(),
         'fake-sandbox',

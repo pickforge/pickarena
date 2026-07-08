@@ -120,14 +120,23 @@ $instruction
     return 'droid';
   }
 
+  static const _factoryConfigFileNames = [
+    'settings.json',
+    'auth.v2.file',
+    'auth.v2.key',
+  ];
+
   static List<String> _factoryConfigReadOnlyPaths() {
     final home =
         Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
     if (home.isEmpty) return const [];
-    final factoryDir = Directory(p.join(home, '.factory'));
-    return factoryDir.existsSync() ? [factoryDir.path] : const [];
+    return [
+      for (final name in _factoryConfigFileNames)
+        if (File(p.join(home, '.factory', name)).existsSync())
+          p.join(home, '.factory', name),
+    ];
   }
 
   static Future<AgentRunResult> _defaultRunner(

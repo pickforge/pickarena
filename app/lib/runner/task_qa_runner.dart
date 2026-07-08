@@ -631,6 +631,22 @@ class TaskQaRunner {
       }
     }
 
+    final runtimeIsolation = TaskQaRuntimeIsolationReport(
+      generatedCodeSandboxRequired: generatedCodeSandboxRequired,
+      generatedCodeSandboxEnforced: generatedCodeSandbox != null,
+      generatedCodeSandboxBackend:
+          generatedCodeSandbox?.backend ??
+          bubblewrapGeneratedCodeSandboxBackend,
+      workspaces: List.unmodifiable(workspaceEvidence),
+    );
+    if (!runtimeIsolation.restrictedPathsAbsent) {
+      failureMessages.add(
+        'Workspace isolation evidence found '
+        '${runtimeIsolation.restrictedPathCount} restricted path(s) in '
+        'solver workspaces.',
+      );
+    }
+
     return TaskQaReport(
       taskId: task.id,
       taskVersion: task.version,
@@ -645,14 +661,7 @@ class TaskQaRunner {
       baselineHiddenResults: List.unmodifiable(baselineHiddenResults),
       referencePublicResults: List.unmodifiable(referencePublicResults),
       referenceHiddenResults: List.unmodifiable(referenceHiddenResults),
-      runtimeIsolation: TaskQaRuntimeIsolationReport(
-        generatedCodeSandboxRequired: generatedCodeSandboxRequired,
-        generatedCodeSandboxEnforced: generatedCodeSandbox != null,
-        generatedCodeSandboxBackend:
-            generatedCodeSandbox?.backend ??
-            bubblewrapGeneratedCodeSandboxBackend,
-        workspaces: List.unmodifiable(workspaceEvidence),
-      ),
+      runtimeIsolation: runtimeIsolation,
     );
   }
 
