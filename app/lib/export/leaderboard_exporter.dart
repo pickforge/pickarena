@@ -14,7 +14,8 @@ import 'package:crypto/crypto.dart';
 enum LeaderboardExportStrategy { aggregateCompatible, latestRun, bestObserved }
 
 const dartArenaBenchmarkVersion = '2026-05-31-master-spec';
-const dartArenaEvaluatorSchemaVersion = 1;
+const dartArenaEvaluatorSchemaVersion = 2;
+const dartArenaScoringSchemaVersion = 2;
 
 extension LeaderboardExportStrategyName on LeaderboardExportStrategy {
   String get kebabName {
@@ -668,13 +669,15 @@ Map<String, Object?> _confidenceIntervalJson(ConfidenceInterval? interval) => {
 };
 
 Map<String, Object?> _scoringMetadataJson() => {
-  'schemaVersion': 1,
+  'schemaVersion': dartArenaScoringSchemaVersion,
   'primaryMetric': 'primary_pass',
   'rankingMetric': 'primary_pass_rate',
   'confidenceInterval': 'wilson_95',
   'llmJudgePolicy': 'diagnostic_only',
+  'diffSizePolicy': 'diagnostic_only_full_patch',
   'objectiveEvaluatorIds': objectiveEvaluatorIds.toList()..sort(),
   'secondaryEvaluatorIds': secondaryEvaluatorIds.toList()..sort(),
+  'diagnosticOnlyEvaluatorIds': diagnosticOnlyEvaluatorIds.toList()..sort(),
   'hiddenVerifierPattern': '*_hidden',
   'failureTags': supportedFailureTags,
   'objectiveFailureCaps': {

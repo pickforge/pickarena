@@ -99,7 +99,7 @@ void main() {
     expect(benchmark['track'], 'agentic');
     expect(benchmark['version'], '2026-05-31-master-spec');
     expect(benchmark['taskSetId'], startsWith('taskset-'));
-    expect(benchmark['evaluatorSchemaVersion'], 1);
+    expect(benchmark['evaluatorSchemaVersion'], 2);
 
     final pricingRegistry = export['pricingRegistry']! as Map<String, Object?>;
     expect(pricingRegistry['version'], '2026-05-31');
@@ -378,9 +378,15 @@ void main() {
       'pricingStatusCounts': {'exact': 1},
     });
     final scoring = export['scoring']! as Map<String, Object?>;
+    expect(scoring['schemaVersion'], 2);
     expect(scoring['primaryMetric'], 'primary_pass');
     expect(scoring['rankingMetric'], 'primary_pass_rate');
     expect(scoring['confidenceInterval'], 'wilson_95');
+    expect(scoring['diffSizePolicy'], 'diagnostic_only_full_patch');
+    expect(scoring['diagnosticOnlyEvaluatorIds'], ['diff_size']);
+    final defaultWeights =
+        scoring['defaultEvaluatorWeights']! as Map<String, Object?>;
+    expect(defaultWeights, isNot(contains('diff_size')));
     expect(
       scoring['failureTags'],
       containsAll(['pass', 'public_tests_failed', 'hidden_verifier_failed']),

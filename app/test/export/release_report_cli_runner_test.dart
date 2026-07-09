@@ -1787,7 +1787,7 @@ void main() {
     final scoring = leaderboard['scoring']! as Map<String, Object?>;
     expect(benchmark['version'], '2026-05-31-master-spec');
     expect(benchmark['taskSetId'], 'taskset-test');
-    expect(benchmark['evaluatorSchemaVersion'], 1);
+    expect(benchmark['evaluatorSchemaVersion'], 2);
     expect(scoring['primaryMetric'], 'primary_pass');
     expect(scoring['rankingMetric'], 'primary_pass_rate');
     expect(scoring['confidenceInterval'], 'wilson_95');
@@ -10524,7 +10524,7 @@ Map<String, Object?> _leaderboardJson({
     if (includeBenchmarkReleaseMetadata) ...{
       'version': '2026-05-31-master-spec',
       'taskSetId': 'taskset-test',
-      'evaluatorSchemaVersion': 1,
+      'evaluatorSchemaVersion': 2,
     },
     'track': 'agentic',
     'dataPolicy': 'aggregate-compatible',
@@ -10840,11 +10840,12 @@ void _markLeaderboardPublicTelemetryUnknown(Map<String, Object?> leaderboard) {
 }
 
 Map<String, Object?> _scoringJson() => {
-  'schemaVersion': 1,
+  'schemaVersion': 2,
   'primaryMetric': 'primary_pass',
   'rankingMetric': 'primary_pass_rate',
   'confidenceInterval': 'wilson_95',
   'llmJudgePolicy': 'diagnostic_only',
+  'diffSizePolicy': 'diagnostic_only_full_patch',
   'objectiveEvaluatorIds': [
     'analyze',
     'compile',
@@ -10854,6 +10855,7 @@ Map<String, Object?> _scoringJson() => {
     'widget_tree',
   ],
   'secondaryEvaluatorIds': ['diff_size', 'llm_judge'],
+  'diagnosticOnlyEvaluatorIds': ['diff_size'],
   'hiddenVerifierPattern': '*_hidden',
   'failureTags': [
     'pass',
@@ -10877,7 +10879,6 @@ Map<String, Object?> _scoringJson() => {
   'defaultEvaluatorWeights': {
     'analyze': 0.5,
     'compile': 0.5,
-    'diff_size': 0.3,
     'hidden_test': 1.0,
     'llm_judge': 0.7,
     'test': 1.0,
@@ -11814,7 +11815,7 @@ Map<String, Object?> _taskQaReportJson({
         {
           'tool': {'name': 'dart_arena_task_qa'},
           'evaluator': {
-            'schemaVersion': 1,
+            'schemaVersion': 2,
             'version': '2026-05-31-master-spec',
           },
           'environment': {

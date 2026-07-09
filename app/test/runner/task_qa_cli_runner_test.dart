@@ -154,7 +154,7 @@ void main() {
       });
       expect(report['admission'], {
         'tool': {'name': 'dart_arena_task_qa'},
-        'evaluator': {'schemaVersion': 1, 'version': '2026-05-31-master-spec'},
+        'evaluator': {'schemaVersion': 2, 'version': '2026-05-31-master-spec'},
         'environment': {
           'dartVersion': 'test-dart',
           'dependencySnapshot': {

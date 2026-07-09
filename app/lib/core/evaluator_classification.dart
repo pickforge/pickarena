@@ -11,6 +11,8 @@ const objectiveEvaluatorIds = <String>{
 
 const secondaryEvaluatorIds = <String>{'llm_judge', 'diff_size'};
 
+const diagnosticOnlyEvaluatorIds = <String>{'diff_size'};
+
 bool isObjectiveEvaluatorId(String evaluatorId) {
   return objectiveEvaluatorIds.contains(evaluatorId) ||
       evaluatorId.endsWith('_hidden');
@@ -18,6 +20,10 @@ bool isObjectiveEvaluatorId(String evaluatorId) {
 
 bool isSecondaryEvaluatorId(String evaluatorId) {
   return secondaryEvaluatorIds.contains(evaluatorId);
+}
+
+bool isDiagnosticOnlyEvaluatorId(String evaluatorId) {
+  return diagnosticOnlyEvaluatorIds.contains(evaluatorId);
 }
 
 bool isHiddenVerifierEvaluatorId(String evaluatorId) {
