@@ -19,7 +19,7 @@
       "name": "dart_arena_task_qa"
     },
     "evaluator": {
-      "schemaVersion": 1,
+      "schemaVersion": 2,
       "version": "2026-05-31-master-spec"
     },
     "environment": {
@@ -28,8 +28,8 @@
         "status": "present",
         "files": {
           "pubspec.yaml": {
-            "sha256": "1a77a2d12be10b5c49655dbf690c7aca5593a6d934b523763549077517314f4e",
-            "bytes": 6336
+            "sha256": "2a498deb8c1429354f0bc37237f3542c6627d8abe738e9100f3cd41dc8cd402a",
+            "bytes": 3005
           },
           "pubspec.lock": {
             "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
@@ -38,12 +38,13 @@
         }
       },
       "flutterVersion": "3.41.6",
-      "gitCommit": "68321eeaff3fbf5a1bfee2893c2fab3b0b446d0a",
-      "gitDirty": true,
+      "gitCommit": "1e76b02fc4efaa4b96e1d5a58ae53a7ee8f8a598",
+      "gitDirty": false,
       "hostPlatform": "linux",
       "locale": "C.UTF-8",
       "operatingSystemVersion": "Linux 7.1.3-1-cachyos #1 SMP PREEMPT_DYNAMIC Mon, 06 Jul 2026 19:44:10 +0000"
-    }
+    },
+    "taskBundleDigest": "ef38d839cc188fd66911a898cf5227ffc7649536a1f46f092440238a5325c076"
   },
   "executionPolicy": {
     "allowInternet": false,
@@ -178,7 +179,7 @@
     }
   },
   "status": "admitted",
-  "generatedAt": "2026-07-08T20:16:22.780483Z",
+  "generatedAt": "2026-07-09T17:15:31.821545Z",
   "checks": {
     "baselineHiddenFailed": true,
     "referencePublicPassed": true,
@@ -248,8 +249,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 11.8s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 11.5s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -263,8 +264,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 10.7s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 10.6s)\n",
             "tool": "flutter"
           }
         },
@@ -280,7 +280,6 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -290,9 +289,12 @@
           "score": 1.0,
           "rationale": "changed_lines=0",
           "details": {
-            "original_lines": 14,
-            "new_lines": 14,
             "changed_lines": 0,
+            "changed_file_count": 0,
+            "compared_file_count": 3,
+            "measurement_source": "workspace_fixtures",
+            "original_lines": 48,
+            "new_lines": 48,
             "score_k": 20
           }
         }
@@ -349,7 +351,7 @@
           "details": {
             "exitCode": 1,
             "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \n\n  error • Const variables must be initialized with a constant value • test/contact_search_controller_test.dart:6:5 • const_initialized_with_non_constant_value\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:6:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:6:5 • non_constant_list_element\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:7:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:7:5 • non_constant_list_element\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:13:23 • undefined_method\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:19:31 • undefined_method\n\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n7 issues found. (ran in 11.2s)\n",
+            "stderr": "7 issues found. (ran in 11.5s)\n",
             "tool": "flutter"
           }
         },
@@ -364,7 +366,7 @@
             "infos": 0,
             "exit_code": 1,
             "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \n\n  error • Const variables must be initialized with a constant value • test/contact_search_controller_test.dart:6:5 • const_initialized_with_non_constant_value\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:6:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:6:5 • non_constant_list_element\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:7:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:7:5 • non_constant_list_element\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:13:23 • undefined_method\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:19:31 • undefined_method\n\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n7 issues found. (ran in 10.1s)\n",
+            "stderr": "7 issues found. (ran in 10.6s)\n",
             "tool": "flutter"
           }
         },
@@ -387,9 +389,12 @@
           "score": 0.36787944117144233,
           "rationale": "changed_lines=20",
           "details": {
-            "original_lines": 14,
-            "new_lines": 12,
             "changed_lines": 20,
+            "changed_file_count": 1,
+            "compared_file_count": 3,
+            "measurement_source": "workspace_fixtures",
+            "original_lines": 48,
+            "new_lines": 46,
             "score_k": 20
           }
         }
@@ -412,8 +417,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 11.0s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 11.4s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -427,8 +432,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 10.0s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 10.6s)\n",
             "tool": "flutter"
           }
         },
@@ -444,7 +448,6 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -454,9 +457,12 @@
           "score": 0.7788007830714049,
           "rationale": "changed_lines=5",
           "details": {
-            "original_lines": 14,
-            "new_lines": 17,
             "changed_lines": 5,
+            "changed_file_count": 1,
+            "compared_file_count": 3,
+            "measurement_source": "workspace_fixtures",
+            "original_lines": 48,
+            "new_lines": 51,
             "score_k": 20
           }
         }
