@@ -305,7 +305,7 @@ void main() {
     expect(report.negativeCasesRejected, isFalse);
   });
 
-  test('dirty git admission environment is not release evidence', () {
+  test('non-clean git admission environments are not release evidence', () {
     const report = TaskQaReport(
       taskId: 'task',
       taskVersion: 1,
@@ -332,22 +332,32 @@ void main() {
       referenceHiddenResults: [],
     );
 
-    final admission = taskQaAdmissionReportJson(
-      task: _NegativeQaTask(),
-      report: report,
-      environment: const {'gitDirty': true},
-    );
+    for (final environment in <Map<String, Object?>?>[
+      const {'gitDirty': true},
+      null,
+      const {},
+      const {'gitDirty': null},
+      const {'gitDirty': 'unknown'},
+    ]) {
+      final admission = taskQaAdmissionReportJson(
+        task: _NegativeQaTask(),
+        report: report,
+        environment: environment,
+      );
+
+      expect(taskQaAdmissionReleaseGradePassed(report, environment), isFalse);
+      expect(admission['status'], 'rejected');
+      expect(
+        admission['failureMessages'],
+        contains(
+          'Admission environment gitDirty must be false; this report is not release evidence.',
+        ),
+      );
+    }
 
     expect(
-      taskQaAdmissionReleaseGradePassed(report, const {'gitDirty': true}),
-      isFalse,
-    );
-    expect(admission['status'], 'rejected');
-    expect(
-      admission['failureMessages'],
-      contains(
-        'Admission environment gitDirty=true; this report is not release evidence.',
-      ),
+      taskQaAdmissionReleaseGradePassed(report, const {'gitDirty': false}),
+      isTrue,
     );
   });
 

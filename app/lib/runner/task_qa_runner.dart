@@ -988,9 +988,9 @@ List<String> taskQaAdmissionFailureMessages(
   Map<String, Object?>? environment,
 ) {
   final failures = [...report.failureMessages];
-  if (environment?['gitDirty'] == true) {
+  if (environment?['gitDirty'] != false) {
     failures.add(
-      'Admission environment gitDirty=true; this report is not release evidence.',
+      'Admission environment gitDirty must be false; this report is not release evidence.',
     );
   }
   return failures;

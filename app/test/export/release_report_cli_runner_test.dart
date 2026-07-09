@@ -1381,7 +1381,7 @@ void main() {
   );
 
   test(
-    'recomputes task bundle digest from the task QA CLI report layout',
+    'recomputes task bundle digest from the task QA summary output layout',
     () async {
       final tmp = await Directory.systemTemp.createTemp(
         'release_report_task_bundle_qa_cli_layout_',
@@ -1393,7 +1393,7 @@ void main() {
       final report = await _runTaskBundleIntegrityReleaseReport(
         tmp,
         includeDigest: true,
-        useTaskQaCliReportLayout: true,
+        useTaskQaSummaryLayout: true,
       );
 
       final audit = report['verifierAudit']! as Map<String, Object?>;
@@ -12157,16 +12157,26 @@ Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
   String? digestOverride,
   Object? admissionGitDirty = false,
   bool includeAdmissionGitDirty = true,
-  bool useTaskQaCliReportLayout = false,
+  bool useTaskQaSummaryLayout = false,
 }) async {
   final leaderboardPath = p.join(tmp.path, 'leaderboard.v1.json');
   final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
   await taskQaDir.create(recursive: true);
   final taskQaSummaryPath = p.join(taskQaDir.path, 'admission_summary.json');
-  final taskBundle = Directory(p.join(taskQaDir.path, 'tasks', 'task.a'));
+  final taskBundleRoot = Directory(p.join(tmp.path, 'task_bundles'));
+  final taskBundle = Directory(
+    useTaskQaSummaryLayout
+        ? p.join(taskBundleRoot.path, 'task.a')
+        : p.join(taskQaDir.path, 'tasks', 'task.a'),
+  );
   final taskBundleDigest = await _writeReleaseTaskBundle(taskBundle);
-  final reportPath = useTaskQaCliReportLayout
-      ? p.join(taskBundle.path, 'admission_report.json')
+  final reportPath = useTaskQaSummaryLayout
+      ? p.join(
+          taskQaDir.path,
+          'tasks',
+          'task_task.a_96ed8d5fca07',
+          'admission_report.json',
+        )
       : p.join(taskBundle.path, 'qa', 'admission_report.json');
   await Directory(p.dirname(reportPath)).create(recursive: true);
   await File(
@@ -12201,6 +12211,10 @@ Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
       leaderboardPath,
       '--task-qa-summary',
       taskQaSummaryPath,
+      if (useTaskQaSummaryLayout) ...[
+        '--task-bundle-root',
+        taskBundleRoot.path,
+      ],
       '--out',
       outPath,
       '--release-id',
