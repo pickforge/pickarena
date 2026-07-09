@@ -15,6 +15,7 @@ import 'package:dart_arena/export/artifact_bundle.dart';
 import 'package:dart_arena/headless/headless_benchmark_runner.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
+import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:drift/native.dart';
@@ -76,6 +77,12 @@ class _AgenticHeadlessSmokeTask extends _HeadlessSmokeTask {
 
   @override
   BenchmarkTrack get track => BenchmarkTrack.agentic;
+}
+
+class _PlanAwareHeadlessSmokeTask extends _HeadlessSmokeTask {
+  @override
+  ReferencePlan? get referencePlan =>
+      const ReferencePlan(version: 1, markdown: '1. inspect\n2. implement');
 }
 
 class _GeneratedCodePresentEvaluator implements Evaluator {
@@ -424,6 +431,48 @@ void main() {
       expect(result.exportedBundleDirectory.existsSync(), isTrue);
     },
   );
+
+  test('persists reference plans for headless runs', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'dart_arena_headless_plan_',
+    );
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(() async {
+      await db.close();
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+
+    final workdirRoot = Directory(p.join(tmp.path, 'workdirs'))
+      ..createSync(recursive: true);
+    final provider = DeterministicFakeProvider();
+    final result = await const HeadlessBenchmarkRunner().run(
+      _config(
+        runId: 'headless-plan-run',
+        runDao: RunDao(db),
+        planDao: PlanDao(db),
+        workdirManager: NoOpPrepareWorkdirManager(root: workdirRoot),
+        outputParent: Directory(p.join(tmp.path, 'bundles'))
+          ..createSync(recursive: true),
+        allowedTrajectoryRoots: [workdirRoot],
+        provider: provider,
+        modelId: provider.modelId,
+        tasks: [_PlanAwareHeadlessSmokeTask()],
+        useReferencePlan: true,
+      ),
+    );
+
+    expect(
+      result.finalSummary.taskRuns.single.planId,
+      startsWith('ref-phase7.headless_smoke-v1'),
+    );
+    final provenance =
+        jsonDecode(result.finalSummary.run.provenanceJson!)
+            as Map<String, Object?>;
+    expect(
+      (provenance['config'] as Map<String, Object?>)['useReferencePlan'],
+      isTrue,
+    );
+  });
 
   test(
     'agentic timeout without previews still exports response artifact',
@@ -853,6 +902,7 @@ void main() {
 HeadlessBenchmarkConfig _config({
   required String runId,
   required RunDao runDao,
+  PlanDao? planDao,
   required WorkdirManager workdirManager,
   required Directory outputParent,
   required List<Directory> allowedTrajectoryRoots,
@@ -860,6 +910,7 @@ HeadlessBenchmarkConfig _config({
   required String modelId,
   List<BenchmarkTask>? tasks,
   List<AgentHarness> agentHarnesses = const [],
+  bool useReferencePlan = false,
   Duration timeout = const Duration(seconds: 5),
 }) {
   return HeadlessBenchmarkConfig(
@@ -875,6 +926,7 @@ HeadlessBenchmarkConfig _config({
     evaluatorWeights: _weights,
     workdirManager: workdirManager,
     runDao: runDao,
+    planDao: planDao,
     bundleOutputParent: outputParent,
     now: () => DateTime.utc(2026, 5, 30, 12),
     idGenerator: () => runId,
@@ -891,6 +943,7 @@ HeadlessBenchmarkConfig _config({
     allowedTrajectoryRoots: allowedTrajectoryRoots,
     maxConcurrency: 1,
     trialsPerTask: 1,
+    useReferencePlan: useReferencePlan,
     timeout: timeout,
   );
 }

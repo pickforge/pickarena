@@ -81,7 +81,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - run: flutter pub get
+      - run: dart pub get
         working-directory: app
-      - run: flutter test test/tasks/official_file_backed_task_test.dart
+      - run: dart test --concurrency=1 test/tasks/official_file_backed_task_test.dart
         working-directory: app

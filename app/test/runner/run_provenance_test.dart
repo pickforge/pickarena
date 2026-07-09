@@ -13,7 +13,6 @@ import 'package:dart_arena/core/task_verifier.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/resource_enforcement_policy.dart';
-import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
@@ -163,12 +162,9 @@ void main() {
       final task = _SensitiveTask();
       final jsonText = await buildRunProvenanceJson(
         runId: 'run-1',
-        event: StartRun(
+        config: RunProvenanceConfig(
           tasks: [task],
           providers: [provider],
-          modelsByProvider: const {
-            'secret-provider': [' model-a ', 'model-a', 'model-b'],
-          },
           evaluatorConfig: EvaluatorConfig(
             judgeProvider: provider,
             judgeModel: 'judge-model',
@@ -349,10 +345,9 @@ void main() {
     final task = _PartialResourceTask();
     final jsonText = await buildRunProvenanceJson(
       runId: 'run-1',
-      event: StartRun(
+      config: RunProvenanceConfig(
         tasks: [task],
         providers: const [],
-        modelsByProvider: const {},
         evaluatorConfig: const EvaluatorConfig(),
       ),
       normalizedModelsByProvider: const {},

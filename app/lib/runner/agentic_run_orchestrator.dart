@@ -15,16 +15,7 @@ import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/runner/evaluator_resource_limits.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
-import 'package:dart_arena/runner/run_progress_snapshot.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
-
-typedef AgenticProgressCallback =
-    void Function(
-      RunComboPhase phase, {
-      String? answerPreview,
-      int? promptTokens,
-      int? completionTokens,
-    });
 
 class AgenticRunOrchestrator {
   AgenticRunOrchestrator({
@@ -52,7 +43,6 @@ class AgenticRunOrchestrator {
     required int trialIndex,
     required EvaluatorConfig evaluatorConfig,
     String? planId,
-    AgenticProgressCallback? onProgress,
     void Function()? cancellationCheck,
     Duration Function()? remainingTimeout,
     Future<void>? cancellationSignal,
@@ -60,7 +50,6 @@ class AgenticRunOrchestrator {
     Directory? workspace;
     cancellationCheck?.call();
     try {
-      onProgress?.call(RunComboPhase.creatingWorkdir);
       workspace = await workdirManager.createAgenticTaskWorkdir(
         runId: runId,
         providerId: providerId,
@@ -86,7 +75,6 @@ class AgenticRunOrchestrator {
     }
     cancellationCheck?.call();
 
-    onProgress?.call(RunComboPhase.preparingWorkspace);
     final initialPrep = await workdirManager.prepare(
       workspace,
       isFlutter: task.isFlutter,
@@ -132,7 +120,6 @@ class AgenticRunOrchestrator {
     }
 
     cancellationCheck?.call();
-    onProgress?.call(RunComboPhase.runningAgent);
     final harnessStopwatch = Stopwatch()..start();
     late final AgentRunResult agentResult;
     try {
@@ -157,15 +144,7 @@ class AgenticRunOrchestrator {
         metadata: {'exception': e.runtimeType.toString()},
       );
     }
-    onProgress?.call(
-      RunComboPhase.runningAgent,
-      answerPreview: _agentResponseText(agentResult),
-      promptTokens: agentResult.promptTokens,
-      completionTokens: agentResult.completionTokens,
-    );
-
     cancellationCheck?.call();
-    onProgress?.call(RunComboPhase.capturingPatch);
     PatchCaptureResult? capturedPatch;
     EvaluationResult? patchFailure;
     try {
@@ -196,7 +175,6 @@ class AgenticRunOrchestrator {
     ];
 
     cancellationCheck?.call();
-    onProgress?.call(RunComboPhase.grading);
     final gradingPrep = await workdirManager.prepare(
       workspace,
       isFlutter: task.isFlutter,
@@ -245,7 +223,6 @@ class AgenticRunOrchestrator {
     }
 
     cancellationCheck?.call();
-    onProgress?.call(RunComboPhase.persisting);
     final aggregateScore = aggregate(evaluations, weights);
     final primitives = determineResultPrimitives(
       evaluations: evaluations,

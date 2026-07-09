@@ -4,188 +4,77 @@
 
 # PickArena
 
-A benchmark arena for AI coding models on real Dart and Flutter tasks. PickArena is a Flutter desktop app that compares model quality across code generation, agentic execution, hidden verification, repeated trials, and human preference review — then publishes reproducible leaderboards.
+PickArena is a CLI benchmark runner for AI coding models on Dart and Flutter task corpora. It runs codegen and agentic benchmarks, records reproducible evidence, exports leaderboard data, and publishes the static web leaderboard. There is no desktop app.
 
-PickForge builds the app. PickLab lets agents see, run, and test it. PickArena measures the results.
+## What it does
 
-Local-first. Open source. Built for people who ship.
-
-## What it measures
-
-- **Codegen and agentic tracks:** run direct model responses as well as agent-style planning/execution workflows.
-- **Task QA and hidden verifiers:** score tasks with compile checks, analyzer checks, visible tests, hidden/reference tests, diff-size signals, and LLM judges.
-- **Reliable leaderboards:** repeat trials per task/model combo and aggregate results across quality, speed, reliability, and category dimensions.
-- **Human review:** compare competing outputs in a review queue and fold preferences into rankings.
-- **Provenance and exports:** save run manifests, environment details, summaries, CSV/Markdown/JSON reports, and reproducible artifact bundles.
-- **Headless CI smoke:** exercise the headless benchmark runner in GitHub Actions for release confidence.
-
-## Benchmark docs
-
-- [Specs entry point](docs/specs/README.md)
-- [Mobile Agent Benchmark spec](docs/specs/2026-06-15-pickarena-mobile-agent-benchmark.md)
-- [Task author entry point](tasks/README.md)
-- [Task authoring reference](tasks/AUTHORING.md)
+- Runs codegen and agentic task matrices with repeated trials.
+- Validates task bundles and hidden verifiers.
+- Stores provenance, run results, artifact bundles, and CSV/Markdown/JSON exports.
+- Publishes static leaderboard and release-report data for the Svelte website.
 
 ## Quickstart
 
-Install Flutter for your desktop platform, then run:
+Install Dart and a system SQLite runtime. Install Flutter too when running Flutter task bundles; PickArena itself is a pure Dart package.
 
 ```sh
 cd app
-flutter pub get
-flutter run -d linux   # or -d windows, -d macos
+dart pub get
+
+dart run --verbosity=error dart_arena:dart_arena_headless --help
+dart run --verbosity=error dart_arena:dart_arena_task_qa --help
+dart run --verbosity=error dart_arena:dart_arena_export_leaderboard --help
 ```
 
-### A benchmark run
+Run a benchmark with a JSON config:
 
-Configure at least one provider in **Settings**, select **New Run**, choose tasks, providers, models, evaluator settings, concurrency, and trial count — then start the run and monitor progress. Review the leaderboard, inspect task-run details, export run bundles, or compare outputs in the review queue.
+```sh
+cd app
+dart run --verbosity=error dart_arena:dart_arena_headless --config run.json
+```
 
-<p align="center">
-  <img src="app/assets/branding/pickarena-benchmark-mock.svg" alt="PICKARENA · BENCHMARK RUN — leaderboard, live trials with hidden verifiers, human review queue, and static-site publishing" width="900">
-</p>
+The config supplies task bundle roots, providers, models, evaluator settings, concurrency, trials, output paths, and timeouts. See the official script below for a complete agentic example.
 
-## Provider setup
+## Task QA and exports
 
-Open **Settings** in the app to configure model providers. PickArena currently supports:
+Use the task-QA CLI before admitting task changes, then export completed run data:
 
-- Ollama Local and Ollama Cloud
-- OpenCode Go
-- OpenAI
-- OpenRouter
-- DeepSeek
-- Anthropic
-- custom OpenAI-compatible local providers
-- local Factory Droid execution
+```sh
+cd app
+dart run --verbosity=error dart_arena:dart_arena_task_qa --help
+dart run --verbosity=error dart_arena:dart_arena_export_leaderboard --help
+dart run --verbosity=error dart_arena:dart_arena_release_report --help
+```
 
-API keys and provider base URLs are stored through platform secure storage. Do not commit keys, exported credentials, local databases, or benchmark work directories.
+Task authoring references live in [tasks/README.md](tasks/README.md) and [tasks/AUTHORING.md](tasks/AUTHORING.md).
 
-## Official Bubblewrap run and website publishing
+## Official Bubblewrap run and web publishing
 
-Use this flow when you want to run the private official agentic corpus, publish the result to the static Pickforge Studio/PickArena web leaderboard, and keep the evidence reproducible.
-
-Prerequisites:
-
-- `bwrap` is installed and available on `PATH`.
-- Flutter, Dart, and Bun are installed.
-- Factory Droid can run the custom model from `~/.factory/settings.json`.
-- The default model id is `custom:gpt-5.3-codex-spark---Codex`, which maps to **GPT 5.3 Codex Spark - Codex** in the local Factory settings.
-- The git worktree is clean before the benchmark run. Release reports intentionally mark dirty-worktree runs as non-release evidence.
-
-Run the official Bubblewrap benchmark:
+The official corpus flow needs Bubblewrap, Flutter for the Flutter task corpus, Dart, Bun, and Factory Droid.
 
 ```sh
 RUN_ID=spark-sandboxed-official-$(date -u +%Y%m%dT%H%M%SZ) \
   bash scripts/run-official-bubblewrap-benchmark.sh
-```
 
-The script writes `.factory/$RUN_ID/run.json`, runs `dart_arena_headless`, enables `requireGeneratedCodeSandbox`, uses Bubblewrap for generated code, runs the active official Flutter tasks, and stores the run database plus artifact bundle under `.factory/$RUN_ID/`.
-
-Useful overrides:
-
-```sh
-TRIALS_PER_TASK=3 MAX_CONCURRENCY=1 TIMEOUT_SECONDS=7200 \
-  RUN_ID=spark-sandboxed-official-20260606T120000Z \
-  bash scripts/run-official-bubblewrap-benchmark.sh
-```
-
-Publish a completed run to the static website data:
-
-```sh
 bash scripts/publish-benchmark-to-web.sh .factory/<run-id>
 ```
 
-That command:
-
-- exports `web/static/data/leaderboard.v1.json` with `--strategy aggregate-compatible`;
-- exports `web/static/data/release_report.v1.json` as a provenance sidecar;
-- validates the Svelte static site with `bun run web:check` and `bun run web:smoke`.
-
-To publish and push in one command after reviewing the run id:
-
-```sh
-COMMIT=1 PUSH=1 \
-  COMMIT_MESSAGE="data: publish spark benchmark results" \
-  bash scripts/publish-benchmark-to-web.sh .factory/<run-id>
-```
-
-The script stages only the generated static data files. It does not stage local databases, workdirs, screenshots, credentials, or `.factory/` contents.
-
-Manual equivalent:
-
-```sh
-cd app
-dart run --verbosity=error dart_arena:dart_arena_export_leaderboard \
-  --database ../.factory/<run-id>/dart_arena.sqlite \
-  --out ../web/static/data/leaderboard.v1.json \
-  --track agentic \
-  --strategy aggregate-compatible \
-  --run-id <run-id>
-
-dart run --verbosity=error dart_arena:dart_arena_release_report \
-  --leaderboard ../web/static/data/leaderboard.v1.json \
-  --database ../.factory/<run-id>/dart_arena.sqlite \
-  --artifact-bundle-root ../.factory/<run-id>/bundles/dart_arena_run_<run-id> \
-  --task-qa-report-root ../tasks/flutter \
-  --release-id <run-id> \
-  --out ../web/static/data/release_report.v1.json
-
-cd ..
-bun run web:check
-bun run web:smoke
-git add web/static/data/leaderboard.v1.json web/static/data/release_report.v1.json
-git commit -m "data: publish benchmark results"
-git push origin main
-```
-
-`web/static/data/leaderboard.v1.json` is the file consumed by the public Svelte site. `web/static/data/release_report.v1.json` is published for auditability, but the current site UI does not require it to render the leaderboard.
-
-Deploying the website:
-
-- If Vercel, Netlify, or another static host is connected to `main`, pushing the data commit is enough for the host to rebuild.
-- Otherwise, run `bun run web:smoke` and deploy the generated `web/build/` directory.
-- For a non-root path such as GitHub Pages at `/pickarena`, build with `PUBLIC_BASE_PATH=/pickarena bun run web:smoke` and deploy `web/build/`.
-
-## Desktop builds
-
-Build debug desktop artifacts from the matching host OS:
-
-```sh
-cd app
-flutter build linux --debug
-flutter build windows --debug
-flutter build macos --debug
-```
-
-Cross-building Windows or macOS from Linux is not supported by Flutter, so run those commands on native hosts.
-
-## Privacy and security
-
-- Provider credentials stay in platform secure storage.
-- Benchmark tasks and generated work directories may contain model output and code diffs; inspect exported bundles before sharing them.
-- Hidden verifier fixtures are part of the local benchmark corpus and should not be exposed to model prompts during a run.
-- The app does not require committing local databases, caches, generated build outputs, or exported benchmark artifacts.
+The publish command writes `web/static/data/leaderboard.v1.json` and `web/static/data/release_report.v1.json`, then validates the Svelte site. Use `COMMIT=1 PUSH=1` only after reviewing the generated data.
 
 ## Development
 
-Use these commands before submitting changes:
-
 ```sh
 cd app
-flutter pub get
+dart pub get
 dart format --set-exit-if-changed lib test
-flutter analyze
-flutter test
-flutter build linux --debug
+dart analyze
+dart test
+
+cd ../web
+bun install --frozen-lockfile
+bun run check
+bun run smoke
 ```
-
-The CI smoke workflow also runs:
-
-```sh
-cd app
-flutter test test/headless/headless_benchmark_runner_test.dart
-```
-
-Contributions should keep the package/import name as `dart_arena`, preserve benchmark reproducibility, and include tests for scoring, task fixtures, or UI behavior when changed.
 
 ## License
 
