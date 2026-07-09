@@ -83,5 +83,5 @@ jobs:
           channel: stable
       - run: dart pub get
         working-directory: app
-      - run: dart test --concurrency=1 test/tasks/official_file_backed_task_test.dart
+      - run: flutter test --concurrency=1 test/tasks/official_file_backed_task_test.dart
         working-directory: app
