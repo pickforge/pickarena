@@ -21,12 +21,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 import '../support/headless_fakes.dart';
-import '../support/official_tasks.dart';
+import '../support/file_backed_bundle_fixture.dart';
 
 const _weights = <String, double>{
   'smoke_generated_code': 1.0,
   'smoke_generated_file': 1.0,
 };
+
+const _fileBackedHeadlessTaskId = 'file.headless_cli_smoke';
 
 class _HeadlessSmokeTask extends BenchmarkTask {
   @override
@@ -233,11 +235,12 @@ void main() {
       });
 
       const runId = 'cli-provider-process-fail-run';
+      final taskBundleRoot = await _writeHeadlessFileBackedTaskRoot(tmp);
       final configFile = await _writeConfig(
         tmp,
         runId: runId,
-        tasks: ['forms.email_validation'],
-        taskBundleRoots: [officialFlutterTaskRoot().path],
+        tasks: [_fileBackedHeadlessTaskId],
+        taskBundleRoots: [taskBundleRoot.path],
         provider: {
           'type': 'openai_compatible',
           'id': 'local_provider_fail',
@@ -293,11 +296,12 @@ void main() {
       });
 
       const runId = 'cli-process-timeout-run';
+      final taskBundleRoot = await _writeHeadlessFileBackedTaskRoot(tmp);
       final configFile = await _writeConfig(
         tmp,
         runId: runId,
-        tasks: ['forms.email_validation'],
-        taskBundleRoots: [officialFlutterTaskRoot().path],
+        tasks: [_fileBackedHeadlessTaskId],
+        taskBundleRoots: [taskBundleRoot.path],
         provider: {
           'type': 'openai_compatible',
           'id': 'local_timeout',
@@ -377,11 +381,12 @@ void main() {
       });
 
       const runId = 'cli-prepare-timeout-run';
+      final taskBundleRoot = await _writeHeadlessFileBackedTaskRoot(tmp);
       final configFile = await _writeConfig(
         tmp,
         runId: runId,
-        tasks: ['forms.email_validation'],
-        taskBundleRoots: [officialFlutterTaskRoot().path],
+        tasks: [_fileBackedHeadlessTaskId],
+        taskBundleRoots: [taskBundleRoot.path],
         provider: {
           'type': 'openai_compatible',
           'id': 'local_prepare_timeout',
@@ -732,10 +737,11 @@ printf '%s' "$DROID_SANDBOX_MARKER" > headless-sandbox-marker.txt
     });
     final configFile = await _writeConfig(tmp, tasks: ['missing.task']);
     final stderrLines = <String>[];
+    final runner = _CapturingHeadlessBenchmarkRunner();
 
     final exitCode = await runHeadlessCli(
       ['--config', configFile.path],
-      dependencies: _dependencies(),
+      dependencies: _dependencies(runner: runner),
       stdoutWriter: (_) {},
       stderrWriter: stderrLines.add,
     );
@@ -743,6 +749,7 @@ printf '%s' "$DROID_SANDBOX_MARKER" > headless-sandbox-marker.txt
     expect(exitCode, isNot(0));
     final decoded = _expectSingleJsonObject(stderrLines.single);
     expect(decoded['error'], 'unknown task id: missing.task');
+    expect(runner.capturedConfig, isNull);
   });
 
   test(
@@ -917,6 +924,17 @@ Future<File> _writeConfig(
     }),
   );
   return file;
+}
+
+Future<Directory> _writeHeadlessFileBackedTaskRoot(Directory tmp) async {
+  final root = Directory(p.join(tmp.path, 'task_bundles'));
+  await writeAnswerFileBackedBundle(
+    root,
+    directoryName: 'headless_cli_smoke',
+    id: _fileBackedHeadlessTaskId,
+    instruction: 'Make answer() return 42 for the headless CLI smoke task.\n',
+  );
+  return root;
 }
 
 Future<void> _serveNeverCompletingChat(HttpServer server) async {
