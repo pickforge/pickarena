@@ -14,7 +14,8 @@ import 'package:crypto/crypto.dart';
 enum LeaderboardExportStrategy { aggregateCompatible, latestRun, bestObserved }
 
 const dartArenaBenchmarkVersion = '2026-05-31-master-spec';
-const dartArenaEvaluatorSchemaVersion = 1;
+const dartArenaEvaluatorSchemaVersion = 2;
+const _diagnosticOnlyScoringSchemaVersion = 2;
 
 extension LeaderboardExportStrategyName on LeaderboardExportStrategy {
   String get kebabName {
@@ -157,7 +158,7 @@ Future<Map<String, Object?>> buildLeaderboardExport(
       'judgeOverhead': judgeOverhead.toJson(),
       'runProvenance': runProvenance.toJson(),
     },
-    'scoring': _scoringMetadataJson(),
+    'scoring': _scoringMetadataJson(selected.scoringSchemaVersion),
     'pricingRegistry': pricingRegistryProvenance(),
     'models': models,
     'tasks': tasks,
@@ -183,21 +184,23 @@ _SelectedTaskRuns _selectTaskRuns({
       if (anchorRun == null) {
         return const _SelectedTaskRuns(taskRuns: [], anchorRunId: null);
       }
+      final anchorWeights = _parseEvaluatorWeights(anchorRun);
       final anchorSignature = _RunCompatibilitySignature.fromTaskRuns(
         taskRunsByRunId[anchorRun.id] ?? const <TaskRun>[],
+        scoringSchemaVersion: anchorWeights.scoringSchemaVersion,
       );
-      final anchorWeights = _parseEvaluatorWeights(anchorRun);
       final warningKeys = <String>{};
       final selected = <TaskRun>[];
       for (final entry in taskRunsByRunId.entries) {
         final candidateRun = runsById[entry.key];
         if (candidateRun == null) continue;
+        final candidateWeights = _parseEvaluatorWeights(candidateRun);
         final candidateSignature = _RunCompatibilitySignature.fromTaskRuns(
           entry.value,
+          scoringSchemaVersion: candidateWeights.scoringSchemaVersion,
         );
-        if (candidateSignature != anchorSignature) continue;
+        if (!anchorSignature.isCompatibleWith(candidateSignature)) continue;
 
-        final candidateWeights = _parseEvaluatorWeights(candidateRun);
         if (anchorWeights.weights != null && candidateWeights.weights != null) {
           if (!_mapEquals(anchorWeights.weights!, candidateWeights.weights!)) {
             continue;
@@ -220,6 +223,8 @@ _SelectedTaskRuns _selectTaskRuns({
         taskRuns: selected,
         anchorRunId: anchorRun.id,
         sourceRunIds: selected.map((taskRun) => taskRun.runId).toSet(),
+        scoringSchemaVersion:
+            anchorWeights.scoringSchemaVersion ?? dartArenaScoringSchemaVersion,
       );
     case LeaderboardExportStrategy.latestRun:
       final anchorRun = _anchorRun(
@@ -236,6 +241,9 @@ _SelectedTaskRuns _selectTaskRuns({
         ),
         anchorRunId: anchorRun.id,
         sourceRunIds: <String>{anchorRun.id},
+        scoringSchemaVersion:
+            _parseEvaluatorWeights(anchorRun).scoringSchemaVersion ??
+            dartArenaScoringSchemaVersion,
       );
     case LeaderboardExportStrategy.bestObserved:
       final scopedRunIds = options.runId == null
@@ -249,6 +257,13 @@ _SelectedTaskRuns _selectTaskRuns({
         taskRuns: _selectBestObserved(scopedTaskRuns),
         anchorRunId: options.runId,
         sourceRunIds: scopedTaskRuns.map((taskRun) => taskRun.runId).toSet(),
+        scoringSchemaVersion:
+            options.runId == null || runsById[options.runId!] == null
+            ? dartArenaScoringSchemaVersion
+            : _parseEvaluatorWeights(
+                    runsById[options.runId!]!,
+                  ).scoringSchemaVersion ??
+                  dartArenaScoringSchemaVersion,
       );
   }
 }
@@ -667,12 +682,16 @@ Map<String, Object?> _confidenceIntervalJson(ConfidenceInterval? interval) => {
   'upper': interval?.upper ?? 0.0,
 };
 
-Map<String, Object?> _scoringMetadataJson() => {
-  'schemaVersion': 1,
+Map<String, Object?> _scoringMetadataJson(int schemaVersion) => {
+  'schemaVersion': schemaVersion,
   'primaryMetric': 'primary_pass',
   'rankingMetric': 'primary_pass_rate',
   'confidenceInterval': 'wilson_95',
   'llmJudgePolicy': 'diagnostic_only',
+  if (schemaVersion >= _diagnosticOnlyScoringSchemaVersion) ...{
+    'diffSizePolicy': 'diagnostic_only_full_patch',
+    'diagnosticOnlyEvaluatorIds': diagnosticOnlyEvaluatorIds.toList()..sort(),
+  },
   'objectiveEvaluatorIds': objectiveEvaluatorIds.toList()..sort(),
   'secondaryEvaluatorIds': secondaryEvaluatorIds.toList()..sort(),
   'hiddenVerifierPattern': '*_hidden',
@@ -752,24 +771,41 @@ _EvaluatorWeightsParse _parseEvaluatorWeights(Run run) {
         'Run ${run.id} has no evaluator weights provenance; skipped evaluator-weight compatibility check.',
       );
     }
+    final scoringSchemaVersion = _scoringSchemaVersion(
+      config['scoringSchemaVersion'],
+    );
+    if (scoringSchemaVersion == null) {
+      return _EvaluatorWeightsParse.warning(
+        'Run ${run.id} has malformed scoring schema provenance; skipped evaluator-weight compatibility check.',
+      );
+    }
     final weights = config['evaluatorWeights'];
     if (weights is! Map<String, Object?>) {
       return _EvaluatorWeightsParse.warning(
         'Run ${run.id} has no evaluator weights provenance; skipped evaluator-weight compatibility check.',
+        scoringSchemaVersion: scoringSchemaVersion,
       );
     }
     final normalized = <String, Object?>{};
     for (final entry in weights.entries) {
+      if (scoringSchemaVersion >= _diagnosticOnlyScoringSchemaVersion &&
+          diagnosticOnlyEvaluatorIds.contains(entry.key)) {
+        continue;
+      }
       final value = entry.value;
       if (value is num) {
         normalized[entry.key] = value.toDouble();
       } else {
         return _EvaluatorWeightsParse.warning(
           'Run ${run.id} has malformed evaluator weights; skipped evaluator-weight compatibility check.',
+          scoringSchemaVersion: scoringSchemaVersion,
         );
       }
     }
-    return _EvaluatorWeightsParse(weights: normalized);
+    return _EvaluatorWeightsParse(
+      weights: normalized,
+      scoringSchemaVersion: scoringSchemaVersion,
+    );
   } on Object {
     return _EvaluatorWeightsParse.warning(
       'Run ${run.id} has malformed provenance; skipped evaluator-weight compatibility check.',
@@ -920,11 +956,13 @@ class _SelectedTaskRuns {
     required this.taskRuns,
     required this.anchorRunId,
     this.sourceRunIds = const <String>{},
+    this.scoringSchemaVersion = dartArenaScoringSchemaVersion,
   });
 
   final List<TaskRun> taskRuns;
   final String? anchorRunId;
   final Set<String> sourceRunIds;
+  final int scoringSchemaVersion;
 }
 
 class _SourceRunProvenanceSummary {
@@ -1215,9 +1253,13 @@ class _RunCompatibilitySignature {
   const _RunCompatibilitySignature({
     required this.taskKeys,
     required this.harnessIds,
+    required this.scoringSchemaVersion,
   });
 
-  factory _RunCompatibilitySignature.fromTaskRuns(List<TaskRun> taskRuns) {
+  factory _RunCompatibilitySignature.fromTaskRuns(
+    List<TaskRun> taskRuns, {
+    required int? scoringSchemaVersion,
+  }) {
     return _RunCompatibilitySignature(
       taskKeys: (taskRuns.map((taskRun) => _taskKey(taskRun)).toSet().toList()
         ..sort()),
@@ -1228,22 +1270,36 @@ class _RunCompatibilitySignature {
               .toSet()
               .toList()
             ..sort()),
+      scoringSchemaVersion: scoringSchemaVersion,
     );
   }
 
   final List<String> taskKeys;
   final List<String> harnessIds;
+  final int? scoringSchemaVersion;
+
+  bool isCompatibleWith(_RunCompatibilitySignature other) {
+    return _listEquals(taskKeys, other.taskKeys) &&
+        _listEquals(harnessIds, other.harnessIds) &&
+        (scoringSchemaVersion == null ||
+            other.scoringSchemaVersion == null ||
+            scoringSchemaVersion == other.scoringSchemaVersion);
+  }
 
   @override
   bool operator ==(Object other) {
     return other is _RunCompatibilitySignature &&
         _listEquals(taskKeys, other.taskKeys) &&
-        _listEquals(harnessIds, other.harnessIds);
+        _listEquals(harnessIds, other.harnessIds) &&
+        scoringSchemaVersion == other.scoringSchemaVersion;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(Object.hashAll(taskKeys), Object.hashAll(harnessIds));
+  int get hashCode => Object.hash(
+    Object.hashAll(taskKeys),
+    Object.hashAll(harnessIds),
+    scoringSchemaVersion,
+  );
 }
 
 bool _listEquals<T>(List<T> a, List<T> b) {
@@ -1771,12 +1827,32 @@ bool _isBlocked(Evaluation evaluation) {
 }
 
 class _EvaluatorWeightsParse {
-  const _EvaluatorWeightsParse({this.weights, this.warning});
+  const _EvaluatorWeightsParse({
+    this.weights,
+    this.warning,
+    this.scoringSchemaVersion,
+  });
 
-  factory _EvaluatorWeightsParse.warning(String warning) {
-    return _EvaluatorWeightsParse(warning: warning);
+  factory _EvaluatorWeightsParse.warning(
+    String warning, {
+    int? scoringSchemaVersion,
+  }) {
+    return _EvaluatorWeightsParse(
+      warning: warning,
+      scoringSchemaVersion: scoringSchemaVersion,
+    );
   }
 
   final Map<String, Object?>? weights;
   final String? warning;
+  final int? scoringSchemaVersion;
+}
+
+int? _scoringSchemaVersion(Object? value) {
+  if (value == null) return 1;
+  if (value is int && value > 0) return value;
+  if (value is num && value > 0 && value == value.roundToDouble()) {
+    return value.toInt();
+  }
+  return null;
 }

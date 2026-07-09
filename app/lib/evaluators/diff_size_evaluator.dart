@@ -1,11 +1,15 @@
-import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
+import 'package:dart_arena/core/workspace_path.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:diff_match_patch/diff_match_patch.dart';
-import 'package:path/path.dart' as p;
+
+final _patchTruncationMarker = RegExp(
+  r'\[patch truncated at \d+ characters\]\s*$',
+);
 
 class DiffSizeEvaluator implements Evaluator {
   DiffSizeEvaluator({required this.originalFixturePath, this.k = 20});
@@ -18,38 +22,134 @@ class DiffSizeEvaluator implements Evaluator {
 
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
-    final original = ctx.task.fixtures[originalFixturePath];
-    final newFile = File(p.join(ctx.workDir.path, originalFixturePath));
-    if (original == null || !newFile.existsSync()) {
+    final outcome = await _measure(ctx);
+    final measurement = outcome.measurement;
+    if (measurement == null) {
       return EvaluationResult(
         evaluatorId: id,
-        passed: false,
+        passed: true,
         score: 0.0,
         rationale: 'diff source missing',
         details: {
-          'original_present': original != null,
-          'new_file_present': newFile.existsSync(),
-          'path': originalFixturePath,
+          'fixture_count': ctx.task.fixtures.length,
+          'legacy_path': originalFixturePath,
+          if (outcome.patchTruncated) 'patch_truncated': true,
         },
       );
     }
 
-    final newContents = await newFile.readAsString();
-    final changed = _changedLines(original, newContents);
-    final score = math.exp(-changed / k);
+    final score = math.exp(-measurement.changedLines / k);
     final clamped = score.clamp(0.0, 1.0);
 
     return EvaluationResult(
       evaluatorId: id,
-      passed: clamped >= 0.3,
+      passed: true,
       score: clamped,
-      rationale: 'changed_lines=$changed',
+      rationale: 'changed_lines=${measurement.changedLines}',
       details: {
-        'original_lines': '\n'.allMatches(original).length + 1,
-        'new_lines': '\n'.allMatches(newContents).length + 1,
-        'changed_lines': changed,
+        'changed_lines': measurement.changedLines,
+        'changed_file_count': measurement.changedFileCount,
+        'compared_file_count': measurement.comparedFileCount,
+        'measurement_source': measurement.source,
+        if (measurement.originalLines != null)
+          'original_lines': measurement.originalLines,
+        if (measurement.newLines != null) 'new_lines': measurement.newLines,
+        if (measurement.missingFileCount > 0)
+          'missing_file_count': measurement.missingFileCount,
+        if (measurement.patchTruncated) 'patch_truncated': true,
         'score_k': k,
       },
+    );
+  }
+
+  Future<_DiffMeasurementOutcome> _measure(EvaluationContext ctx) async {
+    final patch = ctx.response.extractedCode;
+    var patchTruncated = false;
+    if (ctx.task.track == BenchmarkTrack.agentic && patch != null) {
+      final patchMeasurement = _measurePatch(patch);
+      patchTruncated =
+          patchMeasurement?.patchTruncated ??
+          _patchTruncationMarker.hasMatch(patch);
+      if (patchMeasurement != null && !patchMeasurement.patchTruncated) {
+        return _DiffMeasurementOutcome(measurement: patchMeasurement);
+      }
+    }
+    final fixtureMeasurement = await _measureFixtureFiles(ctx);
+    if (fixtureMeasurement == null) {
+      return _DiffMeasurementOutcome(patchTruncated: patchTruncated);
+    }
+    return _DiffMeasurementOutcome(
+      measurement: patchTruncated
+          ? fixtureMeasurement.withPatchTruncated()
+          : fixtureMeasurement,
+      patchTruncated: patchTruncated,
+    );
+  }
+
+  _DiffMeasurement? _measurePatch(String patch) {
+    if (!patch.contains('diff --git ')) return null;
+
+    var changedLines = 0;
+    var changedFileCount = 0;
+    var inHunk = false;
+    for (final line in patch.split('\n')) {
+      if (line.startsWith('diff --git ')) {
+        changedFileCount++;
+        inHunk = false;
+        continue;
+      }
+      if (line.startsWith('@@')) {
+        inHunk = true;
+        continue;
+      }
+      if (!inHunk) continue;
+      if (line.startsWith(r'\ No newline at end of file')) continue;
+      if (line.startsWith('+')) {
+        changedLines++;
+      } else if (line.startsWith('-')) {
+        changedLines++;
+      }
+    }
+
+    if (changedFileCount == 0) return null;
+
+    return _DiffMeasurement(
+      changedLines: changedLines,
+      changedFileCount: changedFileCount,
+      comparedFileCount: changedFileCount,
+      source: 'agent_patch',
+      patchTruncated: _patchTruncationMarker.hasMatch(patch),
+    );
+  }
+
+  Future<_DiffMeasurement?> _measureFixtureFiles(EvaluationContext ctx) async {
+    if (ctx.task.fixtures.isEmpty) return null;
+
+    var changedLines = 0;
+    var changedFileCount = 0;
+    var missingFileCount = 0;
+    var originalLines = 0;
+    var newLines = 0;
+    for (final entry in ctx.task.fixtures.entries) {
+      final file = resolveWorkspaceFile(ctx.workDir, entry.key);
+      final exists = await file.exists();
+      final newContents = exists ? await file.readAsString() : '';
+      final changed = _changedLines(entry.value, newContents);
+      if (changed > 0) changedFileCount++;
+      if (!exists) missingFileCount++;
+      changedLines += changed;
+      originalLines += _lineCount(entry.value);
+      newLines += _lineCount(newContents);
+    }
+
+    return _DiffMeasurement(
+      changedLines: changedLines,
+      changedFileCount: changedFileCount,
+      comparedFileCount: ctx.task.fixtures.length,
+      originalLines: originalLines,
+      newLines: newLines,
+      missingFileCount: missingFileCount,
+      source: 'workspace_fixtures',
     );
   }
 
@@ -71,6 +171,8 @@ class DiffSizeEvaluator implements Evaluator {
     return changed;
   }
 
+  int _lineCount(String contents) => '\n'.allMatches(contents).length + 1;
+
   String _encode(List<String> lines, Map<String, String> map) {
     final buf = StringBuffer();
     for (final line in lines) {
@@ -85,4 +187,49 @@ class DiffSizeEvaluator implements Evaluator {
     }
     return buf.toString();
   }
+}
+
+class _DiffMeasurement {
+  const _DiffMeasurement({
+    required this.changedLines,
+    required this.changedFileCount,
+    required this.comparedFileCount,
+    required this.source,
+    this.originalLines,
+    this.newLines,
+    this.missingFileCount = 0,
+    this.patchTruncated = false,
+  });
+
+  final int changedLines;
+  final int changedFileCount;
+  final int comparedFileCount;
+  final String source;
+  final int? originalLines;
+  final int? newLines;
+  final int missingFileCount;
+  final bool patchTruncated;
+
+  _DiffMeasurement withPatchTruncated() {
+    return _DiffMeasurement(
+      changedLines: changedLines,
+      changedFileCount: changedFileCount,
+      comparedFileCount: comparedFileCount,
+      source: source,
+      originalLines: originalLines,
+      newLines: newLines,
+      missingFileCount: missingFileCount,
+      patchTruncated: true,
+    );
+  }
+}
+
+class _DiffMeasurementOutcome {
+  const _DiffMeasurementOutcome({
+    this.measurement,
+    this.patchTruncated = false,
+  });
+
+  final _DiffMeasurement? measurement;
+  final bool patchTruncated;
 }

@@ -21,7 +21,7 @@ import 'package:dart_arena/runner/resource_enforcement_policy.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 
 const taskQaAdmissionToolName = 'dart_arena_task_qa';
-const taskQaAdmissionEvaluatorSchemaVersion = 1;
+const taskQaAdmissionEvaluatorSchemaVersion = 2;
 const taskQaAdmissionEvaluatorVersion = '2026-05-31-master-spec';
 
 class TaskQaReport {

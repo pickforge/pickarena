@@ -19,6 +19,11 @@ const _artifactBundleChecksumsSchemaVersion = 1;
 const _artifactRunResultsSchemaVersion = 1;
 const _taskQaSummarySchemaVersion = 1;
 const _taskQaReportSchemaVersion = 1;
+const _requiredScoringSchemaVersion = 2;
+const _requiredBenchmarkEvaluatorSchemaVersion = 2;
+const _requiredDiffSizePolicy = 'diagnostic_only_full_patch';
+const _diffSizeEvaluatorId = 'diff_size';
+const _requiredTaskQaAdmissionEvaluatorSchemaVersion = 2;
 final _artifactBundleWarningCodePattern = RegExp(
   r'^[a-z0-9][a-z0-9_.-]{0,95}$',
 );
@@ -200,6 +205,9 @@ Map<String, Object?> buildReleaseReport({
     blockers.add(
       'Leaderboard benchmark evaluator schema version metadata is missing.',
     );
+  } else if (evaluatorSchemaVersion <
+      _requiredBenchmarkEvaluatorSchemaVersion) {
+    blockers.add('Leaderboard benchmark evaluator schema version is stale.');
   }
 
   final taskRunCount = _intValue(source['taskRunCount']);
@@ -1060,6 +1068,9 @@ Map<String, Object?> _scoringReadinessGate({
 }) {
   final objectiveEvaluatorIds = _stringList(scoring['objectiveEvaluatorIds']);
   final secondaryEvaluatorIds = _stringList(scoring['secondaryEvaluatorIds']);
+  final diagnosticOnlyEvaluatorIds = _stringList(
+    scoring['diagnosticOnlyEvaluatorIds'],
+  );
   final failureTags = _stringList(scoring['failureTags']);
   final objectiveFailureCaps = _objectMap(scoring['objectiveFailureCaps']);
   final defaultEvaluatorWeights = _objectMap(
@@ -1068,13 +1079,15 @@ Map<String, Object?> _scoringReadinessGate({
   final requiredFailureTagsPresent = _requiredFailureTagsPresent(failureTags);
   final hiddenVerifierPattern = scoring['hiddenVerifierPattern'];
   final passed =
-      _intValue(scoring['schemaVersion']) > 0 &&
+      _intValue(scoring['schemaVersion']) >= _requiredScoringSchemaVersion &&
       scoring['primaryMetric'] == 'primary_pass' &&
       scoring['rankingMetric'] == 'primary_pass_rate' &&
       scoring['confidenceInterval'] == 'wilson_95' &&
       scoring['llmJudgePolicy'] is String &&
+      scoring['diffSizePolicy'] == _requiredDiffSizePolicy &&
       objectiveEvaluatorIds.isNotEmpty &&
       secondaryEvaluatorIds.isNotEmpty &&
+      diagnosticOnlyEvaluatorIds.contains(_diffSizeEvaluatorId) &&
       hiddenVerifierPattern is String &&
       hiddenVerifierPattern.trim().isNotEmpty &&
       failureTags.isNotEmpty &&
@@ -1089,8 +1102,13 @@ Map<String, Object?> _scoringReadinessGate({
     'rankingMetric': scoring['rankingMetric'],
     'confidenceInterval': scoring['confidenceInterval'],
     'llmJudgePolicy': scoring['llmJudgePolicy'],
+    'diffSizePolicy': scoring['diffSizePolicy'],
     'objectiveEvaluatorCount': objectiveEvaluatorIds.length,
     'secondaryEvaluatorCount': secondaryEvaluatorIds.length,
+    'diagnosticOnlyEvaluatorCount': diagnosticOnlyEvaluatorIds.length,
+    'diffSizeDiagnosticOnly': diagnosticOnlyEvaluatorIds.contains(
+      _diffSizeEvaluatorId,
+    ),
     'failureTagCount': failureTags.length,
     'requiredFailureTagsPresent': requiredFailureTagsPresent,
     'objectiveFailureCapCount': objectiveFailureCaps.length,
@@ -5313,6 +5331,9 @@ Map<String, Object?> _scoringSummary(
   final scoring = _objectMap(rawScoring);
   final objectiveEvaluatorIds = _stringList(scoring['objectiveEvaluatorIds']);
   final secondaryEvaluatorIds = _stringList(scoring['secondaryEvaluatorIds']);
+  final diagnosticOnlyEvaluatorIds = _stringList(
+    scoring['diagnosticOnlyEvaluatorIds'],
+  );
   final failureTags = _stringList(scoring['failureTags']);
   final objectiveFailureCaps = _objectMap(scoring['objectiveFailureCaps']);
   final defaultEvaluatorWeights = _objectMap(
@@ -5325,13 +5346,18 @@ Map<String, Object?> _scoringSummary(
       scoring['rankingMetric'] is! String ||
       scoring['confidenceInterval'] is! String ||
       scoring['llmJudgePolicy'] is! String ||
+      scoring['diffSizePolicy'] is! String ||
       scoring['objectiveEvaluatorIds'] is! List ||
       scoring['secondaryEvaluatorIds'] is! List ||
+      scoring['diagnosticOnlyEvaluatorIds'] is! List ||
       scoring['hiddenVerifierPattern'] is! String ||
       scoring['failureTags'] is! List ||
       scoring['objectiveFailureCaps'] is! Map ||
       scoring['defaultEvaluatorWeights'] is! Map) {
     blockers.add('Leaderboard export has incomplete scoring metadata.');
+  }
+  if (_intValue(scoring['schemaVersion']) < _requiredScoringSchemaVersion) {
+    blockers.add('Leaderboard scoring schema version is stale.');
   }
   if (scoring['primaryMetric'] != 'primary_pass') {
     blockers.add('Leaderboard scoring primary metric is not primary_pass.');
@@ -5343,6 +5369,16 @@ Map<String, Object?> _scoringSummary(
   }
   if (scoring['confidenceInterval'] != 'wilson_95') {
     blockers.add('Leaderboard scoring confidence interval is not wilson_95.');
+  }
+  if (scoring['diffSizePolicy'] != _requiredDiffSizePolicy) {
+    blockers.add(
+      'Leaderboard scoring diff_size policy is not diagnostic_only_full_patch.',
+    );
+  }
+  if (!diagnosticOnlyEvaluatorIds.contains(_diffSizeEvaluatorId)) {
+    blockers.add(
+      'Leaderboard scoring diagnostic-only evaluator ids are incomplete.',
+    );
   }
   if (!failureTags.contains('pass') ||
       !failureTags.contains('public_tests_failed') ||
@@ -5356,8 +5392,10 @@ Map<String, Object?> _scoringSummary(
     'rankingMetric': scoring['rankingMetric'],
     'confidenceInterval': scoring['confidenceInterval'],
     'llmJudgePolicy': scoring['llmJudgePolicy'],
+    'diffSizePolicy': scoring['diffSizePolicy'],
     'objectiveEvaluatorIds': objectiveEvaluatorIds,
     'secondaryEvaluatorIds': secondaryEvaluatorIds,
+    'diagnosticOnlyEvaluatorIds': diagnosticOnlyEvaluatorIds,
     'hiddenVerifierPattern': scoring['hiddenVerifierPattern'],
     'failureTags': failureTags,
     'objectiveFailureCaps': {
@@ -6857,7 +6895,9 @@ Map<String, Object?> _verifierAudit(
       final evaluator = _objectMap(admission['evaluator']);
       final evaluatorSchemaVersion = _intValue(evaluator['schemaVersion']);
       final evaluatorVersion = _nonEmptyString(evaluator['version']);
-      if (evaluatorSchemaVersion <= 0 || evaluatorVersion == null) {
+      if (evaluatorSchemaVersion !=
+              _requiredTaskQaAdmissionEvaluatorSchemaVersion ||
+          evaluatorVersion == null) {
         invalidAdmissionEvaluatorCount++;
         tasksWithAdmissionProvenanceIssues.add({
           ...taskRef,

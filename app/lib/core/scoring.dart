@@ -3,6 +3,8 @@ import 'dart:math' show sqrt;
 import 'package:dart_arena/core/evaluator_classification.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 
+const dartArenaScoringSchemaVersion = 2;
+
 const Map<String, double> defaultEvaluatorWeights = {
   'compile': 0.5,
   'analyze': 0.5,
@@ -11,7 +13,6 @@ const Map<String, double> defaultEvaluatorWeights = {
   'test_author': 4.0,
   'widget_tree': 1.0,
   'llm_judge': 0.7,
-  'diff_size': 0.3,
 };
 
 double aggregate(List<EvaluationResult> results, Map<String, double> weights) {
@@ -29,6 +30,7 @@ double aggregate(List<EvaluationResult> results, Map<String, double> weights) {
     if (isSecondaryEvaluatorId(r.evaluatorId) && isIgnoredOrSkipped(r)) {
       continue;
     }
+    if (isDiagnosticOnlyEvaluatorId(r.evaluatorId)) continue;
     final w = weights[r.evaluatorId] ?? 1.0;
     num += r.score * w;
     den += w;

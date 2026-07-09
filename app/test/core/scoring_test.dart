@@ -53,7 +53,6 @@ void main() {
       const results = [
         EvaluationResult(evaluatorId: 'compile', passed: false, score: 0.0),
         EvaluationResult(evaluatorId: 'llm_judge', passed: true, score: 1.0),
-        EvaluationResult(evaluatorId: 'diff_size', passed: true, score: 1.0),
       ];
 
       expect(aggregate(results, defaultEvaluatorWeights), 0.20);
@@ -132,6 +131,19 @@ void main() {
       },
     );
 
+    test('diff size is diagnostic-only even when a weight is supplied', () {
+      const results = [
+        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+        EvaluationResult(evaluatorId: 'test', passed: true, score: 1.0),
+        EvaluationResult(evaluatorId: 'diff_size', passed: true, score: 0.0),
+      ];
+
+      expect(
+        aggregate(results, const {'compile': 1, 'test': 1, 'diff_size': 100}),
+        1.0,
+      );
+    });
+
     test('blocked evaluators have zero effective weight', () {
       const results = [
         EvaluationResult(evaluatorId: 'compile', passed: false, score: 0.0),
@@ -164,18 +176,21 @@ void main() {
     });
   });
 
-  test('defaultEvaluatorWeights covers all built-in evaluators', () {
-    expect(
-      defaultEvaluatorWeights.keys,
-      containsAll(<String>[
-        'compile',
-        'analyze',
-        'test',
-        'hidden_test',
-        'widget_tree',
-        'llm_judge',
-        'diff_size',
-      ]),
-    );
-  });
+  test(
+    'defaultEvaluatorWeights covers aggregate-scored built-in evaluators',
+    () {
+      expect(
+        defaultEvaluatorWeights.keys,
+        containsAll(<String>[
+          'compile',
+          'analyze',
+          'test',
+          'hidden_test',
+          'widget_tree',
+          'llm_judge',
+        ]),
+      );
+      expect(defaultEvaluatorWeights, isNot(contains('diff_size')));
+    },
+  );
 }
