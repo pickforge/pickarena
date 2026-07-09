@@ -18,12 +18,14 @@ class TaskNegativeCase {
     required this.description,
     required this.solution,
     this.kind = TaskNegativeCaseKind.custom,
+    this.rootPath,
   });
 
   final String id;
   final String description;
   final ReferenceSolution solution;
   final TaskNegativeCaseKind kind;
+  final String? rootPath;
 }
 
 enum TaskNegativeCaseKind { noop, apiBreaking, overfit, minimalBad, custom }
