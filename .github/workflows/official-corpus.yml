@@ -1,0 +1,87 @@
+name: Official Corpus
+
+on:
+  pull_request:
+    paths:
+      - 'tasks/**'
+      - 'app/lib/runner/**'
+      - 'app/lib/evaluators/**'
+      - 'app/lib/export/**'
+      - 'app/test/tasks/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'tasks/**'
+      - 'app/lib/runner/**'
+      - 'app/lib/evaluators/**'
+      - 'app/lib/export/**'
+      - 'app/test/tasks/**'
+
+permissions:
+  contents: read
+
+jobs:
+  official-corpus:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Bubblewrap
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap
+      - name: Preflight Bubblewrap sandbox
+        run: |
+          set -u
+          log="$RUNNER_TEMP/bubblewrap-preflight.log"
+
+          run_probe() {
+            bwrap --version &&
+              systemd-run --user --scope --quiet --expand-environment=no -p CPUQuota=100% /usr/bin/env true &&
+              bwrap --ro-bind / / --unshare-pid --unshare-ipc /bin/true
+          }
+
+          if run_probe >"$log" 2>&1; then
+            {
+              echo "### Bubblewrap preflight"
+              echo ""
+              echo "Functional Bubblewrap and systemd user-scope probes passed."
+            } >>"$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "### Bubblewrap preflight"
+            echo ""
+            echo "Initial preflight failed; attempting Ubuntu unprivileged user namespace allowance."
+            echo ""
+            echo '```'
+            cat "$log"
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 >>"$log" 2>&1 || true
+          fi
+
+          if run_probe >>"$log" 2>&1; then
+            {
+              echo ""
+              echo "Preflight passed after applying the Ubuntu unprivileged user namespace allowance."
+            } >>"$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo ""
+            echo "Bubblewrap preflight still failed after remediation. The official corpus test will run in its visible skip path; enforcement is not being asserted on this runner."
+            echo ""
+            echo '```'
+            cat "$log"
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+        working-directory: app
+      - run: flutter test test/tasks/official_file_backed_task_test.dart
+        working-directory: app
