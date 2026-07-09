@@ -1,6 +1,6 @@
 schemaVersion: 1
 id: ui.action_bar_overflow
-version: 1
+version: 2
 category: widget_testing
 track: agentic
 tags:

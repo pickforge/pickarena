@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "taskId": "forms.email_validation",
-  "taskVersion": 1,
+  "taskVersion": 2,
   "category": "bugFix",
   "difficulty": "medium",
   "track": "agentic",
@@ -38,8 +38,8 @@
         }
       },
       "flutterVersion": "3.41.6",
-      "gitCommit": "68321eeaff3fbf5a1bfee2893c2fab3b0b446d0a",
-      "gitDirty": true,
+      "gitCommit": "7e7f25aca3a75fef2798eb9e2aff88dcd6b2b2f3",
+      "gitDirty": false,
       "hostPlatform": "linux",
       "locale": "C.UTF-8",
       "operatingSystemVersion": "Linux 7.1.3-1-cachyos #1 SMP PREEMPT_DYNAMIC Mon, 06 Jul 2026 19:44:10 +0000"
@@ -86,8 +86,8 @@
       "snapshotStage": "pre_tool_execution",
       "workspaceCount": 5,
       "visibleFileCount": 15,
-      "visibleBytes": 5678,
-      "combinedVisibleManifestSha256": "e8abb40eb578616f17a0e3ecaafc18d50de809d062ea85d20f5dfd6c463b60ea",
+      "visibleBytes": 5964,
+      "combinedVisibleManifestSha256": "31081ca4b6de273a0602b1d695a978e915ddff657ccd6a6d807ada9b1ab0b69f",
       "restrictedPathCount": 0,
       "symlinkCount": 0,
       "unreadableFileCount": 0,
@@ -118,8 +118,8 @@
           "role": "reference",
           "index": 0,
           "visibleFileCount": 3,
-          "visibleBytes": 1297,
-          "visibleManifestSha256": "cba8a428d873652ee2bc1f558a29a1515e64e36f0bc9175fc9856abca44958c4",
+          "visibleBytes": 1583,
+          "visibleManifestSha256": "0f0b2e5949bd45d72b1ae10198d8f3825d1d062b98d48d08021c2bd5d5b19b82",
           "workdirUnderRunsRoot": true,
           "rootConfined": true,
           "relativePathsOnly": true,
@@ -178,7 +178,7 @@
     }
   },
   "status": "admitted",
-  "generatedAt": "2026-07-08T20:16:22.780483Z",
+  "generatedAt": "2026-07-09T07:28:40.628618Z",
   "checks": {
     "baselineHiddenFailed": true,
     "referencePublicPassed": true,
@@ -248,8 +248,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_forms.em_a6131ef220cf...                      \nNo issues found! (ran in 11.6s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Analyzing segment_forms.em_a6131ef220cf...                      \nNo issues found! (ran in 11.3s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -263,8 +263,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_forms.em_a6131ef220cf...                      \nNo issues found! (ran in 10.7s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Analyzing segment_forms.em_a6131ef220cf...                      \nNo issues found! (ran in 10.2s)\n",
             "tool": "flutter"
           }
         },
@@ -280,7 +279,6 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -344,8 +342,8 @@
           "rationale": "analysis errors present",
           "details": {
             "exitCode": 1,
-            "stdout": "Analyzing segment_forms.em_a6131ef220cf...                      \n\n  error • The function 'EmailSignUpController' isn't defined • test/email_signup_controller_test.dart:6:24 • undefined_function\n  error • Undefined name 'EmailSignUpController' • test/email_signup_controller_test.dart:9:34 • undefined_identifier\n  error • The function 'EmailSignUpController' isn't defined • test/email_signup_controller_test.dart:14:24 • undefined_function\n\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n3 issues found. (ran in 11.6s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_forms.em_a6131ef220cf...                      \n\n  error • The function 'EmailSignUpController' isn't defined • test/email_signup_controller_test.dart:6:24 • undefined_function\n  error • Undefined name 'EmailSignUpController' • test/email_signup_controller_test.dart:9:34 • undefined_identifier\n  error • The function 'EmailSignUpController' isn't defined • test/email_signup_controller_test.dart:14:24 • undefined_function\n\n",
+            "stderr": "3 issues found. (ran in 11.0s)\n",
             "tool": "flutter"
           }
         },
@@ -359,8 +357,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 1,
-            "raw_stdout": "Analyzing segment_forms.em_a6131ef220cf...                      \n\n  error • The function 'EmailSignUpController' isn't defined • test/email_signup_controller_test.dart:6:24 • undefined_function\n  error • Undefined name 'EmailSignUpController' • test/email_signup_controller_test.dart:9:34 • undefined_identifier\n  error • The function 'EmailSignUpController' isn't defined • test/email_signup_controller_test.dart:14:24 • undefined_function\n\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n3 issues found. (ran in 10.2s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_forms.em_a6131ef220cf...                      \n\n  error • The function 'EmailSignUpController' isn't defined • test/email_signup_controller_test.dart:6:24 • undefined_function\n  error • Undefined name 'EmailSignUpController' • test/email_signup_controller_test.dart:9:34 • undefined_identifier\n  error • The function 'EmailSignUpController' isn't defined • test/email_signup_controller_test.dart:14:24 • undefined_function\n\n",
+            "stderr": "3 issues found. (ran in 10.0s)\n",
             "tool": "flutter"
           }
         },
@@ -408,8 +406,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_forms.em_a6131ef220cf...                      \nNo issues found! (ran in 10.9s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_forms.em_a6131ef220cf...                      \nNo issues found! (ran in 11.1s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -422,9 +420,8 @@
             "errors": 0,
             "warnings": 0,
             "infos": 0,
-            "exit_code": -9,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_forms.em_a6131ef220cf...                      ",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "exit_code": 0,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_forms.em_a6131ef220cf...                      \nNo issues found! (ran in 10.0s)\n",
             "tool": "flutter"
           }
         },
@@ -440,7 +437,6 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },

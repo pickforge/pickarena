@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "taskId": "ui.action_bar_overflow",
-  "taskVersion": 1,
+  "taskVersion": 2,
   "category": "widgetTesting",
   "difficulty": "medium",
   "track": "agentic",
@@ -39,8 +39,8 @@
         }
       },
       "flutterVersion": "3.41.6",
-      "gitCommit": "68321eeaff3fbf5a1bfee2893c2fab3b0b446d0a",
-      "gitDirty": true,
+      "gitCommit": "7e7f25aca3a75fef2798eb9e2aff88dcd6b2b2f3",
+      "gitDirty": false,
       "hostPlatform": "linux",
       "locale": "C.UTF-8",
       "operatingSystemVersion": "Linux 7.1.3-1-cachyos #1 SMP PREEMPT_DYNAMIC Mon, 06 Jul 2026 19:44:10 +0000"
@@ -87,8 +87,8 @@
       "snapshotStage": "pre_tool_execution",
       "workspaceCount": 10,
       "visibleFileCount": 30,
-      "visibleBytes": 111087,
-      "combinedVisibleManifestSha256": "577785ce7fe1807f32216bdb408e08e9f63937277502bb54374354cfd9b7bb7b",
+      "visibleBytes": 111418,
+      "combinedVisibleManifestSha256": "a4f17ec3d8ed453819dea92ac5f3caacfb426bc8588aa406e9a7cf1820b44870",
       "restrictedPathCount": 0,
       "symlinkCount": 0,
       "unreadableFileCount": 0,
@@ -119,8 +119,8 @@
           "role": "reference",
           "index": 0,
           "visibleFileCount": 3,
-          "visibleBytes": 12533,
-          "visibleManifestSha256": "cae666c87a84731bc384973a0362d9492b533fa1530ccf2313ee85d1b6f6848b",
+          "visibleBytes": 12864,
+          "visibleManifestSha256": "afb048b0e5ba339d05b363e3d65259e08b9c424c7cd9f5928b775db478b6c0c9",
           "workdirUnderRunsRoot": true,
           "rootConfined": true,
           "relativePathsOnly": true,
@@ -254,7 +254,7 @@
     }
   },
   "status": "admitted",
-  "generatedAt": "2026-07-08T20:16:22.780483Z",
+  "generatedAt": "2026-07-09T07:23:20.014742Z",
   "checks": {
     "baselineHiddenFailed": true,
     "referencePublicPassed": true,
@@ -325,8 +325,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 10.9s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 11.7s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -340,8 +340,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 9.2s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 9.9s)\n",
             "tool": "flutter"
           }
         },
@@ -374,7 +373,6 @@
               }
             ],
             "exit_code": 1,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -410,7 +408,7 @@
           "details": {
             "exitCode": 1,
             "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \n\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:7:17 • non_type_as_type_argument\n  error • The named parameter 'primaryLabel' isn't defined • test/responsive_action_bar_test.dart:18:13 • undefined_named_parameter\n  error • The named parameter 'onPrimaryPressed' isn't defined • test/responsive_action_bar_test.dart:19:13 • undefined_named_parameter\n  error • The named parameter 'actions' isn't defined • test/responsive_action_bar_test.dart:20:13 • undefined_named_parameter\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:28:6 • non_type_as_type_argument\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:33:11 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:34:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:41:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:48:5 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:75:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:77:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:81:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:85:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:88:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:90:53 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:92:53 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:115:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:119:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:124:44 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:133:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:137:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:141:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:145:57 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:147:57 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:151:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:155:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:159:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:167:42 • undefined_method\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:189:24 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:190:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:197:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:204:9 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:222:45 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:223:45 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:226:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:233:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:238:55 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:256:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:258:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:261:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:267:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:269:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:272:43 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:274:53 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:278:38 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:282:38 • undefined_method\n\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n46 issues found. (ran in 10.6s)\n",
+            "stderr": "46 issues found. (ran in 12.1s)\n",
             "tool": "flutter"
           }
         },
@@ -425,7 +423,7 @@
             "infos": 0,
             "exit_code": 1,
             "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \n\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:7:17 • non_type_as_type_argument\n  error • The named parameter 'primaryLabel' isn't defined • test/responsive_action_bar_test.dart:18:13 • undefined_named_parameter\n  error • The named parameter 'onPrimaryPressed' isn't defined • test/responsive_action_bar_test.dart:19:13 • undefined_named_parameter\n  error • The named parameter 'actions' isn't defined • test/responsive_action_bar_test.dart:20:13 • undefined_named_parameter\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:28:6 • non_type_as_type_argument\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:33:11 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:34:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:41:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:48:5 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:75:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:77:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:81:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:85:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:88:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:90:53 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:92:53 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:115:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:119:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:124:44 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:133:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:137:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:141:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:145:57 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:147:57 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:151:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:155:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:159:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:167:42 • undefined_method\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:189:24 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:190:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:197:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:204:9 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:222:45 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:223:45 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:226:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:233:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:238:55 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:256:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:258:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:261:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:267:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:269:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:272:43 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:274:53 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:278:38 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:282:38 • undefined_method\n\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n46 issues found. (ran in 9.0s)\n",
+            "stderr": "46 issues found. (ran in 9.8s)\n",
             "tool": "flutter"
           }
         },
@@ -473,8 +471,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 10.9s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 12.0s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -487,9 +485,8 @@
             "errors": 0,
             "warnings": 0,
             "infos": 0,
-            "exit_code": -9,
-            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      ",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "exit_code": 0,
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 9.9s)\n",
             "tool": "flutter"
           }
         },
@@ -514,7 +511,6 @@
               }
             ],
             "exit_code": 1,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -549,8 +545,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 11.0s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 11.8s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -564,8 +560,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 9.1s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 10.1s)\n",
             "tool": "flutter"
           }
         },
@@ -598,7 +593,6 @@
               }
             ],
             "exit_code": 1,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -633,8 +627,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 11.0s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 11.9s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -648,8 +642,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 9.1s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 9.9s)\n",
             "tool": "flutter"
           }
         },
@@ -674,7 +667,6 @@
               }
             ],
             "exit_code": 1,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -709,8 +701,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 10.9s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 12.1s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -724,8 +716,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 9.1s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 9.9s)\n",
             "tool": "flutter"
           }
         },
@@ -750,7 +741,6 @@
               }
             ],
             "exit_code": 1,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -785,8 +775,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 10.7s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 12.0s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -800,8 +790,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 9.2s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 9.8s)\n",
             "tool": "flutter"
           }
         },
@@ -826,7 +815,6 @@
               }
             ],
             "exit_code": 1,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -861,8 +849,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 10.9s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 11.9s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -876,8 +864,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 9.1s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 10.0s)\n",
             "tool": "flutter"
           }
         },
@@ -893,7 +880,6 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
