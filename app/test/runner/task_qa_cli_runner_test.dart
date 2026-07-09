@@ -16,7 +16,7 @@ import 'package:dart_arena/evaluators/test_evaluator.dart';
 import 'package:dart_arena/runner/resource_enforcement_policy.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/task_qa_cli_runner.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {

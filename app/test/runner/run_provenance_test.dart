@@ -15,7 +15,7 @@ import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/resource_enforcement_policy.dart';
 import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 class _FixedEnvironment implements RunProvenanceEnvironmentProvider {

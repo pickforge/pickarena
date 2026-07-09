@@ -11,7 +11,7 @@ import 'package:dart_arena/evaluators/test_evaluator.dart';
 import 'package:dart_arena/runner/codegen_task_executor.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../support/headless_fakes.dart';

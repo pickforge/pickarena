@@ -10,7 +10,7 @@ import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:drift/native.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 Future<({AppDatabase db, RunDao dao})> _seed() async {
   final db = AppDatabase(NativeDatabase.memory());

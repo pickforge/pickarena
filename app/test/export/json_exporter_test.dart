@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:dart_arena/export/json_exporter.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
-import 'package:flutter_test/flutter_test.dart' hide Evaluation;
+import 'package:test/test.dart';
 
 void main() {
   test('exports readable blocked evaluator status without raw details', () {

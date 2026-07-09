@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:dart_arena/core/fixture_loader_io.dart';
 import 'package:dart_arena/core/plan_loader_io.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {

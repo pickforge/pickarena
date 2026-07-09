@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dart_arena/providers/openai_compatible_provider.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockDio extends Mock implements Dio {}

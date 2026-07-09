@@ -8,7 +8,7 @@ import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/evaluators/analyze_evaluator.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 class _DummyTask extends BenchmarkTask {

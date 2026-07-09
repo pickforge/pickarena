@@ -5,7 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:dart_arena/export/artifact_bundle.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
-import 'package:flutter_test/flutter_test.dart' hide Evaluation;
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 Run _run({String? provenanceJson}) => Run(

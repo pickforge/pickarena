@@ -10,7 +10,7 @@ import 'package:dart_arena/evaluators/test_author_evaluator.dart';
 import 'package:dart_arena/evaluators/test_evaluator.dart';
 import 'package:dart_arena/evaluators/widget_tree_evaluator.dart';
 import 'package:dart_arena/runner/evaluator_resource_limits.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('task output limit replaces default public test limit', () {

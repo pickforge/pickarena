@@ -1,6 +1,6 @@
 import 'package:dart_arena/analytics/dimensions.dart';
 import 'package:dart_arena/storage/database.dart';
-import 'package:flutter_test/flutter_test.dart' hide Evaluation;
+import 'package:test/test.dart';
 
 TaskRun _tr({
   required String id,

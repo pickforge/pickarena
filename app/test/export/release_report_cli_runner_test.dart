@@ -6,7 +6,7 @@ import 'package:dart_arena/export/release_report_cli_runner.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {

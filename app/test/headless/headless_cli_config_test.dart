@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/headless/headless_cli_config.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {

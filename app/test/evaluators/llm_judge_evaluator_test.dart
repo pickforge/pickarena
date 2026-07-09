@@ -9,7 +9,7 @@ import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/evaluators/llm_judge_evaluator.dart';
 import 'package:dart_arena/providers/model_provider.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 class _ScriptedJudge with Disposable implements ModelProvider {
   _ScriptedJudge(

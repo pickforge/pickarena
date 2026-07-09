@@ -1,5 +1,5 @@
 import 'package:dart_arena/analytics/confidence_interval.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('Wilson interval is unknown for zero samples', () {

@@ -1,5 +1,5 @@
 import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('null plan returns the prompt unchanged', () {

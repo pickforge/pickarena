@@ -1,7 +1,7 @@
 import 'package:dart_arena/analytics/result_primitives.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/model_response.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 EvaluationResult _ev(String id, bool passed) => EvaluationResult(
   evaluatorId: id,

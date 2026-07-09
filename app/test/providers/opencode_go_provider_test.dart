@@ -1,5 +1,5 @@
 import 'package:dart_arena/providers/opencode_go_provider.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('OpenCodeGoProvider has correct identity and base URL', () {
