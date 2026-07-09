@@ -1,33 +1,45 @@
+import 'dart:io';
+
 import 'package:dart_arena/core/plan_loader.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
+import 'package:path/path.dart' as p;
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'PlanLoader.load returns a ReferencePlan with filesystem text',
+    () async {
+      final root = await Directory.systemTemp.createTemp('plan_loader_');
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final file = File(p.join(root.path, 'plans/reference.v1.md'));
+      await file.create(recursive: true);
+      await file.writeAsString('Use the filesystem-backed plan.\n');
 
-  testWidgets(
-    'PlanLoader.load returns a ReferencePlan with the loaded asset text',
-    (tester) async {
       final plan = await PlanLoader.load(
-        assetPath:
-            'lib/tasks/bug_fix/fixtures/off_by_one_pagination/pubspec.yaml',
+        assetPath: 'plans/reference.v1.md',
         version: 1,
+        repoRoot: root.path,
       );
+
       expect(plan.version, 1);
-      expect(plan.markdown, isNotEmpty);
-      expect(plan.markdown, contains('off_by_one_pagination'));
+      expect(plan.markdown, contains('filesystem-backed plan'));
     },
   );
 
-  testWidgets('PlanLoader throws when the asset path is missing', (
-    tester,
-  ) async {
+  test('PlanLoader throws when the filesystem path is missing', () async {
+    final root = await Directory.systemTemp.createTemp('plan_missing_');
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+
     await expectLater(
-      () => PlanLoader.load(
-        assetPath: 'lib/tasks/planning_and_execution/plans/missing.md',
+      PlanLoader.load(
+        assetPath: 'plans/missing.md',
         version: 1,
+        repoRoot: root.path,
       ),
-      throwsA(isA<FlutterError>()),
+      throwsA(isA<FileSystemException>()),
     );
   });
 }

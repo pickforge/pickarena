@@ -1,30 +1,49 @@
+import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
-import 'package:dart_arena/tasks/bug_fix/off_by_one_pagination.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
+
+import '../support/official_tasks.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'official file-backed task metadata loads from top-level tasks',
+    () async {
+      final task = await loadOfficialFlutterTask('forms.email_validation');
+      await task.ensureLoaded();
 
-  test('OffByOnePaginationTask metadata', () async {
-    final task = OffByOnePaginationTask();
-    await task.ensureLoaded();
-    expect(task.id, 'bug.off_by_one_pagination');
-    expect(task.category, Category.bugFix);
-    expect(task.generatedCodePath, 'lib/pagination.dart');
-    expect(task.judgeRubric, isNotNull);
-    expect(task.fixtures.keys, contains('lib/pagination.dart'));
-  });
+      expect(task.id, 'forms.email_validation');
+      expect(task.category, Category.bugFix);
+      expect(task.track, BenchmarkTrack.agentic);
+      expect(task.generatedCodePath, 'lib/email_signup_controller.dart');
+      expect(task.judgeRubric, isNull);
+      expect(task.fixtures.keys, contains('lib/email_signup_controller.dart'));
+      expect(
+        task.fixtures.keys,
+        contains('test/email_signup_controller_test.dart'),
+      );
+      expect(
+        task.fixtures.keys,
+        isNot(contains(task.hiddenVerifiers.single.testPath)),
+      );
+    },
+  );
 
-  test('evaluatorsFor without judge returns 4 evaluators', () {
-    final task = OffByOnePaginationTask();
-    final evs = task.evaluatorsFor(const EvaluatorConfig());
-    expect(evs, hasLength(4));
-    expect(evs.map((e) => e.id).toList(), [
-      'compile',
-      'analyze',
-      'test',
-      'diff_size',
-    ]);
-  });
+  test(
+    'official file-backed evaluators include hidden test and diff size',
+    () async {
+      final task = await loadOfficialFlutterTask('forms.email_validation');
+      await task.ensureLoaded();
+
+      final evs = task.evaluatorsFor(const EvaluatorConfig());
+
+      expect(evs.map((e) => e.id).toList(), [
+        'compile',
+        'analyze',
+        'test',
+        task.hiddenVerifiers.single.id,
+        'diff_size',
+      ]);
+    },
+  );
 }

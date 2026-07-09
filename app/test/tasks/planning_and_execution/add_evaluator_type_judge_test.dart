@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/evaluators/llm_judge_evaluator.dart';
 import 'package:dart_arena/providers/model_provider.dart';
-import 'package:dart_arena/tasks/planning_and_execution/add_evaluator_type.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
+import 'package:test/test.dart';
+
+import '../../support/file_backed_bundle_fixture.dart';
 
 class _FakeJudge with Disposable implements ModelProvider {
   @override
@@ -26,55 +30,68 @@ class _FakeJudge with Disposable implements ModelProvider {
 }
 
 void main() {
-  setUpAll(() {
-    TestWidgetsFlutterBinding.ensureInitialized();
+  late Directory root;
+  late FileBackedTask task;
+
+  setUp(() async {
+    root = await Directory.systemTemp.createTemp('file_backed_rubric_');
+    final bundle = await writeAnswerFileBackedBundle(
+      root,
+      id: 'planning.add_evaluator_type',
+      judgeRubricPath: 'rubrics/add_evaluator_type.md',
+      judgeRubricText: '''
+REFERENCE PLAN (canonical solution):
+Create CoverageEvaluator implementing Evaluator.
+Return ONE composite score and a 1-2 sentence rationale.
+''',
+    );
+    task = await FileBackedTask.load(bundle);
   });
 
-  late AddEvaluatorTypeTask task;
-
-  setUp(() {
-    task = AddEvaluatorTypeTask();
+  tearDown(() async {
+    if (await root.exists()) await root.delete(recursive: true);
   });
 
-  test('judgeRubric is null before ensureLoaded', () {
-    expect(task.judgeRubric, isNull);
+  test('judgeRubricPath loads rubric text from the bundle filesystem', () {
+    final rubric = task.judgeRubric;
+
+    expect(rubric, isNotNull);
+    expect(rubric, contains('REFERENCE PLAN (canonical solution)'));
+    expect(rubric, contains('CoverageEvaluator'));
+    expect(rubric, contains('Evaluator'));
+    expect(
+      rubric,
+      contains('Return ONE composite score and a 1-2 sentence rationale'),
+    );
   });
 
-  test(
-    'judgeRubric is non-null after ensureLoaded and contains expected content',
-    () async {
-      await task.ensureLoaded();
+  test('evaluatorsFor without judge omits llm_judge', () async {
+    await task.ensureLoaded();
 
-      final rubric = task.judgeRubric;
-      expect(rubric, isNotNull);
-      expect(rubric, contains('REFERENCE PLAN (canonical solution)'));
-      expect(rubric, contains('CoverageEvaluator'));
-      expect(rubric, contains('EvaluationResult'));
-      expect(rubric, contains('0.5'));
-      expect(
-        rubric,
-        contains('Return ONE composite score and a 1-2 sentence rationale'),
-      );
-    },
-  );
+    final ids = task
+        .evaluatorsFor(const EvaluatorConfig())
+        .map((e) => e.id)
+        .toList();
 
-  test('evaluatorsFor without judge returns compile, analyze, test', () {
-    final evs = task.evaluatorsFor(const EvaluatorConfig());
-    final ids = evs.map((e) => e.id).toList();
-    expect(ids, ['compile', 'analyze', 'test']);
+    expect(ids, [
+      'compile',
+      'analyze',
+      'test',
+      task.hiddenVerifiers.single.id,
+      'diff_size',
+    ]);
   });
 
-  test(
-    'evaluatorsFor with judge includes llm_judge and is LlmJudgeEvaluator',
-    () {
-      final config = EvaluatorConfig(
-        judgeProvider: _FakeJudge(),
-        judgeModel: 'fj',
-      );
-      final evs = task.evaluatorsFor(config);
-      final ids = evs.map((e) => e.id).toList();
-      expect(ids, ['compile', 'analyze', 'test', 'llm_judge']);
-      expect(evs.last, isA<LlmJudgeEvaluator>());
-    },
-  );
+  test('evaluatorsFor with judge includes llm_judge evaluator', () async {
+    await task.ensureLoaded();
+    final config = EvaluatorConfig(
+      judgeProvider: _FakeJudge(),
+      judgeModel: 'fj',
+    );
+
+    final evs = task.evaluatorsFor(config);
+
+    expect(evs.map((e) => e.id), contains('llm_judge'));
+    expect(evs.whereType<LlmJudgeEvaluator>(), hasLength(1));
+  });
 }

@@ -231,8 +231,8 @@ class FileBackedTask extends BenchmarkTask {
 
   @override
   List<Evaluator> evaluatorsFor(EvaluatorConfig config) => [
-    CompileEvaluator(),
-    AnalyzeEvaluator(),
+    const CompileEvaluator(),
+    const AnalyzeEvaluator(),
     TestEvaluator(),
     ...hiddenVerifiers.map(HiddenTestEvaluator.new),
     if (config.hasJudge)

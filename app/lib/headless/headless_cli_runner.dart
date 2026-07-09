@@ -24,7 +24,6 @@ import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
-import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 
@@ -45,7 +44,7 @@ class HeadlessCliDependencies {
   const HeadlessCliDependencies({
     this.environmentReader = _platformEnvironmentReader,
     this.providerBuilder = _defaultProviderBuilder,
-    this.taskRegistryBuilder = buildDefaultTaskRegistry,
+    this.taskRegistryBuilder = _emptyTaskRegistry,
     this.agentHarnessBuilder = _defaultAgentHarnessBuilder,
     this.now = _now,
     this.provenanceEnvironmentProviderBuilder =
@@ -68,6 +67,8 @@ class HeadlessCliDependencies {
   final HeadlessCliGeneratedCodeSandboxBuilder generatedCodeSandboxBuilder;
   final HeadlessBenchmarkRunner runner;
 }
+
+TaskRegistry _emptyTaskRegistry() => TaskRegistry();
 
 Future<int> runHeadlessCli(
   List<String> args, {

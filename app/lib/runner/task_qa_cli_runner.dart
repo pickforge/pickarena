@@ -9,8 +9,6 @@ import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/task_qa_runner.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
-import 'package:dart_arena/tasks/flutter_corpus/phase3_seed_tasks.dart';
-import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:path/path.dart' as p;
 
 typedef TaskQaCliLineWriter = void Function(String line);
@@ -22,7 +20,7 @@ typedef TaskQaCliGeneratedCodeSandboxBuilder =
 
 class TaskQaCliDependencies {
   const TaskQaCliDependencies({
-    this.taskRegistryBuilder = buildDefaultTaskRegistry,
+    this.taskRegistryBuilder = _emptyTaskRegistry,
     this.environmentProviderBuilder = _defaultEnvironmentProvider,
     this.generatedCodeSandboxBuilder = _defaultGeneratedCodeSandboxBuilder,
     this.now = _now,
@@ -33,6 +31,8 @@ class TaskQaCliDependencies {
   final TaskQaCliGeneratedCodeSandboxBuilder generatedCodeSandboxBuilder;
   final DateTime Function() now;
 }
+
+TaskRegistry _emptyTaskRegistry() => TaskRegistry();
 
 class TaskQaCliException implements Exception {
   const TaskQaCliException(this.message);
@@ -189,7 +189,7 @@ List<BenchmarkTask> _resolveTasks(
   required List<String> loadedBundleTaskIds,
 }) {
   final taskIds = explicitTaskIds.isEmpty
-      ? [...Phase3SeedTaskIds.all, ...loadedBundleTaskIds]
+      ? loadedBundleTaskIds
       : explicitTaskIds;
   if (taskIds.isEmpty) {
     throw const TaskQaCliException('no tasks selected');
@@ -332,8 +332,7 @@ Map<String, Object?> _helpJson() {
       {'name': '--require-generated-code-sandbox', 'required': false},
       {'name': '--help', 'required': false},
     ],
-    'defaults':
-        'Without --task, validates the Phase 3 active corpus plus loaded file-backed tasks.',
+    'defaults': 'Without --task, validates loaded file-backed tasks.',
   };
 }
 

@@ -1,5 +1,4 @@
-import 'fixture_loader_io.dart'
-    if (dart.library.ui) 'fixture_loader_flutter.dart';
+import 'fixture_loader_io.dart';
 
 class FixtureLoader {
   FixtureLoader({required this.assetRoot, required this.files, this.repoRoot});
