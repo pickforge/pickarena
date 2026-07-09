@@ -478,6 +478,7 @@ Future<bool> _skipUnlessBubblewrapAvailable() async {
     '/',
     '--unshare-pid',
     '--unshare-ipc',
+    '--unshare-net',
     '/bin/true',
   ], runInShell: false);
   if (probe.exitCode != 0) {
