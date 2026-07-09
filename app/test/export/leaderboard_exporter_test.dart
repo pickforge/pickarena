@@ -151,6 +151,82 @@ void main() {
   });
 
   test(
+    'aggregate-compatible exports schema-1 anchor scoring metadata',
+    () async {
+      await _seedRun(
+        db,
+        id: 'legacy-anchor',
+        completedAt: DateTime.utc(2026, 5, 2),
+        provenanceJson: _weightsProvenanceJson(
+          evaluatorWeights: {'compile': 1.0, 'diff_size': 0.3},
+        ),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'legacy-anchor-a',
+        runId: 'legacy-anchor',
+        taskId: 'task.a',
+      );
+
+      final export = await buildLeaderboardExport(
+        db,
+        options: const LeaderboardExportOptions(track: 'agentic'),
+      );
+
+      final source = export['source']! as Map<String, Object?>;
+      expect(source['anchorRunId'], 'legacy-anchor');
+      final scoring = export['scoring']! as Map<String, Object?>;
+      expect(scoring['schemaVersion'], 1);
+      expect(scoring.containsKey('diffSizePolicy'), isFalse);
+      expect(scoring.containsKey('diagnosticOnlyEvaluatorIds'), isFalse);
+    },
+  );
+
+  test(
+    'aggregate-compatible keeps schema-1 diff_size weights significant',
+    () async {
+      await _seedRun(
+        db,
+        id: 'legacy-old',
+        completedAt: DateTime.utc(2026, 5, 1),
+        provenanceJson: _weightsProvenanceJson(
+          evaluatorWeights: {'compile': 1.0, 'diff_size': 0.3},
+        ),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'legacy-old-a',
+        runId: 'legacy-old',
+        taskId: 'task.a',
+      );
+      await _seedRun(
+        db,
+        id: 'legacy-latest',
+        completedAt: DateTime.utc(2026, 5, 2),
+        provenanceJson: _weightsProvenanceJson(
+          evaluatorWeights: {'compile': 1.0, 'diff_size': 0.1},
+        ),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'legacy-latest-a',
+        runId: 'legacy-latest',
+        taskId: 'task.a',
+      );
+
+      final export = await buildLeaderboardExport(
+        db,
+        options: const LeaderboardExportOptions(track: 'agentic'),
+      );
+
+      final source = export['source']! as Map<String, Object?>;
+      expect(source['anchorRunId'], 'legacy-latest');
+      expect(source['runIds'], ['legacy-latest']);
+      expect(source['taskRunCount'], 1);
+    },
+  );
+
+  test(
     'aggregate-compatible ignores schema-2 diagnostic weight differences',
     () async {
       await _seedRun(
@@ -1097,6 +1173,7 @@ String _completeRunProvenanceJson() {
         'currency': 'USD',
         'modelCount': 2,
       },
+      'scoringSchemaVersion': 2,
       'providerConfig': 'secret-provider-config',
     },
     'tasks': [
@@ -1158,7 +1235,7 @@ Future<void> _seedRun(
   required String id,
   required DateTime completedAt,
   String provenanceJson =
-      '{"schemaVersion":1,"config":{"evaluatorWeights":{"compile":1.0}}}',
+      '{"schemaVersion":1,"config":{"scoringSchemaVersion":2,"evaluatorWeights":{"compile":1.0}}}',
 }) async {
   await db
       .into(db.runs)

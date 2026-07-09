@@ -10158,6 +10158,8 @@ void main() {
     final leaderboard = _leaderboardJson(sampleCount: 2);
     final scoring = leaderboard['scoring']! as Map<String, Object?>;
     scoring['schemaVersion'] = 1;
+    scoring.remove('diffSizePolicy');
+    scoring.remove('diagnosticOnlyEvaluatorIds');
     await File(leaderboardPath).writeAsString(_prettyJson(leaderboard));
     await File(
       taskQaSummaryPath,
@@ -10198,8 +10200,8 @@ void main() {
     final readinessGates = report['readinessGates']! as Map<String, Object?>;
     final scoringGate = readinessGates['scoring']! as Map<String, Object?>;
     expect(scoringGate['status'], 'blocked');
-    expect(scoringGate['diffSizePolicy'], 'diagnostic_only_full_patch');
-    expect(scoringGate['diffSizeDiagnosticOnly'], isTrue);
+    expect(scoringGate['diffSizePolicy'], null);
+    expect(scoringGate['diffSizeDiagnosticOnly'], isFalse);
   });
 
   test(

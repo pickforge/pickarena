@@ -15,6 +15,7 @@ enum LeaderboardExportStrategy { aggregateCompatible, latestRun, bestObserved }
 
 const dartArenaBenchmarkVersion = '2026-05-31-master-spec';
 const dartArenaEvaluatorSchemaVersion = 2;
+const _diagnosticOnlyScoringSchemaVersion = 2;
 
 extension LeaderboardExportStrategyName on LeaderboardExportStrategy {
   String get kebabName {
@@ -157,7 +158,7 @@ Future<Map<String, Object?>> buildLeaderboardExport(
       'judgeOverhead': judgeOverhead.toJson(),
       'runProvenance': runProvenance.toJson(),
     },
-    'scoring': _scoringMetadataJson(),
+    'scoring': _scoringMetadataJson(selected.scoringSchemaVersion),
     'pricingRegistry': pricingRegistryProvenance(),
     'models': models,
     'tasks': tasks,
@@ -198,7 +199,7 @@ _SelectedTaskRuns _selectTaskRuns({
           entry.value,
           scoringSchemaVersion: candidateWeights.scoringSchemaVersion,
         );
-        if (candidateSignature != anchorSignature) continue;
+        if (!anchorSignature.isCompatibleWith(candidateSignature)) continue;
 
         if (anchorWeights.weights != null && candidateWeights.weights != null) {
           if (!_mapEquals(anchorWeights.weights!, candidateWeights.weights!)) {
@@ -222,6 +223,8 @@ _SelectedTaskRuns _selectTaskRuns({
         taskRuns: selected,
         anchorRunId: anchorRun.id,
         sourceRunIds: selected.map((taskRun) => taskRun.runId).toSet(),
+        scoringSchemaVersion:
+            anchorWeights.scoringSchemaVersion ?? dartArenaScoringSchemaVersion,
       );
     case LeaderboardExportStrategy.latestRun:
       final anchorRun = _anchorRun(
@@ -238,6 +241,9 @@ _SelectedTaskRuns _selectTaskRuns({
         ),
         anchorRunId: anchorRun.id,
         sourceRunIds: <String>{anchorRun.id},
+        scoringSchemaVersion:
+            _parseEvaluatorWeights(anchorRun).scoringSchemaVersion ??
+            dartArenaScoringSchemaVersion,
       );
     case LeaderboardExportStrategy.bestObserved:
       final scopedRunIds = options.runId == null
@@ -251,6 +257,13 @@ _SelectedTaskRuns _selectTaskRuns({
         taskRuns: _selectBestObserved(scopedTaskRuns),
         anchorRunId: options.runId,
         sourceRunIds: scopedTaskRuns.map((taskRun) => taskRun.runId).toSet(),
+        scoringSchemaVersion:
+            options.runId == null || runsById[options.runId!] == null
+            ? dartArenaScoringSchemaVersion
+            : _parseEvaluatorWeights(
+                    runsById[options.runId!]!,
+                  ).scoringSchemaVersion ??
+                  dartArenaScoringSchemaVersion,
       );
   }
 }
@@ -669,16 +682,18 @@ Map<String, Object?> _confidenceIntervalJson(ConfidenceInterval? interval) => {
   'upper': interval?.upper ?? 0.0,
 };
 
-Map<String, Object?> _scoringMetadataJson() => {
-  'schemaVersion': dartArenaScoringSchemaVersion,
+Map<String, Object?> _scoringMetadataJson(int schemaVersion) => {
+  'schemaVersion': schemaVersion,
   'primaryMetric': 'primary_pass',
   'rankingMetric': 'primary_pass_rate',
   'confidenceInterval': 'wilson_95',
   'llmJudgePolicy': 'diagnostic_only',
-  'diffSizePolicy': 'diagnostic_only_full_patch',
+  if (schemaVersion >= _diagnosticOnlyScoringSchemaVersion) ...{
+    'diffSizePolicy': 'diagnostic_only_full_patch',
+    'diagnosticOnlyEvaluatorIds': diagnosticOnlyEvaluatorIds.toList()..sort(),
+  },
   'objectiveEvaluatorIds': objectiveEvaluatorIds.toList()..sort(),
   'secondaryEvaluatorIds': secondaryEvaluatorIds.toList()..sort(),
-  'diagnosticOnlyEvaluatorIds': diagnosticOnlyEvaluatorIds.toList()..sort(),
   'hiddenVerifierPattern': '*_hidden',
   'failureTags': supportedFailureTags,
   'objectiveFailureCaps': {
@@ -773,7 +788,10 @@ _EvaluatorWeightsParse _parseEvaluatorWeights(Run run) {
     }
     final normalized = <String, Object?>{};
     for (final entry in weights.entries) {
-      if (diagnosticOnlyEvaluatorIds.contains(entry.key)) continue;
+      if (scoringSchemaVersion >= _diagnosticOnlyScoringSchemaVersion &&
+          diagnosticOnlyEvaluatorIds.contains(entry.key)) {
+        continue;
+      }
       final value = entry.value;
       if (value is num) {
         normalized[entry.key] = value.toDouble();
@@ -938,11 +956,13 @@ class _SelectedTaskRuns {
     required this.taskRuns,
     required this.anchorRunId,
     this.sourceRunIds = const <String>{},
+    this.scoringSchemaVersion = dartArenaScoringSchemaVersion,
   });
 
   final List<TaskRun> taskRuns;
   final String? anchorRunId;
   final Set<String> sourceRunIds;
+  final int scoringSchemaVersion;
 }
 
 class _SourceRunProvenanceSummary {
@@ -1238,7 +1258,7 @@ class _RunCompatibilitySignature {
 
   factory _RunCompatibilitySignature.fromTaskRuns(
     List<TaskRun> taskRuns, {
-    required int scoringSchemaVersion,
+    required int? scoringSchemaVersion,
   }) {
     return _RunCompatibilitySignature(
       taskKeys: (taskRuns.map((taskRun) => _taskKey(taskRun)).toSet().toList()
@@ -1256,7 +1276,15 @@ class _RunCompatibilitySignature {
 
   final List<String> taskKeys;
   final List<String> harnessIds;
-  final int scoringSchemaVersion;
+  final int? scoringSchemaVersion;
+
+  bool isCompatibleWith(_RunCompatibilitySignature other) {
+    return _listEquals(taskKeys, other.taskKeys) &&
+        _listEquals(harnessIds, other.harnessIds) &&
+        (scoringSchemaVersion == null ||
+            other.scoringSchemaVersion == null ||
+            scoringSchemaVersion == other.scoringSchemaVersion);
+  }
 
   @override
   bool operator ==(Object other) {
@@ -1802,12 +1830,12 @@ class _EvaluatorWeightsParse {
   const _EvaluatorWeightsParse({
     this.weights,
     this.warning,
-    this.scoringSchemaVersion = 1,
+    this.scoringSchemaVersion,
   });
 
   factory _EvaluatorWeightsParse.warning(
     String warning, {
-    int scoringSchemaVersion = 1,
+    int? scoringSchemaVersion,
   }) {
     return _EvaluatorWeightsParse(
       warning: warning,
@@ -1817,7 +1845,7 @@ class _EvaluatorWeightsParse {
 
   final Map<String, Object?>? weights;
   final String? warning;
-  final int scoringSchemaVersion;
+  final int? scoringSchemaVersion;
 }
 
 int? _scoringSchemaVersion(Object? value) {
