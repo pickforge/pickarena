@@ -246,6 +246,45 @@ release:
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );
+
+  test(
+    'file-backed bundle fails task QA when instruction leaks hidden test filename',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'file_backed_prompt_leak_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      await _writeBundle(
+        Directory(p.join(root.path, 'bundles')),
+        hiddenTestPath: 'test/_hidden/answer_hidden_test.dart',
+        instruction:
+            'Make answer() return 42. The hidden verifier is answer_hidden_test.dart.\n',
+      );
+      final task = (await loadFileBackedTasks(
+        Directory(p.join(root.path, 'bundles')),
+      )).single;
+
+      final report = await TaskQaRunner(
+        workdirManager: WorkdirManager(
+          root: Directory(p.join(root.path, 'workdirs')),
+        ),
+        requiredHiddenFlakeRuns: 1,
+        requireNegativeCases: true,
+      ).run(task);
+
+      expect(report.promptSafety.hiddenVerifierLeakFree, isFalse);
+      expect(report.promptSafety.passed, isFalse);
+      expect(
+        report.failureMessages,
+        contains(
+          'Task prompt or prompt-safe context leaks hidden verifier content.',
+        ),
+      );
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 }
 
 Future<Directory> _writeBundle(
@@ -254,6 +293,8 @@ Future<Directory> _writeBundle(
   String id = 'file.answer_fix',
   String generatedCodePath = 'lib/answer.dart',
   String hiddenVerifierId = 'answer_hidden',
+  String hiddenTestPath = 'test/_hidden/answer_test.dart',
+  String instruction = 'Make answer() return 42.\n',
   String releaseYaml = '',
   String policyYaml = '''
 network: false
@@ -290,10 +331,10 @@ workspace:
     test/answer_test.dart: test/answer_test.dart
 hiddenVerifiers:
   - id: $hiddenVerifierId
-    testPath: test/_hidden/answer_test.dart
+    testPath: $hiddenTestPath
     root: hidden_tests
     files:
-      test/_hidden/answer_test.dart: test/_hidden/answer_test.dart
+      $hiddenTestPath: $hiddenTestPath
 reference:
   type: files
   root: solution
@@ -313,7 +354,7 @@ negativeCases:
     files:
       lib/answer.dart: lib/answer.dart
 ''');
-  await _writeFile(bundle, 'instruction.md', 'Make answer() return 42.\n');
+  await _writeFile(bundle, 'instruction.md', instruction);
   await _writeFile(bundle, 'baseline/pubspec.yaml', '''
 name: file_backed_answer
 environment:
@@ -330,7 +371,7 @@ void main() {
   test('answer is an integer', () => expect(answer(), isA<int>()));
 }
 ''');
-  await _writeFile(bundle, 'hidden_tests/test/_hidden/answer_test.dart', '''
+  await _writeFile(bundle, 'hidden_tests/$hiddenTestPath', '''
 import 'package:file_backed_answer/answer.dart';
 import 'package:test/test.dart';
 

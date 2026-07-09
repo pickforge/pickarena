@@ -15,6 +15,7 @@ import 'package:dart_arena/evaluators/hidden_test_evaluator.dart';
 import 'package:dart_arena/evaluators/test_evaluator.dart';
 import 'package:dart_arena/runner/evaluator_resource_limits.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
+import 'package:dart_arena/runner/prompt_safety.dart';
 import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
 import 'package:dart_arena/runner/resource_enforcement_policy.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
@@ -470,11 +471,13 @@ class TaskQaRunner {
       failureMessages.add('Prompt-safe context leaks implementation bodies.');
     }
     if (!promptSafety.hiddenVerifierLeakFree) {
-      failureMessages.add('Prompt-safe context leaks hidden verifier content.');
+      failureMessages.add(
+        'Task prompt or prompt-safe context leaks hidden verifier content.',
+      );
     }
     if (!promptSafety.referenceLeakFree) {
       failureMessages.add(
-        'Prompt-safe context leaks reference solution content.',
+        'Task prompt or prompt-safe context leaks reference solution content.',
       );
     }
 
@@ -883,16 +886,24 @@ class TaskQaRunner {
     final publicTestContext = buildPublicTestFixtureContext(
       fixtures: task.fixtures,
     );
-    final combinedContext = [
+    final promptSafeContext = [
       targetContext,
       publicTestContext,
     ].whereType<String>().join('\n');
+    final visiblePromptContext = [
+      task.prompt,
+      promptSafeContext,
+    ].where((value) => value.trim().isNotEmpty).join('\n');
     final targetSource = task.fixtures[task.generatedCodePath]?.trim();
     final publicTestContextRequired = _hasPublicTestFixtures(task.fixtures);
     final requiredKinds = task.requiredNegativeCaseKinds;
     final presentKinds = task.negativeCases
         .map((negative) => negative.kind)
         .toSet();
+    final leakScan = scanPromptSafetyLeaks(
+      visiblePromptContext: visiblePromptContext,
+      task: task,
+    );
 
     return TaskQaPromptSafetyReport(
       targetContextPresent: targetContext != null && targetContext.isNotEmpty,
@@ -904,20 +915,8 @@ class TaskQaRunner {
           targetSource.isNotEmpty &&
           targetContext != null &&
           !targetContext.contains(targetSource),
-      hiddenVerifierLeakFree: !_containsAny(
-        combinedContext,
-        task.hiddenVerifiers.expand((verifier) => verifier.files.values),
-      ),
-      referenceLeakFree: switch (task.referenceSolution) {
-        ReferenceFileSolution(:final files) => !_containsAny(
-          combinedContext,
-          files.values,
-        ),
-        ReferencePatchSolution(:final patch) => !combinedContext.contains(
-          patch,
-        ),
-        null => true,
-      },
+      hiddenVerifierLeakFree: !leakScan.hiddenVerifierLeak,
+      referenceLeakFree: !leakScan.referenceLeak,
       requiredNegativeCaseKinds: Set.unmodifiable(requiredKinds),
       presentNegativeCaseKinds: Set.unmodifiable(presentKinds),
       missingNegativeCaseKinds: Set.unmodifiable(
@@ -942,14 +941,6 @@ bool _hasPublicTestFixtures(Map<String, String> fixtures) {
           segment == 'reference',
     );
   });
-}
-
-bool _containsAny(String haystack, Iterable<String> needles) {
-  for (final needle in needles) {
-    final trimmed = needle.trim();
-    if (trimmed.isNotEmpty && haystack.contains(trimmed)) return true;
-  }
-  return false;
 }
 
 int _infrastructureErrorCount(Iterable<EvaluationResult> results) {
