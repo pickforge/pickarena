@@ -10,22 +10,38 @@ import 'package:path/path.dart' as p;
 /// key, reads use the environment value and writes strip that provider's
 /// `apiKey` from disk.
 class FileSettingsStore implements SettingsStore {
-  FileSettingsStore({String? path, Map<String, String>? environment})
-    : _environment = Map.unmodifiable(environment ?? Platform.environment),
-      _file = File(
-        path ??
-            (environment ?? Platform.environment)[dartArenaSettingsEnv] ??
-            defaultSettingsPath(environment ?? Platform.environment),
-      );
+  FileSettingsStore({
+    String? path,
+    Map<String, String>? environment,
+    Future<File> Function(File file, String newPath)? renameFile,
+    bool replaceWithBackup = false,
+  }) : this._(
+         _resolveSettingsPath(path, environment ?? Platform.environment),
+         environment ?? Platform.environment,
+         renameFile,
+         replaceWithBackup,
+       );
+
+  FileSettingsStore._(
+    _ResolvedSettingsPath resolved,
+    Map<String, String> environment,
+    this._renameFile,
+    this._replaceWithBackup,
+  ) : _environment = Map.unmodifiable(environment),
+      _file = File(resolved.path),
+      _chmodParentWhenCreated = resolved.chmodParentWhenCreated;
 
   final Map<String, String> _environment;
   final File _file;
+  final bool _chmodParentWhenCreated;
+  final Future<File> Function(File file, String newPath)? _renameFile;
+  final bool _replaceWithBackup;
   Future<void> _updateQueue = Future.value();
 
   String get path => _file.path;
 
   static String defaultSettingsPath(Map<String, String> environment) {
-    final home = environment['HOME'] ?? environment['USERPROFILE'];
+    final home = _homeDirectory(environment);
     if (home != null && home.isNotEmpty) {
       return p.join(home, '.dart_arena', 'settings.json');
     }
@@ -94,7 +110,9 @@ class FileSettingsStore implements SettingsStore {
       final providers = _readObject(settings['providers']);
       final legacy = _readObject(providers['local_openai']);
       final legacyUrl = _readString(legacy['baseUrl']);
-      final legacyKey = _readString(legacy['apiKey']);
+      final legacyKey =
+          _apiKeyFromEnvironment('local_openai', legacy) ??
+          _readString(legacy['apiKey']);
       final trimmedUrl = (legacyUrl ?? '').trim();
       final trimmedKey = (legacyKey ?? '').trim();
       if (trimmedUrl.isNotEmpty || trimmedKey.isNotEmpty) {
@@ -281,17 +299,14 @@ class FileSettingsStore implements SettingsStore {
 
   Future<void> _writeSettings(Map<String, Object?> settings) async {
     _stripEnvironmentBackedApiKeys(settings);
-    await _ensurePrivateParent();
+    await _ensureSettingsParent();
     final temp = await _createPrivateTempFile();
     try {
       await temp.writeAsString(
         '${const JsonEncoder.withIndent('  ').convert(settings)}\n',
         flush: true,
       );
-      if (Platform.isWindows && await _file.exists()) {
-        await _file.delete();
-      }
-      await temp.rename(_file.path);
+      await _replaceSettingsFile(temp);
       await _chmod(_file, '600');
     } finally {
       if (await temp.exists()) {
@@ -306,20 +321,18 @@ class FileSettingsStore implements SettingsStore {
     return run;
   }
 
-  Future<void> _ensurePrivateParent() async {
-    await _file.parent.create(recursive: true);
-    await _chmod(_file.parent, '700');
+  Future<void> _ensureSettingsParent() async {
+    final parent = _file.parent;
+    final existed = await parent.exists();
+    await parent.create(recursive: true);
+    if (_chmodParentWhenCreated && !existed) {
+      await _chmod(parent, '700');
+    }
   }
 
   Future<File> _createPrivateTempFile() async {
-    final basename = p.basename(_file.path);
     for (var attempt = 0; attempt < 16; attempt++) {
-      final temp = File(
-        p.join(
-          _file.parent.path,
-          '.$basename.${DateTime.now().microsecondsSinceEpoch}.$attempt.tmp',
-        ),
-      );
+      final temp = _siblingFile('tmp', attempt);
       try {
         await temp.create(exclusive: true);
         await _chmod(temp, '600');
@@ -329,6 +342,57 @@ class FileSettingsStore implements SettingsStore {
       }
     }
     throw FileSystemException('Unable to create temporary settings file', path);
+  }
+
+  Future<File> _createBackupFile() async {
+    for (var attempt = 0; attempt < 16; attempt++) {
+      final backup = _siblingFile('bak', attempt);
+      if (!await backup.exists()) return backup;
+    }
+    throw FileSystemException('Unable to create backup settings file', path);
+  }
+
+  File _siblingFile(String extension, int attempt) {
+    final basename = p.basename(_file.path);
+    return File(
+      p.join(
+        _file.parent.path,
+        '.$basename.${DateTime.now().microsecondsSinceEpoch}.$attempt.$extension',
+      ),
+    );
+  }
+
+  Future<void> _replaceSettingsFile(File temp) async {
+    if (!Platform.isWindows && !_replaceWithBackup) {
+      await _rename(temp, _file.path);
+      return;
+    }
+
+    File? backup;
+    if (await _file.exists()) {
+      backup = await _createBackupFile();
+      await _rename(_file, backup.path);
+    }
+    try {
+      await _rename(temp, _file.path);
+    } on Object {
+      if (backup != null && await backup.exists()) {
+        if (await _file.exists()) {
+          await _file.delete();
+        }
+        await _rename(backup, _file.path);
+      }
+      rethrow;
+    }
+    if (backup != null && await backup.exists()) {
+      await backup.delete();
+    }
+  }
+
+  Future<File> _rename(File file, String newPath) {
+    final rename = _renameFile;
+    if (rename != null) return rename(file, newPath);
+    return file.rename(newPath);
   }
 
   Future<void> _chmod(FileSystemEntity entity, String mode) async {
@@ -444,4 +508,29 @@ String _providerApiKeyEnvName(String providerId) {
       .replaceAll(RegExp(r'[^A-Z0-9]+'), '_')
       .replaceAll(RegExp(r'^_+|_+$'), '');
   return '$dartArenaApiKeyEnvPrefix$suffix';
+}
+
+String? _homeDirectory(Map<String, String> environment) {
+  return environment['HOME'] ?? environment['USERPROFILE'];
+}
+
+_ResolvedSettingsPath _resolveSettingsPath(
+  String? path,
+  Map<String, String> environment,
+) {
+  if (path != null) return _ResolvedSettingsPath(path, false);
+  final environmentPath = environment[dartArenaSettingsEnv];
+  if (environmentPath != null) {
+    return _ResolvedSettingsPath(environmentPath, false);
+  }
+  final defaultPath = FileSettingsStore.defaultSettingsPath(environment);
+  final home = _homeDirectory(environment);
+  return _ResolvedSettingsPath(defaultPath, home != null && home.isNotEmpty);
+}
+
+class _ResolvedSettingsPath {
+  const _ResolvedSettingsPath(this.path, this.chmodParentWhenCreated);
+
+  final String path;
+  final bool chmodParentWhenCreated;
 }

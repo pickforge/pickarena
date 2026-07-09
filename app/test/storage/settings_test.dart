@@ -126,17 +126,51 @@ void main() {
   });
 
   test(
-    'writes settings file and directory with owner-only permissions',
+    'creates default settings directory with owner-only permissions',
+    () async {
+      final home = await Directory.systemTemp.createTemp(
+        'dart_arena_settings_home_',
+      );
+      addTearDown(() => home.delete(recursive: true));
+
+      final repo = FileSettingsStore(environment: {'HOME': home.path});
+      await repo.setReadmePath('/tmp/README.md');
+
+      final settingsDir = Directory('${home.path}/.dart_arena');
+      final settingsFile = File('${settingsDir.path}/settings.json');
+      expect(_permissionBits(await settingsDir.stat()), 0x1c0);
+      expect(_permissionBits(await settingsFile.stat()), 0x180);
+    },
+    skip: Platform.isWindows,
+  );
+
+  test(
+    'DART_ARENA_SETTINGS path does not chmod parent directory',
+    () async {
+      final fixture = await newSettingsFilePath();
+      final repo = FileSettingsStore(
+        environment: {dartArenaSettingsEnv: fixture.path},
+      );
+
+      await _chmod('777', fixture.dir.path);
+      await repo.setReadmePath('/tmp/README.md');
+
+      expect(_permissionBits(await fixture.dir.stat()), 0x1ff);
+      expect(_permissionBits(await File(fixture.path).stat()), 0x180);
+    },
+    skip: Platform.isWindows,
+  );
+
+  test(
+    'explicit settings path does not chmod parent directory',
     () async {
       final fixture = await newSettingsFilePath();
       final repo = FileSettingsStore(path: fixture.path, environment: const {});
 
-      await repo.setApiKey('openai', 'sk-test');
       await _chmod('777', fixture.dir.path);
-      await _chmod('666', fixture.path);
       await repo.setReadmePath('/tmp/README.md');
 
-      expect(_permissionBits(await fixture.dir.stat()), 0x1c0);
+      expect(_permissionBits(await fixture.dir.stat()), 0x1ff);
       expect(_permissionBits(await File(fixture.path).stat()), 0x180);
     },
     skip: Platform.isWindows,
@@ -195,6 +229,47 @@ void main() {
     expect(decoded['readmePath'], '/tmp/README.md');
     expect(_permissionBits(await file.stat()), 0x180);
   }, skip: Platform.isWindows);
+
+  test(
+    'backup replacement restores old settings when replacement fails',
+    () async {
+      final fixture = await newSettingsFilePath();
+      final file = File(fixture.path);
+      await file.writeAsString(jsonEncode({'readmePath': '/tmp/old.md'}));
+      var replacementAttempts = 0;
+
+      final repo = FileSettingsStore(
+        path: fixture.path,
+        environment: const {},
+        replaceWithBackup: true,
+        renameFile: (file, newPath) async {
+          if (file.path.endsWith('.tmp') && newPath == fixture.path) {
+            replacementAttempts++;
+            throw FileSystemException('rename failed', newPath);
+          }
+          return file.rename(newPath);
+        },
+      );
+
+      await expectLater(
+        () => repo.setReadmePath('/tmp/new.md'),
+        throwsA(isA<FileSystemException>()),
+      );
+
+      final decoded =
+          jsonDecode(await file.readAsString()) as Map<String, Object?>;
+      expect(decoded['readmePath'], '/tmp/old.md');
+      expect(replacementAttempts, 1);
+      final leftovers = await fixture.dir
+          .list()
+          .where(
+            (entity) =>
+                entity.path.endsWith('.tmp') || entity.path.endsWith('.bak'),
+          )
+          .toList();
+      expect(leftovers, isEmpty);
+    },
+  );
 
   test('run concurrency defaults to 4', () async {
     final repo = await newFileSettingsStore();
@@ -367,6 +442,47 @@ void main() {
       expect(result.first.id, 'local_openai');
       final url = await repo.getBaseUrlOverride('local_openai');
       expect(url, 'http://127.0.0.1:8080/v1');
+    });
+
+    test('migration seeds local_openai when default env key exists', () async {
+      final repo = await newFileSettingsStore(
+        environment: const {'DART_ARENA_API_KEY_LOCAL_OPENAI': 'env-key'},
+      );
+
+      final result = await repo.getCustomLocalProviders();
+
+      expect(result.length, 1);
+      expect(result.first.id, 'local_openai');
+      expect(await repo.getApiKey('local_openai'), 'env-key');
+      expect(
+        await repo.getBaseUrlOverride('local_openai'),
+        'http://127.0.0.1:8080/v1',
+      );
+    });
+
+    test('migration seeds local_openai when apiKeyEnv key exists', () async {
+      final fixture = await newSettingsFilePath();
+      await File(fixture.path).writeAsString(
+        jsonEncode({
+          'providers': {
+            'local_openai': {'apiKeyEnv': 'LOCAL_OPENAI_KEY'},
+          },
+        }),
+      );
+      final repo = FileSettingsStore(
+        path: fixture.path,
+        environment: const {'LOCAL_OPENAI_KEY': 'env-key'},
+      );
+
+      final result = await repo.getCustomLocalProviders();
+
+      expect(result.length, 1);
+      expect(result.first.id, 'local_openai');
+      expect(await repo.getApiKey('local_openai'), 'env-key');
+      expect(
+        await repo.getBaseUrlOverride('local_openai'),
+        'http://127.0.0.1:8080/v1',
+      );
     });
 
     test(

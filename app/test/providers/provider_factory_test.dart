@@ -73,6 +73,20 @@ void main() {
     expect(local.defaultEfforts, isEmpty);
   });
 
+  test('env-backed local_openai migration enables provider', () async {
+    final repo = await newFileSettingsStore(
+      environment: const {'DART_ARENA_API_KEY_LOCAL_OPENAI': 'env-key'},
+    );
+
+    final providers = await buildEnabledProviders(repo);
+
+    final local = providers.whereType<OpenAiCompatibleProvider>().singleWhere(
+      (p) => p.id == 'local_openai',
+    );
+    expect(local.baseUrl, 'http://127.0.0.1:8080/v1');
+    expect(local.apiKey, 'env-key');
+  });
+
   test(
     'enabled cloud OpenAI-compatible providers have expected effort lists',
     () async {
