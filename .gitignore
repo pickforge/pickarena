@@ -184,3 +184,6 @@ app.*.symbols
 !/.crew/graphs/
 /.crew/graphs/*
 !/.crew/graphs/.gitkeep
+
+# Local agent config (personal, not project docs)
+CLAUDE.local.md

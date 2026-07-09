@@ -270,7 +270,7 @@ void main() {
   test(
     'evaluator process runs inside Bubblewrap without host file access',
     () async {
-      await _skipUnlessBubblewrapAvailable();
+      if (!await _skipUnlessBubblewrapAvailable()) return;
       final root = await Directory.systemTemp.createTemp(
         'dart_arena_bwrap_eval_',
       );
@@ -322,7 +322,7 @@ echo sandbox-ok
   test(
     'evaluator process cannot reach loopback when network is disabled',
     () async {
-      await _skipUnlessBubblewrapAvailable();
+      if (!await _skipUnlessBubblewrapAvailable()) return;
       await _skipUnlessExecutableAvailable('python3');
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       addTearDown(() async {
@@ -367,7 +367,7 @@ raise SystemExit(4)
   test(
     'evaluator process can reach loopback when network is allowed',
     () async {
-      await _skipUnlessBubblewrapAvailable();
+      if (!await _skipUnlessBubblewrapAvailable()) return;
       await _skipUnlessExecutableAvailable('python3');
       final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
       unawaited(
@@ -416,7 +416,7 @@ print("network-reachable")
   test(
     'evaluator process uses private temp and read-only system binds',
     () async {
-      await _skipUnlessBubblewrapAvailable();
+      if (!await _skipUnlessBubblewrapAvailable()) return;
       final root = await Directory.systemTemp.createTemp(
         'dart_arena_bwrap_mounts_',
       );
@@ -473,7 +473,7 @@ echo private-temp-read-only-system
   test(
     'evaluator process enforces process count inside Bubblewrap',
     () async {
-      await _skipUnlessBubblewrapAvailable();
+      if (!await _skipUnlessBubblewrapAvailable()) return;
       final root = await Directory.systemTemp.createTemp(
         'dart_arena_bwrap_process_limit_',
       );
@@ -506,7 +506,7 @@ echo private-temp-read-only-system
   test(
     'evaluator process runs through CPU cgroup wrapper inside Bubblewrap',
     () async {
-      await _skipUnlessBubblewrapAvailable();
+      if (!await _skipUnlessBubblewrapAvailable()) return;
       final root = await Directory.systemTemp.createTemp(
         'dart_arena_bwrap_cpu_process_limit_',
       );
@@ -536,7 +536,7 @@ echo private-temp-read-only-system
   test(
     'evaluator process enforces output limit inside Bubblewrap',
     () async {
-      await _skipUnlessBubblewrapAvailable();
+      if (!await _skipUnlessBubblewrapAvailable()) return;
       final root = await Directory.systemTemp.createTemp(
         'dart_arena_bwrap_output_limit_',
       );
@@ -566,7 +566,7 @@ echo private-temp-read-only-system
   test(
     'evaluator process enforces memory limit inside Bubblewrap',
     () async {
-      await _skipUnlessBubblewrapAvailable();
+      if (!await _skipUnlessBubblewrapAvailable()) return;
       await _skipUnlessExecutableAvailable('python3');
       final root = await Directory.systemTemp.createTemp(
         'dart_arena_bwrap_memory_limit_',
@@ -604,12 +604,29 @@ while True:
   );
 }
 
-Future<void> _skipUnlessBubblewrapAvailable() async {
+Future<bool> _skipUnlessBubblewrapAvailable() async {
   try {
     await BubblewrapGeneratedCodeSandbox.ensureAvailable();
   } on Object catch (error) {
     markTestSkipped(error.toString());
+    return false;
   }
+  final probe = await Process.run('bwrap', const [
+    '--ro-bind',
+    '/',
+    '/',
+    '--unshare-pid',
+    '--unshare-ipc',
+    '--unshare-net',
+    '/bin/true',
+  ], runInShell: false);
+  if (probe.exitCode != 0) {
+    markTestSkipped(
+      'bwrap functional probe failed with exit code ${probe.exitCode}',
+    );
+    return false;
+  }
+  return true;
 }
 
 Future<void> _skipUnlessExecutableAvailable(String executable) async {
