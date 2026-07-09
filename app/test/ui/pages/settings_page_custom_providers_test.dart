@@ -1,14 +1,15 @@
 import 'dart:io';
 
 import 'package:dart_arena/runner/tmpdir_manager.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/storage/settings_store.dart';
+import 'package:dart_arena/ui/flutter_secure_settings_store.dart';
 import 'package:dart_arena/ui/pages/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget _wrap(SettingsRepository repo, {TmpDirManager? tmpDirManager}) {
+Widget _wrap(SettingsStore repo, {TmpDirManager? tmpDirManager}) {
   final manager =
       tmpDirManager ??
       TmpDirManager(
@@ -18,7 +19,7 @@ Widget _wrap(SettingsRepository repo, {TmpDirManager? tmpDirManager}) {
     home: Scaffold(
       body: MultiRepositoryProvider(
         providers: [
-          RepositoryProvider<SettingsRepository>.value(value: repo),
+          RepositoryProvider<SettingsStore>.value(value: repo),
           RepositoryProvider<TmpDirManager>.value(value: manager),
         ],
         child: const SettingsPage(),
@@ -33,7 +34,7 @@ void main() {
   });
 
   testWidgets('Add dialog Cancel writes nothing', (tester) async {
-    final repo = SettingsRepository();
+    final repo = FlutterSecureSettingsStore();
     await tester.pumpWidget(_wrap(repo));
     await tester.pumpAndSettle();
 
@@ -67,7 +68,7 @@ void main() {
   testWidgets('Add dialog Save trims fields and persists headers/efforts', (
     tester,
   ) async {
-    final repo = SettingsRepository();
+    final repo = FlutterSecureSettingsStore();
     await tester.pumpWidget(_wrap(repo));
     await tester.pumpAndSettle();
 
@@ -123,7 +124,7 @@ void main() {
   });
 
   testWidgets('Save judge with stale id persists null', (tester) async {
-    final repo = SettingsRepository();
+    final repo = FlutterSecureSettingsStore();
     await repo.setJudgeProviderId('stale_custom_provider');
     await repo.setJudgeModelId('some-model');
 
@@ -144,7 +145,7 @@ void main() {
   });
 
   testWidgets('Delete clears entry from storage', (tester) async {
-    final repo = SettingsRepository();
+    final repo = FlutterSecureSettingsStore();
     await repo.setBaseUrlOverride('temp', 'http://temp:8080/v1');
     await repo.setCustomLocalProviders([
       const CustomLocalProviderEntry(id: 'temp', name: 'Temp'),

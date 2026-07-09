@@ -7,11 +7,9 @@ import 'package:dart_arena/providers/openai_compatible_provider.dart';
 import 'package:dart_arena/providers/openai_provider.dart';
 import 'package:dart_arena/providers/opencode_go_provider.dart';
 import 'package:dart_arena/providers/openrouter_provider.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/storage/settings_store.dart';
 
-Future<List<ModelProvider>> buildEnabledProviders(
-  SettingsRepository repo,
-) async {
+Future<List<ModelProvider>> buildEnabledProviders(SettingsStore repo) async {
   final providers = <ModelProvider>[];
 
   providers.add(

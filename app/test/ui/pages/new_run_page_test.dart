@@ -12,7 +12,8 @@ import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/storage/settings_store.dart';
+import 'package:dart_arena/ui/flutter_secure_settings_store.dart';
 import 'package:dart_arena/ui/pages/new_run_page.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -108,7 +109,9 @@ Future<Widget> _wrap(Widget child) async {
       RepositoryProvider<WorkdirManager>.value(
         value: WorkdirManager(root: tmp),
       ),
-      RepositoryProvider<SettingsRepository>.value(value: SettingsRepository()),
+      RepositoryProvider<SettingsStore>.value(
+        value: FlutterSecureSettingsStore(),
+      ),
       RepositoryProvider<RunDao>(
         create: (ctx) => RunDao(ctx.read<AppDatabase>()),
       ),
@@ -414,8 +417,8 @@ void main() {
           RepositoryProvider<WorkdirManager>.value(
             value: WorkdirManager(root: tmp),
           ),
-          RepositoryProvider<SettingsRepository>.value(
-            value: SettingsRepository(),
+          RepositoryProvider<SettingsStore>.value(
+            value: FlutterSecureSettingsStore(),
           ),
           RepositoryProvider<RunDao>(
             create: (ctx) => RunDao(ctx.read<AppDatabase>()),

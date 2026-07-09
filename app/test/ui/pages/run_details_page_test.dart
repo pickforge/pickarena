@@ -3,6 +3,7 @@ import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
+import 'package:dart_arena/ui/flutter_secure_settings_store.dart';
 import 'package:dart_arena/ui/pages/run_details_page.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -52,7 +53,11 @@ void main() {
     final dao = await _seedRun();
     await tester.pumpWidget(
       MaterialApp(
-        home: RunDetailsPage(runId: 'r1', dao: dao),
+        home: RunDetailsPage(
+          runId: 'r1',
+          dao: dao,
+          settings: FlutterSecureSettingsStore(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -66,7 +71,11 @@ void main() {
     final dao = await _seedRun();
     await tester.pumpWidget(
       MaterialApp(
-        home: RunDetailsPage(runId: 'r1', dao: dao),
+        home: RunDetailsPage(
+          runId: 'r1',
+          dao: dao,
+          settings: FlutterSecureSettingsStore(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -80,7 +89,11 @@ void main() {
     final completedDao = await _seedRun();
     await tester.pumpWidget(
       MaterialApp(
-        home: RunDetailsPage(runId: 'r1', dao: completedDao),
+        home: RunDetailsPage(
+          runId: 'r1',
+          dao: completedDao,
+          settings: FlutterSecureSettingsStore(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -92,7 +105,12 @@ void main() {
     final inProgressDao = await _seedRun(completed: false);
     await tester.pumpWidget(
       MaterialApp(
-        home: RunDetailsPage(key: UniqueKey(), runId: 'r1', dao: inProgressDao),
+        home: RunDetailsPage(
+          key: UniqueKey(),
+          runId: 'r1',
+          dao: inProgressDao,
+          settings: FlutterSecureSettingsStore(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -106,7 +124,11 @@ void main() {
     final db = AppDatabase(NativeDatabase.memory());
     await tester.pumpWidget(
       MaterialApp(
-        home: RunDetailsPage(runId: 'nope', dao: RunDao(db)),
+        home: RunDetailsPage(
+          runId: 'nope',
+          dao: RunDao(db),
+          settings: FlutterSecureSettingsStore(),
+        ),
       ),
     );
     await tester.pumpAndSettle();

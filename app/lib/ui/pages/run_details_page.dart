@@ -7,7 +7,7 @@ import 'package:dart_arena/export/md_exporter.dart';
 import 'package:dart_arena/export/readme_publisher.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/run_summary.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/storage/settings_store.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:dart_arena/ui/widgets/run_matrix.dart';
 import 'package:file_picker/file_picker.dart';
@@ -28,7 +28,7 @@ class RunDetailsPage extends StatefulWidget {
 
   final String runId;
   final RunDao? dao;
-  final SettingsRepository? settings;
+  final SettingsStore? settings;
   final ReadmePublisher? publisher;
   final TaskRegistry? registry;
 
@@ -38,7 +38,7 @@ class RunDetailsPage extends StatefulWidget {
 
 class _RunDetailsPageState extends State<RunDetailsPage> {
   late final RunDao _dao;
-  late final SettingsRepository _settings;
+  late final SettingsStore _settings;
   late final ReadmePublisher _publisher;
   late final TaskRegistry _registry;
   Future<RunSummary?>? _future;
@@ -48,7 +48,7 @@ class _RunDetailsPageState extends State<RunDetailsPage> {
   void initState() {
     super.initState();
     _dao = widget.dao ?? context.read<RunDao>();
-    _settings = widget.settings ?? SettingsRepository();
+    _settings = widget.settings ?? context.read<SettingsStore>();
     _publisher = widget.publisher ?? ReadmePublisher();
     _registry = widget.registry ?? buildDefaultTaskRegistry();
     _future = _dao.loadSummary(widget.runId);

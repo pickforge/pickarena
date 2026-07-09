@@ -4,7 +4,7 @@ import 'package:dart_arena/app.dart';
 import 'package:dart_arena/runner/tmpdir_manager.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/database.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/ui/flutter_secure_settings_store.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,7 +32,7 @@ void main() {
       App(
         database: db,
         workdir: WorkdirManager(root: tmp),
-        settings: SettingsRepository(),
+        settings: FlutterSecureSettingsStore(),
         tmpDirManager: TmpDirManager(root: tmpCache),
       ),
     );

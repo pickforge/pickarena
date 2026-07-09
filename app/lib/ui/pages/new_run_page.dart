@@ -6,7 +6,7 @@ import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/provider_factory.dart';
 import 'package:dart_arena/runner/start_run_config.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/storage/settings_store.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:dart_arena/ui/widgets/task_metadata_chips.dart';
 import 'package:flutter/material.dart';
@@ -61,7 +61,7 @@ class _NewRunPageState extends State<NewRunPage> {
   }
 
   Future<void> _loadProviders() async {
-    final settings = context.read<SettingsRepository>();
+    final settings = context.read<SettingsStore>();
     final results = await Future.wait([
       buildEnabledProviders(settings),
       settings.getRunConcurrency(),
@@ -269,7 +269,7 @@ class _NewRunPageState extends State<NewRunPage> {
         .where((t) => _selectedTaskIds.contains(t.id))
         .toList();
 
-    final settings = context.read<SettingsRepository>();
+    final settings = context.read<SettingsStore>();
 
     final judgeProviderId = await settings.getJudgeProviderId();
     final judgeModelId = await settings.getJudgeModelId();
@@ -309,7 +309,7 @@ class _NewRunPageState extends State<NewRunPage> {
     );
   }
 
-  Future<Map<String, double>> _safeWeights(SettingsRepository repo) async {
+  Future<Map<String, double>> _safeWeights(SettingsStore repo) async {
     try {
       return await repo.getEvaluatorWeights();
     } catch (e, st) {
