@@ -117,11 +117,15 @@ Iterable<String> _negativeCasePathTokens(BenchmarkTask task) sync* {
   for (final negativeCase in task.negativeCases) {
     final roots = {
       if (negativeCase.rootPath case final rootPath?)
-        if (rootPath.trim().isNotEmpty) rootPath,
+        if (_trimTrailingPathSlashes(rootPath).isNotEmpty)
+          _trimTrailingPathSlashes(rootPath),
       'negative_cases/${negativeCase.id}',
       'negative_cases/${negativeCase.kind.wireName}',
     };
-    yield* roots;
+    for (final root in roots) {
+      yield root;
+      yield _directoryPathToken(root);
+    }
     switch (negativeCase.solution) {
       case ReferenceFileSolution(:final files):
         for (final path in files.keys) {
@@ -141,8 +145,12 @@ Iterable<String> _referencePathTokens(
   String? rootPath,
 }) sync* {
   for (final path in paths) {
-    if (rootPath != null && rootPath.trim().isNotEmpty) {
-      yield '$rootPath/$path';
+    if (rootPath != null) {
+      final root = _trimTrailingPathSlashes(rootPath);
+      if (root.isNotEmpty) {
+        yield _directoryPathToken(root);
+        yield '$root/$path';
+      }
     }
     yield 'solution/$path';
     yield 'reference/$path';
@@ -328,6 +336,13 @@ bool _isDistinctivePrivateSnippet(String value) {
 
 String _normalizePathText(String value) =>
     value.replaceAll('\\', '/').toLowerCase();
+
+String _trimTrailingPathSlashes(String value) {
+  final normalized = value.trim().replaceAll('\\', '/');
+  return normalized.replaceAll(RegExp(r'/+$'), '');
+}
+
+String _directoryPathToken(String root) => '${_trimTrailingPathSlashes(root)}/';
 
 String _normalizeWhitespace(String value) {
   return value.replaceAll(RegExp(r'\s+'), ' ').trim();

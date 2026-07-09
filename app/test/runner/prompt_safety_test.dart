@@ -118,11 +118,38 @@ void main() {
         isTrue,
       );
       expect(
+        containsHiddenVerifierPromptSafetyLeak(
+          'custom_cases/noop_variant/',
+          _CustomNegativeRootTask(),
+        ),
+        isTrue,
+      );
+      expect(
         containsReferencePromptSafetyLeak(
           'golden_reference/lib/answer.dart',
           _CustomReferenceRootTask(),
         ),
         isTrue,
+      );
+    });
+
+    test('flags bare reference roots', () {
+      expect(
+        containsReferencePromptSafetyLeak(
+          'look under solution/',
+          _SolutionRootReferenceTask(),
+        ),
+        isTrue,
+      );
+    });
+
+    test('ignores prose reference root words without slash', () {
+      expect(
+        containsReferencePromptSafetyLeak(
+          'the solution should be simple',
+          _SolutionRootReferenceTask(),
+        ),
+        isFalse,
       );
     });
 
@@ -385,6 +412,13 @@ class _CustomReferenceRootTask extends _PromptSafetyTask {
   ReferenceSolution? get referenceSolution => const ReferenceFileSolution({
     'lib/answer.dart': 'int answer() => 42;\n',
   }, rootPath: 'golden_reference');
+}
+
+class _SolutionRootReferenceTask extends _PromptSafetyTask {
+  @override
+  ReferenceSolution? get referenceSolution => const ReferenceFileSolution({
+    'lib/answer.dart': 'int answer() => 42;\n',
+  }, rootPath: 'solution');
 }
 
 class _ReferencePlanLeakTask extends _PromptSafetyTask {
