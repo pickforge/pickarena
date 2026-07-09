@@ -211,7 +211,7 @@ environment:
   test(
     'prepare can run a minimal package through Bubblewrap',
     () async {
-      await _skipUnlessBubblewrapAvailable();
+      if (!await _skipUnlessBubblewrapAvailable()) return;
       final root = await Directory.systemTemp.createTemp(
         'dart_arena_prep_bwrap_',
       );
@@ -300,10 +300,26 @@ done
   return script;
 }
 
-Future<void> _skipUnlessBubblewrapAvailable() async {
+Future<bool> _skipUnlessBubblewrapAvailable() async {
   try {
     await BubblewrapGeneratedCodeSandbox.ensureAvailable();
   } on Object catch (error) {
     markTestSkipped(error.toString());
+    return false;
   }
+  final probe = await Process.run('bwrap', const [
+    '--ro-bind',
+    '/',
+    '/',
+    '--unshare-pid',
+    '--unshare-ipc',
+    '/bin/true',
+  ], runInShell: false);
+  if (probe.exitCode != 0) {
+    markTestSkipped(
+      'bwrap functional probe failed with exit code ${probe.exitCode}',
+    );
+    return false;
+  }
+  return true;
 }
