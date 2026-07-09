@@ -195,6 +195,24 @@ void main() {
     }
   });
 
+  test('serializes concurrent updates across stores for same path', () async {
+    final fixture = await newSettingsFilePath();
+    final first = FileSettingsStore(path: fixture.path, environment: const {});
+    final second = FileSettingsStore(path: fixture.path, environment: const {});
+
+    await Future.wait([
+      first.setApiKey('openai', 'sk-test'),
+      second.setReadmePath('/tmp/README.md'),
+    ]);
+
+    final reloaded = FileSettingsStore(
+      path: fixture.path,
+      environment: const {},
+    );
+    expect(await reloaded.getApiKey('openai'), 'sk-test');
+    expect(await reloaded.getReadmePath(), '/tmp/README.md');
+  });
+
   test('atomic writes leave no temporary settings files', () async {
     final fixture = await newSettingsFilePath();
     final repo = FileSettingsStore(path: fixture.path, environment: const {});
@@ -313,6 +331,27 @@ void main() {
     ).writeAsString(jsonEncode({'runConcurrency': 'abc'}));
     final repo = FileSettingsStore(path: fixture.path, environment: const {});
     expect(await repo.getRunConcurrency(), 4);
+  });
+
+  test('malformed settings JSON throws actionable error', () async {
+    final fixture = await newSettingsFilePath();
+    final file = File(fixture.path);
+    const raw = '{"providers":';
+    await file.writeAsString(raw);
+    final repo = FileSettingsStore(path: fixture.path, environment: const {});
+
+    Object? error;
+    try {
+      await repo.getReadmePath();
+    } on Object catch (caught) {
+      error = caught;
+    }
+
+    expect(error, isA<MalformedSettingsFileException>());
+    expect(error, isNot(isA<FormatException>()));
+    expect(error.toString(), contains(fixture.path));
+    expect(error.toString(), contains('Fix or remove'));
+    expect(await file.readAsString(), raw);
   });
 
   test('reviewer ID is generated once and persisted', () async {

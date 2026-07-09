@@ -29,14 +29,17 @@ class FileSettingsStore implements SettingsStore {
     this._replaceWithBackup,
   ) : _environment = Map.unmodifiable(environment),
       _file = File(resolved.path),
+      _lockPath = _canonicalLockPath(resolved.path),
       _chmodParentWhenCreated = resolved.chmodParentWhenCreated;
+
+  static final Map<String, Future<void>> _updateQueues = {};
 
   final Map<String, String> _environment;
   final File _file;
+  final String _lockPath;
   final bool _chmodParentWhenCreated;
   final Future<File> Function(File file, String newPath)? _renameFile;
   final bool _replaceWithBackup;
-  Future<void> _updateQueue = Future.value();
 
   String get path => _file.path;
 
@@ -248,7 +251,7 @@ class FileSettingsStore implements SettingsStore {
   @override
   Future<String> getOrCreateReviewReviewerId() async {
     return _withUpdateLock(() async {
-      final settings = await _readSettings();
+      final settings = await _readSettingsUnlocked();
       final reviewer = _readObject(settings['reviewer']);
       final existing = _readString(reviewer['id']);
       if (existing != null && existing.isNotEmpty) return existing;
@@ -280,21 +283,31 @@ class FileSettingsStore implements SettingsStore {
     });
   }
 
-  Future<Map<String, Object?>> _readSettings() async {
+  Future<Map<String, Object?>> _readSettings() {
+    return _withUpdateLock(_readSettingsUnlocked);
+  }
+
+  Future<Map<String, Object?>> _readSettingsUnlocked() async {
     await _recoverBackupIfNeeded();
     if (!await _file.exists()) return {};
     final raw = await _file.readAsString();
-    if (raw.trim().isEmpty) return {};
-    final decoded = jsonDecode(raw);
-    if (decoded is Map) return Map<String, Object?>.from(decoded);
-    return {};
+    try {
+      if (raw.trim().isEmpty) {
+        throw const FormatException('Settings file is empty.');
+      }
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) return Map<String, Object?>.from(decoded);
+      throw const FormatException('Settings file must contain a JSON object.');
+    } on FormatException catch (error) {
+      throw MalformedSettingsFileException(_file.path, error);
+    }
   }
 
   Future<void> _updateSettings(
     void Function(Map<String, Object?> settings) update,
   ) async {
     await _withUpdateLock(() async {
-      final settings = await _readSettings();
+      final settings = await _readSettingsUnlocked();
       update(settings);
       await _writeSettings(settings);
     });
@@ -320,8 +333,15 @@ class FileSettingsStore implements SettingsStore {
   }
 
   Future<T> _withUpdateLock<T>(Future<T> Function() action) {
-    final run = _updateQueue.then((_) => action(), onError: (_) => action());
-    _updateQueue = run.then<void>((_) {}, onError: (_) {});
+    final previous = _updateQueues[_lockPath] ?? Future<void>.value();
+    final run = previous.then((_) => action(), onError: (_) => action());
+    final next = run.then<void>((_) {}, onError: (_) {});
+    _updateQueues[_lockPath] = next;
+    next.whenComplete(() {
+      if (identical(_updateQueues[_lockPath], next)) {
+        _updateQueues.remove(_lockPath);
+      }
+    });
     return run;
   }
 
@@ -554,9 +574,37 @@ _ResolvedSettingsPath _resolveSettingsPath(
   return _ResolvedSettingsPath(defaultPath, home != null && home.isNotEmpty);
 }
 
+String _canonicalLockPath(String path) {
+  final file = File(path).absolute;
+  try {
+    return file.resolveSymbolicLinksSync();
+  } on FileSystemException {
+    try {
+      return p.join(
+        file.parent.resolveSymbolicLinksSync(),
+        p.basename(file.path),
+      );
+    } on FileSystemException {
+      return p.canonicalize(file.path);
+    }
+  }
+}
+
 class _ResolvedSettingsPath {
   const _ResolvedSettingsPath(this.path, this.chmodParentWhenCreated);
 
   final String path;
   final bool chmodParentWhenCreated;
+}
+
+class MalformedSettingsFileException implements Exception {
+  const MalformedSettingsFileException(this.path, this.cause);
+
+  final String path;
+  final FormatException cause;
+
+  @override
+  String toString() {
+    return 'Malformed settings JSON at $path. Fix or remove this file, then try again. ${cause.message}';
+  }
 }
