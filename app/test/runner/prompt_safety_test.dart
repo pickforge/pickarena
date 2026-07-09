@@ -2,6 +2,7 @@ import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/reference_solution.dart';
+import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/core/task_verifier.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/runner/prompt_safety.dart';
@@ -10,6 +11,15 @@ import 'package:flutter_test/flutter_test.dart';
 const _hiddenAssertion =
     "expect(controller.submittedEmail, 'user.name+tag@example.com');";
 const _referenceSnippet = 'int answer() => 42;';
+const _shortPrivateBlock = '''
+int answer() {
+  return 42;
+}
+''';
+const _genericTwoLineBlock = '''
+if (mounted) {
+}
+''';
 
 void main() {
   group('prompt safety leak scanner', () {
@@ -42,10 +52,7 @@ void main() {
         isTrue,
       );
       expect(
-        containsHiddenVerifierPromptSafetyLeak(
-          'mytest/_hidden/main.dart',
-          task,
-        ),
+        containsHiddenVerifierPromptSafetyLeak('mytest_hidden/main.dart', task),
         isFalse,
       );
     });
@@ -59,6 +66,13 @@ void main() {
       );
       expect(
         containsHiddenVerifierPromptSafetyLeak('hidden_tests', task),
+        isTrue,
+      );
+      expect(
+        containsHiddenVerifierPromptSafetyLeak(
+          '_hidden/main.dart',
+          _GenericHiddenFileNameTask(),
+        ),
         isTrue,
       );
     });
@@ -96,6 +110,13 @@ void main() {
         containsReferencePromptSafetyLeak('solution/lib/answer.dart', task),
         isTrue,
       );
+      expect(
+        containsHiddenVerifierPromptSafetyLeak(
+          'custom_cases/noop_variant/lib/answer.dart',
+          _CustomNegativeRootTask(),
+        ),
+        isTrue,
+      );
     });
 
     test('flags distinctive hidden and reference snippets', () {
@@ -107,6 +128,32 @@ void main() {
       );
       expect(
         containsReferencePromptSafetyLeak(_referenceSnippet, task),
+        isTrue,
+      );
+    });
+
+    test('flags short multi-line private blocks', () {
+      final task = _ShortLinePrivateBlockTask();
+
+      expect(
+        containsHiddenVerifierPromptSafetyLeak(_shortPrivateBlock, task),
+        isTrue,
+      );
+      expect(
+        containsReferencePromptSafetyLeak(_shortPrivateBlock, task),
+        isTrue,
+      );
+    });
+
+    test('flags leaks in workspace instructions', () {
+      final task = _WorkspaceInstructionLeakTask();
+      final visibleContext = buildPromptSafetyVisibleContext(task: task);
+
+      expect(
+        scanPromptSafetyLeaks(
+          visiblePromptContext: visibleContext,
+          task: task,
+        ).hiddenVerifierLeak,
         isTrue,
       );
     });
@@ -167,6 +214,20 @@ void main() {
       );
       expect(
         containsHiddenVerifierPromptSafetyLeak('shortid', _ShortIdTask()),
+        isFalse,
+      );
+      expect(
+        containsHiddenVerifierPromptSafetyLeak(
+          _genericTwoLineBlock,
+          _PublicGenericTwoLineBlockTask(),
+        ),
+        isFalse,
+      );
+      expect(
+        containsReferencePromptSafetyLeak(
+          _genericTwoLineBlock,
+          _PublicGenericTwoLineBlockTask(),
+        ),
         isFalse,
       );
     });
@@ -250,6 +311,45 @@ class _GenericHiddenFileNameTask extends _PromptSafetyTask {
   ];
 }
 
+class _ShortLinePrivateBlockTask extends _PromptSafetyTask {
+  @override
+  List<VerifierFixture> get hiddenVerifiers => const [
+    VerifierFixture(
+      id: 'short_block_hidden',
+      testPath: 'test/_hidden/short_block_test.dart',
+      files: {'test/_hidden/short_block_test.dart': _shortPrivateBlock},
+    ),
+  ];
+
+  @override
+  ReferenceSolution? get referenceSolution =>
+      const ReferenceFileSolution({'lib/answer.dart': _shortPrivateBlock});
+}
+
+class _WorkspaceInstructionLeakTask extends _PromptSafetyTask {
+  @override
+  TaskWorkspace get workspace => TaskWorkspace.fromFixtures(
+    fixtures,
+    instruction:
+        'Fix answer(). The workspace hint mentions answer_hidden_test.dart.',
+  );
+}
+
+class _CustomNegativeRootTask extends _PromptSafetyTask {
+  @override
+  List<TaskNegativeCase> get negativeCases => const [
+    TaskNegativeCase(
+      id: 'noop',
+      description: 'Leaves behavior unchanged.',
+      kind: TaskNegativeCaseKind.noop,
+      rootPath: 'custom_cases/noop_variant',
+      solution: ReferenceFileSolution({
+        'lib/answer.dart': 'int answer() => 41;\n',
+      }),
+    ),
+  ];
+}
+
 class _PublicHiddenSnippetTask extends _PromptSafetyTask {
   @override
   Map<String, String> get fixtures => {
@@ -274,6 +374,27 @@ void main() {
 }
 ''',
   };
+}
+
+class _PublicGenericTwoLineBlockTask extends _PromptSafetyTask {
+  @override
+  Map<String, String> get fixtures => {
+    ...super.fixtures,
+    'test/public_generic_block_test.dart': _genericTwoLineBlock,
+  };
+
+  @override
+  List<VerifierFixture> get hiddenVerifiers => const [
+    VerifierFixture(
+      id: 'public_block_hidden',
+      testPath: 'test/_hidden/public_block_test.dart',
+      files: {'test/_hidden/public_block_test.dart': _genericTwoLineBlock},
+    ),
+  ];
+
+  @override
+  ReferenceSolution? get referenceSolution =>
+      const ReferenceFileSolution({'lib/answer.dart': _genericTwoLineBlock});
 }
 
 class _ShortIdTask extends _PromptSafetyTask {

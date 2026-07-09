@@ -890,10 +890,10 @@ class TaskQaRunner {
       targetContext,
       publicTestContext,
     ].whereType<String>().join('\n');
-    final visiblePromptContext = [
-      task.prompt,
-      promptSafeContext,
-    ].where((value) => value.trim().isNotEmpty).join('\n');
+    final visiblePromptContext = buildPromptSafetyVisibleContext(
+      task: task,
+      promptSafeContext: promptSafeContext,
+    );
     final targetSource = task.fixtures[task.generatedCodePath]?.trim();
     final publicTestContextRequired = _hasPublicTestFixtures(task.fixtures);
     final requiredKinds = task.requiredNegativeCaseKinds;

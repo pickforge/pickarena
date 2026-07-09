@@ -64,6 +64,10 @@ void main() {
       TaskNegativeCaseKind.noop,
       TaskNegativeCaseKind.apiBreaking,
     });
+    expect(task.negativeCases.map((negative) => negative.rootPath), {
+      'negative_cases/noop',
+      'negative_cases/api_breaking',
+    });
   });
 
   test('normalizes custom hidden verifier IDs for classification', () async {

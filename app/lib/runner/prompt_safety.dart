@@ -27,6 +27,24 @@ PromptSafetyLeakScan scanPromptSafetyLeaks({
   );
 }
 
+String buildPromptSafetyVisibleContext({
+  required BenchmarkTask task,
+  String promptSafeContext = '',
+}) {
+  final values = <String>[];
+  void addVisibleText(String? value) {
+    if (value == null || value.trim().isEmpty || values.contains(value)) {
+      return;
+    }
+    values.add(value);
+  }
+
+  addVisibleText(task.prompt);
+  addVisibleText(task.workspace.instruction);
+  addVisibleText(promptSafeContext);
+  return values.join('\n');
+}
+
 bool containsHiddenVerifierPromptSafetyLeak(
   String haystack,
   BenchmarkTask task,
@@ -96,6 +114,8 @@ Iterable<String> _hiddenVerifierPathTokens(BenchmarkTask task) sync* {
 Iterable<String> _negativeCasePathTokens(BenchmarkTask task) sync* {
   for (final negativeCase in task.negativeCases) {
     final roots = {
+      if (negativeCase.rootPath case final rootPath?)
+        if (rootPath.trim().isNotEmpty) rootPath,
       'negative_cases/${negativeCase.id}',
       'negative_cases/${negativeCase.kind.wireName}',
     };
@@ -131,6 +151,7 @@ bool _containsRestrictedHiddenMarker(String haystack) {
   final normalized = _normalizePathText(haystack);
   return _containsPathPrefix(normalized, 'test/_hidden/') ||
       _containsPathPrefix(normalized, 'test/hidden/') ||
+      _containsPathPrefix(normalized, '_hidden/') ||
       _containsDirectoryToken(normalized, 'hidden_tests') ||
       _containsAnyIdentifierToken(haystack, const ['do_not_leak_hidden']) ||
       normalized.contains('hidden verifier source');
@@ -231,6 +252,11 @@ bool _containsDistinctivePrivateContent({
     publicContents.join('\n'),
   );
   for (final content in privateContents) {
+    for (final window in _distinctivePrivateWindows(content)) {
+      final normalizedWindow = _normalizeDistinctiveContent(window);
+      if (normalizedPublic.contains(normalizedWindow)) continue;
+      if (normalizedHaystack.contains(normalizedWindow)) return true;
+    }
     for (final snippet in _distinctivePrivateSnippets(content)) {
       final normalizedSnippet = _normalizeDistinctiveContent(snippet);
       if (normalizedPublic.contains(normalizedSnippet)) continue;
@@ -238,6 +264,30 @@ bool _containsDistinctivePrivateContent({
     }
   }
   return false;
+}
+
+Iterable<String> _distinctivePrivateWindows(String content) sync* {
+  const windowSize = 3;
+  final lines = [
+    for (final line in content.split('\n'))
+      if (_isNonTrivialPrivateLine(line)) line.trim(),
+  ];
+  if (lines.length < windowSize) return;
+  for (var i = 0; i <= lines.length - windowSize; i++) {
+    yield lines.skip(i).take(windowSize).join('\n');
+  }
+}
+
+bool _isNonTrivialPrivateLine(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return false;
+  final lower = trimmed.toLowerCase();
+  return !lower.startsWith('import ') &&
+      !lower.startsWith('export ') &&
+      !lower.startsWith('part ') &&
+      !lower.startsWith('//') &&
+      !lower.startsWith('/*') &&
+      !lower.startsWith('*');
 }
 
 Iterable<String> _distinctivePrivateSnippets(String content) sync* {

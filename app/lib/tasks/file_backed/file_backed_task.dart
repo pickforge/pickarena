@@ -219,6 +219,7 @@ class FileBackedTask extends BenchmarkTask {
           id: spec.id,
           description: spec.description,
           kind: spec.kind,
+          rootPath: spec.root,
           solution: ReferenceFileSolution(
             await _readFiles(bundleDirectory, spec.root, spec.files),
           ),
