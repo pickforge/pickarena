@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:dart_arena/review/preference_ranking.dart';
 import 'package:dart_arena/review/review_battle.dart';
 import 'package:dart_arena/storage/database.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/storage/settings_store.dart';
 import 'package:drift/drift.dart';
 
 class ReviewSelection {
@@ -33,7 +33,7 @@ class ReviewSelection {
 class ReviewRepository {
   ReviewRepository(
     this._db, {
-    SettingsRepository? settings,
+    SettingsStore? settings,
     Random? random,
     DateTime Function()? now,
     String Function()? idGenerator,
@@ -47,7 +47,7 @@ class ReviewRepository {
        _groupCandidateLimit = groupCandidateLimit;
 
   final AppDatabase _db;
-  final SettingsRepository? _settings;
+  final SettingsStore? _settings;
   final Random _random;
   final DateTime Function() _now;
   final String Function()? _idGenerator;
@@ -305,7 +305,7 @@ class ReviewRepository {
   Future<String> _requireReviewerId() async {
     final settings = _settings;
     if (settings == null) {
-      throw StateError('SettingsRepository is required to resolve reviewer ID');
+      throw StateError('SettingsStore is required to resolve reviewer ID');
     }
     return settings.getOrCreateReviewReviewerId();
   }

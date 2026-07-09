@@ -3,7 +3,7 @@ import 'package:dart_arena/review/review_repository.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   Future<TaskRun> seedTaskRun(

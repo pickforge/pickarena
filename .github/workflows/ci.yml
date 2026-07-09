@@ -73,8 +73,14 @@ jobs:
             test/providers/openai_compatible_provider_test.dart \
             test/providers/openai_provider_test.dart \
             test/providers/opencode_go_provider_test.dart \
+            test/providers/provider_factory_test.dart \
             test/providers/openrouter_provider_test.dart \
             test/review/preference_ranking_test.dart
+          dart test --concurrency=1 \
+            test/review/review_repository_test.dart \
+            test/storage/settings_judge_test.dart \
+            test/storage/settings_readme_test.dart \
+            test/storage/settings_test.dart
           dart test --concurrency=1 \
             test/runner/codegen_task_executor_blocking_test.dart \
             test/runner/evaluator_resource_limits_test.dart \

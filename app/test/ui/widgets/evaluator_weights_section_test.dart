@@ -1,16 +1,17 @@
 import 'package:dart_arena/core/scoring.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/storage/settings_store.dart';
+import 'package:dart_arena/ui/flutter_secure_settings_store.dart';
 import 'package:dart_arena/ui/widgets/evaluator_weights_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget _wrap(SettingsRepository repo) {
+Widget _wrap(SettingsStore repo) {
   return MaterialApp(
     home: Scaffold(
       body: SingleChildScrollView(
-        child: RepositoryProvider<SettingsRepository>.value(
+        child: RepositoryProvider<SettingsStore>.value(
           value: repo,
           child: const EvaluatorWeightsSection(),
         ),
@@ -25,7 +26,7 @@ void main() {
   });
 
   testWidgets('renders one row per evaluator id', (tester) async {
-    await tester.pumpWidget(_wrap(SettingsRepository()));
+    await tester.pumpWidget(_wrap(FlutterSecureSettingsStore()));
     await tester.pumpAndSettle();
     for (final id in defaultEvaluatorWeights.keys) {
       expect(
@@ -39,14 +40,14 @@ void main() {
   testWidgets('row badge says Default when value matches default', (
     tester,
   ) async {
-    await tester.pumpWidget(_wrap(SettingsRepository()));
+    await tester.pumpWidget(_wrap(FlutterSecureSettingsStore()));
     await tester.pumpAndSettle();
     expect(find.text('Default'), findsNWidgets(defaultEvaluatorWeights.length));
     expect(find.text('Override'), findsNothing);
   });
 
   testWidgets('editing a row flips its badge to Override', (tester) async {
-    await tester.pumpWidget(_wrap(SettingsRepository()));
+    await tester.pumpWidget(_wrap(FlutterSecureSettingsStore()));
     await tester.pumpAndSettle();
 
     final compileField = find.byKey(const ValueKey('weight-field-compile'));
@@ -61,7 +62,7 @@ void main() {
   });
 
   testWidgets('per-row Reset clears the override field', (tester) async {
-    await tester.pumpWidget(_wrap(SettingsRepository()));
+    await tester.pumpWidget(_wrap(FlutterSecureSettingsStore()));
     await tester.pumpAndSettle();
 
     final compileField = find.byKey(const ValueKey('weight-field-compile'));
@@ -78,7 +79,7 @@ void main() {
   testWidgets('Save persists only rows that differ from defaults', (
     tester,
   ) async {
-    final repo = SettingsRepository();
+    final repo = FlutterSecureSettingsStore();
     await tester.pumpWidget(_wrap(repo));
     await tester.pumpAndSettle();
 
@@ -102,7 +103,7 @@ void main() {
   });
 
   testWidgets('invalid input disables Save', (tester) async {
-    await tester.pumpWidget(_wrap(SettingsRepository()));
+    await tester.pumpWidget(_wrap(FlutterSecureSettingsStore()));
     await tester.pumpAndSettle();
 
     await tester.enterText(

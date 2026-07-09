@@ -10,7 +10,7 @@ import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/dao/plan_dao.dart';
 import 'package:dart_arena/storage/dao/run_dao.dart';
 import 'package:dart_arena/storage/database.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/storage/settings_store.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
 import 'package:dart_arena/ui/pages/dashboard_page.dart';
 import 'package:dart_arena/ui/pages/leaderboard_page.dart';
@@ -112,7 +112,7 @@ class App extends StatelessWidget {
 
   final AppDatabase database;
   final WorkdirManager workdir;
-  final SettingsRepository settings;
+  final SettingsStore settings;
   final TmpDirManager tmpDirManager;
 
   @override
@@ -122,7 +122,7 @@ class App extends StatelessWidget {
         RepositoryProvider<AppDatabase>.value(value: database),
         RepositoryProvider<WorkdirManager>.value(value: workdir),
         RepositoryProvider<TmpDirManager>.value(value: tmpDirManager),
-        RepositoryProvider<SettingsRepository>.value(value: settings),
+        RepositoryProvider<SettingsStore>.value(value: settings),
         RepositoryProvider<RunDao>(
           create: (ctx) => RunDao(ctx.read<AppDatabase>()),
         ),
@@ -135,7 +135,7 @@ class App extends StatelessWidget {
         RepositoryProvider<ReviewRepository>(
           create: (ctx) => ReviewRepository(
             ctx.read<AppDatabase>(),
-            settings: ctx.read<SettingsRepository>(),
+            settings: ctx.read<SettingsStore>(),
           ),
         ),
       ],

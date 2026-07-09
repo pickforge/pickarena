@@ -1,20 +1,19 @@
 import 'package:dart_arena/providers/provider_factory.dart';
 import 'package:dart_arena/providers/openai_compatible_provider.dart';
-import 'package:dart_arena/storage/settings.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:dart_arena/storage/settings_store.dart';
+import 'package:test/test.dart';
+
+import '../support/settings_store_test_utils.dart';
 
 void main() {
-  setUp(() => FlutterSecureStorage.setMockInitialValues({}));
-
   test('Ollama Local + Droid are always enabled', () async {
-    final providers = await buildEnabledProviders(SettingsRepository());
+    final providers = await buildEnabledProviders(await newFileSettingsStore());
     final ids = providers.map((p) => p.id).toList();
     expect(ids, containsAll(['ollama_local', 'droid']));
   });
 
   test('cloud providers appear once their key is set', () async {
-    final repo = SettingsRepository();
+    final repo = await newFileSettingsStore();
     expect(
       (await buildEnabledProviders(repo)).any((p) => p.id == 'opencode_go'),
       isFalse,
@@ -27,7 +26,7 @@ void main() {
   });
 
   test('OpenCode Go accepts legacy OpenCode Zen key slot', () async {
-    final repo = SettingsRepository();
+    final repo = await newFileSettingsStore();
     await repo.setApiKey('opencode_zen', 'legacy-sk');
     final provider = (await buildEnabledProviders(
       repo,
@@ -36,10 +35,9 @@ void main() {
   });
 
   test('no cloud providers appear with empty keys', () async {
-    final providers = await buildEnabledProviders(SettingsRepository());
+    final providers = await buildEnabledProviders(await newFileSettingsStore());
     final ids = providers.map((p) => p.id).toSet();
     expect(ids, containsAll(['ollama_local', 'droid']));
-    // Cloud providers should NOT be present
     expect(ids.contains('openai'), isFalse);
     expect(ids.contains('anthropic'), isFalse);
   });
@@ -47,8 +45,7 @@ void main() {
   test(
     'local OpenAI-compatible provider uses default and override settings',
     () async {
-      final repo = SettingsRepository();
-      // Seed legacy URL so migration creates the entry
+      final repo = await newFileSettingsStore();
       await repo.setBaseUrlOverride('local_openai', 'http://127.0.0.1:8080/v1');
       var provider = (await buildEnabledProviders(repo))
           .whereType<OpenAiCompatibleProvider>()
@@ -67,7 +64,7 @@ void main() {
   );
 
   test('local_openai has empty default efforts', () async {
-    final repo = SettingsRepository();
+    final repo = await newFileSettingsStore();
     await repo.setBaseUrlOverride('local_openai', 'http://127.0.0.1:8080/v1');
     final providers = await buildEnabledProviders(repo);
     final local = providers.whereType<OpenAiCompatibleProvider>().singleWhere(
@@ -79,7 +76,7 @@ void main() {
   test(
     'enabled cloud OpenAI-compatible providers have expected effort lists',
     () async {
-      final repo = SettingsRepository();
+      final repo = await newFileSettingsStore();
       await repo.setApiKey('deepseek', 'sk');
       await repo.setApiKey('openai', 'sk');
       await repo.setApiKey('openrouter', 'sk');
@@ -103,7 +100,7 @@ void main() {
   );
 
   test('custom providers appear when URLs are configured', () async {
-    final repo = SettingsRepository();
+    final repo = await newFileSettingsStore();
     await repo.setBaseUrlOverride('codex', 'http://127.0.0.1:9000/v1');
     await repo.setApiKey('codex', 'sk-codex');
     await repo.setBaseUrlOverride('qwen', 'http://127.0.0.1:9001/v1');
@@ -131,7 +128,7 @@ void main() {
   });
 
   test('custom providers without URL are skipped', () async {
-    final repo = SettingsRepository();
+    final repo = await newFileSettingsStore();
     await repo.setCustomLocalProviders([
       const CustomLocalProviderEntry(id: 'nosetup', name: 'No Setup'),
     ]);
@@ -140,7 +137,7 @@ void main() {
   });
 
   test('custom providers with whitespace-only URL are skipped', () async {
-    final repo = SettingsRepository();
+    final repo = await newFileSettingsStore();
     await repo.setBaseUrlOverride('blank', '   ');
     await repo.setCustomLocalProviders([
       const CustomLocalProviderEntry(id: 'blank', name: 'Blank'),
@@ -152,8 +149,9 @@ void main() {
   test(
     'local_openai is not present without legacy settings or custom entry',
     () async {
-      FlutterSecureStorage.setMockInitialValues({});
-      final providers = await buildEnabledProviders(SettingsRepository());
+      final providers = await buildEnabledProviders(
+        await newFileSettingsStore(),
+      );
       expect(providers.any((p) => p.id == 'local_openai'), isFalse);
     },
   );

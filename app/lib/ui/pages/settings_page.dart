@@ -1,5 +1,5 @@
 import 'package:dart_arena/runner/tmpdir_manager.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/storage/settings_store.dart';
 import 'package:dart_arena/providers/openai_compatible_provider.dart';
 import 'package:dart_arena/ui/widgets/evaluator_weights_section.dart';
 import 'package:file_picker/file_picker.dart';
@@ -15,13 +15,13 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  late final SettingsRepository _repo;
+  late final SettingsStore _repo;
   int _providersVersion = 0;
 
   @override
   void initState() {
     super.initState();
-    _repo = context.read<SettingsRepository>();
+    _repo = context.read<SettingsStore>();
   }
 
   void _onProvidersChanged() => setState(() => _providersVersion++);
@@ -210,12 +210,13 @@ class _ConcurrencySection extends StatefulWidget {
 }
 
 class _ConcurrencySectionState extends State<_ConcurrencySection> {
-  final _repo = SettingsRepository();
+  late final SettingsStore _repo;
   double _value = 4;
 
   @override
   void initState() {
     super.initState();
+    _repo = context.read<SettingsStore>();
     _repo.getRunConcurrency().then(
       (v) => setState(() => _value = v.toDouble()),
     );
@@ -254,7 +255,7 @@ class _JudgeSection extends StatefulWidget {
 }
 
 class _JudgeSectionState extends State<_JudgeSection> {
-  final _repo = SettingsRepository();
+  late final SettingsStore _repo;
   final _modelController = TextEditingController();
   String? _providerId;
   List<String> _providerIds = const [];
@@ -273,6 +274,7 @@ class _JudgeSectionState extends State<_JudgeSection> {
   @override
   void initState() {
     super.initState();
+    _repo = context.read<SettingsStore>();
     _load();
   }
 
@@ -360,7 +362,7 @@ class _JudgeSectionState extends State<_JudgeSection> {
 
 class _CustomLocalProvidersSection extends StatefulWidget {
   const _CustomLocalProvidersSection({required this.repo, this.onChanged});
-  final SettingsRepository repo;
+  final SettingsStore repo;
   final VoidCallback? onChanged;
 
   @override
@@ -476,7 +478,7 @@ class _ProviderCard extends StatelessWidget {
   });
 
   final CustomLocalProviderEntry entry;
-  final SettingsRepository repo;
+  final SettingsStore repo;
   final VoidCallback onEdited;
   final VoidCallback onDeleted;
 
@@ -512,7 +514,7 @@ class _ProviderCard extends StatelessWidget {
 class _UrlPreview extends StatelessWidget {
   const _UrlPreview({required this.id, required this.repo});
   final String id;
-  final SettingsRepository repo;
+  final SettingsStore repo;
 
   @override
   Widget build(BuildContext context) {
@@ -537,7 +539,7 @@ class _UrlPreview extends StatelessWidget {
 class _KeyBadge extends StatelessWidget {
   const _KeyBadge({required this.id, required this.repo});
   final String id;
-  final SettingsRepository repo;
+  final SettingsStore repo;
 
   @override
   Widget build(BuildContext context) {
@@ -571,7 +573,7 @@ class _KeyBadge extends StatelessWidget {
 class _LocalProviderDialog extends StatefulWidget {
   const _LocalProviderDialog({this.entry, required this.repo});
   final CustomLocalProviderEntry? entry;
-  final SettingsRepository repo;
+  final SettingsStore repo;
 
   @override
   State<_LocalProviderDialog> createState() => _LocalProviderDialogState();
@@ -934,7 +936,7 @@ class _LocalProviderDialogState extends State<_LocalProviderDialog> {
 
 class _OllamaLocalSection extends StatefulWidget {
   const _OllamaLocalSection({required this.repo});
-  final SettingsRepository repo;
+  final SettingsStore repo;
 
   @override
   State<_OllamaLocalSection> createState() => _OllamaLocalSectionState();
@@ -988,7 +990,7 @@ class _ApiKeySection extends StatefulWidget {
     required this.providerId,
     required this.label,
   });
-  final SettingsRepository repo;
+  final SettingsStore repo;
   final String providerId;
   final String label;
 
@@ -1062,7 +1064,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
 
 class _ReadmeSection extends StatefulWidget {
   const _ReadmeSection({required this.repo});
-  final SettingsRepository repo;
+  final SettingsStore repo;
 
   @override
   State<_ReadmeSection> createState() => _ReadmeSectionState();

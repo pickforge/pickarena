@@ -1,11 +1,11 @@
 import 'package:dart_arena/core/scoring.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/storage/settings_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class EvaluatorWeightsSection extends StatefulWidget {
   const EvaluatorWeightsSection({super.key, this.repo});
-  final SettingsRepository? repo;
+  final SettingsStore? repo;
 
   @override
   State<EvaluatorWeightsSection> createState() =>
@@ -13,14 +13,14 @@ class EvaluatorWeightsSection extends StatefulWidget {
 }
 
 class _EvaluatorWeightsSectionState extends State<EvaluatorWeightsSection> {
-  late final SettingsRepository _repo;
+  late final SettingsStore _repo;
   final Map<String, TextEditingController> _controllers = {};
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _repo = widget.repo ?? context.read<SettingsRepository>();
+    _repo = widget.repo ?? context.read<SettingsStore>();
     for (final id in defaultEvaluatorWeights.keys) {
       _controllers[id] = TextEditingController()
         ..addListener(() => setState(() {}));

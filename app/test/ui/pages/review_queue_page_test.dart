@@ -5,8 +5,8 @@ import 'package:dart_arena/review/review_repository.dart';
 import 'package:dart_arena/runner/tmpdir_manager.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/database.dart';
-import 'package:dart_arena/storage/settings.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
+import 'package:dart_arena/ui/flutter_secure_settings_store.dart';
 import 'package:dart_arena/ui/pages/review_queue_page.dart';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
@@ -59,7 +59,7 @@ void main() {
   ) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    final repo = ReviewRepository(db, settings: SettingsRepository());
+    final repo = ReviewRepository(db, settings: FlutterSecureSettingsStore());
 
     await tester.pumpWidget(
       MaterialApp(
@@ -91,7 +91,7 @@ void main() {
     for (final task in registry.all()) {
       await task.ensureLoaded();
     }
-    final repo = ReviewRepository(db, settings: SettingsRepository());
+    final repo = ReviewRepository(db, settings: FlutterSecureSettingsStore());
 
     await tester.pumpWidget(
       MaterialApp(
@@ -135,7 +135,7 @@ void main() {
       App(
         database: db,
         workdir: WorkdirManager(root: tmp),
-        settings: SettingsRepository(),
+        settings: FlutterSecureSettingsStore(),
         tmpDirManager: TmpDirManager(root: tmpCache),
       ),
     );

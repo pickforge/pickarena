@@ -6,7 +6,7 @@ import 'package:dart_arena/runner/tmpdir_bootstrap.dart';
 import 'package:dart_arena/runner/tmpdir_manager.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/database.dart';
-import 'package:dart_arena/storage/settings.dart';
+import 'package:dart_arena/ui/flutter_secure_settings_store.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -26,7 +26,7 @@ Future<void> main() async {
   final workdirRoot = Directory(p.join(supportDir.path, 'workdirs'))
     ..createSync(recursive: true);
   final workdir = WorkdirManager(root: workdirRoot);
-  final settings = SettingsRepository();
+  final settings = FlutterSecureSettingsStore();
 
   runApp(
     App(
