@@ -1,6 +1,6 @@
 schemaVersion: 1
 id: forms.email_validation
-version: 1
+version: 2
 category: bug_fix
 track: agentic
 tags:

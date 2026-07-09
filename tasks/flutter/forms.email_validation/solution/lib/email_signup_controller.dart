@@ -6,15 +6,25 @@ class EmailSignUpController {
 
   bool submit(String email) {
     final normalized = email.trim().toLowerCase();
-    final validEmail = RegExp(
-      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-    ).hasMatch(normalized);
-    if (!validEmail) {
+    if (!_isValidEmail(normalized)) {
       errorText = invalidEmailMessage;
       return false;
     }
     submittedEmail = normalized;
     errorText = null;
     return true;
+  }
+
+  bool _isValidEmail(String email) {
+    if (email.contains(RegExp(r'\s'))) {
+      return false;
+    }
+    final parts = email.split('@');
+    if (parts.length != 2 || parts.first.isEmpty) {
+      return false;
+    }
+    final domainLabels = parts.last.split('.');
+    return domainLabels.length >= 2 &&
+        domainLabels.every((label) => label.isNotEmpty);
   }
 }

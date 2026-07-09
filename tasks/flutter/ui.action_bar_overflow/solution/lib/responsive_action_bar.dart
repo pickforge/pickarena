@@ -43,7 +43,7 @@ class ResponsiveActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final split = _splitActions(constraints.maxWidth);
+        final split = _splitActions(context, constraints.maxWidth);
         return Row(
           children: <Widget>[
             for (final action in split.inline)
@@ -64,22 +64,26 @@ class ResponsiveActionBar extends StatelessWidget {
     );
   }
 
-  _ActionSplit _splitActions(double maxWidth) {
-    final visibleCount = maxWidth >= 560
-        ? actions.length
-        : maxWidth >= 400
-        ? 1
-        : 0;
+  _ActionSplit _splitActions(BuildContext context, double max) {
+    final scaler = MediaQuery.textScalerOf(context);
+    num w(String text) =>
+        24 +
+        TextPainter.computeWidth(
+          text: TextSpan(text: text),
+          textDirection: Directionality.of(context),
+          textScaler: scaler,
+        ).clamp(0, scaler.scale(96));
+    int p((int, ResponsiveActionBarAction) e) => e.$2.priority;
     final ranked = actions.indexed.toList()
-      ..sort((left, right) {
-        final priority = left.$2.priority.compareTo(right.$2.priority);
-        return priority == 0 ? left.$1.compareTo(right.$1) : priority;
-      });
-    final inline = ranked.take(visibleCount).map((entry) => entry.$2).toSet();
-    return _ActionSplit(
-      actions.where(inline.contains).toList(),
-      actions.where((action) => !inline.contains(action)).toList(),
-    );
+      ..sort((a, b) => p(a) == p(b) ? a.$1 - b.$1 : p(a) - p(b));
+    var count = ranked.length;
+    for (; count > 0; count--) {
+      final width = (max - (count < ranked.length ? 48 : 0)) / (count + 2);
+      final fits = ranked.take(count).every((e) => width >= w(e.$2.label));
+      if (width >= w(primaryLabel) && fits) break;
+    }
+    final shown = ranked.take(count).map((e) => e.$2).toList();
+    return _ActionSplit(shown, ranked.skip(count).map((e) => e.$2).toList());
   }
 }
 
