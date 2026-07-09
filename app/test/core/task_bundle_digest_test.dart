@@ -52,6 +52,43 @@ void main() {
     },
   );
 
+  test('task bundle digest includes declared judge rubric files', () async {
+    final root = await Directory.systemTemp.createTemp('task_bundle_digest_');
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final bundle = Directory(p.join(root.path, 'bundle'));
+    await _writeBundle(bundle, judgeRubricPath: 'rubrics/judge.md');
+    await _writeFile(bundle, 'rubrics/judge.md', 'Score correctness.\n');
+
+    final digest = await taskBundleDigestSha256(bundle);
+
+    await _writeFile(
+      bundle,
+      'rubrics/judge.md',
+      'Score correctness and scope.\n',
+    );
+    expect(await taskBundleDigestSha256(bundle), isNot(digest));
+  });
+
+  test('task bundle digest rejects backslashes in manifest paths', () async {
+    final root = await Directory.systemTemp.createTemp('task_bundle_digest_');
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final bundle = Directory(p.join(root.path, 'bundle'));
+    await _writeBundle(bundle);
+    final manifest = File(p.join(bundle.path, 'task.yaml'));
+    await manifest.writeAsString(
+      (await manifest.readAsString()).replaceFirst(
+        'instructionPath: instruction.md',
+        r'instructionPath: instruction\path.md',
+      ),
+    );
+
+    expect(() => taskBundleDigestSha256(bundle), throwsA(isA<ArgumentError>()));
+  });
+
   test('task bundle digest ignores undeclared OS metadata files', () async {
     final root = await Directory.systemTemp.createTemp('task_bundle_digest_');
     addTearDown(() async {
@@ -109,8 +146,12 @@ Future<Map<String, String>> _writeBundle(
   Directory bundle, {
   bool reverseOrder = false,
   String workspaceRoot = 'baseline',
+  String? judgeRubricPath,
 }) async {
-  final taskYaml = _taskYaml(workspaceRoot: workspaceRoot);
+  final taskYaml = _taskYaml(
+    workspaceRoot: workspaceRoot,
+    judgeRubricPath: judgeRubricPath,
+  );
   final files = {
     'task.yaml': taskYaml,
     'instruction.md': 'Fix the task.\n',
@@ -131,10 +172,10 @@ Future<Map<String, String>> _writeBundle(
   return files;
 }
 
-String _taskYaml({required String workspaceRoot}) =>
+String _taskYaml({required String workspaceRoot, String? judgeRubricPath}) =>
     '''
 instructionPath: instruction.md
-workspace:
+${judgeRubricPath == null ? '' : 'judgeRubricPath: $judgeRubricPath\n'}workspace:
   root: $workspaceRoot
   files:
     lib/main.dart: lib/main.dart

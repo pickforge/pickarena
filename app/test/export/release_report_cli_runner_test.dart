@@ -1325,13 +1325,83 @@ void main() {
     final blockers = (report['blockers']! as List<Object?>).join('\n');
     expect(
       blockers,
-      contains('Task QA report task.a@v1 admission environment is dirty.'),
+      contains(
+        'Task QA report task.a@v1 admission environment gitDirty must be false.',
+      ),
     );
     final audit = report['verifierAudit']! as Map<String, Object?>;
     final integrity = audit['taskBundleIntegrity']! as Map<String, Object?>;
     expect(integrity['admissionEnvironmentGitDirtyCount'], 1);
     expect(integrity['digestMatchedCount'], 1);
   });
+
+  test(
+    'blocks report when admission environment gitDirty is not false',
+    () async {
+      Future<void> expectBlocked({
+        required String suffix,
+        required Object? gitDirty,
+        bool includeGitDirty = true,
+      }) async {
+        final tmp = await Directory.systemTemp.createTemp(
+          'release_report_task_bundle_git_dirty_${suffix}_',
+        );
+        addTearDown(() async {
+          if (await tmp.exists()) await tmp.delete(recursive: true);
+        });
+
+        final report = await _runTaskBundleIntegrityReleaseReport(
+          tmp,
+          includeDigest: true,
+          admissionGitDirty: gitDirty,
+          includeAdmissionGitDirty: includeGitDirty,
+        );
+
+        final blockers = (report['blockers']! as List<Object?>).join('\n');
+        expect(
+          blockers,
+          contains(
+            'Task QA report task.a@v1 admission environment gitDirty must be false.',
+          ),
+        );
+        final audit = report['verifierAudit']! as Map<String, Object?>;
+        final integrity = audit['taskBundleIntegrity']! as Map<String, Object?>;
+        expect(integrity['admissionEnvironmentGitDirtyCount'], 1);
+        expect(integrity['digestMatchedCount'], 1);
+      }
+
+      await expectBlocked(
+        suffix: 'missing',
+        gitDirty: false,
+        includeGitDirty: false,
+      );
+      await expectBlocked(suffix: 'null', gitDirty: null);
+      await expectBlocked(suffix: 'invalid', gitDirty: 'unknown');
+    },
+  );
+
+  test(
+    'recomputes task bundle digest from the task QA CLI report layout',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'release_report_task_bundle_qa_cli_layout_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+
+      final report = await _runTaskBundleIntegrityReleaseReport(
+        tmp,
+        includeDigest: true,
+        useTaskQaCliReportLayout: true,
+      );
+
+      final audit = report['verifierAudit']! as Map<String, Object?>;
+      final integrity = audit['taskBundleIntegrity']! as Map<String, Object?>;
+      expect(integrity['digestMatchedCount'], 1);
+      expect(integrity['digestRecomputeMissingCount'], 0);
+    },
+  );
 
   test('blocks report when loaded task QA execution policy is unsafe', () async {
     final tmp = await Directory.systemTemp.createTemp(
@@ -12085,7 +12155,9 @@ Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
   Directory tmp, {
   required bool includeDigest,
   String? digestOverride,
-  bool admissionGitDirty = false,
+  Object? admissionGitDirty = false,
+  bool includeAdmissionGitDirty = true,
+  bool useTaskQaCliReportLayout = false,
 }) async {
   final leaderboardPath = p.join(tmp.path, 'leaderboard.v1.json');
   final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
@@ -12093,7 +12165,9 @@ Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
   final taskQaSummaryPath = p.join(taskQaDir.path, 'admission_summary.json');
   final taskBundle = Directory(p.join(taskQaDir.path, 'tasks', 'task.a'));
   final taskBundleDigest = await _writeReleaseTaskBundle(taskBundle);
-  final reportPath = p.join(taskBundle.path, 'qa', 'admission_report.json');
+  final reportPath = useTaskQaCliReportLayout
+      ? p.join(taskBundle.path, 'admission_report.json')
+      : p.join(taskBundle.path, 'qa', 'admission_report.json');
   await Directory(p.dirname(reportPath)).create(recursive: true);
   await File(
     leaderboardPath,
@@ -12114,6 +12188,7 @@ Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
             ? digestOverride ?? taskBundleDigest
             : null,
         admissionGitDirty: admissionGitDirty,
+        includeAdmissionGitDirty: includeAdmissionGitDirty,
       ),
     ),
   );
@@ -12285,7 +12360,8 @@ Map<String, Object?> _taskQaReportJson({
   String releaseStatus = 'active',
   bool includeAdmissionProvenance = true,
   String? taskBundleDigest,
-  bool admissionGitDirty = false,
+  Object? admissionGitDirty = false,
+  bool includeAdmissionGitDirty = true,
   Map<String, Object?>? admissionProvenanceOverride,
   bool includeExecutionPolicy = true,
   Map<String, Object?>? executionPolicyOverride,
@@ -12310,7 +12386,7 @@ Map<String, Object?> _taskQaReportJson({
           'environment': {
             'dartVersion': '3.9.0',
             'flutterVersion': '3.35.0',
-            'gitDirty': admissionGitDirty,
+            if (includeAdmissionGitDirty) 'gitDirty': admissionGitDirty,
             'dependencySnapshot': {
               'status': 'present',
               'files': {

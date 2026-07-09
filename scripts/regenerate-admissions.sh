@@ -22,12 +22,17 @@ fail=0
 
 for t in $TASKS; do
   echo "=== QA $t"
+  qa_exit=0
   result=$(dart run --verbosity=error dart_arena:dart_arena_task_qa \
     --task-bundle-root ../tasks/flutter \
     --task "$t" \
     --require-generated-code-sandbox \
-    --out "$OUT" | tail -1)
+    --out "$OUT" | tail -1) || qa_exit=$?
   echo "$result"
+  if [ "$qa_exit" -ne 0 ]; then
+    echo "=== $t QA COMMAND FAILED (exit $qa_exit)" >&2
+    fail=1
+  fi
   if ! echo "$result" | grep -q '"rejectedTaskCount":0'; then
     echo "=== $t REJECTED" >&2
     fail=1

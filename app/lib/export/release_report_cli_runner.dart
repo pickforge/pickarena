@@ -275,9 +275,12 @@ Future<Map<String, Object?>?> _taskBundleDigestEvidence(
 Directory? _taskBundleDirectoryForAdmissionReport(String reportPath) {
   final normalized = p.normalize(p.absolute(reportPath));
   if (p.basename(normalized) != 'admission_report.json') return null;
-  final qaDirectory = p.dirname(normalized);
-  if (p.basename(qaDirectory) != 'qa') return null;
-  final bundleDirectory = Directory(p.dirname(qaDirectory));
+  final reportDirectory = p.dirname(normalized);
+  final bundleDirectory = Directory(
+    p.basename(reportDirectory) == 'qa'
+        ? p.dirname(reportDirectory)
+        : reportDirectory,
+  );
   if (!File(p.join(bundleDirectory.path, 'task.yaml')).existsSync()) {
     return null;
   }

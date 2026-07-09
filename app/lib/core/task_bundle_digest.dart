@@ -53,7 +53,11 @@ Future<List<_TaskBundleDigestFile>> _taskBundleDigestFiles(
   );
   final judgeRubricPath = _optionalString(manifest, 'judgeRubricPath');
   if (judgeRubricPath != null) {
-    _addDeclaredFile(relativePaths, judgeRubricPath, field: 'judgeRubricPath');
+    _addDeclaredBundleFile(
+      relativePaths,
+      judgeRubricPath,
+      field: 'judgeRubricPath',
+    );
   }
   _addDeclaredFileMap(
     relativePaths,
@@ -155,6 +159,25 @@ void _addDeclaredFile(
       'must resolve inside task bundle digest roots',
     );
   }
+  _addCanonicalBundleFile(paths, canonical, relativePath, field: field);
+}
+
+String _addDeclaredBundleFile(
+  SplayTreeSet<String> paths,
+  String relativePath, {
+  required String field,
+}) {
+  final canonical = _requiredPathString(relativePath, field);
+  _addCanonicalBundleFile(paths, canonical, relativePath, field: field);
+  return canonical;
+}
+
+void _addCanonicalBundleFile(
+  SplayTreeSet<String> paths,
+  String canonical,
+  String relativePath, {
+  required String field,
+}) {
   if (_isIgnoredBundleFile(canonical)) {
     throw ArgumentError.value(
       relativePath,
@@ -216,11 +239,13 @@ File _resolveBundleFile(String root, String relativePath) {
 
 String _requiredPathString(Object? value, String field) {
   if (value is! String) throw FormatException('$field must be a string');
-  final normalizedSeparators = value.replaceAll('\\', '/');
-  final rawParts = normalizedSeparators.split('/');
-  final normalized = p.posix.normalize(normalizedSeparators);
+  if (value.contains('\\')) {
+    throw ArgumentError.value(value, field, 'must not contain backslashes');
+  }
+  final rawParts = value.split('/');
+  final normalized = p.posix.normalize(value);
   if (normalized == '.' ||
-      p.posix.isAbsolute(normalizedSeparators) ||
+      p.posix.isAbsolute(value) ||
       rawParts.contains('..')) {
     throw ArgumentError.value(value, field, 'must be a relative file path');
   }

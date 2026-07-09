@@ -6975,11 +6975,11 @@ Map<String, Object?> _verifierAudit(
         );
       } else {
         admissionEnvironmentPresentCount++;
-        if (environment['gitDirty'] == true) {
+        if (environment['gitDirty'] != false) {
           admissionEnvironmentGitDirtyCount++;
           tasksWithDirtyAdmissionEnvironment.add(taskRef);
           blockers.add(
-            'Task QA report ${_taskKey(report)} admission environment is dirty.',
+            'Task QA report ${_taskKey(report)} admission environment gitDirty must be false.',
           );
         }
         final sdkVersionStatus = _environmentSdkVersionStatus(environment);
