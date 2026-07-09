@@ -69,7 +69,11 @@ dart pub get
 dart format --set-exit-if-changed lib test
 dart analyze
 dart test
+```
 
+The CLI needs only Dart and a system SQLite. The full test suite also needs Flutter installed: it compiles the Flutter task corpus fixtures.
+
+```sh
 cd ../web
 bun install --frozen-lockfile
 bun run check

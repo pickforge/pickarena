@@ -67,6 +67,7 @@ jobs:
             test/export/readme_publisher_test.dart \
             test/export/release_report_cli_runner_test.dart \
             test/headless/headless_benchmark_runner_test.dart \
+            test/runner/agentic_run_orchestrator_test.dart \
             test/headless/headless_cli_config_test.dart \
             test/headless/headless_cli_runner_test.dart
           dart test --concurrency=1 \
