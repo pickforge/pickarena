@@ -2,82 +2,78 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/core/benchmark_task.dart';
-import 'package:dart_arena/runner/task_qa_runner.dart';
-import 'package:dart_arena/runner/workdir_manager.dart';
-import 'package:dart_arena/tasks/flutter_corpus/phase3_seed_tasks.dart';
-import 'package:dart_arena/tasks/task_catalog.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
+import 'package:path/path.dart' as p;
+
+import '../support/official_tasks.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  test('official corpus QA reports match filesystem-loaded tasks', () async {
+    final tasks = await loadOfficialFlutterTasks();
+    final reportRoot = Directory('build/corpus_qa');
+    await reportRoot.create(recursive: true);
 
-  test(
-    'registered phase 3 corpus tasks pass task QA',
-    () async {
-      final registry = buildDefaultTaskRegistry();
-      final tasks = [for (final id in Phase3SeedTaskIds.all) registry.byId(id)!]
-        ..sort((a, b) {
-          final category = a.category.name.compareTo(b.category.name);
-          if (category != 0) return category;
-          final difficulty = a.difficulty.name.compareTo(b.difficulty.name);
-          if (difficulty != 0) return difficulty;
-          return a.id.compareTo(b.id);
-        });
-      final reportRoot = Directory('build/corpus_qa');
-      await reportRoot.create(recursive: true);
-      final workdirRoot = Directory('${reportRoot.path}/workdirs');
-      if (await workdirRoot.exists()) {
-        await workdirRoot.delete(recursive: true);
-      }
-      final runner = TaskQaRunner(
-        workdirManager: WorkdirManager(
-          root: workdirRoot,
-          allowReentrantFlutterTool: true,
-        ),
-        requiredHiddenFlakeRuns: 1,
-        requireNegativeCases: true,
-        allowReentrantFlutterTool: true,
+    expect(tasks.map((task) => task.id), officialFlutterTaskIds);
+
+    final taskReports = <Map<String, Object?>>[];
+    for (final task in tasks) {
+      await task.ensureLoaded();
+      final admission = await _readAdmissionReport(task);
+
+      expect(admission['taskId'], task.id);
+      expect(admission['taskVersion'], task.version);
+      expect(admission['track'], task.track.name);
+      expect(admission['status'], 'admitted');
+      expect(admission['release'], task.releaseMetadata.toJson());
+      final checks = admission['checks'] as Map<String, Object?>;
+      expect(checks['baselineHiddenFailed'], isTrue, reason: task.id);
+      expect(checks['referencePublicPassed'], isTrue, reason: task.id);
+      expect(checks['referenceHiddenPassed'], isTrue, reason: task.id);
+      expect(checks['promptSafeContextLeakFree'], isTrue, reason: task.id);
+      final promptSafety = admission['promptSafety'] as Map<String, Object?>;
+      expect(promptSafety['passed'], isTrue, reason: task.id);
+      expect(task.hiddenVerifiers, isNotEmpty, reason: task.id);
+      expect(task.referenceSolution, isNotNull, reason: task.id);
+      expect(task.negativeCases, isNotEmpty, reason: task.id);
+      expect(
+        task.fixtures.keys,
+        isNot(contains(task.hiddenVerifiers.single.testPath)),
+        reason: task.id,
       );
-      final reports = <TaskQaReport>[];
 
-      for (final task in tasks) {
-        reports.add(await runner.run(task));
-      }
+      taskReports.add(_reportJson(task, admission));
+    }
 
-      final payload = {
-        'generated_at': DateTime.now().toIso8601String(),
-        'task_count': reports.length,
-        'tasks': [
-          for (final report in reports)
-            _reportJson(registry.byId(report.taskId)!, report),
-        ],
-      };
-      await File(
-        '${reportRoot.path}/corpus_task_qa_report.json',
-      ).writeAsString(const JsonEncoder.withIndent('  ').convert(payload));
-
-      for (final report in reports) {
-        expect(report.baselineHiddenFailed, isTrue, reason: report.taskId);
-        expect(report.referencePublicPassed, isTrue, reason: report.taskId);
-        expect(report.referenceHiddenPassed, isTrue, reason: report.taskId);
-        expect(report.negativeCasesRejected, isTrue, reason: report.taskId);
-        expect(
-          report.requiredNegativeCaseKindsCovered,
-          isTrue,
-          reason: report.taskId,
-        );
-        expect(report.promptSafety.passed, isTrue, reason: report.taskId);
-        expect(report.failureMessages, isEmpty, reason: report.taskId);
-      }
-    },
-    timeout: const Timeout(Duration(minutes: 20)),
-  );
+    final payload = {
+      'generated_at': DateTime.now().toIso8601String(),
+      'task_count': taskReports.length,
+      'tasks': taskReports,
+    };
+    await File(
+      p.join(reportRoot.path, 'corpus_task_qa_report.json'),
+    ).writeAsString(const JsonEncoder.withIndent('  ').convert(payload));
+  });
 }
 
-Map<String, Object?> _reportJson(BenchmarkTask task, TaskQaReport report) {
+Future<Map<String, Object?>> _readAdmissionReport(BenchmarkTask task) async {
+  final file = File(
+    p.join(
+      officialFlutterTaskRoot().path,
+      task.id,
+      'qa',
+      'admission_report.json',
+    ),
+  );
+  return jsonDecode(await file.readAsString()) as Map<String, Object?>;
+}
+
+Map<String, Object?> _reportJson(
+  BenchmarkTask task,
+  Map<String, Object?> admission,
+) {
   return {
-    'task_id': report.taskId,
-    'version': report.taskVersion,
+    'task_id': task.id,
+    'version': task.version,
     'category': task.category.name,
     'difficulty': task.difficulty.name,
     'track': task.track.name,
@@ -90,19 +86,9 @@ Map<String, Object?> _reportJson(BenchmarkTask task, TaskQaReport report) {
       'allow_internet': task.allowInternet,
       'resources': task.resourceLimits.toJson(),
     },
-    'baseline_hidden_failed': report.baselineHiddenFailed,
-    'reference_public_passed': report.referencePublicPassed,
-    'reference_hidden_passed': report.referenceHiddenPassed,
-    'hidden_flake_runs': report.hiddenFlakeRuns,
-    'hidden_verifier_digests': report.hiddenVerifierDigests,
-    'negative_cases_rejected': report.negativeCasesRejected,
-    'required_negative_case_kinds_covered':
-        report.requiredNegativeCaseKindsCovered,
-    'prompt_safety': report.promptSafety.toJson(),
-    'negative_cases': [
-      for (final negativeCase in report.negativeCaseReports)
-        negativeCase.toJson(),
-    ],
-    'failure_messages': report.failureMessages,
+    'checks': admission['checks'],
+    'prompt_safety': admission['promptSafety'],
+    'negative_cases': admission['negativeCases'],
+    'failure_messages': admission['failureMessages'],
   };
 }

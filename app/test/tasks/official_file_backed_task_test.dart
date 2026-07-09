@@ -8,24 +8,12 @@ import 'package:dart_arena/runner/resource_enforcement_policy.dart';
 import 'package:dart_arena/runner/task_qa_runner.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
-const _officialFlutterTaskIds = [
-  'accessibility.quantity_stepper_semantics',
-  'async.refresh_deduplicator',
-  'forms.email_validation',
-  'lists.contact_search',
-  'navigation.auth_redirect_race',
-  'persistence.offline_feed_preferences',
-  'platform.channel_mock',
-  'refactor.price_label_formatter',
-  'state.selection_controller',
-  'ui.action_bar_overflow',
-];
+import '../support/official_tasks.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
   final sandboxValidation = _generatedCodeSandboxValidation();
 
   group('official admission sandbox claim verification', () {
@@ -120,7 +108,7 @@ void main() {
     final tasks = await _loadOfficialTasks();
     final ids = tasks.map((task) => task.id).toList();
 
-    expect(ids, _officialFlutterTaskIds);
+    expect(ids, officialFlutterTaskIds);
 
     for (final task in tasks) {
       await task.ensureLoaded();
@@ -176,7 +164,7 @@ void main() {
   });
 
   group('official Flutter bundles satisfy their admission reports', () {
-    for (final taskId in _officialFlutterTaskIds) {
+    for (final taskId in officialFlutterTaskIds) {
       test(taskId, () async {
         final task = await _loadOfficialTask(taskId);
         await _expectOfficialAdmissionReportSatisfied(
@@ -189,16 +177,7 @@ void main() {
 }
 
 Future<FileBackedTask> _loadOfficialTask(String taskId) async {
-  final tasks = await _loadOfficialTasks();
-  final matches = tasks.where((task) => task.id == taskId).toList();
-
-  if (matches.length == 1) return matches.single;
-
-  final loadedIds = tasks.map((task) => task.id).join(', ');
-  fail(
-    'Expected exactly one official Flutter task with id "$taskId", '
-    'but found ${matches.length}. Loaded task ids: [$loadedIds]',
-  );
+  return loadOfficialFlutterTask(taskId);
 }
 
 Future<void> _expectOfficialAdmissionReportSatisfied(
@@ -333,9 +312,7 @@ Future<void> _expectOfficialAdmissionReportSatisfied(
 }
 
 Future<List<FileBackedTask>> _loadOfficialTasks() {
-  return loadFileBackedTasks(
-    Directory(p.join(Directory.current.path, '..', 'tasks', 'flutter')),
-  );
+  return loadOfficialFlutterTasks();
 }
 
 Future<Map<String, Object?>> _readAdmissionReport(FileBackedTask task) async {

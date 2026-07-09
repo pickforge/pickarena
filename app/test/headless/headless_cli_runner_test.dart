@@ -21,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 import '../support/headless_fakes.dart';
+import '../support/official_tasks.dart';
 
 const _weights = <String, double>{
   'smoke_generated_code': 1.0,
@@ -235,7 +236,8 @@ void main() {
       final configFile = await _writeConfig(
         tmp,
         runId: runId,
-        tasks: ['bug.off_by_one_pagination'],
+        tasks: ['forms.email_validation'],
+        taskBundleRoots: [officialFlutterTaskRoot().path],
         provider: {
           'type': 'openai_compatible',
           'id': 'local_provider_fail',
@@ -294,7 +296,8 @@ void main() {
       final configFile = await _writeConfig(
         tmp,
         runId: runId,
-        tasks: ['bug.off_by_one_pagination'],
+        tasks: ['forms.email_validation'],
+        taskBundleRoots: [officialFlutterTaskRoot().path],
         provider: {
           'type': 'openai_compatible',
           'id': 'local_timeout',
@@ -377,7 +380,8 @@ void main() {
       final configFile = await _writeConfig(
         tmp,
         runId: runId,
-        tasks: ['bug.off_by_one_pagination'],
+        tasks: ['forms.email_validation'],
+        taskBundleRoots: [officialFlutterTaskRoot().path],
         provider: {
           'type': 'openai_compatible',
           'id': 'local_prepare_timeout',
@@ -885,6 +889,7 @@ Future<File> _writeConfig(
   Directory tmp, {
   String runId = 'cli-run',
   List<String> tasks = const ['phase7.headless_smoke'],
+  List<String> taskBundleRoots = const [],
   Map<String, Object?> provider = const {
     'type': 'droid',
     'models': ['fake-headless-model'],
@@ -898,6 +903,7 @@ Future<File> _writeConfig(
       'runId': runId,
       'name': 'CLI smoke',
       'tasks': tasks,
+      'taskBundleRoots': taskBundleRoots,
       'providers': [provider],
       'evaluatorWeights': _weights,
       'maxConcurrency': 1,

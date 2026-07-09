@@ -1,6 +1,6 @@
 import 'package:dart_arena/core/benchmark_task.dart';
 
-import 'plan_loader_io.dart' if (dart.library.ui) 'plan_loader_flutter.dart';
+import 'plan_loader_io.dart';
 
 class PlanLoader {
   static Future<ReferencePlan> load({

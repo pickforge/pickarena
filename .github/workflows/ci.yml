@@ -19,7 +19,7 @@ jobs:
           channel: stable
       - run: flutter pub get
         working-directory: app
-      - run: dart format --set-exit-if-changed bin lib/core lib/export lib/headless lib/runner lib/storage test/core test/headless test/runner test/support
+      - run: dart format --set-exit-if-changed bin lib/core lib/export lib/headless lib/runner lib/storage lib/tasks test/core test/headless test/runner test/support test/tasks
         working-directory: app
       - name: Dart test pure engine baseline
         run: |
@@ -36,13 +36,16 @@ jobs:
             test/core/code_extractor_test.dart \
             test/core/evaluator_blocking_test.dart \
             test/core/evaluator_config_test.dart \
+            test/core/fixture_loader_test.dart \
             test/core/loader_io_test.dart \
             test/core/model_identity_test.dart \
             test/core/model_response_test.dart \
             test/core/patch_capture_test.dart \
+            test/core/plan_loader_test.dart \
             test/core/scoring_combine_test.dart \
             test/core/scoring_test.dart \
             test/core/task_artifact_test.dart \
+            test/core/task_registry_test.dart \
             test/core/unified_diff_test.dart
           dart test --concurrency=1 \
             test/evaluators/analyze_evaluator_test.dart \
@@ -83,6 +86,7 @@ jobs:
             test/storage/settings_test.dart
           dart test --concurrency=1 \
             test/runner/codegen_task_executor_blocking_test.dart \
+            test/runner/corpus_task_qa_test.dart \
             test/runner/evaluator_resource_limits_test.dart \
             test/runner/generated_code_sandbox_test.dart \
             test/runner/prompt_safety_test.dart \
@@ -90,6 +94,7 @@ jobs:
             test/runner/run_provenance_test.dart \
             test/runner/subprocess_environment_test.dart \
             test/runner/task_qa_cli_runner_test.dart \
+            test/runner/task_qa_runner_test.dart \
             test/runner/tmpdir_manager_test.dart \
             test/runner/workdir_manager_dispatch_test.dart \
             test/runner/workdir_manager_prepare_test.dart \
@@ -99,8 +104,12 @@ jobs:
             test/storage/plans_dao_test.dart \
             test/storage/run_dao_test.dart \
             test/storage/run_summary_test.dart \
+            test/tasks/counter_bloc_benchmark_correctness_test.dart \
             test/tasks/file_backed_task_test.dart \
-            test/tasks/phase3_seed_tasks_test.dart
+            test/tasks/off_by_one_pagination_test.dart \
+            test/tasks/official_file_backed_task_test.dart \
+            test/tasks/planning_and_execution/add_evaluator_type_judge_test.dart \
+            test/tasks/planning_and_execution/add_filter_dimension_judge_test.dart
         working-directory: app
       - run: dart run --verbosity=error dart_arena:dart_arena_headless --help
         working-directory: app

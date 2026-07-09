@@ -4,15 +4,42 @@ import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
 
 class _StubTask extends BenchmarkTask {
-  @override
-  String get id => 'stub.one';
+  _StubTask({
+    this.stubId = 'stub.one',
+    this.stubCategory = Category.bugFix,
+    this.stubTrack = BenchmarkTrack.codegen,
+    this.stubTags = const {},
+    this.stubDifficulty = TaskDifficulty.unspecified,
+    this.stubPlatformRequirements = const {},
+  });
+
+  final String stubId;
+  final Category stubCategory;
+  final BenchmarkTrack stubTrack;
+  final Set<TaskTag> stubTags;
+  final TaskDifficulty stubDifficulty;
+  final Set<TaskPlatform> stubPlatformRequirements;
 
   @override
-  Category get category => Category.bugFix;
+  String get id => stubId;
+
+  @override
+  Category get category => stubCategory;
+
+  @override
+  BenchmarkTrack get track => stubTrack;
+
+  @override
+  Set<TaskTag> get tags => stubTags;
+
+  @override
+  TaskDifficulty get difficulty => stubDifficulty;
+
+  @override
+  Set<TaskPlatform> get platformRequirements => stubPlatformRequirements;
 
   @override
   String get prompt => 'do nothing';
@@ -31,8 +58,6 @@ class _StubTask extends BenchmarkTask {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
   test('register and lookup', () {
     final registry = TaskRegistry();
     registry.register(_StubTask());
@@ -48,28 +73,13 @@ void main() {
     expect(() => registry.register(_StubTask()), throwsStateError);
   });
 
-  test(
-    'default registry includes an agentic task with visible workspace',
-    () async {
-      final registry = buildDefaultTaskRegistry();
-      final task = registry.byId('agentic.bug.async_race_condition');
+  test('default registry does not embed corpus tasks', () {
+    final registry = buildDefaultTaskRegistry();
 
-      expect(task, isNotNull);
-      expect(task!.track, BenchmarkTrack.agentic);
-      await task.ensureLoaded();
+    expect(registry.all(), isEmpty);
+  });
 
-      expect(task.workspace.files, isNotEmpty);
-      expect(task.hiddenVerifiers, isNotEmpty);
-      expect(
-        task.workspace.files.keys,
-        everyElement(
-          predicate<String>((path) => !_isExcludedWorkspacePath(path)),
-        ),
-      );
-    },
-  );
-
-  test('default metadata keeps legacy tasks filterable', () {
+  test('default metadata keeps ad hoc tasks filterable', () {
     final task = _StubTask();
 
     expect(task.tags, isEmpty);
@@ -80,7 +90,24 @@ void main() {
   });
 
   test('registry queries tags, difficulty, track, and platform', () {
-    final registry = buildDefaultTaskRegistry();
+    final registry = TaskRegistry()
+      ..register(
+        _StubTask(
+          stubId: 'agentic.navigation',
+          stubTrack: BenchmarkTrack.agentic,
+          stubTags: {TaskTag.navigation},
+          stubDifficulty: TaskDifficulty.hard,
+          stubPlatformRequirements: {TaskPlatform.linux},
+        ),
+      )
+      ..register(
+        _StubTask(
+          stubId: 'codegen.state',
+          stubCategory: Category.stateManagement,
+          stubTags: {TaskTag.stateBloc},
+          stubDifficulty: TaskDifficulty.medium,
+        ),
+      );
     final tasks = registry
         .query(
           track: BenchmarkTrack.agentic,
@@ -91,30 +118,6 @@ void main() {
         .map((task) => task.id)
         .toList();
 
-    expect(tasks, contains('navigation.go_router_auth_redirect'));
-    expect(tasks, isNot(contains('state.bloc_debounce_cancellation')));
+    expect(tasks, ['agentic.navigation']);
   });
-}
-
-bool _isExcludedWorkspacePath(String relativePath) {
-  final parts = p
-      .split(p.normalize(relativePath))
-      .map((part) => part.toLowerCase())
-      .toList(growable: false);
-  if (parts.any(
-    (part) =>
-        part == '.git' ||
-        part == '_hidden' ||
-        part == 'reference' ||
-        part == '_reference' ||
-        part == 'author_notes' ||
-        part == '_author' ||
-        part == 'task_qa',
-  )) {
-    return true;
-  }
-  final basename = parts.isEmpty ? '' : parts.last;
-  return basename == 'author_notes.md' ||
-      basename == 'qa_report.md' ||
-      basename == 'task_qa_report.md';
 }

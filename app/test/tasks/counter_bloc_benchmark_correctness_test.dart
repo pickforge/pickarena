@@ -1,16 +1,15 @@
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
-import 'package:dart_arena/tasks/state_management/counter_bloc.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
+
+import '../support/official_tasks.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
   test(
-    'counter bloc prompt exposes const event constructor contract',
+    'file-backed prompt context exposes public API without implementation',
     () async {
-      final task = CounterBlocTask();
+      final task = await loadOfficialFlutterTask('state.selection_controller');
       await task.ensureLoaded();
 
       final targetContext = buildPromptSafeTargetContext(
@@ -24,20 +23,21 @@ void main() {
       );
 
       expect(prompt, contains('CURRENT TARGET FILE API/SKELETON'));
-      expect(prompt, contains('const Increment();'));
-      expect(prompt, contains('const Decrement();'));
-      expect(prompt, contains('const Reset();'));
-      expect(prompt, isNot(contains('emit(')));
+      expect(prompt, contains('class SelectionController'));
+      expect(prompt, contains('List<String> get selectedIds'));
+      expect(prompt, contains('void toggle(String id)'));
+      expect(prompt, contains('void clear()'));
+      expect(prompt, isNot(contains('..clear()')));
     },
   );
 
-  test('missing const compile failure cannot exceed compile cap', () {
-    const knownMissingConstFailure = [
+  test('missing behavior compile failure cannot exceed compile cap', () {
+    const knownMissingBehaviorFailure = [
       EvaluationResult(
         evaluatorId: 'compile',
         passed: false,
         score: 0.0,
-        rationale: 'const constructor required by tests',
+        rationale: 'public API contract required by tests',
       ),
       EvaluationResult(evaluatorId: 'analyze', passed: false, score: 0.0),
       EvaluationResult(evaluatorId: 'test', passed: false, score: 0.0),
@@ -46,7 +46,7 @@ void main() {
     ];
 
     expect(
-      aggregate(knownMissingConstFailure, defaultEvaluatorWeights),
+      aggregate(knownMissingBehaviorFailure, defaultEvaluatorWeights),
       lessThanOrEqualTo(0.20),
     );
   });
