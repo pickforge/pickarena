@@ -117,6 +117,13 @@ void main() {
         ),
         isTrue,
       );
+      expect(
+        containsReferencePromptSafetyLeak(
+          'golden_reference/lib/answer.dart',
+          _CustomReferenceRootTask(),
+        ),
+        isTrue,
+      );
     });
 
     test('flags distinctive hidden and reference snippets', () {
@@ -154,6 +161,29 @@ void main() {
           visiblePromptContext: visibleContext,
           task: task,
         ).hiddenVerifierLeak,
+        isTrue,
+      );
+    });
+
+    test('flags leaks in reference plans', () {
+      final task = _ReferencePlanLeakTask();
+      final visibleContext = buildPromptSafetyVisibleContext(task: task);
+
+      expect(
+        scanPromptSafetyLeaks(
+          visiblePromptContext: visibleContext,
+          task: task,
+        ).referenceLeak,
+        isTrue,
+      );
+    });
+
+    test('flags raw authored hidden verifier IDs', () {
+      expect(
+        containsHiddenVerifierPromptSafetyLeak(
+          'edge_cases',
+          _RawAuthoredHiddenIdTask(),
+        ),
         isTrue,
       );
     });
@@ -346,6 +376,33 @@ class _CustomNegativeRootTask extends _PromptSafetyTask {
       solution: ReferenceFileSolution({
         'lib/answer.dart': 'int answer() => 41;\n',
       }),
+    ),
+  ];
+}
+
+class _CustomReferenceRootTask extends _PromptSafetyTask {
+  @override
+  ReferenceSolution? get referenceSolution => const ReferenceFileSolution({
+    'lib/answer.dart': 'int answer() => 42;\n',
+  }, rootPath: 'golden_reference');
+}
+
+class _ReferencePlanLeakTask extends _PromptSafetyTask {
+  @override
+  ReferencePlan? get referencePlan => const ReferencePlan(
+    version: 1,
+    markdown: 'The reference plan mentions solution/lib/answer.dart.',
+  );
+}
+
+class _RawAuthoredHiddenIdTask extends _PromptSafetyTask {
+  @override
+  List<VerifierFixture> get hiddenVerifiers => const [
+    VerifierFixture(
+      id: 'edge_cases_hidden',
+      authoredId: 'edge_cases',
+      testPath: 'test/_hidden/edge_cases_test.dart',
+      files: {'test/_hidden/edge_cases_test.dart': 'void hidden() {}\n'},
     ),
   ];
 }

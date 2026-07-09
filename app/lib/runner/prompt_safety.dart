@@ -41,6 +41,7 @@ String buildPromptSafetyVisibleContext({
 
   addVisibleText(task.prompt);
   addVisibleText(task.workspace.instruction);
+  addVisibleText(task.referencePlan?.markdown);
   addVisibleText(promptSafeContext);
   return values.join('\n');
 }
@@ -71,19 +72,20 @@ bool containsHiddenVerifierPromptSafetyLeak(
       _containsAnyPathLikeToken(haystack, hiddenPaths) ||
       _containsAnyFileNameToken(haystack, hiddenFileNames) ||
       _containsAnyFileStemToken(haystack, hiddenFileStems) ||
-      _containsAnyIdentifierToken(
-        haystack,
-        task.hiddenVerifiers.map((verifier) => verifier.id),
-      ) ||
+      _containsAnyIdentifierToken(haystack, [
+        for (final verifier in task.hiddenVerifiers) verifier.id,
+        for (final verifier in task.hiddenVerifiers)
+          if (verifier.authoredId case final authoredId?) authoredId,
+      ]) ||
       _containsAnyPathLikeToken(haystack, _negativeCasePathTokens(task));
 }
 
 bool containsReferencePromptSafetyLeak(String haystack, BenchmarkTask task) {
   return switch (task.referenceSolution) {
-    ReferenceFileSolution(:final files) =>
+    ReferenceFileSolution(:final files, :final rootPath) =>
       _containsAnyPathLikeToken(
             haystack,
-            _referencePathTokens(task, files.keys),
+            _referencePathTokens(task, files.keys, rootPath: rootPath),
           ) ||
           _containsRestrictedReferenceMarker(haystack) ||
           _containsDistinctivePrivateContent(
@@ -135,9 +137,13 @@ Iterable<String> _negativeCasePathTokens(BenchmarkTask task) sync* {
 
 Iterable<String> _referencePathTokens(
   BenchmarkTask task,
-  Iterable<String> paths,
-) sync* {
+  Iterable<String> paths, {
+  String? rootPath,
+}) sync* {
   for (final path in paths) {
+    if (rootPath != null && rootPath.trim().isNotEmpty) {
+      yield '$rootPath/$path';
+    }
     yield 'solution/$path';
     yield 'reference/$path';
     yield '_reference/$path';

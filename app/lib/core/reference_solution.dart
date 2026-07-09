@@ -7,9 +7,10 @@ sealed class ReferenceSolution {
 }
 
 class ReferenceFileSolution extends ReferenceSolution {
-  const ReferenceFileSolution(this.files);
+  const ReferenceFileSolution(this.files, {this.rootPath});
 
   final Map<String, String> files;
+  final String? rootPath;
 }
 
 class ReferencePatchSolution extends ReferenceSolution {

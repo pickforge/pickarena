@@ -199,6 +199,7 @@ class FileBackedTask extends BenchmarkTask {
       for (final verifier in _hiddenVerifierSpecs)
         VerifierFixture(
           id: verifier.id,
+          authoredId: verifier.authoredId,
           testPath: verifier.testPath,
           files: await _readFiles(
             bundleDirectory,
@@ -211,6 +212,7 @@ class FileBackedTask extends BenchmarkTask {
       null => null,
       final spec => ReferenceFileSolution(
         await _readFiles(bundleDirectory, spec.root, spec.files),
+        rootPath: spec.root,
       ),
     };
     _loadedNegativeCases = [
@@ -272,19 +274,23 @@ class _WorkspaceSpec {
 class _HiddenVerifierSpec {
   const _HiddenVerifierSpec({
     required this.id,
+    required this.authoredId,
     required this.testPath,
     required this.root,
     required this.files,
   });
 
   final String id;
+  final String? authoredId;
   final String testPath;
   final String root;
   final Map<String, String> files;
 
   factory _HiddenVerifierSpec.fromYaml(YamlMap yaml) {
+    final authoredId = _optionalString(yaml, 'id')?.trim();
     return _HiddenVerifierSpec(
-      id: _normalizeHiddenVerifierId(_optionalString(yaml, 'id')),
+      id: _normalizeHiddenVerifierId(authoredId),
+      authoredId: authoredId,
       testPath: _requiredString(yaml, 'testPath'),
       root: _requiredString(yaml, 'root'),
       files: _parseFileMap(yaml['files'], field: 'hiddenVerifiers.files'),

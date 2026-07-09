@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_arena/core/benchmark_task.dart';
+import 'package:dart_arena/core/reference_solution.dart';
 import 'package:dart_arena/runner/task_qa_runner.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
@@ -59,7 +60,12 @@ void main() {
       'test/_hidden/answer_test.dart',
     );
     expect(task.hiddenVerifiers.single.id, 'answer_hidden');
+    expect(task.hiddenVerifiers.single.authoredId, 'answer_hidden');
     expect(task.referenceSolution, isNotNull);
+    expect(
+      (task.referenceSolution! as ReferenceFileSolution).rootPath,
+      'solution',
+    );
     expect(task.negativeCases.map((negative) => negative.kind), {
       TaskNegativeCaseKind.noop,
       TaskNegativeCaseKind.apiBreaking,
@@ -83,6 +89,7 @@ void main() {
     await task.ensureLoaded();
 
     expect(task.hiddenVerifiers.single.id, 'edge_cases_hidden');
+    expect(task.hiddenVerifiers.single.authoredId, 'edge_cases');
   });
 
   test('rejects path-unsafe task IDs and generated code paths', () async {
