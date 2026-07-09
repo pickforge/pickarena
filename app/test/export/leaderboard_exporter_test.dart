@@ -107,19 +107,60 @@ void main() {
     expect(pricingRegistry['modelCount'], greaterThan(0));
   });
 
+  test('aggregate-compatible separates scoring schema versions', () async {
+    await _seedRun(
+      db,
+      id: 'schema-old',
+      completedAt: DateTime.utc(2026, 5, 1),
+      provenanceJson: _weightsProvenanceJson(
+        evaluatorWeights: {'compile': 1.0, 'diff_size': 0.3},
+      ),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'schema-old-a',
+      runId: 'schema-old',
+      taskId: 'task.a',
+    );
+    await _seedRun(
+      db,
+      id: 'schema-latest',
+      completedAt: DateTime.utc(2026, 5, 2),
+      provenanceJson: _weightsProvenanceJson(
+        scoringSchemaVersion: 2,
+        evaluatorWeights: {'compile': 1.0},
+      ),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'schema-latest-a',
+      runId: 'schema-latest',
+      taskId: 'task.a',
+    );
+
+    final export = await buildLeaderboardExport(
+      db,
+      options: const LeaderboardExportOptions(track: 'agentic'),
+    );
+
+    final source = export['source']! as Map<String, Object?>;
+    expect(source['anchorRunId'], 'schema-latest');
+    expect(source['runIds'], ['schema-latest']);
+    expect(source['taskRunCount'], 1);
+    expect(source['warnings'], isEmpty);
+  });
+
   test(
-    'aggregate-compatible ignores diagnostic-only weight provenance differences',
+    'aggregate-compatible ignores schema-2 diagnostic weight differences',
     () async {
       await _seedRun(
         db,
         id: 'diag-old',
         completedAt: DateTime.utc(2026, 5, 1),
-        provenanceJson: jsonEncode({
-          'schemaVersion': 1,
-          'config': {
-            'evaluatorWeights': {'compile': 1.0, 'diff_size': 0.3},
-          },
-        }),
+        provenanceJson: _weightsProvenanceJson(
+          scoringSchemaVersion: 2,
+          evaluatorWeights: {'compile': 1.0, 'diff_size': 0.3},
+        ),
       );
       await _seedTaskRun(
         db,
@@ -131,12 +172,10 @@ void main() {
         db,
         id: 'diag-latest',
         completedAt: DateTime.utc(2026, 5, 2),
-        provenanceJson: jsonEncode({
-          'schemaVersion': 1,
-          'config': {
-            'evaluatorWeights': {'compile': 1.0},
-          },
-        }),
+        provenanceJson: _weightsProvenanceJson(
+          scoringSchemaVersion: 2,
+          evaluatorWeights: {'compile': 1.0},
+        ),
       );
       await _seedTaskRun(
         db,
@@ -1131,6 +1170,20 @@ Future<void> _seedRun(
           provenanceJson: Value(provenanceJson),
         ),
       );
+}
+
+String _weightsProvenanceJson({
+  int? scoringSchemaVersion,
+  required Map<String, Object?> evaluatorWeights,
+}) {
+  return jsonEncode({
+    'schemaVersion': 1,
+    'config': {
+      if (scoringSchemaVersion != null)
+        'scoringSchemaVersion': scoringSchemaVersion,
+      'evaluatorWeights': evaluatorWeights,
+    },
+  });
 }
 
 Future<void> _seedTaskRun(

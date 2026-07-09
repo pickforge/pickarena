@@ -220,6 +220,7 @@ void main() {
             as List),
         ['model-a::high', 'model-b'],
       );
+      expect(config['scoringSchemaVersion'], 2);
       expect(config['evaluatorWeights'], {'compile': 0.2, 'hidden_test': 1.0});
       expect(config['judge'], {
         'providerId': 'secret-provider',

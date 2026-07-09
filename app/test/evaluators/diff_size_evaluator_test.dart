@@ -202,8 +202,10 @@ index 1111111..2222222 100644
     expect(r.details['changed_lines'], 1);
   });
 
-  test('marks captured agent patch telemetry as truncated', () async {
-    const patch = '''
+  test(
+    'falls back to workspace measurement for truncated agent patch',
+    () async {
+      const patch = '''
 diff --git a/lib/a.dart b/lib/a.dart
 index 1111111..2222222 100644
 --- a/lib/a.dart
@@ -214,21 +216,59 @@ index 1111111..2222222 100644
 
 [patch truncated at 262144 characters]
 ''';
-    final ev = DiffSizeEvaluator(originalFixturePath: 'lib/a.dart');
-    final r = await ev.evaluate(
-      await _ctxWithFiles(
-        fixtures: const {'lib/a.dart': 'int a() => 1;\n'},
-        workdirContents: const {'lib/a.dart': 'int a() => 1;\n'},
-        extractedCode: patch,
-        track: BenchmarkTrack.agentic,
-      ),
-    );
+      final ev = DiffSizeEvaluator(originalFixturePath: 'lib/a.dart');
+      final r = await ev.evaluate(
+        await _ctxWithFiles(
+          fixtures: const {
+            'lib/a.dart': 'int a() => 1;\n',
+            'lib/b.dart': 'int b() => 1;\n',
+          },
+          workdirContents: const {
+            'lib/a.dart': 'int a() => 2;\n',
+            'lib/b.dart': 'int b() => 2;\n',
+          },
+          extractedCode: patch,
+          track: BenchmarkTrack.agentic,
+        ),
+      );
 
-    expect(r.passed, isTrue);
-    expect(r.details['measurement_source'], 'agent_patch');
-    expect(r.details['changed_lines'], 2);
-    expect(r.details['patch_truncated'], isTrue);
-  });
+      expect(r.passed, isTrue);
+      expect(r.details['measurement_source'], 'workspace_fixtures');
+      expect(r.details['changed_file_count'], 2);
+      expect(r.details['compared_file_count'], 2);
+      expect(r.details['changed_lines'], 4);
+      expect(r.details['patch_truncated'], isTrue);
+    },
+  );
+
+  test(
+    'truncated agent patch without fixture fallback is unmeasured',
+    () async {
+      const patch = '''
+diff --git a/lib/a.dart b/lib/a.dart
+@@ -1 +1 @@
+-int a() => 1;
++int a() => 2;
+
+[patch truncated at 262144 characters]
+''';
+      final ev = DiffSizeEvaluator(originalFixturePath: 'lib/a.dart');
+      final r = await ev.evaluate(
+        await _ctxWithFiles(
+          fixtures: const {},
+          workdirContents: const {},
+          extractedCode: patch,
+          track: BenchmarkTrack.agentic,
+        ),
+      );
+
+      expect(r.passed, isTrue);
+      expect(r.score, 0.0);
+      expect(r.rationale, contains('missing'));
+      expect(r.details['measurement_source'], isNull);
+      expect(r.details['patch_truncated'], isTrue);
+    },
+  );
 
   test('codegen track ignores patch-looking extracted code', () async {
     const patch = '''

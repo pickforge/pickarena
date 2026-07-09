@@ -7,6 +7,7 @@ import 'package:dart_arena/analytics/cost_estimator.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/model_identity.dart';
+import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_integrity.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/resource_enforcement_policy.dart';
@@ -227,6 +228,7 @@ Future<String> buildRunProvenanceJson({
       'trialsPerTask': event.trialsPerTask < 1 ? 1 : event.trialsPerTask,
       'useReferencePlan': event.useReferencePlan,
       'existingRunId': event.existingRunId,
+      'scoringSchemaVersion': dartArenaScoringSchemaVersion,
       'generatedCodeSandbox': {
         'required': event.generatedCodeSandboxRequired,
         'enforced': event.generatedCodeSandboxEnforced,

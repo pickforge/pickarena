@@ -3,6 +3,8 @@ import 'dart:math' show sqrt;
 import 'package:dart_arena/core/evaluator_classification.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 
+const dartArenaScoringSchemaVersion = 2;
+
 const Map<String, double> defaultEvaluatorWeights = {
   'compile': 0.5,
   'analyze': 0.5,

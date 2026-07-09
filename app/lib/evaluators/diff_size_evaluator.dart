@@ -22,7 +22,8 @@ class DiffSizeEvaluator implements Evaluator {
 
   @override
   Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
-    final measurement = await _measure(ctx);
+    final outcome = await _measure(ctx);
+    final measurement = outcome.measurement;
     if (measurement == null) {
       return EvaluationResult(
         evaluatorId: id,
@@ -32,6 +33,7 @@ class DiffSizeEvaluator implements Evaluator {
         details: {
           'fixture_count': ctx.task.fixtures.length,
           'legacy_path': originalFixturePath,
+          if (outcome.patchTruncated) 'patch_truncated': true,
         },
       );
     }
@@ -60,13 +62,28 @@ class DiffSizeEvaluator implements Evaluator {
     );
   }
 
-  Future<_DiffMeasurement?> _measure(EvaluationContext ctx) async {
+  Future<_DiffMeasurementOutcome> _measure(EvaluationContext ctx) async {
     final patch = ctx.response.extractedCode;
+    var patchTruncated = false;
     if (ctx.task.track == BenchmarkTrack.agentic && patch != null) {
       final patchMeasurement = _measurePatch(patch);
-      if (patchMeasurement != null) return patchMeasurement;
+      patchTruncated =
+          patchMeasurement?.patchTruncated ??
+          _patchTruncationMarker.hasMatch(patch);
+      if (patchMeasurement != null && !patchMeasurement.patchTruncated) {
+        return _DiffMeasurementOutcome(measurement: patchMeasurement);
+      }
     }
-    return _measureFixtureFiles(ctx);
+    final fixtureMeasurement = await _measureFixtureFiles(ctx);
+    if (fixtureMeasurement == null) {
+      return _DiffMeasurementOutcome(patchTruncated: patchTruncated);
+    }
+    return _DiffMeasurementOutcome(
+      measurement: patchTruncated
+          ? fixtureMeasurement.withPatchTruncated()
+          : fixtureMeasurement,
+      patchTruncated: patchTruncated,
+    );
   }
 
   _DiffMeasurement? _measurePatch(String patch) {
@@ -191,5 +208,28 @@ class _DiffMeasurement {
   final int? originalLines;
   final int? newLines;
   final int missingFileCount;
+  final bool patchTruncated;
+
+  _DiffMeasurement withPatchTruncated() {
+    return _DiffMeasurement(
+      changedLines: changedLines,
+      changedFileCount: changedFileCount,
+      comparedFileCount: comparedFileCount,
+      source: source,
+      originalLines: originalLines,
+      newLines: newLines,
+      missingFileCount: missingFileCount,
+      patchTruncated: true,
+    );
+  }
+}
+
+class _DiffMeasurementOutcome {
+  const _DiffMeasurementOutcome({
+    this.measurement,
+    this.patchTruncated = false,
+  });
+
+  final _DiffMeasurement? measurement;
   final bool patchTruncated;
 }
