@@ -305,6 +305,52 @@ void main() {
     expect(report.negativeCasesRejected, isFalse);
   });
 
+  test('dirty git admission environment is not release evidence', () {
+    const report = TaskQaReport(
+      taskId: 'task',
+      taskVersion: 1,
+      baselineHiddenFailed: true,
+      referencePublicPassed: true,
+      referenceHiddenPassed: true,
+      hiddenFlakeRuns: 1,
+      hiddenVerifierDigests: {},
+      negativeCaseReports: [],
+      promptSafety: TaskQaPromptSafetyReport(
+        targetContextPresent: true,
+        publicTestContextPresent: false,
+        publicTestContextRequired: false,
+        implementationBodiesOmitted: true,
+        hiddenVerifierLeakFree: true,
+        referenceLeakFree: true,
+        requiredNegativeCaseKinds: {},
+        presentNegativeCaseKinds: {},
+        missingNegativeCaseKinds: {},
+      ),
+      failureMessages: [],
+      baselineHiddenResults: [],
+      referencePublicResults: [],
+      referenceHiddenResults: [],
+    );
+
+    final admission = taskQaAdmissionReportJson(
+      task: _NegativeQaTask(),
+      report: report,
+      environment: const {'gitDirty': true},
+    );
+
+    expect(
+      taskQaAdmissionReleaseGradePassed(report, const {'gitDirty': true}),
+      isFalse,
+    );
+    expect(admission['status'], 'rejected');
+    expect(
+      admission['failureMessages'],
+      contains(
+        'Admission environment gitDirty=true; this report is not release evidence.',
+      ),
+    );
+  });
+
   test('invalid negative case reports are not considered rejected', () {
     const report = TaskQaNegativeCaseReport(
       id: 'bad_negative',

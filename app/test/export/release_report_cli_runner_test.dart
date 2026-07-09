@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:dart_arena/core/task_bundle_digest.dart';
 import 'package:dart_arena/export/release_report_cli_runner.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:drift/drift.dart';
@@ -1255,6 +1256,83 @@ void main() {
     },
   );
 
+  test('blocks report when task bundle digest is absent', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'release_report_task_bundle_digest_absent_',
+    );
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+
+    final report = await _runTaskBundleIntegrityReleaseReport(
+      tmp,
+      includeDigest: false,
+    );
+
+    final blockers = (report['blockers']! as List<Object?>).join('\n');
+    expect(
+      blockers,
+      contains('Task QA report task.a@v1 task bundle digest is missing.'),
+    );
+    final audit = report['verifierAudit']! as Map<String, Object?>;
+    final integrity = audit['taskBundleIntegrity']! as Map<String, Object?>;
+    expect(integrity['digestMissingCount'], 1);
+    expect(integrity['digestMatchedCount'], 0);
+  });
+
+  test('blocks report when task bundle digest mismatches disk', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'release_report_task_bundle_digest_mismatch_',
+    );
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+
+    final report = await _runTaskBundleIntegrityReleaseReport(
+      tmp,
+      includeDigest: true,
+      digestOverride:
+          '0000000000000000000000000000000000000000000000000000000000000000',
+    );
+
+    final blockers = (report['blockers']! as List<Object?>).join('\n');
+    expect(
+      blockers,
+      contains(
+        'Task QA report task.a@v1 task bundle digest does not match the disk bundle.',
+      ),
+    );
+    final audit = report['verifierAudit']! as Map<String, Object?>;
+    final integrity = audit['taskBundleIntegrity']! as Map<String, Object?>;
+    expect(integrity['digestMismatchedCount'], 1);
+    expect(integrity['digestMatchedCount'], 0);
+  });
+
+  test('blocks report when admission environment is dirty', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'release_report_task_bundle_git_dirty_',
+    );
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+
+    final report = await _runTaskBundleIntegrityReleaseReport(
+      tmp,
+      includeDigest: true,
+      admissionGitDirty: true,
+    );
+
+    final blockers = (report['blockers']! as List<Object?>).join('\n');
+    expect(
+      blockers,
+      contains('Task QA report task.a@v1 admission environment is dirty.'),
+    );
+    final audit = report['verifierAudit']! as Map<String, Object?>;
+    final integrity = audit['taskBundleIntegrity']! as Map<String, Object?>;
+    expect(integrity['admissionEnvironmentGitDirtyCount'], 1);
+    expect(integrity['digestMatchedCount'], 1);
+  });
+
   test('blocks report when loaded task QA execution policy is unsafe', () async {
     final tmp = await Directory.systemTemp.createTemp(
       'release_report_task_qa_execution_policy_',
@@ -1749,7 +1827,9 @@ void main() {
     final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
     await taskQaDir.create(recursive: true);
     final taskQaSummaryPath = p.join(taskQaDir.path, 'admission_summary.json');
-    final reportPath = p.join(taskQaDir.path, 'tasks', 'a', 'report.json');
+    final taskBundle = Directory(p.join(taskQaDir.path, 'tasks', 'task.a'));
+    final taskBundleDigest = await _writeReleaseTaskBundle(taskBundle);
+    final reportPath = p.join(taskBundle.path, 'qa', 'admission_report.json');
     await Directory(p.dirname(reportPath)).create(recursive: true);
     await File(
       leaderboardPath,
@@ -1763,7 +1843,9 @@ void main() {
         ),
       ),
     );
-    await File(reportPath).writeAsString(_prettyJson(_taskQaReportJson()));
+    await File(reportPath).writeAsString(
+      _prettyJson(_taskQaReportJson(taskBundleDigest: taskBundleDigest)),
+    );
     final databasePath = p.join(tmp.path, 'dart_arena.sqlite');
     await _seedDatabase(databasePath);
     final artifactManifestPath = p.join(tmp.path, 'manifest.json');
@@ -1865,7 +1947,7 @@ void main() {
     final taskQaReports = inputs['taskQaReports']! as List<Object?>;
     _expectFingerprint(
       taskQaReports.single! as Map<String, Object?>,
-      path: 'tasks/a/report.json',
+      path: 'tasks/task.a/qa/admission_report.json',
     );
     final provenance = report['provenance']! as Map<String, Object?>;
     expect(provenance['embeddedRunCount'], 1);
@@ -2568,7 +2650,9 @@ void main() {
         taskQaDir.path,
         'admission_summary.json',
       );
-      final reportPath = p.join(taskQaDir.path, 'tasks', 'a', 'report.json');
+      final taskBundle = Directory(p.join(taskQaDir.path, 'tasks', 'task.a'));
+      final taskBundleDigest = await _writeReleaseTaskBundle(taskBundle);
+      final reportPath = p.join(taskBundle.path, 'qa', 'admission_report.json');
       await Directory(p.dirname(reportPath)).create(recursive: true);
       await File(
         leaderboardPath,
@@ -2582,7 +2666,9 @@ void main() {
           ),
         ),
       );
-      await File(reportPath).writeAsString(_prettyJson(_taskQaReportJson()));
+      await File(reportPath).writeAsString(
+        _prettyJson(_taskQaReportJson(taskBundleDigest: taskBundleDigest)),
+      );
       final databasePath = p.join(tmp.path, 'dart_arena.sqlite');
       await _seedDatabase(databasePath, runIds: const ['run-1', 'run-2']);
       final firstBundleRoot = p.join(tmp.path, 'bundle_run_1');
@@ -11995,6 +12081,187 @@ List<String> _standardBundleCliArgs(Map<String, String> files) => [
   files['report.md']!,
 ];
 
+Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
+  Directory tmp, {
+  required bool includeDigest,
+  String? digestOverride,
+  bool admissionGitDirty = false,
+}) async {
+  final leaderboardPath = p.join(tmp.path, 'leaderboard.v1.json');
+  final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
+  await taskQaDir.create(recursive: true);
+  final taskQaSummaryPath = p.join(taskQaDir.path, 'admission_summary.json');
+  final taskBundle = Directory(p.join(taskQaDir.path, 'tasks', 'task.a'));
+  final taskBundleDigest = await _writeReleaseTaskBundle(taskBundle);
+  final reportPath = p.join(taskBundle.path, 'qa', 'admission_report.json');
+  await Directory(p.dirname(reportPath)).create(recursive: true);
+  await File(
+    leaderboardPath,
+  ).writeAsString(_prettyJson(_leaderboardJson(sampleCount: 1)));
+  await File(taskQaSummaryPath).writeAsString(
+    _prettyJson(
+      _taskQaSummaryJson(
+        reportPath: p
+            .relative(reportPath, from: taskQaDir.path)
+            .replaceAll('\\', '/'),
+      ),
+    ),
+  );
+  await File(reportPath).writeAsString(
+    _prettyJson(
+      _taskQaReportJson(
+        taskBundleDigest: includeDigest
+            ? digestOverride ?? taskBundleDigest
+            : null,
+        admissionGitDirty: admissionGitDirty,
+      ),
+    ),
+  );
+  final outPath = p.join(tmp.path, 'release', 'release_report.v1.json');
+  final stdoutLines = <String>[];
+
+  final exitCode = await runReleaseReportCli(
+    [
+      '--leaderboard',
+      leaderboardPath,
+      '--task-qa-summary',
+      taskQaSummaryPath,
+      '--out',
+      outPath,
+      '--release-id',
+      '2026-06-task-bundle-integrity',
+    ],
+    dependencies: ReleaseReportCliDependencies(
+      now: () => DateTime.utc(2026, 6, 4, 3, 10),
+    ),
+    stdoutWriter: stdoutLines.add,
+    stderrWriter: (_) {},
+  );
+
+  expect(exitCode, 0);
+  expect(stdoutLines.single, contains('"status":"blocked"'));
+  return jsonDecode(await File(outPath).readAsString()) as Map<String, Object?>;
+}
+
+Future<String> _writeReleaseTaskBundle(Directory bundle) async {
+  await _writeTaskBundleFile(bundle, 'task.yaml', '''
+schemaVersion: 1
+id: task.a
+version: 1
+category: bug_fix
+track: agentic
+tags:
+  - bugfix
+difficulty: easy
+platformRequirements:
+  - linux
+timeoutSeconds: 60
+release:
+  corpus: private_official
+  status: active
+network: false
+resources:
+  cpus: 2
+  memory_mb: 8192
+  max_processes: 64
+  max_output_bytes: 1048576
+generatedCodePath: lib/answer.dart
+isFlutter: false
+instructionPath: instruction.md
+workspace:
+  root: baseline
+  files:
+    pubspec.yaml: pubspec.yaml
+    lib/answer.dart: lib/answer.dart
+hiddenVerifiers:
+  - id: hidden_test
+    testPath: test/_hidden/answer_hidden_test.dart
+    root: hidden_tests
+    files:
+      test/_hidden/answer_hidden_test.dart: test/_hidden/answer_hidden_test.dart
+reference:
+  type: files
+  root: solution
+  files:
+    lib/answer.dart: lib/answer.dart
+requiredNegativeCaseKinds:
+  - noop
+  - api_breaking
+  - overfit
+negativeCases:
+  - id: noop
+    kind: noop
+    description: Leaves the original answer unchanged.
+    root: negative_cases/noop
+    files:
+      lib/answer.dart: lib/answer.dart
+  - id: api_breaking
+    kind: api_breaking
+    description: Breaks the answer API.
+    root: negative_cases/api_breaking
+    files:
+      lib/answer.dart: lib/answer.dart
+  - id: overfit_public_surface
+    kind: overfit
+    description: Matches public behavior while missing hidden behavior.
+    root: negative_cases/overfit
+    files:
+      lib/answer.dart: lib/answer.dart
+''');
+  await _writeTaskBundleFile(
+    bundle,
+    'instruction.md',
+    'Make answer return 42.\n',
+  );
+  await _writeTaskBundleFile(bundle, 'baseline/pubspec.yaml', '''
+name: release_task
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+''');
+  await _writeTaskBundleFile(
+    bundle,
+    'baseline/lib/answer.dart',
+    'int answer() => 41;\n',
+  );
+  await _writeTaskBundleFile(
+    bundle,
+    'hidden_tests/test/_hidden/answer_hidden_test.dart',
+    'void main() {}\n',
+  );
+  await _writeTaskBundleFile(
+    bundle,
+    'solution/lib/answer.dart',
+    'int answer() => 42;\n',
+  );
+  await _writeTaskBundleFile(
+    bundle,
+    'negative_cases/noop/lib/answer.dart',
+    'int answer() => 41;\n',
+  );
+  await _writeTaskBundleFile(
+    bundle,
+    'negative_cases/api_breaking/lib/answer.dart',
+    'void answer() {}\n',
+  );
+  await _writeTaskBundleFile(
+    bundle,
+    'negative_cases/overfit/lib/answer.dart',
+    'int answer() => 0;\n',
+  );
+  await _writeTaskBundleFile(bundle, 'qa/notes.txt', 'not release evidence\n');
+  return taskBundleDigestSha256(bundle);
+}
+
+Future<void> _writeTaskBundleFile(
+  Directory bundle,
+  String relativePath,
+  String content,
+) async {
+  final file = File(p.join(bundle.path, relativePath));
+  await file.parent.create(recursive: true);
+  await file.writeAsString(content);
+}
+
 Map<String, Object?> _taskQaReportJson({
   Object? schemaVersion = 1,
   bool includeHiddenDigests = true,
@@ -12017,6 +12284,8 @@ Map<String, Object?> _taskQaReportJson({
   String releaseCorpus = 'private_official',
   String releaseStatus = 'active',
   bool includeAdmissionProvenance = true,
+  String? taskBundleDigest,
+  bool admissionGitDirty = false,
   Map<String, Object?>? admissionProvenanceOverride,
   bool includeExecutionPolicy = true,
   Map<String, Object?>? executionPolicyOverride,
@@ -12037,9 +12306,11 @@ Map<String, Object?> _taskQaReportJson({
             'schemaVersion': 2,
             'version': '2026-05-31-master-spec',
           },
+          if (taskBundleDigest != null) 'taskBundleDigest': taskBundleDigest,
           'environment': {
             'dartVersion': '3.9.0',
             'flutterVersion': '3.35.0',
+            'gitDirty': admissionGitDirty,
             'dependencySnapshot': {
               'status': 'present',
               'files': {

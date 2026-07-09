@@ -222,6 +222,23 @@ h3 {
   padding: 0.85rem 1rem;
 }
 
+.provisional-banner {
+  align-items: center;
+  background: rgba(255, 122, 26, 0.12);
+  border: 1px solid rgba(255, 122, 26, 0.38);
+  border-radius: 1rem;
+  color: var(--ink);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+}
+
+.provisional-banner strong {
+  color: #ffb26f;
+}
+
 .section {
   padding: clamp(2rem, 6vw, 4.5rem) 0 0;
 }

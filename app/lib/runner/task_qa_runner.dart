@@ -978,12 +978,32 @@ Map<String, Object?> _evaluationJson(EvaluationResult result) => {
 bool taskQaAdmissionPassed(TaskQaReport report) =>
     report.failureMessages.isEmpty;
 
+bool taskQaAdmissionReleaseGradePassed(
+  TaskQaReport report,
+  Map<String, Object?>? environment,
+) => taskQaAdmissionFailureMessages(report, environment).isEmpty;
+
+List<String> taskQaAdmissionFailureMessages(
+  TaskQaReport report,
+  Map<String, Object?>? environment,
+) {
+  final failures = [...report.failureMessages];
+  if (environment?['gitDirty'] == true) {
+    failures.add(
+      'Admission environment gitDirty=true; this report is not release evidence.',
+    );
+  }
+  return failures;
+}
+
 Map<String, Object?> taskQaAdmissionReportJson({
   required BenchmarkTask task,
   required TaskQaReport report,
   DateTime? generatedAt,
   Map<String, Object?>? environment,
+  String? taskBundleDigest,
 }) {
+  final failureMessages = taskQaAdmissionFailureMessages(report, environment);
   final checks = <String, Object?>{
     'baselineHiddenFailed': report.baselineHiddenFailed,
     'referencePublicPassed': report.referencePublicPassed,
@@ -1036,6 +1056,7 @@ Map<String, Object?> taskQaAdmissionReportJson({
         'version': taskQaAdmissionEvaluatorVersion,
       },
       if (environment != null) 'environment': _sortedObjectMap(environment),
+      if (taskBundleDigest != null) 'taskBundleDigest': taskBundleDigest,
     },
     'executionPolicy': {
       'allowInternet': task.allowInternet,
@@ -1043,7 +1064,7 @@ Map<String, Object?> taskQaAdmissionReportJson({
       'resourceEnforcement': taskResourceEnforcementJson(),
     },
     'runtimeIsolation': report.runtimeIsolation.toJson(),
-    'status': taskQaAdmissionPassed(report) ? 'admitted' : 'rejected',
+    'status': failureMessages.isEmpty ? 'admitted' : 'rejected',
     if (generatedAt != null) 'generatedAt': generatedAt.toIso8601String(),
     'checks': checks,
     'hiddenVerifierDigests': report.hiddenVerifierDigests,
@@ -1053,7 +1074,7 @@ Map<String, Object?> taskQaAdmissionReportJson({
       for (final negativeCase in report.negativeCaseReports)
         negativeCase.toJson(),
     ],
-    'failureMessages': report.failureMessages,
+    'failureMessages': failureMessages,
   };
 }
 

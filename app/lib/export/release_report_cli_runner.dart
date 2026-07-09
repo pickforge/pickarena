@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dart_arena/core/task_bundle_digest.dart';
 import 'package:dart_arena/export/leaderboard_cli_runner.dart';
 import 'package:dart_arena/export/release_report.dart';
 import 'package:dart_arena/storage/database.dart';
@@ -60,6 +61,7 @@ Future<int> runReleaseReportCli(
           );
     final taskQaReports = <Map<String, Object?>>[];
     final taskQaReportInputs = <Map<String, Object?>>[];
+    final taskBundleDigestEvidence = <Map<String, Object?>>[];
     final reportReadErrors = <String>[];
     final directTaskQaReportPaths = parsed.taskQaSummaryPath == null
         ? await _directTaskQaReportPaths(
@@ -72,6 +74,7 @@ Future<int> runReleaseReportCli(
             directTaskQaReportPaths,
             taskQaReports: taskQaReports,
             taskQaReportInputs: taskQaReportInputs,
+            taskBundleDigestEvidence: taskBundleDigestEvidence,
             reportReadErrors: reportReadErrors,
             fallbackGeneratedAt: dependencies.now().toUtc(),
           )
@@ -79,6 +82,7 @@ Future<int> runReleaseReportCli(
             parsed.taskQaSummaryPath!,
             taskQaReports: taskQaReports,
             taskQaReportInputs: taskQaReportInputs,
+            taskBundleDigestEvidence: taskBundleDigestEvidence,
             reportReadErrors: reportReadErrors,
           );
 
@@ -95,6 +99,7 @@ Future<int> runReleaseReportCli(
       leaderboard: leaderboard,
       taskQaSummary: taskQaSummary,
       taskQaReports: taskQaReports,
+      taskBundleDigestEvidence: taskBundleDigestEvidence,
       taskQaReportReadErrors: reportReadErrors,
       runProvenanceById: runProvenanceById,
       artifactManifest: artifactManifest,
@@ -193,6 +198,7 @@ Future<Map<String, Object?>> _loadTaskQaSummaryReports(
   String taskQaSummaryPath, {
   required List<Map<String, Object?>> taskQaReports,
   required List<Map<String, Object?>> taskQaReportInputs,
+  required List<Map<String, Object?>> taskBundleDigestEvidence,
   required List<String> reportReadErrors,
 }) async {
   final taskQaSummary = _readJsonObject(taskQaSummaryPath);
@@ -200,10 +206,18 @@ Future<Map<String, Object?>> _loadTaskQaSummaryReports(
   for (final reportPath in _taskQaReportPaths(taskQaSummary, summaryDir)) {
     final displayPath = _displayPath(reportPath, summaryDir);
     try {
-      taskQaReports.add(_readJsonObject(reportPath));
+      final report = _readJsonObject(reportPath);
+      taskQaReports.add(report);
       taskQaReportInputs.add(
         await _fileInputArtifact(reportPath, displayPath: displayPath),
       );
+      final digestEvidence = await _taskBundleDigestEvidence(
+        report,
+        reportPath,
+      );
+      if (digestEvidence != null) {
+        taskBundleDigestEvidence.add(digestEvidence);
+      }
     } on Object {
       reportReadErrors.add(displayPath);
     }
@@ -215,16 +229,25 @@ Future<Map<String, Object?>> _loadDirectTaskQaReports(
   List<String> taskQaReportPaths, {
   required List<Map<String, Object?>> taskQaReports,
   required List<Map<String, Object?>> taskQaReportInputs,
+  required List<Map<String, Object?>> taskBundleDigestEvidence,
   required List<String> reportReadErrors,
   required DateTime fallbackGeneratedAt,
 }) async {
   for (final reportPath in taskQaReportPaths) {
     final displayPath = _directTaskQaReportDisplayPath(reportPath);
     try {
-      taskQaReports.add(_readJsonObject(reportPath));
+      final report = _readJsonObject(reportPath);
+      taskQaReports.add(report);
       taskQaReportInputs.add(
         await _fileInputArtifact(reportPath, displayPath: displayPath),
       );
+      final digestEvidence = await _taskBundleDigestEvidence(
+        report,
+        reportPath,
+      );
+      if (digestEvidence != null) {
+        taskBundleDigestEvidence.add(digestEvidence);
+      }
     } on Object {
       reportReadErrors.add(displayPath);
     }
@@ -233,6 +256,32 @@ Future<Map<String, Object?>> _loadDirectTaskQaReports(
     taskQaReports,
     fallbackGeneratedAt: fallbackGeneratedAt,
   );
+}
+
+Future<Map<String, Object?>?> _taskBundleDigestEvidence(
+  Map<String, Object?> report,
+  String reportPath,
+) async {
+  final bundleDirectory = _taskBundleDirectoryForAdmissionReport(reportPath);
+  if (bundleDirectory == null) return null;
+  return {
+    'taskId': report['taskId'],
+    'taskVersion': report['taskVersion'],
+    'track': report['track'],
+    'taskBundleDigest': await taskBundleDigestSha256(bundleDirectory),
+  };
+}
+
+Directory? _taskBundleDirectoryForAdmissionReport(String reportPath) {
+  final normalized = p.normalize(p.absolute(reportPath));
+  if (p.basename(normalized) != 'admission_report.json') return null;
+  final qaDirectory = p.dirname(normalized);
+  if (p.basename(qaDirectory) != 'qa') return null;
+  final bundleDirectory = Directory(p.dirname(qaDirectory));
+  if (!File(p.join(bundleDirectory.path, 'task.yaml')).existsSync()) {
+    return null;
+  }
+  return bundleDirectory;
 }
 
 Future<List<ReleaseArtifactBundleInput>> _loadArtifactBundleInputs(

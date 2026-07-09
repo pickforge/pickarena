@@ -161,6 +161,7 @@ Map<String, Object?> buildReleaseReport({
   required Map<String, Object?> leaderboard,
   required Map<String, Object?> taskQaSummary,
   required List<Map<String, Object?>> taskQaReports,
+  List<Map<String, Object?>> taskBundleDigestEvidence = const [],
   required ReleaseReportOptions options,
   Map<String, Map<String, Object?>>? runProvenanceById,
   List<String> taskQaReportReadErrors = const [],
@@ -309,6 +310,7 @@ Map<String, Object?> buildReleaseReport({
   final verifierAudit = _verifierAudit(
     taskQaReports,
     blockers,
+    taskBundleDigestEvidence: taskBundleDigestEvidence,
     minHiddenFlakeRunsPerTask: options.minHiddenFlakeRunsPerTask,
     reportGeneratedAt: generatedAt,
   );
@@ -657,6 +659,28 @@ Map<String, Object?> _corpusReadinessGate({
   final admissionEnvironmentDependencySnapshotIncompleteCount = _intValue(
     admissionProvenance['dependencySnapshotIncompleteCount'],
   );
+  final taskBundleIntegrity = _objectMap(verifierAudit['taskBundleIntegrity']);
+  final taskBundleDigestPresentCount = _intValue(
+    taskBundleIntegrity['digestPresentCount'],
+  );
+  final taskBundleDigestMissingCount = _intValue(
+    taskBundleIntegrity['digestMissingCount'],
+  );
+  final taskBundleDigestInvalidCount = _intValue(
+    taskBundleIntegrity['digestInvalidCount'],
+  );
+  final taskBundleDigestMatchedCount = _intValue(
+    taskBundleIntegrity['digestMatchedCount'],
+  );
+  final taskBundleDigestMismatchedCount = _intValue(
+    taskBundleIntegrity['digestMismatchedCount'],
+  );
+  final taskBundleDigestRecomputeMissingCount = _intValue(
+    taskBundleIntegrity['digestRecomputeMissingCount'],
+  );
+  final admissionEnvironmentGitDirtyCount = _intValue(
+    taskBundleIntegrity['admissionEnvironmentGitDirtyCount'],
+  );
   final taskExecutionPolicy = _objectMap(verifierAudit['taskExecutionPolicy']);
   final taskExecutionPolicyPresentCount = _intValue(
     taskExecutionPolicy['presentCount'],
@@ -798,6 +822,13 @@ Map<String, Object?> _corpusReadinessGate({
       admissionEnvironmentSdkVersionIncompleteCount == 0 &&
       admissionEnvironmentDependencySnapshotPresentCount >= taskCount &&
       admissionEnvironmentDependencySnapshotIncompleteCount == 0 &&
+      taskBundleDigestPresentCount >= taskCount &&
+      taskBundleDigestMissingCount == 0 &&
+      taskBundleDigestInvalidCount == 0 &&
+      taskBundleDigestMatchedCount >= taskCount &&
+      taskBundleDigestMismatchedCount == 0 &&
+      taskBundleDigestRecomputeMissingCount == 0 &&
+      admissionEnvironmentGitDirtyCount == 0 &&
       taskExecutionPolicyPresentCount >= taskCount &&
       taskExecutionPolicyMissingCount == 0 &&
       taskExecutionPolicyIncompleteCount == 0 &&
@@ -927,6 +958,14 @@ Map<String, Object?> _corpusReadinessGate({
         admissionEnvironmentDependencySnapshotPresentCount,
     'admissionEnvironmentDependencySnapshotIncompleteCount':
         admissionEnvironmentDependencySnapshotIncompleteCount,
+    'taskBundleDigestPresentCount': taskBundleDigestPresentCount,
+    'taskBundleDigestMissingCount': taskBundleDigestMissingCount,
+    'taskBundleDigestInvalidCount': taskBundleDigestInvalidCount,
+    'taskBundleDigestMatchedCount': taskBundleDigestMatchedCount,
+    'taskBundleDigestMismatchedCount': taskBundleDigestMismatchedCount,
+    'taskBundleDigestRecomputeMissingCount':
+        taskBundleDigestRecomputeMissingCount,
+    'admissionEnvironmentGitDirtyCount': admissionEnvironmentGitDirtyCount,
     'taskExecutionPolicyPresentCount': taskExecutionPolicyPresentCount,
     'taskExecutionPolicyMissingCount': taskExecutionPolicyMissingCount,
     'taskExecutionPolicyIncompleteCount': taskExecutionPolicyIncompleteCount,
@@ -6694,9 +6733,16 @@ String _taskQaReportPathReason({
 Map<String, Object?> _verifierAudit(
   List<Map<String, Object?>> reports,
   Set<String> blockers, {
+  List<Map<String, Object?>> taskBundleDigestEvidence = const [],
   required int minHiddenFlakeRunsPerTask,
   required DateTime reportGeneratedAt,
 }) {
+  final taskBundleDigestEvidenceByKey = {
+    for (final evidence in taskBundleDigestEvidence)
+      if (_taskQaReportKey(evidence) case final key?)
+        if (_nonEmptyString(evidence['taskBundleDigest']) case final digest?)
+          key: digest,
+  };
   final checkCounts = SplayTreeMap<String, Map<String, int>>();
   final negativeCaseCounts = SplayTreeMap<String, Map<String, int>>();
   var hiddenVerifierDigestCount = 0;
@@ -6759,6 +6805,13 @@ Map<String, Object?> _verifierAudit(
   var admissionEnvironmentSdkVersionIncompleteCount = 0;
   var admissionEnvironmentDependencySnapshotPresentCount = 0;
   var admissionEnvironmentDependencySnapshotIncompleteCount = 0;
+  var admissionEnvironmentGitDirtyCount = 0;
+  var taskBundleDigestPresentCount = 0;
+  var taskBundleDigestMissingCount = 0;
+  var taskBundleDigestInvalidCount = 0;
+  var taskBundleDigestMatchedCount = 0;
+  var taskBundleDigestMismatchedCount = 0;
+  var taskBundleDigestRecomputeMissingCount = 0;
   var taskExecutionPolicyPresentCount = 0;
   var taskExecutionPolicyMissingCount = 0;
   var taskExecutionPolicyIncompleteCount = 0;
@@ -6777,6 +6830,8 @@ Map<String, Object?> _verifierAudit(
   final tasksWithVerifierQualityIssues = <Map<String, Object?>>[];
   final tasksWithAdmissionCheckIssues = <Map<String, Object?>>[];
   final tasksWithAdmissionFailureMessages = <Map<String, Object?>>[];
+  final tasksWithTaskBundleDigestIssues = <Map<String, Object?>>[];
+  final tasksWithDirtyAdmissionEnvironment = <Map<String, Object?>>[];
   final tasksMissingPromptSafety = <Map<String, Object?>>[];
   final tasksWithPromptSafetyIssues = <Map<String, Object?>>[];
   final tasksBelowHiddenFlakeRunMinimum = <Map<String, Object?>>[];
@@ -6791,6 +6846,7 @@ Map<String, Object?> _verifierAudit(
 
   for (final report in reports) {
     final taskRef = _taskRef(report);
+    final taskKey = _taskQaReportKey(report);
     final schemaVersion = _intValue(report['schemaVersion']);
     final schemaVersionStatus = schemaVersion <= 0
         ? 'missing'
@@ -6919,6 +6975,13 @@ Map<String, Object?> _verifierAudit(
         );
       } else {
         admissionEnvironmentPresentCount++;
+        if (environment['gitDirty'] == true) {
+          admissionEnvironmentGitDirtyCount++;
+          tasksWithDirtyAdmissionEnvironment.add(taskRef);
+          blockers.add(
+            'Task QA report ${_taskKey(report)} admission environment is dirty.',
+          );
+        }
         final sdkVersionStatus = _environmentSdkVersionStatus(environment);
         if (sdkVersionStatus == 'present') {
           admissionEnvironmentSdkVersionPresentCount++;
@@ -6946,6 +7009,46 @@ Map<String, Object?> _verifierAudit(
           blockers.add(
             'Task QA report ${_taskKey(report)} admission environment dependency snapshot metadata is incomplete.',
           );
+        }
+      }
+      final taskBundleDigest = _nonEmptyString(admission['taskBundleDigest']);
+      if (taskBundleDigest == null) {
+        taskBundleDigestMissingCount++;
+        tasksWithTaskBundleDigestIssues.add({...taskRef, 'status': 'missing'});
+        blockers.add(
+          'Task QA report ${_taskKey(report)} task bundle digest is missing.',
+        );
+      } else if (!_sha256DigestPattern.hasMatch(taskBundleDigest)) {
+        taskBundleDigestInvalidCount++;
+        tasksWithTaskBundleDigestIssues.add({...taskRef, 'status': 'invalid'});
+        blockers.add(
+          'Task QA report ${_taskKey(report)} task bundle digest is invalid.',
+        );
+      } else {
+        taskBundleDigestPresentCount++;
+        final recomputedDigest = taskKey == null
+            ? null
+            : taskBundleDigestEvidenceByKey[taskKey];
+        if (recomputedDigest == null) {
+          taskBundleDigestRecomputeMissingCount++;
+          tasksWithTaskBundleDigestIssues.add({
+            ...taskRef,
+            'status': 'unavailable',
+          });
+          blockers.add(
+            'Task QA report ${_taskKey(report)} task bundle digest could not be recomputed from disk.',
+          );
+        } else if (recomputedDigest != taskBundleDigest) {
+          taskBundleDigestMismatchedCount++;
+          tasksWithTaskBundleDigestIssues.add({
+            ...taskRef,
+            'status': 'mismatched',
+          });
+          blockers.add(
+            'Task QA report ${_taskKey(report)} task bundle digest does not match the disk bundle.',
+          );
+        } else {
+          taskBundleDigestMatchedCount++;
         }
       }
     }
@@ -7654,6 +7757,17 @@ Map<String, Object?> _verifierAudit(
       'dependencySnapshotIncompleteCount':
           admissionEnvironmentDependencySnapshotIncompleteCount,
       'tasksWithAdmissionProvenanceIssues': tasksWithAdmissionProvenanceIssues,
+    },
+    'taskBundleIntegrity': {
+      'digestPresentCount': taskBundleDigestPresentCount,
+      'digestMissingCount': taskBundleDigestMissingCount,
+      'digestInvalidCount': taskBundleDigestInvalidCount,
+      'digestMatchedCount': taskBundleDigestMatchedCount,
+      'digestMismatchedCount': taskBundleDigestMismatchedCount,
+      'digestRecomputeMissingCount': taskBundleDigestRecomputeMissingCount,
+      'admissionEnvironmentGitDirtyCount': admissionEnvironmentGitDirtyCount,
+      'tasksWithTaskBundleDigestIssues': tasksWithTaskBundleDigestIssues,
+      'tasksWithDirtyAdmissionEnvironment': tasksWithDirtyAdmissionEnvironment,
     },
     'taskExecutionPolicy': {
       'presentCount': taskExecutionPolicyPresentCount,

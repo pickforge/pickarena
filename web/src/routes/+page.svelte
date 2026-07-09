@@ -284,6 +284,13 @@
     </nav>
   </header>
 
+  {#if leaderboard.provisional}
+    <div class="provisional-banner" role="status">
+      <strong>Provisional leaderboard</strong>
+      <span>This 1-model board is an interim preview until the v1.0 run.</span>
+    </div>
+  {/if}
+
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero-content">
       <img

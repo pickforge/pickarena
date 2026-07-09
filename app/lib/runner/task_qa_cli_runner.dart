@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/path_safety.dart';
+import 'package:dart_arena/core/task_bundle_digest.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
@@ -102,7 +103,11 @@ Future<int> runTaskQaCli(
 
     for (final task in tasks) {
       final report = await runner.run(task);
-      final admitted = taskQaAdmissionPassed(report);
+      final admitted = taskQaAdmissionReleaseGradePassed(report, environment);
+      final failureMessages = taskQaAdmissionFailureMessages(
+        report,
+        environment,
+      );
       if (!admitted) rejectedTaskCount++;
       final reportFile = await _writeTaskReport(
         outputDir: outputDir,
@@ -116,7 +121,7 @@ Future<int> runTaskQaCli(
         'taskVersion': task.version,
         'track': task.track.name,
         'status': admitted ? 'admitted' : 'rejected',
-        'failureCount': report.failureMessages.length,
+        'failureCount': failureMessages.length,
         'reportPath': _relativeOutputPath(outputDir, reportFile),
         'runtimeIsolation': {
           'generatedCodeSandboxEnforced':
@@ -215,6 +220,9 @@ Future<File> _writeTaskReport({
   );
   await reportDir.create(recursive: true);
   final reportFile = File(p.join(reportDir.path, 'admission_report.json'));
+  final taskBundleDigest = task is FileBackedTask
+      ? await taskBundleDigestSha256(task.bundleDirectory)
+      : null;
   await reportFile.writeAsString(
     _prettyJson(
       taskQaAdmissionReportJson(
@@ -222,6 +230,7 @@ Future<File> _writeTaskReport({
         report: report,
         generatedAt: generatedAt,
         environment: environment,
+        taskBundleDigest: taskBundleDigest,
       ),
     ),
   );
