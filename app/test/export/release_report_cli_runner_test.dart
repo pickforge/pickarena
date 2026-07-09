@@ -1381,27 +1381,58 @@ void main() {
   );
 
   test(
-    'recomputes task bundle digest from the task QA summary output layout',
+    'recomputes task bundle digest through every task QA ingestion path',
     () async {
-      final tmp = await Directory.systemTemp.createTemp(
-        'release_report_task_bundle_qa_cli_layout_',
-      );
-      addTearDown(() async {
-        if (await tmp.exists()) await tmp.delete(recursive: true);
-      });
+      for (final inputMode in _TaskQaInputMode.values) {
+        final tmp = await Directory.systemTemp.createTemp(
+          'release_report_task_bundle_${inputMode.name}_',
+        );
+        addTearDown(() async {
+          if (await tmp.exists()) await tmp.delete(recursive: true);
+        });
 
-      final report = await _runTaskBundleIntegrityReleaseReport(
-        tmp,
-        includeDigest: true,
-        useTaskQaSummaryLayout: true,
-      );
+        final report = await _runTaskBundleIntegrityReleaseReport(
+          tmp,
+          includeDigest: true,
+          inputMode: inputMode,
+          useBuildOutputLayout: true,
+        );
 
-      final audit = report['verifierAudit']! as Map<String, Object?>;
-      final integrity = audit['taskBundleIntegrity']! as Map<String, Object?>;
-      expect(integrity['digestMatchedCount'], 1);
-      expect(integrity['digestRecomputeMissingCount'], 0);
+        final audit = report['verifierAudit']! as Map<String, Object?>;
+        final integrity = audit['taskBundleIntegrity']! as Map<String, Object?>;
+        expect(integrity['digestMatchedCount'], 1, reason: inputMode.name);
+        expect(
+          integrity['digestRecomputeMissingCount'],
+          0,
+          reason: inputMode.name,
+        );
+      }
     },
   );
+
+  test('reports why build-output digest evidence is unavailable', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'release_report_task_bundle_unavailable_',
+    );
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+
+    final report = await _runTaskBundleIntegrityReleaseReport(
+      tmp,
+      includeDigest: true,
+      useBuildOutputLayout: true,
+      includeTaskBundleRoot: false,
+    );
+
+    final blockers = (report['blockers']! as List<Object?>).join('\n');
+    expect(
+      blockers,
+      contains(
+        'Task QA report task.a@v1 digest evidence unavailable: task bundle root was not provided and report is not beside a task bundle.',
+      ),
+    );
+  });
 
   test('blocks report when loaded task QA execution policy is unsafe', () async {
     final tmp = await Directory.systemTemp.createTemp(
@@ -12157,7 +12188,9 @@ Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
   String? digestOverride,
   Object? admissionGitDirty = false,
   bool includeAdmissionGitDirty = true,
-  bool useTaskQaSummaryLayout = false,
+  _TaskQaInputMode inputMode = _TaskQaInputMode.summary,
+  bool useBuildOutputLayout = false,
+  bool includeTaskBundleRoot = true,
 }) async {
   final leaderboardPath = p.join(tmp.path, 'leaderboard.v1.json');
   final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
@@ -12165,12 +12198,12 @@ Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
   final taskQaSummaryPath = p.join(taskQaDir.path, 'admission_summary.json');
   final taskBundleRoot = Directory(p.join(tmp.path, 'task_bundles'));
   final taskBundle = Directory(
-    useTaskQaSummaryLayout
+    useBuildOutputLayout
         ? p.join(taskBundleRoot.path, 'task.a')
         : p.join(taskQaDir.path, 'tasks', 'task.a'),
   );
   final taskBundleDigest = await _writeReleaseTaskBundle(taskBundle);
-  final reportPath = useTaskQaSummaryLayout
+  final reportPath = useBuildOutputLayout
       ? p.join(
           taskQaDir.path,
           'tasks',
@@ -12209,9 +12242,15 @@ Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
     [
       '--leaderboard',
       leaderboardPath,
-      '--task-qa-summary',
-      taskQaSummaryPath,
-      if (useTaskQaSummaryLayout) ...[
+      ...switch (inputMode) {
+        _TaskQaInputMode.summary => ['--task-qa-summary', taskQaSummaryPath],
+        _TaskQaInputMode.report => ['--task-qa-report', reportPath],
+        _TaskQaInputMode.reportRoot => [
+          '--task-qa-report-root',
+          taskQaDir.path,
+        ],
+      },
+      if (useBuildOutputLayout && includeTaskBundleRoot) ...[
         '--task-bundle-root',
         taskBundleRoot.path,
       ],
@@ -12231,6 +12270,8 @@ Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
   expect(stdoutLines.single, contains('"status":"blocked"'));
   return jsonDecode(await File(outPath).readAsString()) as Map<String, Object?>;
 }
+
+enum _TaskQaInputMode { summary, report, reportRoot }
 
 Future<String> _writeReleaseTaskBundle(Directory bundle) async {
   await _writeTaskBundleFile(bundle, 'task.yaml', '''

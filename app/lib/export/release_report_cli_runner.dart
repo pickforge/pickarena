@@ -77,6 +77,7 @@ Future<int> runReleaseReportCli(
             taskBundleDigestEvidence: taskBundleDigestEvidence,
             reportReadErrors: reportReadErrors,
             fallbackGeneratedAt: dependencies.now().toUtc(),
+            taskBundleRoot: parsed.taskBundleRoot,
           )
         : await _loadTaskQaSummaryReports(
             parsed.taskQaSummaryPath!,
@@ -206,24 +207,15 @@ Future<Map<String, Object?>> _loadTaskQaSummaryReports(
   final taskQaSummary = _readJsonObject(taskQaSummaryPath);
   final summaryDir = p.dirname(taskQaSummaryPath);
   for (final reportPath in _taskQaReportPaths(taskQaSummary, summaryDir)) {
-    final displayPath = _displayPath(reportPath, summaryDir);
-    try {
-      final report = _readJsonObject(reportPath);
-      taskQaReports.add(report);
-      taskQaReportInputs.add(
-        await _fileInputArtifact(reportPath, displayPath: displayPath),
-      );
-      final digestEvidence = await _taskBundleDigestEvidence(
-        report,
-        reportPath,
-        taskBundleRoot: taskBundleRoot,
-      );
-      if (digestEvidence != null) {
-        taskBundleDigestEvidence.add(digestEvidence);
-      }
-    } on Object {
-      reportReadErrors.add(displayPath);
-    }
+    await _loadTaskQaReport(
+      reportPath,
+      displayPath: _displayPath(reportPath, summaryDir),
+      taskQaReports: taskQaReports,
+      taskQaReportInputs: taskQaReportInputs,
+      taskBundleDigestEvidence: taskBundleDigestEvidence,
+      reportReadErrors: reportReadErrors,
+      taskBundleRoot: taskBundleRoot,
+    );
   }
   return taskQaSummary;
 }
@@ -235,25 +227,18 @@ Future<Map<String, Object?>> _loadDirectTaskQaReports(
   required List<Map<String, Object?>> taskBundleDigestEvidence,
   required List<String> reportReadErrors,
   required DateTime fallbackGeneratedAt,
+  required String? taskBundleRoot,
 }) async {
   for (final reportPath in taskQaReportPaths) {
-    final displayPath = _directTaskQaReportDisplayPath(reportPath);
-    try {
-      final report = _readJsonObject(reportPath);
-      taskQaReports.add(report);
-      taskQaReportInputs.add(
-        await _fileInputArtifact(reportPath, displayPath: displayPath),
-      );
-      final digestEvidence = await _taskBundleDigestEvidence(
-        report,
-        reportPath,
-      );
-      if (digestEvidence != null) {
-        taskBundleDigestEvidence.add(digestEvidence);
-      }
-    } on Object {
-      reportReadErrors.add(displayPath);
-    }
+    await _loadTaskQaReport(
+      reportPath,
+      displayPath: _directTaskQaReportDisplayPath(reportPath),
+      taskQaReports: taskQaReports,
+      taskQaReportInputs: taskQaReportInputs,
+      taskBundleDigestEvidence: taskBundleDigestEvidence,
+      reportReadErrors: reportReadErrors,
+      taskBundleRoot: taskBundleRoot,
+    );
   }
   return _taskQaSummaryFromReports(
     taskQaReports,
@@ -261,21 +246,100 @@ Future<Map<String, Object?>> _loadDirectTaskQaReports(
   );
 }
 
-Future<Map<String, Object?>?> _taskBundleDigestEvidence(
+Future<void> _loadTaskQaReport(
+  String reportPath, {
+  required String displayPath,
+  required List<Map<String, Object?>> taskQaReports,
+  required List<Map<String, Object?>> taskQaReportInputs,
+  required List<Map<String, Object?>> taskBundleDigestEvidence,
+  required List<String> reportReadErrors,
+  required String? taskBundleRoot,
+}) async {
+  try {
+    final report = _readJsonObject(reportPath);
+    taskQaReports.add(report);
+    taskQaReportInputs.add(
+      await _fileInputArtifact(reportPath, displayPath: displayPath),
+    );
+    taskBundleDigestEvidence.add(
+      await _taskBundleDigestEvidence(
+        report,
+        reportPath,
+        taskBundleRoot: taskBundleRoot,
+      ),
+    );
+  } on Object {
+    reportReadErrors.add(displayPath);
+  }
+}
+
+Future<Map<String, Object?>> _taskBundleDigestEvidence(
   Map<String, Object?> report,
   String reportPath, {
   String? taskBundleRoot,
 }) async {
-  final bundleDirectory =
-      _taskBundleDirectoryForAdmissionReport(reportPath) ??
-      _taskBundleDirectoryForTaskId(taskBundleRoot, report['taskId']);
-  if (bundleDirectory == null) return null;
-  return {
+  final resolution = _resolveTaskBundleDirectory(
+    reportPath: reportPath,
+    taskId: report['taskId'],
+    taskBundleRoot: taskBundleRoot,
+  );
+  final evidence = <String, Object?>{
     'taskId': report['taskId'],
     'taskVersion': report['taskVersion'],
     'track': report['track'],
-    'taskBundleDigest': await taskBundleDigestSha256(bundleDirectory),
   };
+  final bundleDirectory = resolution.bundleDirectory;
+  if (bundleDirectory == null) {
+    return {
+      ...evidence,
+      'taskBundleDigestUnavailableReason': resolution.unavailableReason,
+    };
+  }
+  try {
+    return {
+      ...evidence,
+      'taskBundleDigest': await taskBundleDigestSha256(bundleDirectory),
+    };
+  } on Object {
+    return {
+      ...evidence,
+      'taskBundleDigestUnavailableReason':
+          'task bundle digest computation failed',
+    };
+  }
+}
+
+_TaskBundleResolution _resolveTaskBundleDirectory({
+  required String reportPath,
+  required Object? taskId,
+  required String? taskBundleRoot,
+}) {
+  if (taskBundleRoot != null) {
+    final bundleDirectory = _taskBundleDirectoryForTaskId(
+      taskBundleRoot,
+      taskId,
+    );
+    if (bundleDirectory != null) {
+      return _TaskBundleResolution.resolved(bundleDirectory);
+    }
+  }
+  final bundleDirectory = _taskBundleDirectoryForAdmissionReport(reportPath);
+  if (bundleDirectory != null) {
+    return _TaskBundleResolution.resolved(bundleDirectory);
+  }
+  if (taskBundleRoot == null) {
+    return const _TaskBundleResolution.unavailable(
+      'task bundle root was not provided and report is not beside a task bundle',
+    );
+  }
+  if (taskId is! String || !_isSafeTaskId(taskId)) {
+    return const _TaskBundleResolution.unavailable(
+      'report taskId is missing or unsafe',
+    );
+  }
+  return const _TaskBundleResolution.unavailable(
+    'task bundle was not found under --task-bundle-root and report is not beside a task bundle',
+  );
 }
 
 Directory? _taskBundleDirectoryForAdmissionReport(String reportPath) {
@@ -388,11 +452,17 @@ Future<List<String>> _taskQaReportPathsFromRoot(String rootPath) async {
   await for (final entity in root.list(recursive: true, followLinks: false)) {
     if (entity is! File) continue;
     final normalized = p.normalize(p.absolute(entity.path));
-    if (p.basename(normalized) != 'admission_report.json') continue;
-    if (p.basename(p.dirname(normalized)) != 'qa') continue;
+    if (!_isTaskQaAdmissionReportPath(normalized)) continue;
     paths.add(normalized);
   }
   return paths..sort();
+}
+
+bool _isTaskQaAdmissionReportPath(String path) {
+  if (p.basename(path) != 'admission_report.json') return false;
+  final reportDirectory = p.dirname(path);
+  return p.basename(reportDirectory) == 'qa' ||
+      p.basename(p.dirname(reportDirectory)) == 'tasks';
 }
 
 Map<String, Object?> _taskQaSummaryFromReports(
@@ -857,4 +927,15 @@ class _ParsedArgs {
   final int minSamplesPerModel;
   final int minHiddenFlakeRunsPerTask;
   final bool failOnBlocked;
+}
+
+class _TaskBundleResolution {
+  const _TaskBundleResolution.resolved(this.bundleDirectory)
+    : unavailableReason = null;
+
+  const _TaskBundleResolution.unavailable(this.unavailableReason)
+    : bundleDirectory = null;
+
+  final Directory? bundleDirectory;
+  final String? unavailableReason;
 }

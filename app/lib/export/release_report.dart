@@ -6743,6 +6743,13 @@ Map<String, Object?> _verifierAudit(
         if (_nonEmptyString(evidence['taskBundleDigest']) case final digest?)
           key: digest,
   };
+  final taskBundleDigestUnavailableReasonByKey = {
+    for (final evidence in taskBundleDigestEvidence)
+      if (_taskQaReportKey(evidence) case final key?)
+        if (_nonEmptyString(evidence['taskBundleDigestUnavailableReason'])
+            case final reason?)
+          key: reason,
+  };
   final checkCounts = SplayTreeMap<String, Map<String, int>>();
   final negativeCaseCounts = SplayTreeMap<String, Map<String, int>>();
   var hiddenVerifierDigestCount = 0;
@@ -7030,13 +7037,18 @@ Map<String, Object?> _verifierAudit(
             ? null
             : taskBundleDigestEvidenceByKey[taskKey];
         if (recomputedDigest == null) {
+          final unavailableReason = taskKey == null
+              ? 'task report identity is invalid'
+              : taskBundleDigestUnavailableReasonByKey[taskKey] ??
+                    'no task bundle digest evidence was produced';
           taskBundleDigestRecomputeMissingCount++;
           tasksWithTaskBundleDigestIssues.add({
             ...taskRef,
             'status': 'unavailable',
+            'reason': unavailableReason,
           });
           blockers.add(
-            'Task QA report ${_taskKey(report)} task bundle digest could not be recomputed from disk.',
+            'Task QA report ${_taskKey(report)} digest evidence unavailable: $unavailableReason.',
           );
         } else if (recomputedDigest != taskBundleDigest) {
           taskBundleDigestMismatchedCount++;
