@@ -176,6 +176,32 @@ index 3333333..4444444 100644
     expect(r.details['changed_lines'], 4);
   });
 
+  test('counts hunk lines whose content starts with pluses', () async {
+    const patch = '''
+diff --git a/lib/a.dart b/lib/a.dart
+index 1111111..2222222 100644
+--- a/lib/a.dart
++++ b/lib/a.dart
+@@ -1 +1,2 @@
+ int a() => 1;
++++counter;
+''';
+    final ev = DiffSizeEvaluator(originalFixturePath: 'lib/a.dart');
+    final r = await ev.evaluate(
+      await _ctxWithFiles(
+        fixtures: const {'lib/a.dart': 'int a() => 1;\n'},
+        workdirContents: const {'lib/a.dart': 'int a() => 1;\n'},
+        extractedCode: patch,
+        track: BenchmarkTrack.agentic,
+      ),
+    );
+
+    expect(r.passed, isTrue);
+    expect(r.details['measurement_source'], 'agent_patch');
+    expect(r.details['changed_file_count'], 1);
+    expect(r.details['changed_lines'], 1);
+  });
+
   test('marks captured agent patch telemetry as truncated', () async {
     const patch = '''
 diff --git a/lib/a.dart b/lib/a.dart

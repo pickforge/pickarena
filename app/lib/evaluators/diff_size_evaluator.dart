@@ -87,9 +87,9 @@ class DiffSizeEvaluator implements Evaluator {
       }
       if (!inHunk) continue;
       if (line.startsWith(r'\ No newline at end of file')) continue;
-      if (line.startsWith('+') && !line.startsWith('+++')) {
+      if (line.startsWith('+')) {
         changedLines++;
-      } else if (line.startsWith('-') && !line.startsWith('---')) {
+      } else if (line.startsWith('-')) {
         changedLines++;
       }
     }

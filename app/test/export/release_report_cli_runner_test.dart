@@ -1160,6 +1160,101 @@ void main() {
     },
   );
 
+  test(
+    'blocks report when task QA admission evaluator schema is stale',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'release_report_task_qa_admission_schema_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+      final leaderboardPath = p.join(tmp.path, 'leaderboard.v1.json');
+      final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
+      await taskQaDir.create(recursive: true);
+      final taskQaSummaryPath = p.join(
+        taskQaDir.path,
+        'admission_summary.json',
+      );
+      final reportPath = p.join(taskQaDir.path, 'tasks', 'a', 'report.json');
+      await Directory(p.dirname(reportPath)).create(recursive: true);
+      await File(
+        leaderboardPath,
+      ).writeAsString(_prettyJson(_leaderboardJson(sampleCount: 1)));
+      await File(
+        taskQaSummaryPath,
+      ).writeAsString(_prettyJson(_taskQaSummaryJson(reportPath: reportPath)));
+      await File(reportPath).writeAsString(
+        _prettyJson(
+          _taskQaReportJson(
+            admissionProvenanceOverride: {
+              'tool': {'name': 'dart_arena_task_qa'},
+              'evaluator': {
+                'schemaVersion': 1,
+                'version': '2026-05-31-master-spec',
+              },
+              'environment': {
+                'dartVersion': '3.9.0',
+                'flutterVersion': '3.35.0',
+                'dependencySnapshot': {
+                  'status': 'present',
+                  'files': {
+                    'pubspec.lock': {
+                      'sha256':
+                          '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+                      'bytes': 12345,
+                    },
+                  },
+                },
+              },
+            },
+          ),
+        ),
+      );
+      final outPath = p.join(tmp.path, 'release', 'release_report.v1.json');
+      final stdoutLines = <String>[];
+
+      final exitCode = await runReleaseReportCli(
+        [
+          '--leaderboard',
+          leaderboardPath,
+          '--task-qa-summary',
+          taskQaSummaryPath,
+          '--out',
+          outPath,
+          '--release-id',
+          '2026-06-task-qa-admission-schema',
+        ],
+        dependencies: ReleaseReportCliDependencies(
+          now: () => DateTime.utc(2026, 6, 4, 3, 9),
+        ),
+        stdoutWriter: stdoutLines.add,
+        stderrWriter: (_) {},
+      );
+
+      expect(exitCode, 0);
+      expect(stdoutLines.single, contains('"status":"blocked"'));
+      final report =
+          jsonDecode(await File(outPath).readAsString())
+              as Map<String, Object?>;
+      final blockers = (report['blockers']! as List<Object?>).join('\n');
+      expect(
+        blockers,
+        contains(
+          'Task QA report task.a@v1 admission evaluator metadata is invalid.',
+        ),
+      );
+      final verifierAudit = report['verifierAudit']! as Map<String, Object?>;
+      final admissionProvenance =
+          verifierAudit['admissionProvenance']! as Map<String, Object?>;
+      expect(admissionProvenance['invalidEvaluatorCount'], 1);
+      final readinessGates = report['readinessGates']! as Map<String, Object?>;
+      final corpusGate = readinessGates['corpus']! as Map<String, Object?>;
+      expect(corpusGate['status'], 'blocked');
+      expect(corpusGate['invalidAdmissionEvaluatorCount'], 1);
+    },
+  );
+
   test('blocks report when loaded task QA execution policy is unsafe', () async {
     final tmp = await Directory.systemTemp.createTemp(
       'release_report_task_qa_execution_policy_',
@@ -9983,6 +10078,66 @@ void main() {
       blockers,
       contains('Leaderboard export has incomplete scoring metadata'),
     );
+  });
+
+  test('blocks report when scoring schema is stale', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'release_report_scoring_schema_',
+    );
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+    final leaderboardPath = p.join(tmp.path, 'leaderboard.v1.json');
+    final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
+    await taskQaDir.create(recursive: true);
+    final taskQaSummaryPath = p.join(taskQaDir.path, 'admission_summary.json');
+    final reportPath = p.join(taskQaDir.path, 'tasks', 'a', 'report.json');
+    await Directory(p.dirname(reportPath)).create(recursive: true);
+    final leaderboard = _leaderboardJson(sampleCount: 2);
+    final scoring = leaderboard['scoring']! as Map<String, Object?>;
+    scoring['schemaVersion'] = 1;
+    await File(leaderboardPath).writeAsString(_prettyJson(leaderboard));
+    await File(
+      taskQaSummaryPath,
+    ).writeAsString(_prettyJson(_taskQaSummaryJson(reportPath: reportPath)));
+    await File(reportPath).writeAsString(_prettyJson(_taskQaReportJson()));
+    final databasePath = p.join(tmp.path, 'dart_arena.sqlite');
+    await _seedDatabase(databasePath);
+    final outPath = p.join(tmp.path, 'release_report.v1.json');
+    final stderrLines = <String>[];
+
+    final exitCode = await runReleaseReportCli(
+      [
+        '--leaderboard',
+        leaderboardPath,
+        '--task-qa-summary',
+        taskQaSummaryPath,
+        '--database',
+        databasePath,
+        '--out',
+        outPath,
+        '--release-id',
+        '2026-06-scoring-schema-gated',
+        '--fail-on-blocked',
+      ],
+      dependencies: ReleaseReportCliDependencies(
+        now: () => DateTime.utc(2026, 6, 3, 23, 46),
+      ),
+      stdoutWriter: (_) {},
+      stderrWriter: stderrLines.add,
+    );
+
+    expect(exitCode, 1);
+    expect(stderrLines.single, contains('"status":"blocked"'));
+    final report =
+        jsonDecode(await File(outPath).readAsString()) as Map<String, Object?>;
+    final blockers = (report['blockers']! as List<Object?>).join('\n');
+    expect(blockers, contains('Leaderboard scoring schema version is stale.'));
+    final readinessGates = report['readinessGates']! as Map<String, Object?>;
+    final scoringGate = readinessGates['scoring']! as Map<String, Object?>;
+    expect(scoringGate['status'], 'blocked');
+    expect(scoringGate['diffSizePolicy'], 'diagnostic_only_full_patch');
+    expect(scoringGate['diffSizeDiagnosticOnly'], isTrue);
   });
 
   test(
