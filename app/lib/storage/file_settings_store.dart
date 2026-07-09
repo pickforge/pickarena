@@ -323,9 +323,8 @@ class FileSettingsStore implements SettingsStore {
 
   Future<void> _ensureSettingsParent() async {
     final parent = _file.parent;
-    final existed = await parent.exists();
     await parent.create(recursive: true);
-    if (_chmodParentWhenCreated && !existed) {
+    if (_chmodParentWhenCreated) {
       await _chmod(parent, '700');
     }
   }
