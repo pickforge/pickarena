@@ -1,5 +1,5 @@
 import 'package:dart_arena/providers/deepseek_provider.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('DeepSeekProvider has correct identity, base URL, and efforts', () {

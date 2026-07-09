@@ -1,6 +1,6 @@
 import 'package:dart_arena/review/preference_ranking.dart';
 import 'package:dart_arena/review/review_battle.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   PreferenceBattleInput battle({

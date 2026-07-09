@@ -1,5 +1,5 @@
 import 'package:dart_arena/core/model_identity.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('parses reasoning effort variants without changing model id', () {

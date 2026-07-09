@@ -1,5 +1,5 @@
 import 'package:dart_arena/runner/subprocess_environment.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('scrubs common secret environment keys while preserving tool env', () {

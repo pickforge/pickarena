@@ -2,7 +2,7 @@ import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/reference_solution.dart';
 import 'package:dart_arena/tasks/flutter_corpus/phase3_seed_tasks.dart';
 import 'package:dart_arena/tasks/task_catalog.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('phase 3 seed tasks are registered with executable metadata', () {

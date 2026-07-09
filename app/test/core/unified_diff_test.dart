@@ -1,5 +1,5 @@
 import 'package:dart_arena/core/unified_diff.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('computeUnifiedDiff', () {

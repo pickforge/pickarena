@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/agent/droid_agent_harness.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {

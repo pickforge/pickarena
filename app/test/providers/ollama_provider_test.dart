@@ -1,6 +1,6 @@
 import 'package:dart_arena/providers/ollama_provider.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockDio extends Mock implements Dio {}

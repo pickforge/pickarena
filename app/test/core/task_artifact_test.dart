@@ -8,7 +8,7 @@ import 'package:dart_arena/core/task_artifact.dart';
 import 'package:dart_arena/core/task_verifier.dart';
 import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {

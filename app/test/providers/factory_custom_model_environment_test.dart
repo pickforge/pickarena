@@ -1,5 +1,5 @@
 import 'package:dart_arena/providers/factory_custom_model_environment.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('finds env references for selected custom model settings', () {

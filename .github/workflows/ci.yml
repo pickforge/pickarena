@@ -21,6 +21,81 @@ jobs:
         working-directory: app
       - run: dart format --set-exit-if-changed bin lib/core lib/export lib/headless lib/runner lib/storage test/core test/headless test/runner test/support
         working-directory: app
+      - name: Dart test pure engine baseline
+        run: |
+          dart test --concurrency=1 \
+            test/agent/agent_harness_test.dart \
+            test/analytics/benchmark_statistics_test.dart \
+            test/analytics/confidence_interval_test.dart \
+            test/analytics/cost_estimator_test.dart \
+            test/analytics/dimensions_test.dart \
+            test/analytics/leaderboard_filter_test.dart \
+            test/analytics/leaderboard_repository_test.dart \
+            test/analytics/result_primitives_test.dart \
+            test/core/code_extractor_json_test.dart \
+            test/core/code_extractor_test.dart \
+            test/core/evaluator_blocking_test.dart \
+            test/core/evaluator_config_test.dart \
+            test/core/loader_io_test.dart \
+            test/core/model_identity_test.dart \
+            test/core/model_response_test.dart \
+            test/core/patch_capture_test.dart \
+            test/core/scoring_combine_test.dart \
+            test/core/scoring_test.dart \
+            test/core/task_artifact_test.dart \
+            test/core/unified_diff_test.dart
+          dart test --concurrency=1 \
+            test/evaluators/analyze_evaluator_test.dart \
+            test/evaluators/compile_evaluator_test.dart \
+            test/evaluators/diff_size_evaluator_test.dart \
+            test/evaluators/evaluator_process_test.dart \
+            test/evaluators/hidden_test_evaluator_test.dart \
+            test/evaluators/llm_judge_evaluator_test.dart \
+            test/evaluators/test_author_evaluator_test.dart \
+            test/evaluators/test_evaluator_test.dart
+          dart test --concurrency=1 \
+            test/export/artifact_bundle_test.dart \
+            test/export/csv_exporter_test.dart \
+            test/export/json_exporter_test.dart \
+            test/export/leaderboard_cli_runner_test.dart \
+            test/export/leaderboard_exporter_test.dart \
+            test/export/md_exporter_test.dart \
+            test/export/readme_publisher_test.dart \
+            test/export/release_report_cli_runner_test.dart \
+            test/headless/headless_benchmark_runner_test.dart \
+            test/headless/headless_cli_config_test.dart
+          dart test --concurrency=1 \
+            test/providers/anthropic_provider_test.dart \
+            test/providers/deepseek_provider_test.dart \
+            test/providers/droid_exec_provider_test.dart \
+            test/providers/factory_custom_model_environment_test.dart \
+            test/providers/ollama_provider_test.dart \
+            test/providers/openai_compatible_provider_test.dart \
+            test/providers/openai_provider_test.dart \
+            test/providers/opencode_go_provider_test.dart \
+            test/providers/openrouter_provider_test.dart \
+            test/review/preference_ranking_test.dart
+          dart test --concurrency=1 \
+            test/runner/codegen_task_executor_blocking_test.dart \
+            test/runner/evaluator_resource_limits_test.dart \
+            test/runner/generated_code_sandbox_test.dart \
+            test/runner/prompt_safety_test.dart \
+            test/runner/prompts/plan_aware_prompt_test.dart \
+            test/runner/run_provenance_test.dart \
+            test/runner/subprocess_environment_test.dart \
+            test/runner/task_qa_cli_runner_test.dart \
+            test/runner/tmpdir_manager_test.dart \
+            test/runner/workdir_manager_dispatch_test.dart \
+            test/runner/workdir_manager_prepare_test.dart \
+            test/runner/workdir_manager_test.dart \
+            test/storage/database_migration_test.dart \
+            test/storage/database_test.dart \
+            test/storage/plans_dao_test.dart \
+            test/storage/run_dao_test.dart \
+            test/storage/run_summary_test.dart \
+            test/tasks/file_backed_task_test.dart \
+            test/tasks/phase3_seed_tasks_test.dart
+        working-directory: app
       - run: dart run --verbosity=error dart_arena:dart_arena_headless --help
         working-directory: app
       - run: flutter analyze

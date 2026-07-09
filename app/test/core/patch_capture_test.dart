@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_arena/core/patch_capture.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 Future<void> _git(Directory dir, List<String> args) async {

@@ -1,7 +1,7 @@
 import 'package:dart_arena/export/md_exporter.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/storage/run_summary.dart';
-import 'package:flutter_test/flutter_test.dart' hide Evaluation;
+import 'package:test/test.dart';
 
 RunSummary _summary({
   String? name,

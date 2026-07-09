@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:dart_arena/evaluators/evaluator_process.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {

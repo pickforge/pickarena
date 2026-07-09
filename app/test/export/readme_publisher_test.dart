@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_arena/export/readme_publisher.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 const _markers = '''

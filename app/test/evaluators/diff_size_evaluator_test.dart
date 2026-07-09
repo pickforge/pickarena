@@ -8,7 +8,7 @@ import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/evaluators/diff_size_evaluator.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 const _original = '''

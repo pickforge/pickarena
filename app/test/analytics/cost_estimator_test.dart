@@ -1,5 +1,5 @@
 import 'package:dart_arena/analytics/cost_estimator.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('estimates microdollar cost from token counts and exact pricing', () {

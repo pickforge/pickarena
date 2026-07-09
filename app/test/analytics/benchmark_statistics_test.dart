@@ -1,7 +1,7 @@
 import 'package:dart_arena/analytics/benchmark_statistics.dart';
 import 'package:dart_arena/analytics/cost_estimator.dart';
 import 'package:dart_arena/storage/database.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 TaskRun _taskRun({
   required String id,
