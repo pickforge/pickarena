@@ -763,6 +763,7 @@ _EvaluatorWeightsParse _parseEvaluatorWeights(Run run) {
     }
     final normalized = <String, Object?>{};
     for (final entry in weights.entries) {
+      if (diagnosticOnlyEvaluatorIds.contains(entry.key)) continue;
       final value = entry.value;
       if (value is num) {
         normalized[entry.key] = value.toDouble();

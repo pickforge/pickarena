@@ -10023,6 +10023,68 @@ void main() {
     expect(benchmark['evaluatorSchemaVersion'], 0);
   });
 
+  test('blocks report when benchmark evaluator schema is stale', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'release_report_benchmark_evaluator_schema_',
+    );
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+    final leaderboardPath = p.join(tmp.path, 'leaderboard.v1.json');
+    final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
+    await taskQaDir.create(recursive: true);
+    final taskQaSummaryPath = p.join(taskQaDir.path, 'admission_summary.json');
+    final reportPath = p.join(taskQaDir.path, 'tasks', 'a', 'report.json');
+    await Directory(p.dirname(reportPath)).create(recursive: true);
+    final leaderboard = _leaderboardJson(sampleCount: 2);
+    final benchmark = leaderboard['benchmark']! as Map<String, Object?>;
+    benchmark['evaluatorSchemaVersion'] = 1;
+    await File(leaderboardPath).writeAsString(_prettyJson(leaderboard));
+    await File(
+      taskQaSummaryPath,
+    ).writeAsString(_prettyJson(_taskQaSummaryJson(reportPath: reportPath)));
+    await File(reportPath).writeAsString(_prettyJson(_taskQaReportJson()));
+    final databasePath = p.join(tmp.path, 'dart_arena.sqlite');
+    await _seedDatabase(databasePath);
+    final outPath = p.join(tmp.path, 'release_report.v1.json');
+    final stderrLines = <String>[];
+
+    final exitCode = await runReleaseReportCli(
+      [
+        '--leaderboard',
+        leaderboardPath,
+        '--task-qa-summary',
+        taskQaSummaryPath,
+        '--database',
+        databasePath,
+        '--out',
+        outPath,
+        '--release-id',
+        '2026-06-benchmark-evaluator-schema-gated',
+        '--fail-on-blocked',
+      ],
+      dependencies: ReleaseReportCliDependencies(
+        now: () => DateTime.utc(2026, 6, 4, 2, 1),
+      ),
+      stdoutWriter: (_) {},
+      stderrWriter: stderrLines.add,
+    );
+
+    expect(exitCode, 1);
+    expect(stderrLines.single, contains('"status":"blocked"'));
+    final report =
+        jsonDecode(await File(outPath).readAsString()) as Map<String, Object?>;
+    final blockers = (report['blockers']! as List<Object?>).join('\n');
+    expect(
+      blockers,
+      contains('Leaderboard benchmark evaluator schema version is stale.'),
+    );
+    final reportBenchmark =
+        (report['leaderboard']! as Map<String, Object?>)['benchmark']!
+            as Map<String, Object?>;
+    expect(reportBenchmark['evaluatorSchemaVersion'], 1);
+  });
+
   test('blocks report when scoring metadata is missing', () async {
     final tmp = await Directory.systemTemp.createTemp(
       'release_report_scoring_',

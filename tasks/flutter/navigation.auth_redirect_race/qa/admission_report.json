@@ -18,7 +18,7 @@
       "name": "dart_arena_task_qa"
     },
     "evaluator": {
-      "schemaVersion": 2,
+      "schemaVersion": 1,
       "version": "2026-05-31-master-spec"
     },
     "environment": {

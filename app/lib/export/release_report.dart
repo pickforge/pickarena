@@ -20,6 +20,7 @@ const _artifactRunResultsSchemaVersion = 1;
 const _taskQaSummarySchemaVersion = 1;
 const _taskQaReportSchemaVersion = 1;
 const _requiredScoringSchemaVersion = 2;
+const _requiredBenchmarkEvaluatorSchemaVersion = 2;
 const _requiredDiffSizePolicy = 'diagnostic_only_full_patch';
 const _diffSizeEvaluatorId = 'diff_size';
 const _requiredTaskQaAdmissionEvaluatorSchemaVersion = 2;
@@ -204,6 +205,9 @@ Map<String, Object?> buildReleaseReport({
     blockers.add(
       'Leaderboard benchmark evaluator schema version metadata is missing.',
     );
+  } else if (evaluatorSchemaVersion <
+      _requiredBenchmarkEvaluatorSchemaVersion) {
+    blockers.add('Leaderboard benchmark evaluator schema version is stale.');
   }
 
   final taskRunCount = _intValue(source['taskRunCount']);

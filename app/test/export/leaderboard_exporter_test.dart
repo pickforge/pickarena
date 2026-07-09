@@ -107,6 +107,57 @@ void main() {
     expect(pricingRegistry['modelCount'], greaterThan(0));
   });
 
+  test(
+    'aggregate-compatible ignores diagnostic-only weight provenance differences',
+    () async {
+      await _seedRun(
+        db,
+        id: 'diag-old',
+        completedAt: DateTime.utc(2026, 5, 1),
+        provenanceJson: jsonEncode({
+          'schemaVersion': 1,
+          'config': {
+            'evaluatorWeights': {'compile': 1.0, 'diff_size': 0.3},
+          },
+        }),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'diag-old-a',
+        runId: 'diag-old',
+        taskId: 'task.a',
+      );
+      await _seedRun(
+        db,
+        id: 'diag-latest',
+        completedAt: DateTime.utc(2026, 5, 2),
+        provenanceJson: jsonEncode({
+          'schemaVersion': 1,
+          'config': {
+            'evaluatorWeights': {'compile': 1.0},
+          },
+        }),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'diag-latest-a',
+        runId: 'diag-latest',
+        taskId: 'task.a',
+      );
+
+      final export = await buildLeaderboardExport(
+        db,
+        options: const LeaderboardExportOptions(track: 'agentic'),
+      );
+
+      final source = export['source']! as Map<String, Object?>;
+      expect(source['anchorRunId'], 'diag-latest');
+      expect(source['runIds'], ['diag-latest', 'diag-old']);
+      expect(source['taskRunCount'], 2);
+      expect(source['warnings'], isEmpty);
+    },
+  );
+
   test('source includes sanitized run provenance readiness summary', () async {
     await _seedRun(
       db,

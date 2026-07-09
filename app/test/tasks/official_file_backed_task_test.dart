@@ -144,7 +144,7 @@ Future<void> _expectOfficialAdmissionReportSatisfied(
   final admissionProvenance = admission['admission'] as Map<String, Object?>;
   expect(admissionProvenance['tool'], {'name': 'dart_arena_task_qa'});
   expect(admissionProvenance['evaluator'], {
-    'schemaVersion': 2,
+    'schemaVersion': 1,
     'version': '2026-05-31-master-spec',
   });
   final environment =
