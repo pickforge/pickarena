@@ -271,6 +271,18 @@ void main() {
     },
   );
 
+  test('reads restore backup when settings file is missing', () async {
+    final fixture = await newSettingsFilePath();
+    final backup = File('${fixture.dir.path}/.settings.json.1.0.bak');
+    await backup.writeAsString(jsonEncode({'readmePath': '/tmp/from-bak.md'}));
+
+    final repo = FileSettingsStore(path: fixture.path, environment: const {});
+
+    expect(await repo.getReadmePath(), '/tmp/from-bak.md');
+    expect(await File(fixture.path).exists(), isTrue);
+    expect(await backup.exists(), isFalse);
+  });
+
   test('run concurrency defaults to 4', () async {
     final repo = await newFileSettingsStore();
     expect(await repo.getRunConcurrency(), 4);
@@ -311,6 +323,18 @@ void main() {
 
     expect(first, startsWith('local-reviewer-'));
     expect(second, first);
+  });
+
+  test('reviewer ID is generated once for concurrent calls', () async {
+    final repo = await newFileSettingsStore();
+
+    final ids = await Future.wait([
+      repo.getOrCreateReviewReviewerId(),
+      repo.getOrCreateReviewReviewerId(),
+    ]);
+
+    expect(ids.first, startsWith('local-reviewer-'));
+    expect(ids.toSet(), hasLength(1));
   });
 
   test('reviewer alias is optional and trimmed', () async {

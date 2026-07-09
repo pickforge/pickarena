@@ -247,15 +247,17 @@ class FileSettingsStore implements SettingsStore {
 
   @override
   Future<String> getOrCreateReviewReviewerId() async {
-    final settings = await _readSettings();
-    final reviewer = _readObject(settings['reviewer']);
-    final existing = _readString(reviewer['id']);
-    if (existing != null && existing.isNotEmpty) return existing;
-    final generated = generateLocalReviewerId();
-    await _updateNestedObject('reviewer', (reviewer) {
+    return _withUpdateLock(() async {
+      final settings = await _readSettings();
+      final reviewer = _readObject(settings['reviewer']);
+      final existing = _readString(reviewer['id']);
+      if (existing != null && existing.isNotEmpty) return existing;
+      final generated = generateLocalReviewerId();
       reviewer['id'] = generated;
+      settings['reviewer'] = reviewer;
+      await _writeSettings(settings);
+      return generated;
     });
-    return generated;
   }
 
   @override
@@ -279,6 +281,7 @@ class FileSettingsStore implements SettingsStore {
   }
 
   Future<Map<String, Object?>> _readSettings() async {
+    await _recoverBackupIfNeeded();
     if (!await _file.exists()) return {};
     final raw = await _file.readAsString();
     if (raw.trim().isEmpty) return {};
@@ -300,8 +303,9 @@ class FileSettingsStore implements SettingsStore {
   Future<void> _writeSettings(Map<String, Object?> settings) async {
     _stripEnvironmentBackedApiKeys(settings);
     await _ensureSettingsParent();
-    final temp = await _createPrivateTempFile();
+    final temp = await _createEmptyTempFile();
     try {
+      await _chmod(temp, '600');
       await temp.writeAsString(
         '${const JsonEncoder.withIndent('  ').convert(settings)}\n',
         flush: true,
@@ -329,12 +333,11 @@ class FileSettingsStore implements SettingsStore {
     }
   }
 
-  Future<File> _createPrivateTempFile() async {
+  Future<File> _createEmptyTempFile() async {
     for (var attempt = 0; attempt < 16; attempt++) {
       final temp = _siblingFile('tmp', attempt);
       try {
         await temp.create(exclusive: true);
-        await _chmod(temp, '600');
         return temp;
       } on PathExistsException {
         continue;
@@ -349,6 +352,30 @@ class FileSettingsStore implements SettingsStore {
       if (!await backup.exists()) return backup;
     }
     throw FileSystemException('Unable to create backup settings file', path);
+  }
+
+  Future<void> _recoverBackupIfNeeded() async {
+    if (await _file.exists()) return;
+    final backup = await _findBackupFile();
+    if (backup == null) return;
+    await _rename(backup, _file.path);
+    await _chmod(_file, '600');
+  }
+
+  Future<File?> _findBackupFile() async {
+    final parent = _file.parent;
+    if (!await parent.exists()) return null;
+    final prefix = '.${p.basename(_file.path)}.';
+    final candidates = <({File file, DateTime modified})>[];
+    await for (final entity in parent.list()) {
+      if (entity is! File) continue;
+      final name = p.basename(entity.path);
+      if (!name.startsWith(prefix) || !name.endsWith('.bak')) continue;
+      candidates.add((file: entity, modified: (await entity.stat()).modified));
+    }
+    if (candidates.isEmpty) return null;
+    candidates.sort((a, b) => b.modified.compareTo(a.modified));
+    return candidates.first.file;
   }
 
   File _siblingFile(String extension, int attempt) {
