@@ -199,6 +199,7 @@ export type LeaderboardTrialSummary = {
 
 export type LeaderboardData = {
   schemaVersion: 1;
+  provisional: boolean;
   generatedAt: string | null;
   benchmark: LeaderboardBenchmark;
   source: LeaderboardSource;
@@ -222,6 +223,7 @@ type LeaderboardFetch = (
 
 const emptyLeaderboard: LeaderboardData = {
   schemaVersion: 1,
+  provisional: false,
   generatedAt: null,
   benchmark: {
     title: 'PickArena by Pickforge Studio',
@@ -333,6 +335,7 @@ function parseLeaderboard(value: unknown): LeaderboardData | null {
 
   return {
     schemaVersion: 1,
+    provisional: value.provisional === true,
     generatedAt: typeof value.generatedAt === 'string' ? value.generatedAt : null,
     benchmark: {
       title,

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dart_arena/core/task_bundle_digest.dart';
 import 'package:dart_arena/export/leaderboard_cli_runner.dart';
 import 'package:dart_arena/export/release_report.dart';
 import 'package:dart_arena/storage/database.dart';
@@ -60,6 +61,7 @@ Future<int> runReleaseReportCli(
           );
     final taskQaReports = <Map<String, Object?>>[];
     final taskQaReportInputs = <Map<String, Object?>>[];
+    final taskBundleDigestEvidence = <Map<String, Object?>>[];
     final reportReadErrors = <String>[];
     final directTaskQaReportPaths = parsed.taskQaSummaryPath == null
         ? await _directTaskQaReportPaths(
@@ -72,14 +74,18 @@ Future<int> runReleaseReportCli(
             directTaskQaReportPaths,
             taskQaReports: taskQaReports,
             taskQaReportInputs: taskQaReportInputs,
+            taskBundleDigestEvidence: taskBundleDigestEvidence,
             reportReadErrors: reportReadErrors,
             fallbackGeneratedAt: dependencies.now().toUtc(),
+            taskBundleRoot: parsed.taskBundleRoot,
           )
         : await _loadTaskQaSummaryReports(
             parsed.taskQaSummaryPath!,
             taskQaReports: taskQaReports,
             taskQaReportInputs: taskQaReportInputs,
+            taskBundleDigestEvidence: taskBundleDigestEvidence,
             reportReadErrors: reportReadErrors,
+            taskBundleRoot: parsed.taskBundleRoot,
           );
 
     Map<String, Map<String, Object?>>? runProvenanceById;
@@ -95,6 +101,7 @@ Future<int> runReleaseReportCli(
       leaderboard: leaderboard,
       taskQaSummary: taskQaSummary,
       taskQaReports: taskQaReports,
+      taskBundleDigestEvidence: taskBundleDigestEvidence,
       taskQaReportReadErrors: reportReadErrors,
       runProvenanceById: runProvenanceById,
       artifactManifest: artifactManifest,
@@ -193,20 +200,22 @@ Future<Map<String, Object?>> _loadTaskQaSummaryReports(
   String taskQaSummaryPath, {
   required List<Map<String, Object?>> taskQaReports,
   required List<Map<String, Object?>> taskQaReportInputs,
+  required List<Map<String, Object?>> taskBundleDigestEvidence,
   required List<String> reportReadErrors,
+  required String? taskBundleRoot,
 }) async {
   final taskQaSummary = _readJsonObject(taskQaSummaryPath);
   final summaryDir = p.dirname(taskQaSummaryPath);
   for (final reportPath in _taskQaReportPaths(taskQaSummary, summaryDir)) {
-    final displayPath = _displayPath(reportPath, summaryDir);
-    try {
-      taskQaReports.add(_readJsonObject(reportPath));
-      taskQaReportInputs.add(
-        await _fileInputArtifact(reportPath, displayPath: displayPath),
-      );
-    } on Object {
-      reportReadErrors.add(displayPath);
-    }
+    await _loadTaskQaReport(
+      reportPath,
+      displayPath: _displayPath(reportPath, summaryDir),
+      taskQaReports: taskQaReports,
+      taskQaReportInputs: taskQaReportInputs,
+      taskBundleDigestEvidence: taskBundleDigestEvidence,
+      reportReadErrors: reportReadErrors,
+      taskBundleRoot: taskBundleRoot,
+    );
   }
   return taskQaSummary;
 }
@@ -215,24 +224,160 @@ Future<Map<String, Object?>> _loadDirectTaskQaReports(
   List<String> taskQaReportPaths, {
   required List<Map<String, Object?>> taskQaReports,
   required List<Map<String, Object?>> taskQaReportInputs,
+  required List<Map<String, Object?>> taskBundleDigestEvidence,
   required List<String> reportReadErrors,
   required DateTime fallbackGeneratedAt,
+  required String? taskBundleRoot,
 }) async {
   for (final reportPath in taskQaReportPaths) {
-    final displayPath = _directTaskQaReportDisplayPath(reportPath);
-    try {
-      taskQaReports.add(_readJsonObject(reportPath));
-      taskQaReportInputs.add(
-        await _fileInputArtifact(reportPath, displayPath: displayPath),
-      );
-    } on Object {
-      reportReadErrors.add(displayPath);
-    }
+    await _loadTaskQaReport(
+      reportPath,
+      displayPath: _directTaskQaReportDisplayPath(reportPath),
+      taskQaReports: taskQaReports,
+      taskQaReportInputs: taskQaReportInputs,
+      taskBundleDigestEvidence: taskBundleDigestEvidence,
+      reportReadErrors: reportReadErrors,
+      taskBundleRoot: taskBundleRoot,
+    );
   }
   return _taskQaSummaryFromReports(
     taskQaReports,
     fallbackGeneratedAt: fallbackGeneratedAt,
   );
+}
+
+Future<void> _loadTaskQaReport(
+  String reportPath, {
+  required String displayPath,
+  required List<Map<String, Object?>> taskQaReports,
+  required List<Map<String, Object?>> taskQaReportInputs,
+  required List<Map<String, Object?>> taskBundleDigestEvidence,
+  required List<String> reportReadErrors,
+  required String? taskBundleRoot,
+}) async {
+  try {
+    final report = _readJsonObject(reportPath);
+    taskQaReports.add(report);
+    taskQaReportInputs.add(
+      await _fileInputArtifact(reportPath, displayPath: displayPath),
+    );
+    taskBundleDigestEvidence.add(
+      await _taskBundleDigestEvidence(
+        report,
+        reportPath,
+        taskBundleRoot: taskBundleRoot,
+      ),
+    );
+  } on Object {
+    reportReadErrors.add(displayPath);
+  }
+}
+
+Future<Map<String, Object?>> _taskBundleDigestEvidence(
+  Map<String, Object?> report,
+  String reportPath, {
+  String? taskBundleRoot,
+}) async {
+  final resolution = _resolveTaskBundleDirectory(
+    reportPath: reportPath,
+    taskId: report['taskId'],
+    taskBundleRoot: taskBundleRoot,
+  );
+  final evidence = <String, Object?>{
+    'taskId': report['taskId'],
+    'taskVersion': report['taskVersion'],
+    'track': report['track'],
+  };
+  final bundleDirectory = resolution.bundleDirectory;
+  if (bundleDirectory == null) {
+    return {
+      ...evidence,
+      'taskBundleDigestUnavailableReason': resolution.unavailableReason,
+    };
+  }
+  try {
+    return {
+      ...evidence,
+      'taskBundleDigest': await taskBundleDigestSha256(bundleDirectory),
+    };
+  } on Object {
+    return {
+      ...evidence,
+      'taskBundleDigestUnavailableReason':
+          'task bundle digest computation failed',
+    };
+  }
+}
+
+_TaskBundleResolution _resolveTaskBundleDirectory({
+  required String reportPath,
+  required Object? taskId,
+  required String? taskBundleRoot,
+}) {
+  if (taskBundleRoot != null) {
+    final bundleDirectory = _taskBundleDirectoryForTaskId(
+      taskBundleRoot,
+      taskId,
+    );
+    if (bundleDirectory != null) {
+      return _TaskBundleResolution.resolved(bundleDirectory);
+    }
+  }
+  final bundleDirectory = _taskBundleDirectoryForAdmissionReport(reportPath);
+  if (bundleDirectory != null) {
+    return _TaskBundleResolution.resolved(bundleDirectory);
+  }
+  if (taskBundleRoot == null) {
+    return const _TaskBundleResolution.unavailable(
+      'task bundle root was not provided and report is not beside a task bundle',
+    );
+  }
+  if (taskId is! String || !_isSafeTaskId(taskId)) {
+    return const _TaskBundleResolution.unavailable(
+      'report taskId is missing or unsafe',
+    );
+  }
+  return const _TaskBundleResolution.unavailable(
+    'task bundle was not found under --task-bundle-root and report is not beside a task bundle',
+  );
+}
+
+Directory? _taskBundleDirectoryForAdmissionReport(String reportPath) {
+  final normalized = p.normalize(p.absolute(reportPath));
+  if (p.basename(normalized) != 'admission_report.json') return null;
+  final reportDirectory = p.dirname(normalized);
+  final bundleDirectory = Directory(
+    p.basename(reportDirectory) == 'qa'
+        ? p.dirname(reportDirectory)
+        : reportDirectory,
+  );
+  if (!File(p.join(bundleDirectory.path, 'task.yaml')).existsSync()) {
+    return null;
+  }
+  return bundleDirectory;
+}
+
+Directory? _taskBundleDirectoryForTaskId(String? rootPath, Object? taskId) {
+  if (rootPath == null || taskId is! String || !_isSafeTaskId(taskId)) {
+    return null;
+  }
+  final root = p.normalize(p.absolute(rootPath));
+  final bundlePath = p.normalize(p.join(root, taskId));
+  if (!p.isWithin(root, bundlePath)) return null;
+  final bundleDirectory = Directory(bundlePath);
+  if (!File(p.join(bundleDirectory.path, 'task.yaml')).existsSync()) {
+    return null;
+  }
+  return bundleDirectory;
+}
+
+bool _isSafeTaskId(String value) {
+  final trimmed = value.trim();
+  return trimmed.isNotEmpty &&
+      trimmed != '.' &&
+      trimmed != '..' &&
+      !trimmed.contains('/') &&
+      !trimmed.contains(r'\');
 }
 
 Future<List<ReleaseArtifactBundleInput>> _loadArtifactBundleInputs(
@@ -307,11 +452,17 @@ Future<List<String>> _taskQaReportPathsFromRoot(String rootPath) async {
   await for (final entity in root.list(recursive: true, followLinks: false)) {
     if (entity is! File) continue;
     final normalized = p.normalize(p.absolute(entity.path));
-    if (p.basename(normalized) != 'admission_report.json') continue;
-    if (p.basename(p.dirname(normalized)) != 'qa') continue;
+    if (!_isTaskQaAdmissionReportPath(normalized)) continue;
     paths.add(normalized);
   }
   return paths..sort();
+}
+
+bool _isTaskQaAdmissionReportPath(String path) {
+  if (p.basename(path) != 'admission_report.json') return false;
+  final reportDirectory = p.dirname(path);
+  return p.basename(reportDirectory) == 'qa' ||
+      p.basename(p.dirname(reportDirectory)) == 'tasks';
 }
 
 Map<String, Object?> _taskQaSummaryFromReports(
@@ -512,6 +663,7 @@ _ParsedArgs? _parseArgs(List<String> args) {
 
   String? leaderboardPath;
   String? taskQaSummaryPath;
+  String? taskBundleRoot;
   final taskQaReportPaths = <String>[];
   final taskQaReportRoots = <String>[];
   final artifactBundleRoots = <String>[];
@@ -534,6 +686,8 @@ _ParsedArgs? _parseArgs(List<String> args) {
         leaderboardPath = _requiredValue(args, ++i, arg);
       case '--task-qa-summary':
         taskQaSummaryPath = _requiredValue(args, ++i, arg);
+      case '--task-bundle-root':
+        taskBundleRoot = _requiredValue(args, ++i, arg);
       case '--task-qa-report':
         taskQaReportPaths.add(_requiredValue(args, ++i, arg));
       case '--task-qa-report-root':
@@ -605,6 +759,9 @@ _ParsedArgs? _parseArgs(List<String> args) {
     taskQaSummaryPath: taskQaSummaryPath == null
         ? null
         : p.normalize(p.absolute(taskQaSummaryPath)),
+    taskBundleRoot: taskBundleRoot == null
+        ? null
+        : p.normalize(p.absolute(taskBundleRoot)),
     taskQaReportPaths: [
       for (final path in taskQaReportPaths) p.normalize(p.absolute(path)),
     ],
@@ -667,14 +824,15 @@ Map<String, Object?> _helpJson() {
   return const {
     'status': 'help',
     'usage':
-        'dart run --verbosity=error dart_arena:dart_arena_release_report --leaderboard ../web/static/data/leaderboard.v1.json --task-qa-summary build/task_qa/admission_summary.json --database .dart_arena/dart_arena.sqlite --artifact-manifest build/release/manifest.json --artifact-checksums build/release/checksums.json --artifact-run-results build/release/run_results.v1.json --artifact-results-csv build/release/results.csv --artifact-report build/release/report.md --out build/release/release_report.v1.json',
+        'dart run --verbosity=error dart_arena:dart_arena_release_report --leaderboard ../web/static/data/leaderboard.v1.json --task-qa-summary build/task_qa/admission_summary.json --task-bundle-root ../tasks/flutter --database .dart_arena/dart_arena.sqlite --artifact-manifest build/release/manifest.json --artifact-checksums build/release/checksums.json --artifact-run-results build/release/run_results.v1.json --artifact-results-csv build/release/results.csv --artifact-report build/release/report.md --out build/release/release_report.v1.json',
     'taskQaInputs':
-        'Use --task-qa-summary for a generated admission summary, repeat --task-qa-report for stored per-task admission_report.json files, or repeat --task-qa-report-root to discover qa/admission_report.json files under task roots.',
+        'Use --task-bundle-root with --task-qa-summary to recompute source bundle digests, repeat --task-qa-report for stored per-task admission_report.json files, or repeat --task-qa-report-root to discover qa/admission_report.json files under task roots.',
     'artifactBundleInputs':
         'Use individual artifact bundle files for a single run, or repeat --artifact-bundle-root for aggregate-compatible releases spanning multiple run bundles.',
     'options': [
       {'name': '--leaderboard', 'value': 'path', 'required': true},
       {'name': '--task-qa-summary', 'value': 'path', 'required': false},
+      {'name': '--task-bundle-root', 'value': 'path', 'required': false},
       {
         'name': '--task-qa-report',
         'value': 'path',
@@ -735,6 +893,7 @@ class _ParsedArgs {
   const _ParsedArgs({
     required this.leaderboardPath,
     required this.taskQaSummaryPath,
+    required this.taskBundleRoot,
     required this.taskQaReportPaths,
     required this.taskQaReportRoots,
     required this.artifactBundleRoots,
@@ -753,6 +912,7 @@ class _ParsedArgs {
 
   final String leaderboardPath;
   final String? taskQaSummaryPath;
+  final String? taskBundleRoot;
   final List<String> taskQaReportPaths;
   final List<String> taskQaReportRoots;
   final List<String> artifactBundleRoots;
@@ -767,4 +927,15 @@ class _ParsedArgs {
   final int minSamplesPerModel;
   final int minHiddenFlakeRunsPerTask;
   final bool failOnBlocked;
+}
+
+class _TaskBundleResolution {
+  const _TaskBundleResolution.resolved(this.bundleDirectory)
+    : unavailableReason = null;
+
+  const _TaskBundleResolution.unavailable(this.unavailableReason)
+    : bundleDirectory = null;
+
+  final Directory? bundleDirectory;
+  final String? unavailableReason;
 }

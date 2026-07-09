@@ -168,6 +168,7 @@ void main() {
             },
           },
           'flutterVersion': 'test-flutter',
+          'gitDirty': false,
         },
       });
       expect(checks['baselineHiddenFailed'], isTrue);
@@ -263,6 +264,7 @@ class _FixedTaskQaEnvironmentProvider
     return const {
       'flutterVersion': 'test-flutter',
       'dartVersion': 'test-dart',
+      'gitDirty': false,
       'dependencySnapshot': {
         'status': 'present',
         'files': {

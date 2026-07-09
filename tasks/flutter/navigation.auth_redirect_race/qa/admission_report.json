@@ -18,7 +18,7 @@
       "name": "dart_arena_task_qa"
     },
     "evaluator": {
-      "schemaVersion": 1,
+      "schemaVersion": 2,
       "version": "2026-05-31-master-spec"
     },
     "environment": {
@@ -27,8 +27,8 @@
         "status": "present",
         "files": {
           "pubspec.yaml": {
-            "sha256": "1a77a2d12be10b5c49655dbf690c7aca5593a6d934b523763549077517314f4e",
-            "bytes": 6336
+            "sha256": "2a498deb8c1429354f0bc37237f3542c6627d8abe738e9100f3cd41dc8cd402a",
+            "bytes": 3005
           },
           "pubspec.lock": {
             "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
@@ -37,12 +37,13 @@
         }
       },
       "flutterVersion": "3.41.6",
-      "gitCommit": "68321eeaff3fbf5a1bfee2893c2fab3b0b446d0a",
-      "gitDirty": true,
+      "gitCommit": "1e76b02fc4efaa4b96e1d5a58ae53a7ee8f8a598",
+      "gitDirty": false,
       "hostPlatform": "linux",
       "locale": "C.UTF-8",
       "operatingSystemVersion": "Linux 7.1.3-1-cachyos #1 SMP PREEMPT_DYNAMIC Mon, 06 Jul 2026 19:44:10 +0000"
-    }
+    },
+    "taskBundleDigest": "9a0ebc4d1d604f7166d9736888afe13fb7ef5c682d2c37a3171f1a6cc7c4d89c"
   },
   "executionPolicy": {
     "allowInternet": false,
@@ -177,7 +178,7 @@
     }
   },
   "status": "admitted",
-  "generatedAt": "2026-07-08T20:16:22.780483Z",
+  "generatedAt": "2026-07-09T17:17:53.035215Z",
   "checks": {
     "baselineHiddenFailed": true,
     "referencePublicPassed": true,
@@ -247,8 +248,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_navigati_caa3d79d6788...                      \nNo issues found! (ran in 10.9s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_navigati_caa3d79d6788...                      \nNo issues found! (ran in 11.5s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -262,8 +263,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_navigati_caa3d79d6788...                      \nNo issues found! (ran in 10.4s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_navigati_caa3d79d6788...                      \nNo issues found! (ran in 10.7s)\n",
             "tool": "flutter"
           }
         },
@@ -279,7 +279,6 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -289,9 +288,12 @@
           "score": 1.0,
           "rationale": "changed_lines=0",
           "details": {
-            "original_lines": 23,
-            "new_lines": 23,
             "changed_lines": 0,
+            "changed_file_count": 0,
+            "compared_file_count": 3,
+            "measurement_source": "workspace_fixtures",
+            "original_lines": 56,
+            "new_lines": 56,
             "score_k": 20
           }
         }
@@ -339,8 +341,8 @@
           "rationale": "analysis errors present",
           "details": {
             "exitCode": 1,
-            "stdout": "Analyzing segment_navigati_caa3d79d6788...                      \n\n  error • The function 'AuthRedirectController' isn't defined • test/auth_router_test.dart:6:24 • undefined_function\n  error • Undefined name 'AuthRedirectController' • test/auth_router_test.dart:10:7 • undefined_identifier\n  error • The function 'AuthRedirectController' isn't defined • test/auth_router_test.dart:15:24 • undefined_function\n\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n3 issues found. (ran in 11.0s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_navigati_caa3d79d6788...                      \n\n  error • The function 'AuthRedirectController' isn't defined • test/auth_router_test.dart:6:24 • undefined_function\n  error • Undefined name 'AuthRedirectController' • test/auth_router_test.dart:10:7 • undefined_identifier\n  error • The function 'AuthRedirectController' isn't defined • test/auth_router_test.dart:15:24 • undefined_function\n\n",
+            "stderr": "3 issues found. (ran in 11.6s)\n",
             "tool": "flutter"
           }
         },
@@ -354,8 +356,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 1,
-            "raw_stdout": "Analyzing segment_navigati_caa3d79d6788...                      \n\n  error • The function 'AuthRedirectController' isn't defined • test/auth_router_test.dart:6:24 • undefined_function\n  error • Undefined name 'AuthRedirectController' • test/auth_router_test.dart:10:7 • undefined_identifier\n  error • The function 'AuthRedirectController' isn't defined • test/auth_router_test.dart:15:24 • undefined_function\n\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n3 issues found. (ran in 10.3s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_navigati_caa3d79d6788...                      \n\n  error • The function 'AuthRedirectController' isn't defined • test/auth_router_test.dart:6:24 • undefined_function\n  error • Undefined name 'AuthRedirectController' • test/auth_router_test.dart:10:7 • undefined_identifier\n  error • The function 'AuthRedirectController' isn't defined • test/auth_router_test.dart:15:24 • undefined_function\n\n",
+            "stderr": "3 issues found. (ran in 10.5s)\n",
             "tool": "flutter"
           }
         },
@@ -378,9 +380,12 @@
           "score": 0.3166367693790533,
           "rationale": "changed_lines=23",
           "details": {
-            "original_lines": 23,
-            "new_lines": 4,
             "changed_lines": 23,
+            "changed_file_count": 1,
+            "compared_file_count": 3,
+            "measurement_source": "workspace_fixtures",
+            "original_lines": 56,
+            "new_lines": 37,
             "score_k": 20
           }
         }
@@ -403,8 +408,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_navigati_caa3d79d6788...                      \nNo issues found! (ran in 11.9s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_navigati_caa3d79d6788...                      \nNo issues found! (ran in 11.4s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -418,8 +423,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_navigati_caa3d79d6788...                      \nNo issues found! (ran in 10.6s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_navigati_caa3d79d6788...                      \nNo issues found! (ran in 10.6s)\n",
             "tool": "flutter"
           }
         },
@@ -435,7 +439,6 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -445,9 +448,12 @@
           "score": 0.3499377491111553,
           "rationale": "changed_lines=21",
           "details": {
-            "original_lines": 23,
-            "new_lines": 12,
             "changed_lines": 21,
+            "changed_file_count": 1,
+            "compared_file_count": 3,
+            "measurement_source": "workspace_fixtures",
+            "original_lines": 56,
+            "new_lines": 45,
             "score_k": 20
           }
         }

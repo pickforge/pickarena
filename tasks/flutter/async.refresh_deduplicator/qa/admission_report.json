@@ -19,7 +19,7 @@
       "name": "dart_arena_task_qa"
     },
     "evaluator": {
-      "schemaVersion": 1,
+      "schemaVersion": 2,
       "version": "2026-05-31-master-spec"
     },
     "environment": {
@@ -28,8 +28,8 @@
         "status": "present",
         "files": {
           "pubspec.yaml": {
-            "sha256": "1a77a2d12be10b5c49655dbf690c7aca5593a6d934b523763549077517314f4e",
-            "bytes": 6336
+            "sha256": "2a498deb8c1429354f0bc37237f3542c6627d8abe738e9100f3cd41dc8cd402a",
+            "bytes": 3005
           },
           "pubspec.lock": {
             "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
@@ -38,12 +38,13 @@
         }
       },
       "flutterVersion": "3.41.6",
-      "gitCommit": "68321eeaff3fbf5a1bfee2893c2fab3b0b446d0a",
-      "gitDirty": true,
+      "gitCommit": "1e76b02fc4efaa4b96e1d5a58ae53a7ee8f8a598",
+      "gitDirty": false,
       "hostPlatform": "linux",
       "locale": "C.UTF-8",
       "operatingSystemVersion": "Linux 7.1.3-1-cachyos #1 SMP PREEMPT_DYNAMIC Mon, 06 Jul 2026 19:44:10 +0000"
-    }
+    },
+    "taskBundleDigest": "8aba454a0adef27c45c2418b3c567020b564a3a7007cd2989ae2278403925f04"
   },
   "executionPolicy": {
     "allowInternet": false,
@@ -193,7 +194,7 @@
     }
   },
   "status": "admitted",
-  "generatedAt": "2026-07-08T20:21:57.304910Z",
+  "generatedAt": "2026-07-09T17:08:31.963964Z",
   "checks": {
     "baselineHiddenFailed": true,
     "referencePublicPassed": true,
@@ -216,7 +217,7 @@
   "verifierQualityAudit": {
     "falsePositiveCount": 0,
     "falseNegativeCount": 0,
-    "disagreementCount": 2,
+    "disagreementCount": 3,
     "infrastructureErrorCount": 0,
     "flakeRunCount": 3,
     "flakeFailureCount": 0,
@@ -253,19 +254,19 @@
       "description": "Leaves the duplicate-refresh and stale-overwrite behavior unchanged.",
       "kind": "noop",
       "prepare_passed": true,
-      "public_passed": false,
+      "public_passed": true,
       "hidden_passed": false,
       "rejected": true,
       "public_results": [
         {
           "evaluator_id": "compile",
-          "passed": false,
-          "score": 0.0,
-          "rationale": "analysis errors present",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
           "details": {
-            "exitCode": -9,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      ",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "exitCode": 0,
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 12.5s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -279,22 +280,23 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 11.2s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 10.6s)\n",
             "tool": "flutter"
           }
         },
         {
           "evaluator_id": "test",
-          "passed": false,
-          "score": 0.0,
-          "rationale": "blocked by compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "2/2 tests passed",
           "details": {
-            "blocked": true,
-            "blocked_by": "compile",
-            "blocked_by_rationale": "analysis errors present",
-            "skipped": true,
-            "reason": "blocked by compile"
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
           }
         },
         {
@@ -303,14 +305,54 @@
           "score": 1.0,
           "rationale": "changed_lines=0",
           "details": {
-            "original_lines": 72,
-            "new_lines": 72,
             "changed_lines": 0,
+            "changed_file_count": 0,
+            "compared_file_count": 3,
+            "measurement_source": "workspace_fixtures",
+            "original_lines": 138,
+            "new_lines": 138,
             "score_k": 20
           }
         }
       ],
-      "hidden_results": []
+      "hidden_results": [
+        {
+          "evaluator_id": "refresh_deduplicator_hidden",
+          "passed": false,
+          "score": 0.3333333333333333,
+          "rationale": "2/6 hidden tests passed",
+          "details": {
+            "total": 6,
+            "passed": 2,
+            "failed": 3,
+            "errored": 1,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 4,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/feed_refresh_controller_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/feed_refresh_controller_hidden_test.dart"
+            ]
+          }
+        }
+      ]
     },
     {
       "id": "api_breaking",
@@ -329,7 +371,7 @@
           "details": {
             "exitCode": 1,
             "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \n\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:22:31 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:31:23 • undefined_getter\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:39:36 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:44:23 • undefined_getter\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:53:23 • undefined_getter\n\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n5 issues found. (ran in 11.6s)\n",
+            "stderr": "5 issues found. (ran in 11.6s)\n",
             "tool": "flutter"
           }
         },
@@ -344,7 +386,7 @@
             "infos": 0,
             "exit_code": 1,
             "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \n\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:22:31 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:31:23 • undefined_getter\n  error • The method 'refresh' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:39:36 • undefined_method\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:44:23 • undefined_getter\n  error • The getter 'canRetry' isn't defined for the type 'FeedRefreshController' • test/feed_refresh_controller_test.dart:53:23 • undefined_getter\n\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n5 issues found. (ran in 10.9s)\n",
+            "stderr": "5 issues found. (ran in 10.6s)\n",
             "tool": "flutter"
           }
         },
@@ -367,9 +409,12 @@
           "score": 0.3166367693790533,
           "rationale": "changed_lines=23",
           "details": {
-            "original_lines": 72,
-            "new_lines": 79,
             "changed_lines": 23,
+            "changed_file_count": 1,
+            "compared_file_count": 3,
+            "measurement_source": "workspace_fixtures",
+            "original_lines": 138,
+            "new_lines": 145,
             "score_k": 20
           }
         }
@@ -392,8 +437,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 11.8s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 12.7s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -407,8 +452,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 10.8s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 10.5s)\n",
             "tool": "flutter"
           }
         },
@@ -424,7 +468,6 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
@@ -434,9 +477,12 @@
           "score": 0.6703200460356393,
           "rationale": "changed_lines=8",
           "details": {
-            "original_lines": 72,
-            "new_lines": 78,
             "changed_lines": 8,
+            "changed_file_count": 1,
+            "compared_file_count": 3,
+            "measurement_source": "workspace_fixtures",
+            "original_lines": 138,
+            "new_lines": 144,
             "score_k": 20
           }
         }
@@ -492,8 +538,8 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 11.8s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 11.5s)\n",
+            "stderr": "",
             "tool": "flutter"
           }
         },
@@ -507,8 +553,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 10.8s)\n",
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_async.re_cc567ca8ad40...                      \nNo issues found! (ran in 10.6s)\n",
             "tool": "flutter"
           }
         },
@@ -524,19 +569,21 @@
             "errored": 0,
             "failures": [],
             "exit_code": 0,
-            "stderr": "Command exited with code 255: fetch --tags\nStandard error: error: cannot open '.git/FETCH_HEAD': Read-only file system\n\n",
             "tool": "flutter"
           }
         },
         {
           "evaluator_id": "diff_size",
           "passed": true,
-          "score": 1.0,
-          "rationale": "changed_lines=0",
+          "score": 0.04735892439114093,
+          "rationale": "changed_lines=61",
           "details": {
-            "original_lines": 72,
-            "new_lines": 72,
-            "changed_lines": 0,
+            "changed_lines": 61,
+            "changed_file_count": 1,
+            "compared_file_count": 3,
+            "measurement_source": "workspace_fixtures",
+            "original_lines": 138,
+            "new_lines": 97,
             "score_k": 20
           }
         }
