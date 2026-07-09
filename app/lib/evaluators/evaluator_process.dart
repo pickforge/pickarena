@@ -52,15 +52,19 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
     baseEnvironment: helperBaseEnvironment,
     additionalDeniedKeys: helperDeniedEnvironmentKeys,
   );
+  final resolvedExecutable = resolveFlutterExecutable(
+    executable,
+    environment: environment,
+  );
   final processStart = generatedCodeSandbox == null
       ? SandboxedProcessStart(
-          executable: executable,
+          executable: resolvedExecutable,
           arguments: arguments,
           workingDirectory: workingDirectory,
           environment: environment,
         )
       : await generatedCodeSandbox.wrapProcess(
-          executable: executable,
+          executable: resolvedExecutable,
           arguments: arguments,
           workingDirectory: workingDirectory,
           environment: environment,

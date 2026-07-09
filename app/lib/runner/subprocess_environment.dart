@@ -20,6 +20,7 @@ Map<String, String> benchmarkSubprocessEnvironment({
       if (!_isSensitiveEnvironmentKey(entry.key, denied, allowedSensitive))
         entry.key: entry.value,
   };
+  _preserveFlutterToolchain(source, environment, denied);
   if (allowReentrantFlutterTool && !denied.contains('FLUTTER_ALREADY_LOCKED')) {
     environment['FLUTTER_ALREADY_LOCKED'] = 'true';
   }
@@ -42,6 +43,42 @@ Map<String, String> benchmarkSubprocessEnvironment({
       ..['LOCALAPPDATA'] = p.join(homeDirectory, 'AppData', 'Local');
   }
   return environment;
+}
+
+String resolveFlutterExecutable(
+  String executable, {
+  Map<String, String>? environment,
+}) {
+  if (executable != 'flutter') return executable;
+  final flutterRoot = (environment ?? Platform.environment)['FLUTTER_ROOT'];
+  if (flutterRoot == null || flutterRoot.isEmpty) return executable;
+  return p.join(
+    flutterRoot,
+    'bin',
+    Platform.isWindows ? 'flutter.bat' : 'flutter',
+  );
+}
+
+void _preserveFlutterToolchain(
+  Map<String, String> source,
+  Map<String, String> environment,
+  Set<String> denied,
+) {
+  if (denied.contains('FLUTTER_ROOT')) return;
+  final flutterRoot = source['FLUTTER_ROOT'];
+  if (flutterRoot == null || flutterRoot.isEmpty) return;
+
+  environment['FLUTTER_ROOT'] = flutterRoot;
+  if (denied.contains('PATH')) return;
+
+  final flutterBin = p.join(flutterRoot, 'bin');
+  final pathEntries = (environment['PATH'] ?? '')
+      .split(Platform.pathSeparator)
+      .where((entry) => entry.isNotEmpty && entry != flutterBin);
+  environment['PATH'] = [
+    flutterBin,
+    ...pathEntries,
+  ].join(Platform.pathSeparator);
 }
 
 bool _isSensitiveEnvironmentKey(
