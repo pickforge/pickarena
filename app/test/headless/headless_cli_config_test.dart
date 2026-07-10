@@ -129,6 +129,60 @@ void main() {
       );
     });
 
+    test('parses command-template presets and custom templates', () {
+      final base = _validConfig()..remove('judge');
+      final preset = parseHeadlessCliConfig({
+        ...base,
+        'providers': [
+          {
+            'type': 'agent_cli',
+            'id': 'codex-cli',
+            'displayName': 'Codex CLI',
+            'models': ['gpt-5.5'],
+            'harness': 'codex',
+            'agentVersion': '1.0.0',
+          },
+        ],
+      }, configPath: p.join(Directory.current.path, 'run.json'));
+      expect(preset.providers.single.harness, 'codex');
+
+      final custom = parseHeadlessCliConfig({
+        ...base,
+        'providers': [
+          {
+            'type': 'agent_cli',
+            'id': 'fake-cli',
+            'displayName': 'Fake CLI',
+            'models': ['fake'],
+            'harness': {
+              'name': 'fake',
+              'version': '1.0',
+              'executable': 'fake',
+              'arguments': ['{workspace}', '{instruction}'],
+            },
+          },
+        ],
+      }, configPath: p.join(Directory.current.path, 'run.json'));
+      expect(custom.providers.single.commandTemplate!.executable, 'fake');
+    });
+
+    test('rejects command-template agents for droid providers', () {
+      expect(
+        () => parseHeadlessCliConfig({
+          ..._validConfig(),
+          'providers': [
+            {
+              'type': 'droid',
+              'models': ['x'],
+              'harness': 'codex',
+              'agentVersion': '1.0.0',
+            },
+          ],
+        }, configPath: p.join(Directory.current.path, 'run.json')),
+        throwsA(isA<HeadlessCliConfigException>()),
+      );
+    });
+
     test('rejects malformed required fields and types', () {
       expect(
         () => parseHeadlessCliConfig({

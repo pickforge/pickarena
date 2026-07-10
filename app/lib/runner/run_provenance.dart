@@ -49,6 +49,7 @@ class RunProvenanceConfig {
     this.generatedCodeSandboxRequired = false,
     this.generatedCodeSandboxEnforced = false,
     this.generatedCodeSandboxBackend,
+    this.agentHarnessProvenance = const {},
   });
 
   final List<BenchmarkTask> tasks;
@@ -61,6 +62,7 @@ class RunProvenanceConfig {
   final bool generatedCodeSandboxRequired;
   final bool generatedCodeSandboxEnforced;
   final String? generatedCodeSandboxBackend;
+  final Map<String, Map<String, Object?>> agentHarnessProvenance;
 }
 
 class DefaultRunProvenanceEnvironmentProvider
@@ -260,6 +262,7 @@ Future<String> buildRunProvenanceJson({
         if (config.generatedCodeSandboxBackend != null)
           'backend': config.generatedCodeSandboxBackend,
       },
+      'agentHarnesses': config.agentHarnessProvenance,
       'pricingRegistry': pricingRegistryProvenance(),
       'modelsByProvider': _sortedModelsMap(normalizedModelsByProvider),
       'evaluatorWeights': _sortedNumberMap(evaluatorWeights),

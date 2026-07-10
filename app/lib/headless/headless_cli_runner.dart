@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/agent/agent_harness.dart';
+import 'package:dart_arena/agent/command_template_agent_harness.dart';
 import 'package:dart_arena/agent/droid_agent_harness.dart';
 import 'package:dart_arena/agent/minimal_agent_harness.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_registry.dart';
+import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/headless/headless_benchmark_runner.dart';
 import 'package:dart_arena/headless/headless_cli_config.dart';
 import 'package:dart_arena/providers/anthropic_provider.dart';
@@ -117,6 +119,11 @@ Future<int> runHeadlessCli(
     await Directory(cliConfig.outputDir).create(recursive: true);
     database = AppDatabase(NativeDatabase(File(cliConfig.databasePath)));
 
+    final agentHarnesses = dependencies.agentHarnessBuilder(
+      cliConfig,
+      providers,
+      generatedCodeSandbox,
+    );
     runnerInvoked = true;
     final result = await dependencies.runner.run(
       HeadlessBenchmarkConfig(
@@ -128,11 +135,11 @@ Future<int> runHeadlessCli(
           for (final provider in cliConfig.providers)
             provider.id: provider.models,
         },
-        agentHarnesses: dependencies.agentHarnessBuilder(
-          cliConfig,
-          providers,
-          generatedCodeSandbox,
-        ),
+        agentHarnesses: agentHarnesses,
+        agentHarnessProvenance: {
+          for (final harness in agentHarnesses)
+            harness.id: _agentHarnessProvenance(harness),
+        },
         evaluatorConfig: evaluatorConfig,
         evaluatorWeights: cliConfig.evaluatorWeights,
         workdirManager: WorkdirManager(
@@ -354,6 +361,8 @@ ModelProvider _defaultProviderBuilder(
       );
     case 'droid':
       return DroidExecProvider();
+    case 'agent_cli':
+      return _AgentCliProvider(config);
     default:
       throw HeadlessCliConfigException(
         'unsupported provider type: ${config.type}',
@@ -383,8 +392,55 @@ List<AgentHarness> _defaultAgentHarnessBuilder(
           providersById[configProvider.id],
           config,
           generatedCodeSandbox,
+        )
+      else if (configProvider.commandTemplate != null ||
+          CommandTemplateAgentConfig.presets.containsKey(
+            configProvider.harness,
+          ))
+        CommandTemplateAgentHarness(
+          providerId: configProvider.id,
+          config:
+              configProvider.commandTemplate ??
+              CommandTemplateAgentConfig.preset(
+                configProvider.harness!,
+                version: configProvider.agentVersion!,
+              ),
+          deniedEnvironmentKeys: _configuredApiKeyEnvNames(config),
+          generatedCodeSandbox: generatedCodeSandbox,
         ),
   ];
+}
+
+class _AgentCliProvider implements ModelProvider {
+  const _AgentCliProvider(this.config);
+
+  final HeadlessCliProviderConfig config;
+
+  @override
+  String get id => config.id;
+
+  @override
+  String get displayName => config.displayName;
+
+  @override
+  ProviderMode get mode => ProviderMode.agent;
+
+  @override
+  Future<List<ModelInfo>> listModels() async => [
+    for (final model in config.models) ModelInfo(id: model),
+  ];
+
+  @override
+  Future<ModelResponse> generate({
+    required String prompt,
+    required String model,
+    Duration? timeout,
+  }) => throw StateError(
+    'agent_cli providers are only available via an agent harness',
+  );
+
+  @override
+  void dispose() {}
 }
 
 AgentHarness _minimalHarness(
@@ -401,7 +457,7 @@ AgentHarness _minimalHarness(
   }
   return MinimalAgentHarness(
     provider: provider,
-    harnessId: configProvider.id,
+    harnessId: '${configProvider.id}:minimal',
     deniedEnvironmentKeys: _configuredApiKeyEnvNames(config),
     generatedCodeSandbox: generatedCodeSandbox,
     requireGeneratedCodeSandbox: config.requireGeneratedCodeSandbox,
@@ -417,6 +473,13 @@ BenchmarkTask _resolveTask(TaskRegistry registry, String taskId) {
 }
 
 String? _platformEnvironmentReader(String name) => Platform.environment[name];
+
+Map<String, Object?> _agentHarnessProvenance(AgentHarness harness) {
+  if (harness is AgentHarnessProvenance) {
+    return (harness as AgentHarnessProvenance).provenance;
+  }
+  return const {'kind': 'unknown', 'track': 'scaffold-dependent'};
+}
 
 DateTime _now() => DateTime.now();
 
