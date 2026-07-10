@@ -200,19 +200,21 @@ class WorkdirManager {
       '--whitespace=nowarn',
       '-',
     ], stdin: patch);
-    await _stripRestrictedPaths(gradingDir);
+    await _sanitizeGradingWorkspace(gradingDir);
   }
 
-  Future<void> _stripRestrictedPaths(Directory dir) async {
-    final restricted = <FileSystemEntity>[];
+  Future<void> _sanitizeGradingWorkspace(Directory dir) async {
+    final toRemove = <FileSystemEntity>[];
     await for (final entity in dir.list(recursive: true, followLinks: false)) {
       final relative = p
           .relative(entity.path, from: dir.path)
           .replaceAll('\\', '/');
       if (relative.split('/').first == '.git') continue;
-      if (_shouldExcludeWorkspacePath(relative)) restricted.add(entity);
+      if (entity is Link || _shouldExcludeWorkspacePath(relative)) {
+        toRemove.add(entity);
+      }
     }
-    for (final entity in restricted) {
+    for (final entity in toRemove) {
       try {
         await entity.delete(recursive: true);
       } on FileSystemException {
