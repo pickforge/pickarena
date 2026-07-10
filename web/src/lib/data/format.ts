@@ -66,6 +66,47 @@ export function formatModelName(providerId: string, modelId: string): string {
   return `${providerId} / ${modelId}`;
 }
 
+type ModelIdentity = {
+  providerId: string;
+  modelId: string;
+  displayName?: string | null;
+  providerLabel?: string | null;
+};
+
+export function modelName(entity: ModelIdentity): string {
+  if (entity.displayName && entity.displayName.length > 0) return entity.displayName;
+  return entity.modelId.replace(/^custom:/, '');
+}
+
+export function providerName(entity: ModelIdentity): string {
+  if (entity.providerLabel && entity.providerLabel.length > 0) {
+    return entity.providerLabel;
+  }
+  return entity.providerId;
+}
+
+const EM_DASH = '—';
+
+export function percentText(value: number | null): string {
+  return isFiniteNumber(value) ? formatPercent(value) : EM_DASH;
+}
+
+export function countText(value: number | null): string {
+  return isFiniteNumber(value) ? formatCount(value) : EM_DASH;
+}
+
+export function costText(value: number | null): string {
+  return isFiniteNumber(value) ? formatCost(value) : EM_DASH;
+}
+
+export function durationText(value: number | null): string {
+  return isFiniteNumber(value) ? formatDuration(value) : EM_DASH;
+}
+
+export function tokensText(value: number | null): string {
+  return isFiniteNumber(value) ? formatTokens(value) : EM_DASH;
+}
+
 function isFiniteNumber(value: number | null): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }

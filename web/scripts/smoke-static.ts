@@ -15,7 +15,8 @@ const requiredBrandingAssets = [
   'pickforge_logo.png',
   'pickforge_mark.png'
 ];
-const requiredAnchors = ['leaderboard', 'tasks', 'methodology'];
+const requiredAnchors = ['leaderboard'];
+const requiredRoutePages = ['methodology', 'tasks', 'run'];
 const publicTitle = 'PickArena by Pickforge Studio';
 const basePath = normalizeBasePath(process.env.PUBLIC_BASE_PATH ?? '');
 const appAssetPath = `${basePath}/_app/`;
@@ -58,9 +59,23 @@ async function main(): Promise<void> {
 
   assertNoVisibleRenderingArtifacts(html);
 
+  for (const route of requiredRoutePages) {
+    const routePath = resolve(buildRoot, `${route}.html`);
+    await assertFileExists(routePath);
+    const routeHtml = await readFile(routePath, 'utf8');
+    if (!routeHtml.includes(publicTitle)) {
+      throw new Error(`Missing public title in ${repoRelative(routePath)}`);
+    }
+    if (!routeHtml.includes(appAssetPath)) {
+      throw new Error(`Missing SvelteKit asset path in ${repoRelative(routePath)}`);
+    }
+    assertNoVisibleRenderingArtifacts(routeHtml);
+  }
+
   console.log('Static smoke passed:');
   console.log(`- base path: ${basePath || '(root)'}`);
   console.log(`- ${repoRelative(indexPath)}`);
+  console.log(`- route pages: ${requiredRoutePages.join(', ')}`);
   console.log(`- ${repoRelative(leaderboardPath)}`);
   console.log(
     `- ${requiredBrandingAssets
