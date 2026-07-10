@@ -253,7 +253,12 @@ class HeadlessBenchmarkRunner {
     await config.runDao.updateRunProvenance(config.runId, provenanceJson);
     cancellation.throwIfCancelled();
 
-    await _runCombos(config, plannedCombos, cancellation);
+    final results = await _runCombos(config, plannedCombos, cancellation);
+    cancellation.throwIfCancelled();
+    await config.runDao.updateRunProvenance(
+      config.runId,
+      appendResultProvenance(provenanceJson, results),
+    );
     cancellation.throwIfCancelled();
     await config.runDao.finishRun(config.runId, config.now());
     cancellation.throwIfCancelled();
@@ -352,7 +357,7 @@ class HeadlessBenchmarkRunner {
     return combos;
   }
 
-  Future<void> _runCombos(
+  Future<List<TaskRunResult>> _runCombos(
     HeadlessBenchmarkConfig config,
     List<_HeadlessCombo> combos,
     _HeadlessRunCancellation cancellation,
@@ -373,6 +378,7 @@ class HeadlessBenchmarkRunner {
       for (final harness in config.agentHarnesses) harness.id: harness,
     };
     final failures = <_HeadlessComboFailure>[];
+    final results = <TaskRunResult>[];
     var nextIndex = 0;
     final workerCount = config.maxConcurrency.clamp(1, 8);
 
@@ -394,6 +400,7 @@ class HeadlessBenchmarkRunner {
           );
           cancellation.throwIfCancelled();
           await config.runDao.persistTaskRun(result);
+          results.add(result);
           cancellation.throwIfCancelled();
         } catch (error, stackTrace) {
           cancellation.throwIfCancelled();
@@ -418,6 +425,7 @@ class HeadlessBenchmarkRunner {
       failures.sort((a, b) => a.index.compareTo(b.index));
       throw StateError(_failedComboMessage(failures));
     }
+    return results;
   }
 
   Future<TaskRunResult> _runCombo({

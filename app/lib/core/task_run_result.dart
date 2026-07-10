@@ -21,6 +21,7 @@ class TaskRunResult extends Equatable {
     this.patchText,
     this.trajectoryLogPath,
     this.planId,
+    this.provenance = const {},
   });
 
   final String runId;
@@ -40,6 +41,7 @@ class TaskRunResult extends Equatable {
   final String? patchText;
   final String? trajectoryLogPath;
   final String? planId;
+  final Map<String, Object?> provenance;
 
   @override
   List<Object?> get props => [
@@ -60,5 +62,6 @@ class TaskRunResult extends Equatable {
     patchText,
     trajectoryLogPath,
     planId,
+    provenance,
   ];
 }

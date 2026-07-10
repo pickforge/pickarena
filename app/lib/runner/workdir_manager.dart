@@ -163,22 +163,43 @@ class WorkdirManager {
         taskPath,
       ),
     );
-    await _recreateCleanRunDirectory(dir);
+    return _assembleAgenticWorkspace(dir, workspace);
+  }
 
-    final fixtureRootPath = workspace.fixtureRootPath;
-    if (fixtureRootPath != null) {
-      await _copyFixtureRoot(Directory(fixtureRootPath), dir);
-    }
+  Future<Directory> createAgenticGradingWorkdir({
+    required String runId,
+    required String providerId,
+    required String modelId,
+    required String taskId,
+    required TaskWorkspace workspace,
+    int trialIndex = 0,
+  }) {
+    final taskPath = p.join(
+      _workdirPathSegment(taskId),
+      'trial_$trialIndex',
+      'grading',
+    );
+    final dir = Directory(
+      p.join(
+        root.path,
+        'runs',
+        _workdirPathSegment(runId),
+        _workdirPathSegment(providerId),
+        _workdirPathSegment(modelId, prefix: 'model'),
+        taskPath,
+      ),
+    );
+    return _assembleAgenticWorkspace(dir, workspace);
+  }
 
-    for (final entry in workspace.files.entries) {
-      final f = resolveWorkspaceFile(dir, entry.key);
-      if (_shouldExcludeWorkspacePath(entry.key)) continue;
-      await f.parent.create(recursive: true);
-      await f.writeAsString(entry.value);
-    }
-
-    await _initializeBaselineGit(dir);
-    return dir;
+  Future<void> applyCapturedPatch(Directory gradingDir, String patch) async {
+    if (patch.isEmpty) return;
+    await _runGit(gradingDir, [
+      'apply',
+      '--binary',
+      '--whitespace=nowarn',
+      '-',
+    ], stdin: patch);
   }
 
   Future<WorkdirIsolationEvidence> collectWorkspaceIsolationEvidence(
@@ -565,6 +586,28 @@ class WorkdirManager {
     }
   }
 
+  Future<Directory> _assembleAgenticWorkspace(
+    Directory dir,
+    TaskWorkspace workspace,
+  ) async {
+    await _recreateCleanRunDirectory(dir);
+
+    final fixtureRootPath = workspace.fixtureRootPath;
+    if (fixtureRootPath != null) {
+      await _copyFixtureRoot(Directory(fixtureRootPath), dir);
+    }
+
+    for (final entry in workspace.files.entries) {
+      final f = resolveWorkspaceFile(dir, entry.key);
+      if (_shouldExcludeWorkspacePath(entry.key)) continue;
+      await f.parent.create(recursive: true);
+      await f.writeAsString(entry.value);
+    }
+
+    await _initializeBaselineGit(dir);
+    return dir;
+  }
+
   bool _isSameOrWithin(String parent, String child) {
     return p.equals(parent, child) || p.isWithin(parent, child);
   }
@@ -648,7 +691,11 @@ class WorkdirManager {
     await gitignore.writeAsString(buffer.toString());
   }
 
-  Future<void> _runGit(Directory dir, List<String> args) async {
+  Future<void> _runGit(
+    Directory dir,
+    List<String> args, {
+    String? stdin,
+  }) async {
     if (gitTimeout.compareTo(Duration.zero) <= 0) {
       throw TimeoutException(
         'baseline git initialization timed out',
@@ -664,6 +711,10 @@ class WorkdirManager {
       environment: _baselineGitEnvironment(),
       includeParentEnvironment: false,
     );
+    if (stdin != null) {
+      process.stdin.add(utf8.encode(stdin));
+      await process.stdin.close();
+    }
 
     final stdoutBuffer = _BoundedTextCollector(gitMaxOutputChars);
     final stderrBuffer = _BoundedTextCollector(gitMaxOutputChars);

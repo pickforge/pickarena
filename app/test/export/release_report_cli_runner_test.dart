@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:dart_arena/core/task_bundle_digest.dart';
+import 'package:dart_arena/core/task_integrity.dart';
 import 'package:dart_arena/export/release_report_cli_runner.dart';
 import 'package:dart_arena/storage/database.dart';
+import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:test/test.dart';
@@ -1930,6 +1932,9 @@ void main() {
     final taskQaSummaryPath = p.join(taskQaDir.path, 'admission_summary.json');
     final taskBundle = Directory(p.join(taskQaDir.path, 'tasks', 'task.a'));
     final taskBundleDigest = await _writeReleaseTaskBundle(taskBundle);
+    final task = await FileBackedTask.load(taskBundle);
+    await task.ensureLoaded();
+    final hiddenDigests = hiddenVerifierDigests(task);
     final reportPath = p.join(taskBundle.path, 'qa', 'admission_report.json');
     await Directory(p.dirname(reportPath)).create(recursive: true);
     await File(
@@ -1948,7 +1953,10 @@ void main() {
       _prettyJson(_taskQaReportJson(taskBundleDigest: taskBundleDigest)),
     );
     final databasePath = p.join(tmp.path, 'dart_arena.sqlite');
-    await _seedDatabase(databasePath);
+    await _seedDatabase(
+      databasePath,
+      resultProvenance: _cleanReplayResultProvenance(hiddenDigests, 2),
+    );
     final artifactManifestPath = p.join(tmp.path, 'manifest.json');
     await File(
       artifactManifestPath,
@@ -2753,6 +2761,9 @@ void main() {
       );
       final taskBundle = Directory(p.join(taskQaDir.path, 'tasks', 'task.a'));
       final taskBundleDigest = await _writeReleaseTaskBundle(taskBundle);
+      final task = await FileBackedTask.load(taskBundle);
+      await task.ensureLoaded();
+      final hiddenDigests = hiddenVerifierDigests(task);
       final reportPath = p.join(taskBundle.path, 'qa', 'admission_report.json');
       await Directory(p.dirname(reportPath)).create(recursive: true);
       await File(
@@ -2771,7 +2782,11 @@ void main() {
         _prettyJson(_taskQaReportJson(taskBundleDigest: taskBundleDigest)),
       );
       final databasePath = p.join(tmp.path, 'dart_arena.sqlite');
-      await _seedDatabase(databasePath, runIds: const ['run-1', 'run-2']);
+      await _seedDatabase(
+        databasePath,
+        runIds: const ['run-1', 'run-2'],
+        resultProvenance: _cleanReplayResultProvenance(hiddenDigests, 2),
+      );
       final firstBundleRoot = p.join(tmp.path, 'bundle_run_1');
       final secondBundleRoot = p.join(tmp.path, 'bundle_run_2');
       await _writeCompleteArtifactBundle(firstBundleRoot, runId: 'run-1');
@@ -10996,9 +11011,14 @@ Map<String, Object?> _leaderboardJson({
       'taskSetId': 'taskset-test',
       'evaluatorSchemaVersion': 2,
       'preset': 'mvp',
-      'selectedTasks': ['task.a'],
-      'corpusManifestDigestSha256':
-          '0000000000000000000000000000000000000000000000000000000000000000',
+      'selectedTasks': [
+        {
+          'taskId': 'task.a',
+          'taskVersion': 1,
+          'taskBundleDigest': _fixtureTaskBundleDigest,
+        },
+      ],
+      'corpusManifestDigestSha256': _fixtureCorpusManifestDigest,
     },
     'track': 'agentic',
     'dataPolicy': 'aggregate-compatible',
@@ -11088,6 +11108,7 @@ Map<String, Object?> _leaderboardJson({
     {
       'taskId': 'task.a',
       'taskVersion': 1,
+      'taskBundleDigest': _fixtureTaskBundleDigest,
       'benchmarkTrack': 'agentic',
       'trialCount': sampleCount,
       'sampleCount': sampleCount,
@@ -12618,6 +12639,7 @@ Future<void> _seedDatabase(
   bool includeSdkVersions = true,
   bool includeDependencySnapshot = true,
   bool includePricingRegistry = true,
+  List<Map<String, Object?>> resultProvenance = const [],
 }) async {
   final db = AppDatabase(NativeDatabase(File(databasePath)));
   try {
@@ -12701,6 +12723,17 @@ Future<void> _seedDatabase(
                         },
                     },
                   ],
+                  'combos': [
+                    for (final result in resultProvenance)
+                      {
+                        'taskId': result['taskId'],
+                        'providerId': result['providerId'],
+                        'modelId': result['modelId'],
+                        'trialIndex': result['trialIndex'],
+                      },
+                  ],
+                  if (resultProvenance.isNotEmpty)
+                    'resultProvenance': resultProvenance,
                 }),
               ),
             ),
@@ -12710,6 +12743,38 @@ Future<void> _seedDatabase(
     await db.close();
   }
 }
+
+List<Map<String, Object?>> _cleanReplayResultProvenance(
+  Map<String, String> hiddenVerifierDigests,
+  int count,
+) => [
+  for (var trialIndex = 0; trialIndex < count; trialIndex++)
+    {
+      'taskId': 'task.a',
+      'taskVersion': 1,
+      'benchmarkTrack': 'agentic',
+      'providerId': 'openai',
+      'modelId': 'gpt-5',
+      'trialIndex': trialIndex,
+      'gradingMode': 'clean_replay',
+      'hiddenFixtureIsolation': const {
+        'asserted': true,
+        'leakedPaths': <String>[],
+      },
+      'hiddenVerifierDigests': hiddenVerifierDigests,
+    },
+];
+
+const _fixtureTaskBundleDigest =
+    '0000000000000000000000000000000000000000000000000000000000000000';
+
+final _fixtureCorpusManifestDigest = corpusManifestDigestSha256(const [
+  CorpusManifestEntry(
+    taskId: 'task.a',
+    taskVersion: 1,
+    taskBundleDigest: _fixtureTaskBundleDigest,
+  ),
+]);
 
 String _prettyJson(Object? value) =>
     '${const JsonEncoder.withIndent('  ').convert(value)}\n';

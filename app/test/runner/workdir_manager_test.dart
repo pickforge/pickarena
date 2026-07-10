@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dart_arena/core/patch_capture.dart';
 import 'package:dart_arena/core/path_safety.dart';
 import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
@@ -389,6 +390,72 @@ environment:
       isFalse,
     );
   });
+
+  test(
+    'replays captured patches into a clean agentic grading workdir',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_agentic_grading_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      const workspace = TaskWorkspace(
+        files: {
+          'lib/answer.dart': 'int answer() => 41;\n',
+          'test/_hidden/answer_hidden_test.dart': 'hidden',
+        },
+      );
+      final manager = WorkdirManager(root: root);
+      final agentWorkspace = await manager.createAgenticTaskWorkdir(
+        runId: 'r',
+        providerId: 'p',
+        modelId: 'm',
+        taskId: 't',
+        workspace: workspace,
+      );
+      await File(
+        p.join(agentWorkspace.path, 'lib', 'answer.dart'),
+      ).writeAsString('int answer() => 42;\n');
+      final capturedPatch = await const PatchCapture().capture(agentWorkspace);
+
+      final gradingWorkspace = await manager.createAgenticGradingWorkdir(
+        runId: 'r',
+        providerId: 'p',
+        modelId: 'm',
+        taskId: 't',
+        workspace: workspace,
+      );
+
+      expect(p.basename(gradingWorkspace.path), 'grading');
+      expect(
+        await File(
+          p.join(gradingWorkspace.path, 'lib', 'answer.dart'),
+        ).readAsString(),
+        'int answer() => 41;\n',
+      );
+      expect(
+        await File(
+          p.join(
+            gradingWorkspace.path,
+            'test',
+            '_hidden',
+            'answer_hidden_test.dart',
+          ),
+        ).exists(),
+        isFalse,
+      );
+
+      await manager.applyCapturedPatch(gradingWorkspace, capturedPatch.patch);
+
+      expect(
+        await File(
+          p.join(gradingWorkspace.path, 'lib', 'answer.dart'),
+        ).readAsString(),
+        'int answer() => 42;\n',
+      );
+    },
+  );
 
   test(
     'createAgenticTaskWorkdir does not follow fixture symlinks',

@@ -10,6 +10,7 @@ import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_identity.dart';
 import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_integrity.dart';
+import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/resource_enforcement_policy.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
@@ -303,6 +304,44 @@ Future<String> buildRunProvenanceJson({
   };
 
   return const JsonEncoder.withIndent('  ').convert(json);
+}
+
+String appendResultProvenance(
+  String provenanceJson,
+  Iterable<TaskRunResult> results,
+) {
+  final decoded = jsonDecode(provenanceJson);
+  if (decoded is! Map<String, Object?>) {
+    throw const FormatException('run provenance must be a JSON object');
+  }
+  final resultProvenance =
+      [
+        for (final result in results)
+          {
+            'taskId': result.taskId,
+            'taskVersion': result.taskVersion,
+            'providerId': result.providerId,
+            'modelId': result.modelId,
+            'trialIndex': result.trialIndex,
+            'benchmarkTrack': result.benchmarkTrack,
+            ...result.provenance,
+          },
+      ]..sort((a, b) {
+        final task = (a['taskId']! as String).compareTo(b['taskId']! as String);
+        if (task != 0) return task;
+        final provider = (a['providerId']! as String).compareTo(
+          b['providerId']! as String,
+        );
+        if (provider != 0) return provider;
+        final model = (a['modelId']! as String).compareTo(
+          b['modelId']! as String,
+        );
+        if (model != 0) return model;
+        return (a['trialIndex']! as int).compareTo(b['trialIndex']! as int);
+      });
+  return const JsonEncoder.withIndent(
+    '  ',
+  ).convert({...decoded, 'resultProvenance': resultProvenance});
 }
 
 Map<String, Object?> _taskJson(BenchmarkTask task) {
