@@ -200,6 +200,25 @@ class WorkdirManager {
       '--whitespace=nowarn',
       '-',
     ], stdin: patch);
+    await _stripRestrictedPaths(gradingDir);
+  }
+
+  Future<void> _stripRestrictedPaths(Directory dir) async {
+    final restricted = <FileSystemEntity>[];
+    await for (final entity in dir.list(recursive: true, followLinks: false)) {
+      final relative = p
+          .relative(entity.path, from: dir.path)
+          .replaceAll('\\', '/');
+      if (relative.split('/').first == '.git') continue;
+      if (_shouldExcludeWorkspacePath(relative)) restricted.add(entity);
+    }
+    for (final entity in restricted) {
+      try {
+        await entity.delete(recursive: true);
+      } on FileSystemException {
+        continue;
+      }
+    }
   }
 
   Future<WorkdirIsolationEvidence> collectWorkspaceIsolationEvidence(
@@ -339,7 +358,7 @@ class WorkdirManager {
     );
   }
 
-  Future<void> resetPatchBaseline(Directory workDir) {
+  Future<String> resetPatchBaseline(Directory workDir) {
     return _initializeBaselineGit(workDir);
   }
 
@@ -647,7 +666,7 @@ class WorkdirManager {
     await dir.create(recursive: true);
   }
 
-  Future<void> _initializeBaselineGit(Directory dir) async {
+  Future<String> _initializeBaselineGit(Directory dir) async {
     await _ensureBaselineGitignore(dir);
     await _runGit(dir, ['init']);
     await _runGit(dir, ['config', 'user.email', 'dart-arena@example.invalid']);
@@ -655,6 +674,8 @@ class WorkdirManager {
     await _runGit(dir, ['add', '.']);
     await _runGit(dir, ['commit', '--allow-empty', '-m', 'baseline']);
     await _runGit(dir, ['tag', '-f', patchBaselineRef]);
+    final head = await _runGit(dir, ['rev-parse', 'HEAD']);
+    return head.trim();
   }
 
   Future<void> _ensureBaselineGitignore(Directory dir) async {
@@ -692,7 +713,7 @@ class WorkdirManager {
     await gitignore.writeAsString(buffer.toString());
   }
 
-  Future<void> _runGit(
+  Future<String> _runGit(
     Directory dir,
     List<String> args, {
     String? stdin,
@@ -760,7 +781,7 @@ class WorkdirManager {
           signal.exitCode,
         );
       }
-      return;
+      return stdoutBuffer.text;
     }
 
     await _terminateProcessTree(process.pid, ProcessSignal.sigterm);

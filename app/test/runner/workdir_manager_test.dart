@@ -458,6 +458,97 @@ environment:
     },
   );
 
+  test('strips restricted paths reintroduced by a captured patch', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'dart_arena_grading_strip_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    const workspace = TaskWorkspace(
+      files: {'lib/answer.dart': 'int answer() => 41;\n'},
+    );
+    final manager = WorkdirManager(root: root);
+    final agentWorkspace = await manager.createAgenticTaskWorkdir(
+      runId: 'r',
+      providerId: 'p',
+      modelId: 'm',
+      taskId: 't',
+      workspace: workspace,
+    );
+    await File(
+      p.join(agentWorkspace.path, 'test', '_hidden', 'leaked_test.dart'),
+    ).create(recursive: true);
+    await File(
+      p.join(agentWorkspace.path, 'test', '_hidden', 'leaked_test.dart'),
+    ).writeAsString('leaked');
+    final capturedPatch = await const PatchCapture().capture(agentWorkspace);
+    expect(capturedPatch.patch, contains('_hidden/leaked_test.dart'));
+
+    final gradingWorkspace = await manager.createAgenticGradingWorkdir(
+      runId: 'r',
+      providerId: 'p',
+      modelId: 'm',
+      taskId: 't',
+      workspace: workspace,
+    );
+    await manager.applyCapturedPatch(gradingWorkspace, capturedPatch.patch);
+
+    expect(
+      await File(
+        p.join(gradingWorkspace.path, 'test', '_hidden', 'leaked_test.dart'),
+      ).exists(),
+      isFalse,
+    );
+  });
+
+  test(
+    'captures against the recorded baseline even after the tag is retargeted',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_baseline_sha_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      const workspace = TaskWorkspace(
+        files: {'lib/answer.dart': 'int answer() => 41;\n'},
+      );
+      final manager = WorkdirManager(root: root);
+      final agentWorkspace = await manager.createAgenticTaskWorkdir(
+        runId: 'r',
+        providerId: 'p',
+        modelId: 'm',
+        taskId: 't',
+        workspace: workspace,
+      );
+      final baselineSha = await manager.resetPatchBaseline(agentWorkspace);
+      expect(baselineSha, matches(RegExp(r'^[0-9a-f]{40}$')));
+
+      await File(
+        p.join(agentWorkspace.path, 'lib', 'answer.dart'),
+      ).writeAsString('int answer() => 42;\n');
+      Future<void> git(List<String> args) async {
+        final result = await Process.run(
+          'git',
+          args,
+          workingDirectory: agentWorkspace.path,
+        );
+        expect(result.exitCode, 0, reason: result.stderr.toString());
+      }
+
+      await git(['add', '.']);
+      await git(['commit', '-m', 'agent solution']);
+      await git(['tag', '-f', 'arena_baseline']);
+
+      final captured = await const PatchCapture().capture(
+        agentWorkspace,
+        baselineRef: baselineSha,
+      );
+      expect(captured.patch, contains('+int answer() => 42;'));
+    },
+  );
+
   test(
     'createAgenticTaskWorkdir does not follow fixture symlinks',
     () async {

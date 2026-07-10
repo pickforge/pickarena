@@ -103,8 +103,9 @@ class AgenticRunOrchestrator {
         error: initialPrep.stderr,
       );
     }
+    final String patchBaselineSha;
     try {
-      await workdirManager.resetPatchBaseline(workspace);
+      patchBaselineSha = await workdirManager.resetPatchBaseline(workspace);
     } on Object catch (e) {
       return _environmentFailureResult(
         runId: runId,
@@ -151,7 +152,10 @@ class AgenticRunOrchestrator {
     PatchCaptureResult? capturedPatch;
     EvaluationResult? patchFailure;
     try {
-      capturedPatch = await patchCapture.capture(workspace);
+      capturedPatch = await patchCapture.capture(
+        workspace,
+        baselineRef: patchBaselineSha,
+      );
     } on Object catch (e) {
       patchFailure = EvaluationResult(
         evaluatorId: 'agent_patch',
@@ -181,7 +185,7 @@ class AgenticRunOrchestrator {
       );
     }
     final resultProvenance = <String, Object?>{
-      'gradingMode': 'clean_replay',
+      'gradingMode': 'replay_failed',
       'patchApplied': false,
       'patchSha256': capturedPatch?.patchSha256,
       'hiddenFixtureIsolation': hiddenFixtureIsolation,
@@ -278,6 +282,7 @@ class AgenticRunOrchestrator {
         phase: gradingFailurePhase,
       );
     } else {
+      resultProvenance['gradingMode'] = 'clean_replay';
       for (final evaluator in evaluators) {
         final blocked = blockedEvaluationFor(
           evaluatorId: evaluator.id,

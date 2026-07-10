@@ -36,12 +36,15 @@ class PatchCapture {
   final Duration timeout;
   final int maxOutputChars;
 
-  Future<PatchCaptureResult> capture(Directory workspace) async {
+  Future<PatchCaptureResult> capture(
+    Directory workspace, {
+    String baselineRef = patchBaselineRef,
+  }) async {
     const addIntentArgs = ['add', '-N', '.'];
     final intentToAdd = await _runGit(workspace, addIntentArgs);
     _checkGitResult(intentToAdd, addIntentArgs);
     const statusArgs = ['status', '--porcelain'];
-    const diffArgs = ['diff', patchBaselineRef, '--binary'];
+    final diffArgs = ['diff', baselineRef, '--binary'];
     final status = await _runGit(workspace, statusArgs);
     final diff = await _runGit(workspace, diffArgs);
     _checkGitResult(status, statusArgs);
