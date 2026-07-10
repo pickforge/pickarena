@@ -88,6 +88,8 @@ export type LeaderboardConfidenceInterval = {
 export type LeaderboardModel = {
   providerId: string;
   modelId: string;
+  displayName: string | null;
+  providerLabel: string | null;
   rank: number | null;
   score: number | null;
   passRate: number | null;
@@ -144,6 +146,8 @@ export type LeaderboardTask = {
 export type LeaderboardTaskModelCell = {
   providerId: string;
   modelId: string;
+  displayName: string | null;
+  providerLabel: string | null;
   taskId: string;
   taskVersion: number | string | null;
   benchmarkTrack: string | null;
@@ -178,6 +182,8 @@ export type LeaderboardTrialSummary = {
   runId: string;
   providerId: string;
   modelId: string;
+  displayName: string | null;
+  providerLabel: string | null;
   taskId: string;
   taskVersion: number | string | null;
   benchmarkTrack: string | null;
@@ -500,10 +506,29 @@ function parseRunProvenance(
   };
 }
 
+function parseModelIdentity(value: Record<string, unknown>): {
+  displayName: string | null;
+  providerLabel: string | null;
+} {
+  const config = isRecord(value.modelConfig) ? value.modelConfig : {};
+  const displayName =
+    typeof config.customModelDisplayName === 'string' &&
+    config.customModelDisplayName.length > 0
+      ? config.customModelDisplayName
+      : null;
+  const providerLabel =
+    typeof config.customModelProvider === 'string' &&
+    config.customModelProvider.length > 0
+      ? config.customModelProvider
+      : null;
+  return { displayName, providerLabel };
+}
+
 function parseModelRow(value: Record<string, unknown>): LeaderboardModel {
   return {
     providerId: parseString(value.providerId, 'unknown-provider'),
     modelId: parseString(value.modelId, 'unknown-model'),
+    ...parseModelIdentity(value),
     rank: parseNumber(value.rank),
     score: parseNumber(value.score),
     passRate: parseNumber(value.passRate),
@@ -572,6 +597,7 @@ function parseTaskModelCell(
   return {
     providerId: parseString(value.providerId, 'unknown-provider'),
     modelId: parseString(value.modelId, 'unknown-model'),
+    ...parseModelIdentity(value),
     taskId: parseString(value.taskId, 'unknown-task'),
     taskVersion:
       typeof value.taskVersion === 'string' || typeof value.taskVersion === 'number'
@@ -622,6 +648,7 @@ function parseTrialSummary(
     runId: parseString(value.runId, 'unknown-run'),
     providerId: parseString(value.providerId, 'unknown-provider'),
     modelId: parseString(value.modelId, 'unknown-model'),
+    ...parseModelIdentity(value),
     taskId: parseString(value.taskId, 'unknown-task'),
     taskVersion:
       typeof value.taskVersion === 'string' || typeof value.taskVersion === 'number'
