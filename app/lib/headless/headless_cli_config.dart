@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dart_arena/core/path_safety.dart';
 import 'package:dart_arena/core/scoring.dart';
+import 'package:dart_arena/agent/command_template_agent_harness.dart';
 import 'package:path/path.dart' as p;
 
 class HeadlessCliConfigException implements Exception {
@@ -61,6 +62,8 @@ class HeadlessCliProviderConfig {
     this.apiKeyEnv,
     this.baseUrl,
     this.harness,
+    this.commandTemplate,
+    this.agentVersion,
     this.defaultEfforts = const [],
     this.extraHeaders = const {},
   });
@@ -72,6 +75,8 @@ class HeadlessCliProviderConfig {
   final String? apiKeyEnv;
   final String? baseUrl;
   final String? harness;
+  final CommandTemplateAgentConfig? commandTemplate;
+  final String? agentVersion;
   final List<String> defaultEfforts;
   final Map<String, String> extraHeaders;
 }
@@ -139,7 +144,16 @@ HeadlessCliConfig parseHeadlessCliConfig(
       '${judge.providerId}',
     );
   }
-
+  if (judge != null &&
+      providers.any(
+        (provider) =>
+            provider.id == judge.providerId && provider.type == 'agent_cli',
+      )) {
+    throw HeadlessCliConfigException(
+      'judge providerId must not reference an agent_cli provider: '
+      '${judge.providerId}',
+    );
+  }
   final workdirRoot = _resolvePath(
     _requiredString(json, 'workdirRoot'),
     configDir,
@@ -215,6 +229,7 @@ HeadlessCliProviderConfig _parseProvider(
     'ollama_local' => 'ollama_local',
     'ollama_cloud' => 'ollama_cloud',
     'droid' => 'droid',
+    'agent_cli' => _requiredString(json, 'id', path: 'providers[$index].id'),
     'openai_compatible' => _requiredString(
       json,
       'id',
@@ -224,7 +239,7 @@ HeadlessCliProviderConfig _parseProvider(
   };
   _validateSafeSegment(id, 'providers[$index].id');
 
-  final displayName = type == 'openai_compatible'
+  final displayName = type == 'openai_compatible' || type == 'agent_cli'
       ? _requiredString(
           json,
           'displayName',
@@ -239,19 +254,68 @@ HeadlessCliProviderConfig _parseProvider(
     'apiKeyEnv',
     path: 'providers[$index].apiKeyEnv',
   );
-  final harness = _optionalString(
+  final agentVersion = _optionalString(
     json,
-    'harness',
-    path: 'providers[$index].harness',
+    'agentVersion',
+    path: 'providers[$index].agentVersion',
   );
-  if (harness != null && harness != 'droid' && harness != 'minimal') {
-    throw HeadlessCliConfigException(
-      'providers[$index].harness must be "droid" or "minimal"',
+  final harnessValue = json['harness'];
+  String? harness;
+  CommandTemplateAgentConfig? commandTemplate;
+  if (harnessValue is Map<String, Object?>) {
+    harness = 'command-template';
+    commandTemplate = _parseCommandTemplate(
+      harnessValue,
+      path: 'providers[$index].harness',
     );
+  } else {
+    harness = _optionalString(
+      json,
+      'harness',
+      path: 'providers[$index].harness',
+    );
+    if (harness == 'command-template') {
+      final templateJson = json['commandTemplate'];
+      if (templateJson is! Map<String, Object?>) {
+        throw HeadlessCliConfigException(
+          'providers[$index].commandTemplate must be an object',
+        );
+      }
+      commandTemplate = _parseCommandTemplate(
+        templateJson,
+        path: 'providers[$index].commandTemplate',
+      );
+    } else if (harness != null &&
+        harness != 'droid' &&
+        harness != 'minimal' &&
+        !CommandTemplateAgentConfig.presets.containsKey(harness)) {
+      throw HeadlessCliConfigException(
+        'providers[$index].harness must be "minimal", "droid", a command-template preset, or a command template object',
+      );
+    }
   }
   if (harness == 'droid' && type != 'droid') {
     throw HeadlessCliConfigException(
       'providers[$index].harness "droid" requires provider type "droid"',
+    );
+  }
+  if (type == 'droid' &&
+      (harness == 'command-template' ||
+          CommandTemplateAgentConfig.presets.containsKey(harness))) {
+    throw HeadlessCliConfigException(
+      'providers[$index].harness command-template agents cannot use provider type "droid"',
+    );
+  }
+  if (type == 'agent_cli' &&
+      (harness == null || harness == 'minimal' || harness == 'droid')) {
+    throw HeadlessCliConfigException(
+      'providers[$index] type "agent_cli" requires a command-template harness',
+    );
+  }
+  if (CommandTemplateAgentConfig.presets.containsKey(harness) &&
+      (agentVersion == null || agentVersion.isEmpty)) {
+    throw HeadlessCliConfigException(
+      'providers[$index].agentVersion is required for command-template presets',
     );
   }
 
@@ -269,6 +333,8 @@ HeadlessCliProviderConfig _parseProvider(
     apiKeyEnv: apiKeyEnv,
     baseUrl: baseUrl,
     harness: harness,
+    commandTemplate: commandTemplate,
+    agentVersion: agentVersion,
     defaultEfforts: List.unmodifiable(
       _optionalStringList(
         json,
@@ -284,6 +350,34 @@ HeadlessCliProviderConfig _parseProvider(
       ),
     ),
   );
+}
+
+CommandTemplateAgentConfig _parseCommandTemplate(
+  Map<String, Object?> json, {
+  required String path,
+}) {
+  final name = _requiredString(json, 'name', path: '$path.name');
+  final executable = _requiredString(
+    json,
+    'executable',
+    path: '$path.executable',
+  );
+  final arguments = _requiredStringList(
+    json,
+    'arguments',
+    path: '$path.arguments',
+  );
+  final version = _requiredString(json, 'version', path: '$path.version');
+  try {
+    return CommandTemplateAgentConfig(
+      name: name,
+      executable: executable,
+      arguments: List.unmodifiable(arguments),
+      version: version,
+    );
+  } on ArgumentError catch (error) {
+    throw HeadlessCliConfigException('$path is invalid: $error');
+  }
 }
 
 HeadlessCliJudgeConfig? _parseJudge(Object? value) {

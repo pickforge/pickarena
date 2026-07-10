@@ -33,7 +33,7 @@ cd app
 dart run --verbosity=error dart_arena:dart_arena_headless --config run.json
 ```
 
-The config supplies task bundle roots, providers, models, evaluator settings, concurrency, trials, output paths, and timeouts. See the official script below for a complete agentic example.
+The config supplies task bundle roots, providers, models, evaluator settings, concurrency, trials, output paths, and timeouts. Agentic providers default to the minimal official harness. Set `harness` to `droid`, `codex`, `claude-code`, or `opencode` for an external CLI; command presets require `agentVersion` and use their one-shot `exec`, `-p`, or `run` form with the selected model and instruction. A custom CLI uses an `agent_cli` provider with a `harness` object containing `name`, `version`, `executable`, and `arguments`; arguments may contain `{instruction}`, `{model}`, `{workspace}`, and `{timeout}`. External CLI results are scaffold-dependent and are exported separately from the official comparable minimal track. See the official script below for a complete agentic example.
 
 ## Task QA and exports
 

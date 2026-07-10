@@ -731,46 +731,48 @@ printf '%s' "$DROID_SANDBOX_MARKER" > headless-sandbox-marker.txt
     skip: Platform.isWindows ? 'POSIX shell script test' : false,
   );
 
-  test('selects the minimal harness for an opted-in provider', () async {
-    final tmp = await Directory.systemTemp.createTemp(
-      'dart_arena_cli_minimal_',
-    );
-    addTearDown(() async {
-      if (await tmp.exists()) await tmp.delete(recursive: true);
-    });
-    final configFile = await _writeConfig(
-      tmp,
-      tasks: ['agentic.phase7.headless_smoke'],
-      provider: const {
-        'type': 'droid',
-        'models': ['fake-headless-model'],
-        'harness': 'minimal',
-      },
-    );
-    final runner = _CapturingHeadlessBenchmarkRunner();
+  test(
+    'selects the minimal harness by default for streaming providers',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_cli_minimal_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+      final configFile = await _writeConfig(
+        tmp,
+        tasks: ['agentic.phase7.headless_smoke'],
+        provider: const {
+          'type': 'ollama_local',
+          'models': ['fake-headless-model'],
+        },
+      );
+      final runner = _CapturingHeadlessBenchmarkRunner();
 
-    final exitCode = await runHeadlessCli(
-      ['--config', configFile.path],
-      dependencies: HeadlessCliDependencies(
-        environmentReader: _emptyEnv,
-        providerBuilder: (config, _) => DeterministicFakeProvider(
-          providerId: config.id,
-          providerDisplayName: config.displayName,
-          modelId: config.models.single,
+      final exitCode = await runHeadlessCli(
+        ['--config', configFile.path],
+        dependencies: HeadlessCliDependencies(
+          environmentReader: _emptyEnv,
+          providerBuilder: (config, _) => DeterministicFakeProvider(
+            providerId: config.id,
+            providerDisplayName: config.displayName,
+            modelId: config.models.single,
+          ),
+          taskRegistryBuilder: () =>
+              TaskRegistry()..register(_AgenticHeadlessSmokeTask()),
+          runner: runner,
         ),
-        taskRegistryBuilder: () =>
-            TaskRegistry()..register(_AgenticHeadlessSmokeTask()),
-        runner: runner,
-      ),
-      stdoutWriter: (_) {},
-      stderrWriter: (_) {},
-    );
+        stdoutWriter: (_) {},
+        stderrWriter: (_) {},
+      );
 
-    expect(exitCode, 1);
-    final harness = runner.capturedConfig!.agentHarnesses.single;
-    expect(harness, isA<MinimalAgentHarness>());
-    expect(harness.id, 'droid');
-  });
+      expect(exitCode, 1);
+      final harness = runner.capturedConfig!.agentHarnesses.single;
+      expect(harness, isA<MinimalAgentHarness>());
+      expect(harness.id, 'ollama_local');
+    },
+  );
 
   test('unknown task fails clearly', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_cli_task_');

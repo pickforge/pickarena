@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/agent/agent_run_result.dart';
+import 'package:dart_arena/agent/command_template_agent_harness.dart';
 import 'package:dart_arena/agent/droid_agent_harness.dart';
 import 'package:dart_arena/agent/minimal_agent_harness.dart';
 import 'package:dart_arena/core/model_response.dart';
@@ -776,6 +777,288 @@ done
     skip: Platform.isWindows ? 'POSIX shell script test' : false,
     timeout: const Timeout(Duration(seconds: 8)),
   );
+
+  group('CommandTemplateAgentHarness', () {
+    test(
+      'substitutes the template and lets the CLI edit the workspace',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'template_agent_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final script = await _writeExecutable(workspace, 'fake.sh', r'''
+#!/bin/sh
+printf '%s' "$1" > result.txt
+''');
+        final result =
+            await CommandTemplateAgentHarness(
+              providerId: 'fake-cli',
+              config: CommandTemplateAgentConfig(
+                name: 'fake-cli',
+                executable: script.path,
+                arguments: const ['{instruction}'],
+                version: '1.2.3',
+              ),
+            ).run(
+              workspace: workspace,
+              instruction: 'edit this file',
+              modelId: 'fake-model',
+              timeout: const Duration(seconds: 2),
+            );
+
+        expect(result.succeeded, isTrue);
+        expect(
+          await File(p.join(workspace.path, 'result.txt')).readAsString(),
+          'edit this file',
+        );
+        expect(result.metadata['agentHarness'], {
+          'kind': 'command-template',
+          'track': 'scaffold-dependent',
+          'agent': 'fake-cli',
+          'agentVersion': '1.2.3',
+        });
+      },
+      skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    );
+
+    test(
+      'terminates a timed out CLI process tree',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'template_tree_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final script = await _writeExecutable(workspace, 'fake.sh', '''
+#!/bin/sh
+(sleep 30) &
+echo \$! > child.pid
+wait
+''');
+        final result = await _templateHarness(script).run(
+          workspace: workspace,
+          instruction: 'x',
+          modelId: 'm',
+          timeout: const Duration(milliseconds: 200),
+        );
+
+        expect(result.status, AgentRunStatus.timeout);
+        final childPid = int.parse(
+          File(p.join(workspace.path, 'child.pid')).readAsStringSync().trim(),
+        );
+        for (var i = 0; i < 20 && await _pidIsRunning(childPid); i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+        expect(await _pidIsRunning(childPid), isFalse);
+      },
+      skip: Platform.isWindows ? 'POSIX process-tree assertion' : false,
+    );
+
+    test(
+      'terminates output-flooding CLIs',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'template_flood_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final script = await _writeExecutable(workspace, 'fake.sh', '''
+#!/bin/sh
+while :; do printf '0123456789abcdef0123456789abcdef\\n'; done
+''');
+        final result =
+            await CommandTemplateAgentHarness(
+              providerId: 'fake-cli',
+              config: CommandTemplateAgentConfig(
+                name: 'fake',
+                executable: script.path,
+                arguments: const ['{instruction}'],
+                version: 'test',
+              ),
+              maxProcessOutputChars: 128,
+            ).run(
+              workspace: workspace,
+              instruction: 'x',
+              modelId: 'm',
+              timeout: const Duration(seconds: 5),
+            );
+
+        expect(result.status, AgentRunStatus.failure);
+        expect(result.metadata['output_limit_exceeded'], isTrue);
+      },
+      skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    );
+
+    test(
+      'passes allowInternet to the generated-code sandbox',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'template_sandbox_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final script = await _writeExecutable(
+          workspace,
+          'fake.sh',
+          '#!/bin/sh\n',
+        );
+        final sandbox = _RecordingGeneratedCodeSandbox();
+        await _templateHarness(script, sandbox: sandbox).run(
+          workspace: workspace,
+          instruction: 'x',
+          modelId: 'm',
+          timeout: const Duration(seconds: 2),
+          allowInternet: false,
+        );
+        expect(sandbox.seenAllowInternet, isFalse);
+      },
+      skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    );
+
+    test(
+      'redacts allowed credential values from CLI previews',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'template_redact_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final script = await _writeExecutable(
+          workspace,
+          'fake.sh',
+          r'''#!/bin/sh
+printf %s "$PATH"
+''',
+        );
+        final result =
+            await CommandTemplateAgentHarness(
+              providerId: 'fake-cli',
+              config: CommandTemplateAgentConfig(
+                name: 'fake',
+                executable: script.path,
+                arguments: const ['{instruction}'],
+                version: 'test',
+              ),
+              allowedSensitiveEnvironmentKeys: const ['PATH'],
+            ).run(
+              workspace: workspace,
+              instruction: 'x',
+              modelId: 'm',
+              timeout: const Duration(seconds: 2),
+            );
+
+        expect(result.stdoutPreview, contains('[REDACTED:PATH]'));
+        expect(
+          result.stdoutPreview,
+          isNot(contains(Platform.environment['PATH'])),
+        );
+      },
+      skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    );
+
+    test('resolves built-in command presets', () {
+      final codex = CommandTemplateAgentConfig.preset(
+        'codex',
+        version: '1.0.0',
+      );
+      expect(codex.executable, 'codex');
+      expect(codex.arguments, [
+        'exec',
+        '--sandbox',
+        'workspace-write',
+        '--model',
+        '{model}',
+        '{instruction}',
+      ]);
+      final claudeCode = CommandTemplateAgentConfig.preset(
+        'claude-code',
+        version: '1.0.0',
+      );
+      expect(claudeCode.executable, 'claude');
+      expect(claudeCode.arguments, [
+        '-p',
+        '--permission-mode',
+        'bypassPermissions',
+        '--model',
+        '{model}',
+        '{instruction}',
+      ]);
+      final opencode = CommandTemplateAgentConfig.preset(
+        'opencode',
+        version: '1.0.0',
+      );
+      expect(opencode.executable, 'opencode');
+      expect(opencode.arguments, [
+        'run',
+        '--auto',
+        '--model',
+        '{model}',
+        '{instruction}',
+      ]);
+    });
+
+    test('requires an instruction placeholder', () {
+      expect(
+        () => CommandTemplateAgentHarness(
+          providerId: 'fake-cli',
+          config: const CommandTemplateAgentConfig(
+            name: 'fake',
+            executable: 'fake',
+            arguments: ['--model', '{model}'],
+            version: '1.0.0',
+          ),
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('rejects unknown template placeholders', () {
+      expect(
+        () => CommandTemplateAgentHarness(
+          providerId: 'fake-cli',
+          config: const CommandTemplateAgentConfig(
+            name: 'fake',
+            executable: 'fake',
+            arguments: ['{instruction}', '{work_dir}'],
+            version: '1.0.0',
+          ),
+        ),
+        throwsArgumentError,
+      );
+    });
+  });
+}
+
+CommandTemplateAgentHarness _templateHarness(
+  File script, {
+  GeneratedCodeSandbox? sandbox,
+}) => CommandTemplateAgentHarness(
+  providerId: 'fake-cli',
+  config: CommandTemplateAgentConfig(
+    name: 'fake',
+    executable: script.path,
+    arguments: const ['{instruction}'],
+    version: 'test',
+  ),
+  generatedCodeSandbox: sandbox,
+);
+
+Future<File> _writeExecutable(
+  Directory directory,
+  String name,
+  String body,
+) async {
+  final file = File(p.join(directory.path, name));
+  await file.writeAsString(body);
+  final result = await Process.run('chmod', ['+x', file.path]);
+  if (result.exitCode != 0) throw StateError('chmod failed');
+  return file;
 }
 
 class _ScriptedStreamingProvider implements StreamingModelProvider {

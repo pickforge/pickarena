@@ -16,7 +16,7 @@ typedef DroidAgentProcessRunner =
       Duration timeout,
     );
 
-class DroidAgentHarness implements AgentHarness {
+class DroidAgentHarness implements AgentHarness, AgentHarnessProvenance {
   DroidAgentHarness({
     DroidAgentProcessRunner? runner,
     String? droidPath,
@@ -45,6 +45,13 @@ class DroidAgentHarness implements AgentHarness {
   String get id => 'droid';
 
   @override
+  Map<String, Object?> get provenance => const {
+    'kind': 'droid',
+    'track': 'scaffold-dependent',
+    'agent': 'droid',
+  };
+
+  @override
   Future<AgentRunResult> run({
     required Directory workspace,
     required String instruction,
@@ -65,7 +72,7 @@ class DroidAgentHarness implements AgentHarness {
     ];
     final deniedKeys = {..._deniedEnvironmentKeys, ...deniedEnvironmentKeys};
     final result = _runner == null
-        ? await _defaultRunner(
+        ? await runExternalProcess(
             _exe,
             args,
             workspace,
@@ -75,6 +82,7 @@ class DroidAgentHarness implements AgentHarness {
             _maxProcessOutputChars,
             allowInternet,
             _generatedCodeSandbox,
+            extraReadOnlyPaths: _factoryConfigReadOnlyPaths(),
           )
         : await _runner(_exe, args, workspace, timeout);
     return _boundedResult(result);
@@ -141,7 +149,7 @@ $instruction
     ];
   }
 
-  static Future<AgentRunResult> _defaultRunner(
+  static Future<AgentRunResult> runExternalProcess(
     String exe,
     List<String> args,
     Directory workspace,
@@ -150,11 +158,16 @@ $instruction
     Iterable<String> allowedSensitiveEnvironmentKeys,
     int maxProcessOutputChars,
     bool allowInternet,
-    GeneratedCodeSandbox? generatedCodeSandbox,
-  ) async {
+    GeneratedCodeSandbox? generatedCodeSandbox, {
+    Iterable<String> extraReadOnlyPaths = const [],
+    List<String> Function(Directory workingDirectory)?
+    argumentsForWorkingDirectory,
+  }) async {
     final sw = Stopwatch()..start();
     final cwdProxy = await _createWorkingDirectoryProxy(workspace);
     final workingDirectory = cwdProxy?.directory ?? workspace;
+    final effectiveArguments =
+        argumentsForWorkingDirectory?.call(workingDirectory) ?? args;
     final environment = benchmarkSubprocessEnvironment(
       additionalDeniedKeys: deniedEnvironmentKeys,
       allowedSensitiveKeys: allowedSensitiveEnvironmentKeys,
@@ -167,18 +180,18 @@ $instruction
       final processStart = generatedCodeSandbox == null
           ? SandboxedProcessStart(
               executable: exe,
-              arguments: args,
+              arguments: effectiveArguments,
               workingDirectory: workingDirectory.path,
               environment: environment,
             )
           : await generatedCodeSandbox.wrapProcess(
               executable: exe,
-              arguments: args,
+              arguments: effectiveArguments,
               workingDirectory: workingDirectory.path,
               environment: environment,
               allowInternet: allowInternet,
               resourceLimits: null,
-              extraReadOnlyPaths: _factoryConfigReadOnlyPaths(),
+              extraReadOnlyPaths: extraReadOnlyPaths,
             );
       process = await Process.start(
         processStart.executable,
@@ -272,7 +285,7 @@ $instruction
         latency: sw.elapsed,
         metadata: {
           'executable': exe,
-          'argc': args.length,
+          'argc': effectiveArguments.length,
           'workspace': workspace.path,
           if (cwdProxy != null) 'cwd_proxy_used': true,
           if (generatedCodeSandbox != null)

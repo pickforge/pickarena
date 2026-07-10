@@ -29,6 +29,7 @@ class HeadlessBenchmarkConfig {
     required this.providers,
     required this.modelsByProvider,
     this.agentHarnesses = const [],
+    this.agentHarnessProvenance = const {},
     required this.evaluatorConfig,
     required this.evaluatorWeights,
     required this.workdirManager,
@@ -58,6 +59,7 @@ class HeadlessBenchmarkConfig {
   final List<ModelProvider> providers;
   final Map<String, List<String>> modelsByProvider;
   final List<AgentHarness> agentHarnesses;
+  final Map<String, Map<String, Object?>> agentHarnessProvenance;
   final EvaluatorConfig evaluatorConfig;
   final Map<String, double> evaluatorWeights;
   final WorkdirManager workdirManager;
@@ -220,6 +222,7 @@ class HeadlessBenchmarkRunner {
       generatedCodeSandboxRequired: config.generatedCodeSandboxRequired,
       generatedCodeSandboxEnforced: config.generatedCodeSandboxEnforced,
       generatedCodeSandboxBackend: config.generatedCodeSandboxBackend,
+      agentHarnessProvenance: config.agentHarnessProvenance,
     );
     final provenanceJson = await buildRunProvenanceJson(
       runId: config.runId,
@@ -360,7 +363,7 @@ class HeadlessBenchmarkRunner {
       now: config.now,
       generatedCodeSandbox: config.generatedCodeSandbox,
     );
-    final harnessesByProviderId = {
+    final harnessesByProviderId = <String, AgentHarness>{
       for (final harness in config.agentHarnesses) harness.id: harness,
     };
     final failures = <_HeadlessComboFailure>[];

@@ -14,3 +14,7 @@ abstract class AgentHarness {
     bool allowInternet = true,
   });
 }
+
+abstract interface class AgentHarnessProvenance {
+  Map<String, Object?> get provenance;
+}
