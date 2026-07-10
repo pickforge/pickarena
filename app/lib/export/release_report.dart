@@ -207,8 +207,11 @@ Map<String, Object?> buildReleaseReport({
     benchmark['corpusManifestDigestSha256'],
   );
   final selectedTasks = benchmark['selectedTasks'];
+  final digestIsSha256 =
+      corpusManifestDigest != null &&
+      RegExp(r'^[0-9a-f]{64}$').hasMatch(corpusManifestDigest);
   if (preset == null ||
-      corpusManifestDigest == null ||
+      !digestIsSha256 ||
       selectedTasks is! List ||
       selectedTasks.isEmpty) {
     blockers.add(

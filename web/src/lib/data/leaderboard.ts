@@ -299,7 +299,7 @@ function withWarning(warning: string): LeaderboardLoadResult {
 function parseLeaderboard(value: unknown): LeaderboardData | null {
   if (!isRecord(value)) return null;
   const schemaVersion = parseNumber(value.schemaVersion);
-  if (schemaVersion == null || schemaVersion < 1) return null;
+  if (schemaVersion == null || schemaVersion < 1 || schemaVersion > 2) return null;
   if (!isRecord(value.benchmark)) return null;
   if (!isRecord(value.source)) return null;
   if (!Array.isArray(value.models)) return null;

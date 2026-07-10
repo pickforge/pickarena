@@ -69,6 +69,28 @@ void main() {
       expect(await selectTaskPreset('mvp', [task]), isEmpty);
     },
   );
+
+  test(
+    'mvp excludes tasks whose bundle drifted from the admitted digest',
+    () async {
+      final root = Directory(
+        p.join(Directory.current.path, '..', 'tasks', 'flutter'),
+      );
+      final source = (await loadFileBackedTasks(root)).first;
+      final tmp = await Directory.systemTemp.createTemp('dart_arena_preset_');
+      addTearDown(() => tmp.delete(recursive: true));
+      final bundle = Directory(p.join(tmp.path, 'task'));
+      await _copyDirectory(source.bundleDirectory, bundle);
+      final instruction = File(p.join(bundle.path, 'instruction.md'));
+      await instruction.writeAsString(
+        '${await instruction.readAsString()}\n<!-- drift -->\n',
+      );
+
+      final task = await FileBackedTask.load(bundle);
+
+      expect(await selectTaskPreset('mvp', [task]), isEmpty);
+    },
+  );
 }
 
 Future<void> _copyDirectory(Directory source, Directory destination) async {
