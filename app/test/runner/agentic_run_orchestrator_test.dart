@@ -35,6 +35,8 @@ class _FakeHarness implements AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
+    bool requireGeneratedCodeSandbox = false,
   }) async {
     await onRun(workspace);
     return const AgentRunResult(
@@ -63,6 +65,8 @@ class _MetadataHarness implements AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
+    bool requireGeneratedCodeSandbox = false,
   }) async {
     await File(
       p.join(workspace.path, 'lib', 'answer.dart'),
@@ -89,6 +93,8 @@ class _FailingHarness implements AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
+    bool requireGeneratedCodeSandbox = false,
   }) async {
     return const AgentRunResult(
       status: AgentRunStatus.failure,
@@ -111,6 +117,8 @@ class _NoPreviewTimeoutHarness implements AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
+    bool requireGeneratedCodeSandbox = false,
   }) async {
     await File(
       p.join(workspace.path, 'lib', 'answer.dart'),
@@ -127,6 +135,7 @@ class _NoPreviewTimeoutHarness implements AgentHarness {
 
 class _CapturingDeniedKeysHarness implements AgentHarness {
   Set<String> deniedKeys = const {};
+  var allowInternet = true;
 
   @override
   String get id => 'fake_agent';
@@ -138,8 +147,11 @@ class _CapturingDeniedKeysHarness implements AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
+    bool requireGeneratedCodeSandbox = false,
   }) async {
     deniedKeys = Set.unmodifiable(deniedEnvironmentKeys);
+    this.allowInternet = allowInternet;
     final file = File(p.join(workspace.path, 'lib', 'answer.dart'));
     await file.parent.create(recursive: true);
     await file.writeAsString('int answer() => 42;\n');
@@ -407,7 +419,7 @@ void main() {
 
       final harness = _CapturingDeniedKeysHarness();
       final orchestrator = AgenticRunOrchestrator(
-        workdirManager: WorkdirManager(
+        workdirManager: NoOpPrepareWorkdirManager(
           root: root,
           deniedEnvironmentKeys: const ['SECRET_KEY'],
         ),
@@ -425,6 +437,7 @@ void main() {
       );
 
       expect(harness.deniedKeys, contains('SECRET_KEY'));
+      expect(harness.allowInternet, isFalse);
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );

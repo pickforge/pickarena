@@ -193,6 +193,8 @@ class _NoPreviewTimeoutAgentHarness implements AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
+    bool requireGeneratedCodeSandbox = false,
   }) async {
     expect(modelId, this.modelId);
     final file = File(p.join(workspace.path, 'lib', 'headless_answer.dart'));
@@ -227,6 +229,8 @@ class _NoPreviewFailureAgentHarness implements AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
+    bool requireGeneratedCodeSandbox = false,
   }) async {
     expect(modelId, this.modelId);
     return const AgentRunResult(

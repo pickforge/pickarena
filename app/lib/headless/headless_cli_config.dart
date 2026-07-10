@@ -60,6 +60,7 @@ class HeadlessCliProviderConfig {
     required this.models,
     this.apiKeyEnv,
     this.baseUrl,
+    this.harness,
     this.defaultEfforts = const [],
     this.extraHeaders = const {},
   });
@@ -70,6 +71,7 @@ class HeadlessCliProviderConfig {
   final List<String> models;
   final String? apiKeyEnv;
   final String? baseUrl;
+  final String? harness;
   final List<String> defaultEfforts;
   final Map<String, String> extraHeaders;
 }
@@ -237,6 +239,21 @@ HeadlessCliProviderConfig _parseProvider(
     'apiKeyEnv',
     path: 'providers[$index].apiKeyEnv',
   );
+  final harness = _optionalString(
+    json,
+    'harness',
+    path: 'providers[$index].harness',
+  );
+  if (harness != null && harness != 'droid' && harness != 'minimal') {
+    throw HeadlessCliConfigException(
+      'providers[$index].harness must be "droid" or "minimal"',
+    );
+  }
+  if (harness == 'droid' && type != 'droid') {
+    throw HeadlessCliConfigException(
+      'providers[$index].harness "droid" requires provider type "droid"',
+    );
+  }
 
   if (_requiresApiKeyEnv(type) && (apiKeyEnv == null || apiKeyEnv.isEmpty)) {
     throw HeadlessCliConfigException(
@@ -251,6 +268,7 @@ HeadlessCliProviderConfig _parseProvider(
     models: List.unmodifiable(models),
     apiKeyEnv: apiKeyEnv,
     baseUrl: baseUrl,
+    harness: harness,
     defaultEfforts: List.unmodifiable(
       _optionalStringList(
         json,

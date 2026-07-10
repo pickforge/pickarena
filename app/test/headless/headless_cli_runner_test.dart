@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/agent/droid_agent_harness.dart';
+import 'package:dart_arena/agent/minimal_agent_harness.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
@@ -730,6 +731,47 @@ printf '%s' "$DROID_SANDBOX_MARKER" > headless-sandbox-marker.txt
     skip: Platform.isWindows ? 'POSIX shell script test' : false,
   );
 
+  test('selects the minimal harness for an opted-in provider', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'dart_arena_cli_minimal_',
+    );
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+    final configFile = await _writeConfig(
+      tmp,
+      tasks: ['agentic.phase7.headless_smoke'],
+      provider: const {
+        'type': 'droid',
+        'models': ['fake-headless-model'],
+        'harness': 'minimal',
+      },
+    );
+    final runner = _CapturingHeadlessBenchmarkRunner();
+
+    final exitCode = await runHeadlessCli(
+      ['--config', configFile.path],
+      dependencies: HeadlessCliDependencies(
+        environmentReader: _emptyEnv,
+        providerBuilder: (config, _) => DeterministicFakeProvider(
+          providerId: config.id,
+          providerDisplayName: config.displayName,
+          modelId: config.models.single,
+        ),
+        taskRegistryBuilder: () =>
+            TaskRegistry()..register(_AgenticHeadlessSmokeTask()),
+        runner: runner,
+      ),
+      stdoutWriter: (_) {},
+      stderrWriter: (_) {},
+    );
+
+    expect(exitCode, 1);
+    final harness = runner.capturedConfig!.agentHarnesses.single;
+    expect(harness, isA<MinimalAgentHarness>());
+    expect(harness.id, 'droid');
+  });
+
   test('unknown task fails clearly', () async {
     final tmp = await Directory.systemTemp.createTemp('dart_arena_cli_task_');
     addTearDown(() async {
@@ -781,7 +823,7 @@ printf '%s' "$DROID_SANDBOX_MARKER" > headless-sandbox-marker.txt
             providerDisplayName: config.displayName,
             modelId: config.models.single,
           ),
-          agentHarnessBuilder: (config, _) {
+          agentHarnessBuilder: (config, _, __) {
             harness = DeterministicFakeAgentHarness(
               harnessId: config.providers.single.id,
               modelId: config.providers.single.models.single,
@@ -875,7 +917,7 @@ HeadlessCliDependencies _dependencies({
     taskRegistryBuilder:
         taskRegistryBuilder ??
         (() => TaskRegistry()..register(_HeadlessSmokeTask())),
-    agentHarnessBuilder: agentHarnessBuilder ?? (_, _) => const [],
+    agentHarnessBuilder: agentHarnessBuilder ?? (_, __, ___) => const [],
     now: () => DateTime.utc(2026, 5, 30, 12),
     provenanceEnvironmentProviderBuilder: () =>
         const FixedRunProvenanceEnvironmentProvider(),

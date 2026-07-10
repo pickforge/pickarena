@@ -11,5 +11,6 @@ abstract class AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
   });
 }

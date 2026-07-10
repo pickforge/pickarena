@@ -51,6 +51,7 @@ class DroidAgentHarness implements AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
   }) async {
     final args = [
       'exec',
@@ -72,6 +73,7 @@ class DroidAgentHarness implements AgentHarness {
             deniedKeys,
             factoryCustomModelEnvironmentReferences(modelId),
             _maxProcessOutputChars,
+            allowInternet,
             _generatedCodeSandbox,
           )
         : await _runner(_exe, args, workspace, timeout);
@@ -147,6 +149,7 @@ $instruction
     Iterable<String> deniedEnvironmentKeys,
     Iterable<String> allowedSensitiveEnvironmentKeys,
     int maxProcessOutputChars,
+    bool allowInternet,
     GeneratedCodeSandbox? generatedCodeSandbox,
   ) async {
     final sw = Stopwatch()..start();
@@ -173,7 +176,7 @@ $instruction
               arguments: args,
               workingDirectory: workingDirectory.path,
               environment: environment,
-              allowInternet: true,
+              allowInternet: allowInternet,
               resourceLimits: null,
               extraReadOnlyPaths: _factoryConfigReadOnlyPaths(),
             );
@@ -236,11 +239,11 @@ $instruction
         } else {
           timedOut = signal is _AgentProcessTimeoutExceeded;
           outputLimitHit = signal is _AgentProcessOutputLimitExceeded;
-          await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
+          await terminateProcessTree(process.pid, ProcessSignal.sigterm);
           exitCode = await process.exitCode.timeout(
             const Duration(seconds: 2),
             onTimeout: () async {
-              await _terminateProcessTree(process.pid, ProcessSignal.sigkill);
+              await terminateProcessTree(process.pid, ProcessSignal.sigkill);
               return -1;
             },
           );
@@ -348,7 +351,7 @@ $instruction
     return value.substring(value.length - maxChars);
   }
 
-  static Future<void> _terminateProcessTree(
+  static Future<void> terminateProcessTree(
     int pid,
     ProcessSignal signal,
   ) async {
