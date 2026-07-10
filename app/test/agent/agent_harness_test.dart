@@ -926,7 +926,14 @@ while :; do printf '0123456789abcdef0123456789abcdef\\n'; done
         version: '1.0.0',
       );
       expect(codex.executable, 'codex');
-      expect(codex.arguments, ['exec', '--model', '{model}', '{instruction}']);
+      expect(codex.arguments, [
+        'exec',
+        '--sandbox',
+        'workspace-write',
+        '--model',
+        '{model}',
+        '{instruction}',
+      ]);
       final claudeCode = CommandTemplateAgentConfig.preset(
         'claude-code',
         version: '1.0.0',
@@ -934,6 +941,8 @@ while :; do printf '0123456789abcdef0123456789abcdef\\n'; done
       expect(claudeCode.executable, 'claude');
       expect(claudeCode.arguments, [
         '-p',
+        '--permission-mode',
+        'acceptEdits',
         '--model',
         '{model}',
         '{instruction}',

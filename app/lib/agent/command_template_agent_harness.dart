@@ -22,13 +22,27 @@ class CommandTemplateAgentConfig {
     'codex': CommandTemplateAgentConfig(
       name: 'codex',
       executable: 'codex',
-      arguments: ['exec', '--model', '{model}', '{instruction}'],
+      arguments: [
+        'exec',
+        '--sandbox',
+        'workspace-write',
+        '--model',
+        '{model}',
+        '{instruction}',
+      ],
       version: 'preset',
     ),
     'claude-code': CommandTemplateAgentConfig(
       name: 'claude-code',
       executable: 'claude',
-      arguments: ['-p', '--model', '{model}', '{instruction}'],
+      arguments: [
+        '-p',
+        '--permission-mode',
+        'acceptEdits',
+        '--model',
+        '{model}',
+        '{instruction}',
+      ],
       version: 'preset',
     ),
     'opencode': CommandTemplateAgentConfig(
@@ -67,9 +81,13 @@ class CommandTemplateAgentHarness
     required this.config,
     this.generatedCodeSandbox,
     Iterable<String> deniedEnvironmentKeys = const [],
+    Iterable<String> allowedSensitiveEnvironmentKeys = const [],
     this.maxPreviewChars = 16 * 1024,
     this.maxProcessOutputChars = 1024 * 1024,
   }) : _deniedEnvironmentKeys = Set.unmodifiable(deniedEnvironmentKeys),
+       _allowedSensitiveEnvironmentKeys = Set.unmodifiable(
+         allowedSensitiveEnvironmentKeys,
+       ),
        assert(maxPreviewChars > 0),
        assert(maxProcessOutputChars > 0) {
     _validateTemplate(config.arguments);
@@ -79,6 +97,7 @@ class CommandTemplateAgentHarness
   final CommandTemplateAgentConfig config;
   final GeneratedCodeSandbox? generatedCodeSandbox;
   final Set<String> _deniedEnvironmentKeys;
+  final Set<String> _allowedSensitiveEnvironmentKeys;
   final int maxPreviewChars;
   final int maxProcessOutputChars;
 
@@ -107,8 +126,11 @@ class CommandTemplateAgentHarness
       const [],
       workspace,
       timeout,
-      {..._deniedEnvironmentKeys, ...deniedEnvironmentKeys},
-      const [],
+      {
+        ..._deniedEnvironmentKeys,
+        ...deniedEnvironmentKeys,
+      }.difference(_allowedSensitiveEnvironmentKeys),
+      _allowedSensitiveEnvironmentKeys,
       maxProcessOutputChars,
       allowInternet,
       generatedCodeSandbox,

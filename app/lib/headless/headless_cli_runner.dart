@@ -407,6 +407,9 @@ List<AgentHarness> _defaultAgentHarnessBuilder(
                 version: configProvider.agentVersion!,
               ),
           deniedEnvironmentKeys: _configuredApiKeyEnvNames(config),
+          allowedSensitiveEnvironmentKeys: [
+            if (configProvider.apiKeyEnv != null) configProvider.apiKeyEnv!,
+          ],
           generatedCodeSandbox: generatedCodeSandbox,
         ),
   ];
