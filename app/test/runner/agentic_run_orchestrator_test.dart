@@ -197,7 +197,8 @@ class _GradingWorkspaceEvaluator implements Evaluator {
       p.join(ctx.workDir.path, 'lib', 'answer.dart'),
     ).readAsString();
     final passed =
-        source.contains('42') && p.basename(ctx.workDir.path) == 'grading';
+        source.contains('42') &&
+        p.basename(ctx.workDir.path).endsWith('_grading');
     return EvaluationResult(
       evaluatorId: id,
       passed: passed,
@@ -466,8 +467,15 @@ void main() {
       isTrue,
     );
     expect(evaluator.workDir, isNotNull);
-    expect(p.basename(evaluator.workDir!.path), 'grading');
-    expect(p.dirname(evaluator.workDir!.path), harness.workspace!.path);
+    expect(p.basename(evaluator.workDir!.path), 'trial_0_grading');
+    expect(
+      p.dirname(evaluator.workDir!.path),
+      p.dirname(harness.workspace!.path),
+    );
+    expect(
+      p.isWithin(harness.workspace!.path, evaluator.workDir!.path),
+      isFalse,
+    );
     expect(result.provenance['gradingMode'], 'clean_replay');
     expect(result.provenance['patchApplied'], isTrue);
     expect(

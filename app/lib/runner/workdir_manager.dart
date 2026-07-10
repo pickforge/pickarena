@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:dart_arena/core/patch_capture.dart';
 import 'package:dart_arena/core/path_safety.dart';
 import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/core/workspace_path.dart';
@@ -176,8 +177,7 @@ class WorkdirManager {
   }) {
     final taskPath = p.join(
       _workdirPathSegment(taskId),
-      'trial_$trialIndex',
-      'grading',
+      'trial_${trialIndex}_grading',
     );
     final dir = Directory(
       p.join(
@@ -654,6 +654,7 @@ class WorkdirManager {
     await _runGit(dir, ['config', 'user.name', 'dart_arena']);
     await _runGit(dir, ['add', '.']);
     await _runGit(dir, ['commit', '--allow-empty', '-m', 'baseline']);
+    await _runGit(dir, ['tag', '-f', patchBaselineRef]);
   }
 
   Future<void> _ensureBaselineGitignore(Directory dir) async {

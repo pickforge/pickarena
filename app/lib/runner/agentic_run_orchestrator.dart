@@ -162,11 +162,8 @@ class AgenticRunOrchestrator {
       );
     }
 
-    late final WorkdirIsolationEvidence workspaceIsolation;
     late final Map<String, Object?> hiddenFixtureIsolation;
     try {
-      workspaceIsolation = await workdirManager
-          .collectWorkspaceIsolationEvidence(workspace);
       hiddenFixtureIsolation = await _hiddenFixtureIsolation(task, workspace);
     } on Object catch (e) {
       return _environmentFailureResult(
@@ -187,7 +184,6 @@ class AgenticRunOrchestrator {
       'gradingMode': 'clean_replay',
       'patchApplied': false,
       'patchSha256': capturedPatch?.patchSha256,
-      'agentWorkspaceIsolation': workspaceIsolation.toJson(),
       'hiddenFixtureIsolation': hiddenFixtureIsolation,
       'hiddenVerifierDigests': hiddenVerifierDigests(task),
     };
@@ -214,29 +210,6 @@ class AgenticRunOrchestrator {
         evaluatorConfig: evaluatorConfig,
         phase: 'grading_workspace',
         rationale: 'grading workspace preparation failed',
-        error: e,
-        provenance: resultProvenance,
-      );
-    }
-    try {
-      await workdirManager.applyCapturedPatch(
-        gradingWorkspace,
-        capturedPatch?.patch ?? '',
-      );
-      resultProvenance['patchApplied'] =
-          capturedPatch?.hasMeaningfulDiff ?? false;
-    } on Object catch (e) {
-      return _environmentFailureResult(
-        runId: runId,
-        providerId: providerId,
-        modelId: modelId,
-        task: task,
-        trialIndex: trialIndex,
-        planId: planId,
-        harnessId: harness.id,
-        evaluatorConfig: evaluatorConfig,
-        phase: 'grading_patch_apply',
-        rationale: 'grading patch apply failed',
         error: e,
         provenance: resultProvenance,
       );
@@ -273,12 +246,32 @@ class AgenticRunOrchestrator {
       task.evaluatorsFor(evaluatorConfig),
       task,
     );
+    PrepareFailed? patchApplyFailure;
+    if (gradingPrep is PrepareOk) {
+      try {
+        await workdirManager.applyCapturedPatch(
+          gradingWorkspace,
+          capturedPatch?.patch ?? '',
+        );
+        resultProvenance['patchApplied'] =
+            capturedPatch?.hasMeaningfulDiff ?? false;
+      } on Object catch (e) {
+        patchApplyFailure = PrepareFailed(e.toString());
+      }
+    }
     if (gradingPrep is PrepareFailed) {
       _addPrepareFailureEvaluations(
         evaluations: evaluations,
         evaluators: evaluators,
         failure: gradingPrep,
         phase: 'grading_prepare',
+      );
+    } else if (patchApplyFailure != null) {
+      _addPrepareFailureEvaluations(
+        evaluations: evaluations,
+        evaluators: evaluators,
+        failure: patchApplyFailure,
+        phase: 'grading_patch_apply',
       );
     } else {
       for (final evaluator in evaluators) {

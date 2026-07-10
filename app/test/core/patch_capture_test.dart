@@ -29,6 +29,7 @@ void main() {
     await _git(root, ['config', 'user.name', 'test']);
     await _git(root, ['add', '.']);
     await _git(root, ['commit', '-m', 'baseline']);
+    await _git(root, ['tag', patchBaselineRef]);
 
     await File(p.join(root.path, 'lib.dart')).writeAsString('int a = 2;\n');
     await File(p.join(root.path, 'new.dart')).writeAsString('int b = 3;\n');
@@ -45,7 +46,7 @@ void main() {
     expect(result.patchSha256, matches(RegExp(r'^[0-9a-f]{64}$')));
   });
 
-  test('captures staged changes relative to HEAD', () async {
+  test('captures staged changes relative to the baseline ref', () async {
     final root = await Directory.systemTemp.createTemp('patch_capture_staged_');
     addTearDown(() async {
       if (await root.exists()) await root.delete(recursive: true);
@@ -57,6 +58,7 @@ void main() {
     await _git(root, ['config', 'user.name', 'test']);
     await _git(root, ['add', '.']);
     await _git(root, ['commit', '-m', 'baseline']);
+    await _git(root, ['tag', patchBaselineRef]);
     await File(p.join(root.path, 'lib.dart')).writeAsString('int a = 2;\n');
     await _git(root, ['add', 'lib.dart']);
 
@@ -65,6 +67,34 @@ void main() {
     expect(result.hasMeaningfulDiff, isTrue);
     expect(result.patch, contains('+int a = 2;'));
   });
+
+  test(
+    'captures a solution the agent committed on top of the baseline',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'patch_capture_commit_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+
+      await File(p.join(root.path, 'lib.dart')).writeAsString('int a = 1;\n');
+      await _git(root, ['init']);
+      await _git(root, ['config', 'user.email', 'test@example.invalid']);
+      await _git(root, ['config', 'user.name', 'test']);
+      await _git(root, ['add', '.']);
+      await _git(root, ['commit', '-m', 'baseline']);
+      await _git(root, ['tag', patchBaselineRef]);
+      await File(p.join(root.path, 'lib.dart')).writeAsString('int a = 2;\n');
+      await _git(root, ['add', '.']);
+      await _git(root, ['commit', '-m', 'agent solution']);
+
+      final result = await const PatchCapture().capture(root);
+
+      expect(result.hasMeaningfulDiff, isTrue);
+      expect(result.patch, contains('+int a = 2;'));
+    },
+  );
 
   test(
     'scrubs sensitive environment variables from git subprocesses',

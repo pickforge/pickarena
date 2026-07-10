@@ -427,7 +427,8 @@ environment:
         workspace: workspace,
       );
 
-      expect(p.basename(gradingWorkspace.path), 'grading');
+      expect(p.basename(gradingWorkspace.path), 'trial_0_grading');
+      expect(p.isWithin(agentWorkspace.path, gradingWorkspace.path), isFalse);
       expect(
         await File(
           p.join(gradingWorkspace.path, 'lib', 'answer.dart'),

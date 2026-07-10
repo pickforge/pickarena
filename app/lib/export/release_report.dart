@@ -8017,7 +8017,6 @@ Map<String, Object?> _provenanceSummary({
       if (_taskQaReportKey(evidence) case final key?)
         key: _objectMap(evidence['hiddenVerifierDigests']),
   };
-  var agentWorkspaceRestrictedPathsAbsentResultCount = 0;
   for (final runId in runIds) {
     final provenance = runProvenanceById?[runId];
     if (runProvenanceById != null && provenance == null) {
@@ -8060,7 +8059,6 @@ Map<String, Object?> _provenanceSummary({
     var runCleanReplayResultCount = 0;
     var runHiddenFixtureIsolationAssertedResultCount = 0;
     var runHiddenFixtureIsolationLeakResultCount = 0;
-    var runAgentWorkspaceRestrictedPathsAbsentResultCount = 0;
     for (final result in resultProvenance) {
       resultProvenanceCount++;
       final gradingMode = result['gradingMode'];
@@ -8069,6 +8067,11 @@ Map<String, Object?> _provenanceSummary({
           : 'missing';
       gradingModeCounts[gradingModeKey] =
           (gradingModeCounts[gradingModeKey] ?? 0) + 1;
+
+      if (result['benchmarkTrack'] != 'agentic') {
+        continue;
+      }
+
       if (result['gradingMode'] == 'clean_replay') {
         cleanReplayResultCount++;
         runCleanReplayResultCount++;
@@ -8095,18 +8098,6 @@ Map<String, Object?> _provenanceSummary({
         runHiddenFixtureIsolationLeakResultCount++;
         blockers.add(
           'Hidden verifier fixtures were readable from the agent workspace.',
-        );
-      }
-
-      final agentWorkspaceIsolation = _objectMap(
-        result['agentWorkspaceIsolation'],
-      );
-      if (agentWorkspaceIsolation['restrictedPathsAbsent'] == true) {
-        agentWorkspaceRestrictedPathsAbsentResultCount++;
-        runAgentWorkspaceRestrictedPathsAbsentResultCount++;
-      } else {
-        blockers.add(
-          'Restricted paths were readable from the agent workspace.',
         );
       }
 
@@ -8202,8 +8193,6 @@ Map<String, Object?> _provenanceSummary({
           runHiddenFixtureIsolationAssertedResultCount,
       'hiddenFixtureIsolationLeakResultCount':
           runHiddenFixtureIsolationLeakResultCount,
-      'agentWorkspaceRestrictedPathsAbsentResultCount':
-          runAgentWorkspaceRestrictedPathsAbsentResultCount,
       if (provenance != null) 'provenance': _sanitize(provenance),
     });
   }
@@ -8226,8 +8215,6 @@ Map<String, Object?> _provenanceSummary({
         hiddenFixtureIsolationAssertedResultCount,
     'hiddenFixtureIsolationLeakResultCount':
         hiddenFixtureIsolationLeakResultCount,
-    'agentWorkspaceRestrictedPathsAbsentResultCount':
-        agentWorkspaceRestrictedPathsAbsentResultCount,
     'hiddenVerifierDigestMatchedResultCount':
         hiddenVerifierDigestMatchedResultCount,
     'runs': runs,

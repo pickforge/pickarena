@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 
+const patchBaselineRef = 'arena_baseline';
+
 class PatchCaptureResult {
   const PatchCaptureResult({
     required this.patch,
@@ -39,7 +41,7 @@ class PatchCapture {
     final intentToAdd = await _runGit(workspace, addIntentArgs);
     _checkGitResult(intentToAdd, addIntentArgs);
     const statusArgs = ['status', '--porcelain'];
-    const diffArgs = ['diff', 'HEAD', '--binary'];
+    const diffArgs = ['diff', patchBaselineRef, '--binary'];
     final status = await _runGit(workspace, statusArgs);
     final diff = await _runGit(workspace, diffArgs);
     _checkGitResult(status, statusArgs);

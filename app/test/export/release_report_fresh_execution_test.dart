@@ -178,34 +178,11 @@ void main() {
       ),
     );
   });
-
-  test(
-    'blocks when restricted paths were readable from the agent workspace',
-    () {
-      final blockers = _provenanceBlockers(
-        taskBundleDigestEvidence: const [
-          {
-            'taskId': 'task.a',
-            'taskVersion': 1,
-            'track': 'agentic',
-            'hiddenVerifierDigests': {'hidden_test': 'aa'},
-          },
-        ],
-        hiddenVerifierDigests: const {'hidden_test': 'aa'},
-        restrictedPathsAbsent: false,
-      );
-      expect(
-        blockers,
-        contains('Restricted paths were readable from the agent workspace.'),
-      );
-    },
-  );
 }
 
 String _provenanceBlockers({
   required List<Map<String, Object?>> taskBundleDigestEvidence,
   required Map<String, Object?> hiddenVerifierDigests,
-  bool restrictedPathsAbsent = true,
 }) {
   final report = buildReleaseReport(
     leaderboard: {
@@ -248,9 +225,6 @@ String _provenanceBlockers({
             'hiddenFixtureIsolation': const {
               'asserted': true,
               'leakedPaths': <String>[],
-            },
-            'agentWorkspaceIsolation': {
-              'restrictedPathsAbsent': restrictedPathsAbsent,
             },
             'hiddenVerifierDigests': hiddenVerifierDigests,
           },

@@ -12761,7 +12761,6 @@ List<Map<String, Object?>> _cleanReplayResultProvenance(
         'asserted': true,
         'leakedPaths': <String>[],
       },
-      'agentWorkspaceIsolation': const {'restrictedPathsAbsent': true},
       'hiddenVerifierDigests': hiddenVerifierDigests,
     },
 ];
