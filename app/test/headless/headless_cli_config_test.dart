@@ -213,7 +213,7 @@ void main() {
       );
     });
 
-    test('rejects agent_cli providers for codegen tasks', () {
+    test('does not infer task track from an ID prefix', () {
       final config = _validConfig()
         ..remove('judge')
         ..['tasks'] = ['codegen.example']
@@ -228,11 +228,11 @@ void main() {
           },
         ];
       expect(
-        () => parseHeadlessCliConfig(
+        parseHeadlessCliConfig(
           config,
           configPath: p.join(Directory.current.path, 'run.json'),
-        ),
-        throwsA(isA<HeadlessCliConfigException>()),
+        ).providers.single.type,
+        'agent_cli',
       );
     });
 

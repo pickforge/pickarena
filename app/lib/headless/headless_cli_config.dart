@@ -154,13 +154,6 @@ HeadlessCliConfig parseHeadlessCliConfig(
       '${judge.providerId}',
     );
   }
-  if (providers.any((provider) => provider.type == 'agent_cli') &&
-      tasks.any((task) => task.startsWith('codegen.'))) {
-    throw const HeadlessCliConfigException(
-      'agent_cli providers may only run agentic tasks',
-    );
-  }
-
   final workdirRoot = _resolvePath(
     _requiredString(json, 'workdirRoot'),
     configDir,

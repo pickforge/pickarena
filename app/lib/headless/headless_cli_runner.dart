@@ -103,6 +103,12 @@ Future<int> runHeadlessCli(
     final tasks = [
       for (final taskId in cliConfig.tasks) _resolveTask(registry, taskId),
     ];
+    if (cliConfig.providers.any((provider) => provider.type == 'agent_cli') &&
+        tasks.any((task) => task.track == BenchmarkTrack.codegen)) {
+      throw const HeadlessCliConfigException(
+        'agent_cli providers may only run agentic tasks',
+      );
+    }
     providers = _buildProviders(cliConfig, dependencies, secrets);
     final providersById = {
       for (final provider in providers) provider.id: provider,
