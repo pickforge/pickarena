@@ -118,6 +118,7 @@ class CommandTemplateAgentHarness
       maxProcessOutputChars,
       allowInternet,
       generatedCodeSandbox,
+      extraReadOnlyPaths: _presetConfigPaths(config.name),
     );
     return AgentRunResult(
       status: result.status,
@@ -149,8 +150,10 @@ class CommandTemplateAgentHarness
   }
 
   static void _validateTemplate(List<String> arguments) {
+    var hasInstruction = false;
     for (final argument in arguments) {
       for (final match in RegExp(r'\{([a-z]+)\}').allMatches(argument)) {
+        hasInstruction = hasInstruction || match.group(1) == 'instruction';
         if (!const {
           'instruction',
           'model',
@@ -163,5 +166,26 @@ class CommandTemplateAgentHarness
         }
       }
     }
+    if (!hasInstruction) {
+      throw ArgumentError('command template must include {instruction}');
+    }
+  }
+
+  static Iterable<String> _presetConfigPaths(String name) {
+    final home =
+        Platform.environment['HOME'] ??
+        Platform.environment['USERPROFILE'] ??
+        '';
+    if (home.isEmpty) return const [];
+    final paths = switch (name) {
+      'codex' => ['$home/.codex'],
+      'claude-code' => ['$home/.claude'],
+      'opencode' => ['$home/.config/opencode'],
+      _ => const <String>[],
+    };
+    return [
+      for (final path in paths)
+        if (Directory(path).existsSync()) path,
+    ];
   }
 }

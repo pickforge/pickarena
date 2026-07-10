@@ -386,7 +386,8 @@ List<AgentHarness> _defaultAgentHarnessBuilder(
           deniedEnvironmentKeys: _configuredApiKeyEnvNames(config),
           generatedCodeSandbox: generatedCodeSandbox,
         )
-      else if (configProvider.harness == 'minimal')
+      else if (configProvider.harness == 'minimal' ||
+          configProvider.harness == null)
         _minimalHarness(
           configProvider,
           providersById[configProvider.id],

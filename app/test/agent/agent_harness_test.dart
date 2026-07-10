@@ -876,7 +876,7 @@ while :; do printf '0123456789abcdef0123456789abcdef\\n'; done
               config: CommandTemplateAgentConfig(
                 name: 'fake',
                 executable: script.path,
-                arguments: const [],
+                arguments: const ['{instruction}'],
                 version: 'test',
               ),
               maxProcessOutputChars: 128,
@@ -950,6 +950,21 @@ while :; do printf '0123456789abcdef0123456789abcdef\\n'; done
         '{instruction}',
       ]);
     });
+
+    test('requires an instruction placeholder', () {
+      expect(
+        () => CommandTemplateAgentHarness(
+          providerId: 'fake-cli',
+          config: const CommandTemplateAgentConfig(
+            name: 'fake',
+            executable: 'fake',
+            arguments: ['--model', '{model}'],
+            version: '1.0.0',
+          ),
+        ),
+        throwsArgumentError,
+      );
+    });
   });
 }
 
@@ -961,7 +976,7 @@ CommandTemplateAgentHarness _templateHarness(
   config: CommandTemplateAgentConfig(
     name: 'fake',
     executable: script.path,
-    arguments: const [],
+    arguments: const ['{instruction}'],
     version: 'test',
   ),
   generatedCodeSandbox: sandbox,
