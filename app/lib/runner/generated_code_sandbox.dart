@@ -4,6 +4,7 @@ import 'package:dart_arena/runner/subprocess_environment.dart';
 import 'package:path/path.dart' as p;
 
 const bubblewrapGeneratedCodeSandboxBackend = 'bubblewrap';
+const _flutterCacheReadOnlyMount = '/tmp/dart_arena_flutter_cache_ro';
 
 class GeneratedCodeSandboxException implements Exception {
   const GeneratedCodeSandboxException(this.message);
@@ -161,7 +162,7 @@ class BubblewrapGeneratedCodeSandbox extends GeneratedCodeSandbox {
         executableRoot,
       ],
       if (flutterRoot != null)
-        ...await _flutterWritableCacheFileBinds(
+        ...await _flutterWritableCacheBind(
           flutterRoot: flutterRoot,
           workDir: workDir,
         ),
@@ -336,37 +337,44 @@ class BubblewrapGeneratedCodeSandbox extends GeneratedCodeSandbox {
     ];
   }
 
-  Future<List<String>> _flutterWritableCacheFileBinds({
+  Future<List<String>> _flutterWritableCacheBind({
     required String flutterRoot,
     required String workDir,
   }) async {
     final cacheDir = Directory(p.join(flutterRoot, 'bin', 'cache'));
     if (!await cacheDir.exists()) return const [];
     final overlayDir = Directory(
-      p.join(workDir, '.dart_arena', 'flutter-cache-files'),
+      p.join(workDir, '.dart_arena', 'flutter-cache'),
     );
+    if (await overlayDir.exists()) await overlayDir.delete(recursive: true);
     await overlayDir.create(recursive: true);
-    final binds = <String>[];
-    final overlayNames = {'lockfile'};
     await for (final entity in cacheDir.list(followLinks: false)) {
-      if (entity is! File) continue;
       final basename = p.basename(entity.path);
-      if (basename.endsWith('.stamp') || basename == 'engine.realm') {
-        overlayNames.add(basename);
-      }
-    }
-    for (final basename in overlayNames) {
-      final source = File(p.join(cacheDir.path, basename));
       final overlay = File(p.join(overlayDir.path, basename));
-      if (await source.exists()) {
-        await overlay.writeAsBytes(await source.readAsBytes());
+      if (entity is File && _isMutableFlutterCacheFile(basename)) {
+        await overlay.writeAsBytes(await entity.readAsBytes());
       } else {
-        await overlay.writeAsBytes(const []);
+        await Link(
+          overlay.path,
+        ).create(p.join(_flutterCacheReadOnlyMount, basename));
       }
-      binds.addAll(['--bind', overlay.path, source.path]);
     }
-    return binds;
+    return [
+      '--dir',
+      _flutterCacheReadOnlyMount,
+      '--ro-bind',
+      cacheDir.path,
+      _flutterCacheReadOnlyMount,
+      '--bind',
+      overlayDir.path,
+      cacheDir.path,
+    ];
   }
+
+  bool _isMutableFlutterCacheFile(String basename) =>
+      basename == 'lockfile' ||
+      basename == 'engine.realm' ||
+      basename.endsWith('.stamp');
 
   String _dartExecutableFor(
     String requestedExecutable,

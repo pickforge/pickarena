@@ -203,7 +203,7 @@ void main() {
   );
 
   test(
-    'Flutter cache lockfile is backed by a writable sandbox-local overlay',
+    'Flutter cache has a writable sandbox-local overlay',
     () async {
       final root = await Directory.systemTemp.createTemp(
         'dart_arena_bwrap_flutter_cache_',
@@ -218,7 +218,9 @@ void main() {
         ..createSync(recursive: true);
       File(p.join(flutterRoot.path, 'bin', 'flutter')).writeAsStringSync('');
       File(p.join(cacheDir.path, 'engine.realm')).writeAsStringSync('stable');
+      File(p.join(cacheDir.path, 'engine.stamp')).writeAsStringSync('engine');
       File(p.join(cacheDir.path, 'dart-sdk.stamp')).writeAsStringSync('sdk');
+      Directory(p.join(cacheDir.path, 'dart-sdk')).createSync();
 
       final spec =
           await const BubblewrapGeneratedCodeSandbox(
@@ -232,36 +234,44 @@ void main() {
             resourceLimits: null,
           );
 
-      final overlayDir = p.join(
-        workDir.path,
-        '.dart_arena',
-        'flutter-cache-files',
-      );
-      final lockfileOverlay = p.join(overlayDir, 'lockfile');
-      expect(File(lockfileOverlay).existsSync(), isTrue);
+      final overlayDir = p.join(workDir.path, '.dart_arena', 'flutter-cache');
+      final cacheReadOnlyMount = '/tmp/dart_arena_flutter_cache_ro';
+      final engineStampOverlay = p.join(overlayDir, 'engine.stamp');
+      final dartSdkOverlay = Link(p.join(overlayDir, 'dart-sdk'));
+      expect(File(engineStampOverlay).readAsStringSync(), 'engine');
       expect(
-        spec.arguments,
-        containsAllInOrder([
-          '--bind',
-          lockfileOverlay,
-          p.join(cacheDir.path, 'lockfile'),
-        ]),
+        await dartSdkOverlay.target(),
+        p.join(cacheReadOnlyMount, 'dart-sdk'),
       );
       expect(
         spec.arguments,
         containsAllInOrder([
+          '--ro-bind',
+          flutterRoot.path,
+          flutterRoot.path,
+          '--dir',
+          cacheReadOnlyMount,
+          '--ro-bind',
+          cacheDir.path,
+          cacheReadOnlyMount,
           '--bind',
-          p.join(overlayDir, 'engine.realm'),
-          p.join(cacheDir.path, 'engine.realm'),
+          overlayDir,
+          cacheDir.path,
         ]),
       );
       expect(
         spec.arguments,
-        containsAllInOrder([
-          '--bind',
-          p.join(overlayDir, 'dart-sdk.stamp'),
-          p.join(cacheDir.path, 'dart-sdk.stamp'),
-        ]),
+        isNot(
+          containsAllInOrder(['--bind', flutterRoot.path, flutterRoot.path]),
+        ),
+      );
+      final stampTemp = File(p.join(overlayDir, 'engine.stamp.tmp.1'));
+      stampTemp.writeAsStringSync('next');
+      stampTemp.renameSync(engineStampOverlay);
+      expect(File(engineStampOverlay).readAsStringSync(), 'next');
+      expect(
+        File(p.join(cacheDir.path, 'engine.stamp')).readAsStringSync(),
+        'engine',
       );
     },
     skip: Platform.isLinux ? false : 'Bubblewrap is Linux-only',
