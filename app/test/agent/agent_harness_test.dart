@@ -945,6 +945,7 @@ while :; do printf '0123456789abcdef0123456789abcdef\\n'; done
       expect(opencode.executable, 'opencode');
       expect(opencode.arguments, [
         'run',
+        '--auto',
         '--model',
         '{model}',
         '{instruction}',

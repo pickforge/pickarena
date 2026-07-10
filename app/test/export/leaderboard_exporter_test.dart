@@ -129,6 +129,7 @@ void main() {
         provenanceJson: _harnessProvenanceJson(
           'command-template',
           agent: 'codex',
+          version: '1.0.0',
         ),
       );
       await _seedTaskRun(
@@ -144,6 +145,7 @@ void main() {
         provenanceJson: _harnessProvenanceJson(
           'command-template',
           agent: 'codex',
+          version: '1.0.0',
         ),
       );
       await _seedTaskRun(
@@ -163,6 +165,39 @@ void main() {
       expect(source['taskRunCount'], 2);
     },
   );
+
+  test('aggregate-compatible separates command-template versions', () async {
+    for (final entry in [
+      ('old', DateTime.utc(2026, 5, 1), '1.0.0'),
+      ('latest', DateTime.utc(2026, 5, 2), '2.0.0'),
+    ]) {
+      await _seedRun(
+        db,
+        id: 'version-${entry.$1}',
+        completedAt: entry.$2,
+        provenanceJson: _harnessProvenanceJson(
+          'command-template',
+          agent: 'codex',
+          version: entry.$3,
+        ),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'version-${entry.$1}-a',
+        runId: 'version-${entry.$1}',
+        taskId: 'task.a',
+      );
+    }
+
+    final export = await buildLeaderboardExport(
+      db,
+      options: const LeaderboardExportOptions(track: 'agentic'),
+    );
+
+    expect((export['source']! as Map<String, Object?>)['runIds'], [
+      'version-latest',
+    ]);
+  });
 
   test('aggregate-compatible separates scoring schema versions', () async {
     await _seedRun(
@@ -1320,16 +1355,21 @@ String _weightsProvenanceJson({
   });
 }
 
-String _harnessProvenanceJson(String kind, {String? agent}) => jsonEncode({
-  'schemaVersion': 1,
-  'config': {
-    'scoringSchemaVersion': 2,
-    'evaluatorWeights': {'compile': 1.0},
-    'agentHarnesses': {
-      'harness-v1': {'kind': kind, if (agent != null) 'agent': agent},
-    },
-  },
-});
+String _harnessProvenanceJson(String kind, {String? agent, String? version}) =>
+    jsonEncode({
+      'schemaVersion': 1,
+      'config': {
+        'scoringSchemaVersion': 2,
+        'evaluatorWeights': {'compile': 1.0},
+        'agentHarnesses': {
+          'harness-v1': {
+            'kind': kind,
+            if (agent != null) 'agent': agent,
+            if (version != null) 'agentVersion': version,
+          },
+        },
+      },
+    });
 
 Future<void> _seedTaskRun(
   AppDatabase db, {

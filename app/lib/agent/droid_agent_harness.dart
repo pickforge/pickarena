@@ -160,10 +160,14 @@ $instruction
     bool allowInternet,
     GeneratedCodeSandbox? generatedCodeSandbox, {
     Iterable<String> extraReadOnlyPaths = const [],
+    List<String> Function(Directory workingDirectory)?
+    argumentsForWorkingDirectory,
   }) async {
     final sw = Stopwatch()..start();
     final cwdProxy = await _createWorkingDirectoryProxy(workspace);
     final workingDirectory = cwdProxy?.directory ?? workspace;
+    final effectiveArguments =
+        argumentsForWorkingDirectory?.call(workingDirectory) ?? args;
     final environment = benchmarkSubprocessEnvironment(
       additionalDeniedKeys: deniedEnvironmentKeys,
       allowedSensitiveKeys: allowedSensitiveEnvironmentKeys,
@@ -176,13 +180,13 @@ $instruction
       final processStart = generatedCodeSandbox == null
           ? SandboxedProcessStart(
               executable: exe,
-              arguments: args,
+              arguments: effectiveArguments,
               workingDirectory: workingDirectory.path,
               environment: environment,
             )
           : await generatedCodeSandbox.wrapProcess(
               executable: exe,
-              arguments: args,
+              arguments: effectiveArguments,
               workingDirectory: workingDirectory.path,
               environment: environment,
               allowInternet: allowInternet,
@@ -281,7 +285,7 @@ $instruction
         latency: sw.elapsed,
         metadata: {
           'executable': exe,
-          'argc': args.length,
+          'argc': effectiveArguments.length,
           'workspace': workspace.path,
           if (cwdProxy != null) 'cwd_proxy_used': true,
           if (generatedCodeSandbox != null)

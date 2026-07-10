@@ -188,7 +188,10 @@ _SelectedTaskRuns _selectTaskRuns({
       final anchorSignature = _RunCompatibilitySignature.fromTaskRuns(
         taskRunsByRunId[anchorRun.id] ?? const <TaskRun>[],
         scoringSchemaVersion: anchorWeights.scoringSchemaVersion,
-        harnessKinds: _harnessKinds(anchorRun),
+        harnessKinds: _harnessKinds(
+          anchorRun,
+          taskRunsByRunId[anchorRun.id] ?? const <TaskRun>[],
+        ),
       );
       final warningKeys = <String>{};
       final selected = <TaskRun>[];
@@ -199,7 +202,7 @@ _SelectedTaskRuns _selectTaskRuns({
         final candidateSignature = _RunCompatibilitySignature.fromTaskRuns(
           entry.value,
           scoringSchemaVersion: candidateWeights.scoringSchemaVersion,
-          harnessKinds: _harnessKinds(candidateRun),
+          harnessKinds: _harnessKinds(candidateRun, entry.value),
         );
         if (!anchorSignature.isCompatibleWith(candidateSignature)) continue;
 
@@ -1315,7 +1318,7 @@ class _RunCompatibilitySignature {
   );
 }
 
-Map<String, String> _harnessKinds(Run run) {
+Map<String, String> _harnessKinds(Run run, List<TaskRun> taskRuns) {
   final provenanceJson = run.provenanceJson;
   if (provenanceJson == null || provenanceJson.trim().isEmpty) return const {};
   try {
@@ -1325,10 +1328,15 @@ Map<String, String> _harnessKinds(Run run) {
     if (config is! Map<String, Object?>) return const {};
     final harnesses = config['agentHarnesses'];
     if (harnesses is! Map<String, Object?>) return const {};
+    final usedHarnessIds = taskRuns
+        .map((taskRun) => taskRun.harnessId)
+        .whereType<String>()
+        .toSet();
     return {
       for (final entry in harnesses.entries)
-        if (entry.value is Map<String, Object?>)
-          entry.key: _harnessKind(entry.value as Map<String, Object?>),
+        if (usedHarnessIds.contains(entry.key))
+          if (entry.value is Map<String, Object?>)
+            entry.key: _harnessKind(entry.value as Map<String, Object?>),
     };
   } on Object {
     return const {};
@@ -1338,8 +1346,14 @@ Map<String, String> _harnessKinds(Run run) {
 String _harnessKind(Map<String, Object?> value) {
   final kind = value['kind'];
   final agent = value['agent'];
+  final version = value['agentVersion'];
   if (kind is! String || kind.isEmpty) return 'unknown';
-  return agent is String && agent.isNotEmpty ? '$kind:$agent' : kind;
+  final agentIdentity = agent is String && agent.isNotEmpty
+      ? '$kind:$agent'
+      : kind;
+  return version is String && version.isNotEmpty
+      ? '$agentIdentity:$version'
+      : agentIdentity;
 }
 
 bool _listEquals<T>(List<T> a, List<T> b) {

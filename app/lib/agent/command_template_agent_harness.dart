@@ -34,7 +34,7 @@ class CommandTemplateAgentConfig {
     'opencode': CommandTemplateAgentConfig(
       name: 'opencode',
       executable: 'opencode',
-      arguments: ['run', '--model', '{model}', '{instruction}'],
+      arguments: ['run', '--auto', '--model', '{model}', '{instruction}'],
       version: 'preset',
     ),
   };
@@ -102,15 +102,9 @@ class CommandTemplateAgentHarness
     Iterable<String> deniedEnvironmentKeys = const [],
     bool allowInternet = true,
   }) async {
-    final values = {
-      'instruction': instruction,
-      'model': modelId,
-      'workspace': workspace.path,
-      'timeout': timeout.inSeconds.toString(),
-    };
     final result = await DroidAgentHarness.runExternalProcess(
       config.executable,
-      [for (final argument in config.arguments) _substitute(argument, values)],
+      const [],
       workspace,
       timeout,
       {..._deniedEnvironmentKeys, ...deniedEnvironmentKeys},
@@ -119,6 +113,18 @@ class CommandTemplateAgentHarness
       allowInternet,
       generatedCodeSandbox,
       extraReadOnlyPaths: _presetConfigPaths(config.name),
+      argumentsForWorkingDirectory: (workingDirectory) {
+        final values = {
+          'instruction': instruction,
+          'model': modelId,
+          'workspace': workingDirectory.path,
+          'timeout': timeout.inSeconds.toString(),
+        };
+        return [
+          for (final argument in config.arguments)
+            _substitute(argument, values),
+        ];
+      },
     );
     return AgentRunResult(
       status: result.status,
@@ -179,13 +185,14 @@ class CommandTemplateAgentHarness
     if (home.isEmpty) return const [];
     final paths = switch (name) {
       'codex' => ['$home/.codex'],
-      'claude-code' => ['$home/.claude'],
-      'opencode' => ['$home/.config/opencode'],
+      'claude-code' => ['$home/.claude', '$home/.claude.json'],
+      'opencode' => ['$home/.config/opencode', '$home/.local/share/opencode'],
       _ => const <String>[],
     };
     return [
       for (final path in paths)
-        if (Directory(path).existsSync()) path,
+        if (FileSystemEntity.typeSync(path) != FileSystemEntityType.notFound)
+          path,
     ];
   }
 }
