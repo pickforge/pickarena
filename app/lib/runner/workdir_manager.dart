@@ -686,6 +686,8 @@ class WorkdirManager {
       '.config/tool_state',
       '.dartServer/',
       '.flutter',
+      '.flutter-plugins',
+      '.flutter-plugins-dependencies',
       'AppData/',
       'build/',
       '.packages',
