@@ -123,6 +123,28 @@ void main() {
       );
     });
 
+    test('rejects blank and unknown presets with config errors', () {
+      for (final preset in ['', '   ', 'bogus']) {
+        final config = _validConfig()
+          ..remove('tasks')
+          ..['preset'] = preset;
+
+        expect(
+          () => parseHeadlessCliConfig(
+            config,
+            configPath: p.join(Directory.current.path, 'run.json'),
+          ),
+          throwsA(
+            isA<HeadlessCliConfigException>().having(
+              (error) => error.message,
+              'message',
+              isNot(isEmpty),
+            ),
+          ),
+        );
+      }
+    });
+
     test('parses generated-code sandbox requirement flag', () {
       final config = parseHeadlessCliConfig({
         ..._validConfig(),

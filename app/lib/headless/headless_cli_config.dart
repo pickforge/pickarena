@@ -128,10 +128,16 @@ HeadlessCliConfig parseHeadlessCliConfig(
   if (hasTasks && tasks.isEmpty) {
     throw const HeadlessCliConfigException('tasks must not be empty');
   }
+  if (preset != null && preset.trim().isEmpty) {
+    throw const HeadlessCliConfigException('preset must not be empty');
+  }
   if ((!hasTasks && preset == null) || (hasTasks && preset != null)) {
     throw const HeadlessCliConfigException(
       'exactly one of tasks or preset must be provided',
     );
+  }
+  if (preset != null && preset != 'mvp') {
+    throw HeadlessCliConfigException('unknown preset: $preset, expected: mvp');
   }
 
   final providersJson = _requiredList(json, 'providers');

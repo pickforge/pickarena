@@ -1,4 +1,5 @@
 import 'package:dart_arena/core/benchmark_task.dart';
+import 'package:dart_arena/headless/headless_cli_config.dart';
 import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
 
 List<BenchmarkTask> selectTaskPreset(
@@ -6,7 +7,7 @@ List<BenchmarkTask> selectTaskPreset(
   Iterable<BenchmarkTask> tasks,
 ) {
   if (preset != 'mvp') {
-    throw ArgumentError.value(preset, 'preset', 'unsupported preset');
+    throw HeadlessCliConfigException('unknown preset: $preset, expected: mvp');
   }
   final selected =
       tasks
