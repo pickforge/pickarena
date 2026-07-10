@@ -404,6 +404,7 @@ AgentHarness _minimalHarness(
     harnessId: configProvider.id,
     deniedEnvironmentKeys: _configuredApiKeyEnvNames(config),
     generatedCodeSandbox: generatedCodeSandbox,
+    requireGeneratedCodeSandbox: config.requireGeneratedCodeSandbox,
   );
 }
 

@@ -153,6 +153,8 @@ class DeterministicFakeAgentHarness implements AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
+    bool requireGeneratedCodeSandbox = false,
   }) async {
     if (modelId != this.modelId) {
       throw ArgumentError.value(modelId, 'modelId', 'unknown fake model');
@@ -174,7 +176,7 @@ class DeterministicFakeAgentHarness implements AgentHarness {
 }
 
 class NoOpPrepareWorkdirManager extends WorkdirManager {
-  NoOpPrepareWorkdirManager({required super.root});
+  NoOpPrepareWorkdirManager({required super.root, super.deniedEnvironmentKeys});
 
   @override
   Future<PrepareResult> prepare(

@@ -132,6 +132,7 @@ class AgenticRunOrchestrator {
           remainingTimeout,
         ),
         deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
+        allowInternet: task.allowInternet,
       );
     } on Object catch (e) {
       harnessStopwatch.stop();

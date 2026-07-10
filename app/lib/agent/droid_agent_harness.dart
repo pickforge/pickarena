@@ -51,6 +51,7 @@ class DroidAgentHarness implements AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
   }) async {
     final args = [
       'exec',
@@ -236,11 +237,11 @@ $instruction
         } else {
           timedOut = signal is _AgentProcessTimeoutExceeded;
           outputLimitHit = signal is _AgentProcessOutputLimitExceeded;
-          await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
+          await terminateProcessTree(process.pid, ProcessSignal.sigterm);
           exitCode = await process.exitCode.timeout(
             const Duration(seconds: 2),
             onTimeout: () async {
-              await _terminateProcessTree(process.pid, ProcessSignal.sigkill);
+              await terminateProcessTree(process.pid, ProcessSignal.sigkill);
               return -1;
             },
           );
@@ -348,7 +349,7 @@ $instruction
     return value.substring(value.length - maxChars);
   }
 
-  static Future<void> _terminateProcessTree(
+  static Future<void> terminateProcessTree(
     int pid,
     ProcessSignal signal,
   ) async {

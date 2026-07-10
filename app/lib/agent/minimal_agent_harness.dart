@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
+import 'package:dart_arena/agent/droid_agent_harness.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
@@ -13,6 +14,7 @@ class MinimalAgentHarness implements AgentHarness {
     required this.provider,
     required this.harnessId,
     this.generatedCodeSandbox,
+    this.requireGeneratedCodeSandbox = false,
     Iterable<String> deniedEnvironmentKeys = const [],
     this.maxSteps = 20,
     this.maxOutputChars = 16 * 1024,
@@ -25,6 +27,7 @@ class MinimalAgentHarness implements AgentHarness {
   final StreamingModelProvider provider;
   final String harnessId;
   final GeneratedCodeSandbox? generatedCodeSandbox;
+  final bool requireGeneratedCodeSandbox;
   final Set<String> _deniedEnvironmentKeys;
   final int maxSteps;
   final int maxOutputChars;
@@ -40,6 +43,7 @@ class MinimalAgentHarness implements AgentHarness {
     required String modelId,
     required Duration timeout,
     Iterable<String> deniedEnvironmentKeys = const [],
+    bool allowInternet = true,
   }) async {
     final stopwatch = Stopwatch()..start();
     final history = <_StepObservation>[];
@@ -52,6 +56,7 @@ class MinimalAgentHarness implements AgentHarness {
     var reportedPromptTokens = false;
     var reportedCompletionTokens = false;
     var historyTruncated = false;
+    var outputTruncated = false;
 
     AgentRunResult result(
       AgentRunStatus status,
@@ -71,13 +76,19 @@ class MinimalAgentHarness implements AgentHarness {
           'terminal_reason': terminalReason,
           'step_count': steps,
           if (historyTruncated) 'history_truncated': true,
-          if (generatedCodeSandbox != null)
-            'runtimeBoundary': {
-              'enforced': true,
+          'runtimeBoundary': {
+            'enforced': generatedCodeSandbox != null,
+            if (generatedCodeSandbox != null)
               'backend': generatedCodeSandbox!.backend,
-            },
+          },
+          if (outputTruncated) 'output_truncated': true,
         },
       );
+    }
+
+    if (requireGeneratedCodeSandbox && generatedCodeSandbox == null) {
+      stderr.write('generated-code sandbox is required but not configured');
+      return result(AgentRunStatus.failure, 'sandbox_required', exitCode: 1);
     }
 
     while (true) {
@@ -129,6 +140,7 @@ class MinimalAgentHarness implements AgentHarness {
           workspace: workspace,
           timeout: remainingAfterCompletion,
           deniedEnvironmentKeys: deniedKeys,
+          allowInternet: allowInternet,
         );
       } on TimeoutException {
         return result(AgentRunStatus.timeout, 'timeout');
@@ -139,6 +151,7 @@ class MinimalAgentHarness implements AgentHarness {
       steps++;
       stdout.write(commandResult.stdout);
       stderr.write(commandResult.stderr);
+      outputTruncated = outputTruncated || commandResult.outputTruncated;
       history.add(
         _StepObservation(
           command: command,
@@ -184,24 +197,26 @@ class MinimalAgentHarness implements AgentHarness {
     required Directory workspace,
     required Duration timeout,
     required Iterable<String> deniedEnvironmentKeys,
+    required bool allowInternet,
   }) async {
     final environment = benchmarkSubprocessEnvironment(
       additionalDeniedKeys: deniedEnvironmentKeys,
+      homeDirectory: workspace.path,
     );
     environment['PWD'] = workspace.path;
     final processStart = generatedCodeSandbox == null
         ? SandboxedProcessStart(
             executable: 'bash',
-            arguments: ['-lc', command],
+            arguments: ['--noprofile', '--norc', '-c', command],
             workingDirectory: workspace.path,
             environment: environment,
           )
         : await generatedCodeSandbox!.wrapProcess(
             executable: 'bash',
-            arguments: ['-lc', command],
+            arguments: ['--noprofile', '--norc', '-c', command],
             workingDirectory: workspace.path,
             environment: environment,
-            allowInternet: true,
+            allowInternet: allowInternet,
           );
     final process = await Process.start(
       processStart.executable,
@@ -221,18 +236,34 @@ class MinimalAgentHarness implements AgentHarness {
         .transform(systemEncoding.decoder)
         .listen(stderr.write)
         .asFuture<void>();
-    final exitCode = await process.exitCode.timeout(
-      timeout,
-      onTimeout: () {
-        process.kill(ProcessSignal.sigterm);
-        throw TimeoutException('bash command timed out');
-      },
-    );
+    int exitCode;
+    var timedOut = false;
+    try {
+      exitCode = await process.exitCode.timeout(timeout);
+    } on TimeoutException {
+      timedOut = true;
+      await DroidAgentHarness.terminateProcessTree(
+        process.pid,
+        ProcessSignal.sigterm,
+      );
+      exitCode = await process.exitCode.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () async {
+          await DroidAgentHarness.terminateProcessTree(
+            process.pid,
+            ProcessSignal.sigkill,
+          );
+          return -1;
+        },
+      );
+    }
     await Future.wait([stdoutDone, stderrDone]);
+    if (timedOut) throw TimeoutException('bash command timed out');
     return _CommandResult(
       exitCode: exitCode,
       stdout: stdout.text,
       stderr: stderr.text,
+      outputTruncated: stdout.exceeded || stderr.exceeded,
     );
   }
 
@@ -284,6 +315,8 @@ or
   }
 
   static String? _parseBashCommand(String reply) {
+    final fence = RegExp(r'```bash[ \t]*\r?\n');
+    if (fence.allMatches(reply).length != 1) return null;
     final match = RegExp(
       r'^```bash[ \t]*\r?\n([\s\S]*?)\r?\n```$',
     ).firstMatch(reply);
@@ -292,7 +325,7 @@ or
   }
 
   static String _observation(_CommandResult result) =>
-      'exit code: ${result.exitCode}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}';
+      'exit code: ${result.exitCode}\nstdout:\n${result.stdout}${result.outputTruncated ? '\n...[truncated]...' : ''}\nstderr:\n${result.stderr}';
 }
 
 class _StepObservation {
@@ -319,11 +352,13 @@ class _CommandResult {
     required this.exitCode,
     required this.stdout,
     required this.stderr,
+    required this.outputTruncated,
   });
 
   final int exitCode;
   final String stdout;
   final String stderr;
+  final bool outputTruncated;
 }
 
 class _BoundedTailText {
@@ -331,10 +366,12 @@ class _BoundedTailText {
 
   final int maxChars;
   final _buffer = StringBuffer();
+  var exceeded = false;
 
   void write(String chunk) {
     _buffer.write(chunk);
     if (_buffer.length > maxChars) {
+      exceeded = true;
       final text = _buffer.toString();
       _buffer
         ..clear()

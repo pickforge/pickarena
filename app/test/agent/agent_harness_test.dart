@@ -39,6 +39,7 @@ void main() {
           instruction: 'Write done to result.txt.',
           modelId: 'fake',
           timeout: const Duration(seconds: 2),
+          allowInternet: false,
         );
 
         expect(result.succeeded, isTrue);
@@ -53,7 +54,15 @@ void main() {
         expect(provider.prompts[1], contains('Previous bash command:'));
         expect(provider.prompts[1], contains('exit code: 0'));
         expect(sandbox.seenExecutable, 'bash');
+        expect(sandbox.seenArguments, [
+          '--noprofile',
+          '--norc',
+          '-c',
+          'test -f result.txt',
+        ]);
         expect(sandbox.seenWorkingDirectory, workspace.path);
+        expect(sandbox.seenAllowInternet, isFalse);
+        expect(sandbox.seenEnvironment!['HOME'], workspace.path);
         expect(result.metadata['runtimeBoundary'], {
           'enforced': true,
           'backend': 'fake-backend',
@@ -95,6 +104,50 @@ void main() {
       },
       skip: Platform.isWindows ? 'bash harness requires POSIX shell' : false,
     );
+
+    test('reports an unenforced host boundary', () async {
+      final workspace = await Directory.systemTemp.createTemp('minimal_agent_');
+      addTearDown(() async {
+        if (await workspace.exists()) await workspace.delete(recursive: true);
+      });
+
+      final result =
+          await MinimalAgentHarness(
+            provider: _ScriptedStreamingProvider(['FINISH']),
+            harnessId: 'minimal-test',
+          ).run(
+            workspace: workspace,
+            instruction: 'Finish.',
+            modelId: 'fake',
+            timeout: const Duration(seconds: 2),
+          );
+
+      expect(result.metadata['runtimeBoundary'], {'enforced': false});
+    });
+
+    test('fails closed when a required sandbox is unavailable', () async {
+      final workspace = await Directory.systemTemp.createTemp('minimal_agent_');
+      addTearDown(() async {
+        if (await workspace.exists()) await workspace.delete(recursive: true);
+      });
+      final provider = _ScriptedStreamingProvider(['FINISH']);
+
+      final result =
+          await MinimalAgentHarness(
+            provider: provider,
+            harnessId: 'minimal-test',
+            requireGeneratedCodeSandbox: true,
+          ).run(
+            workspace: workspace,
+            instruction: 'Finish.',
+            modelId: 'fake',
+            timeout: const Duration(seconds: 2),
+          );
+
+      expect(result.status, AgentRunStatus.failure);
+      expect(result.metadata['terminal_reason'], 'sandbox_required');
+      expect(provider.prompts, isEmpty);
+    });
 
     test(
       'stops the bash subprocess when the wall-clock timeout expires',
@@ -146,7 +199,7 @@ void main() {
     });
 
     test(
-      'bounds command output',
+      'terminates bash descendants after a timeout',
       () async {
         final workspace = await Directory.systemTemp.createTemp(
           'minimal_agent_',
@@ -156,9 +209,52 @@ void main() {
         });
         final harness = MinimalAgentHarness(
           provider: _ScriptedStreamingProvider([
-            '```bash\nprintf 1234567890\n```',
-            'FINISH',
+            r'''```bash
+(sleep 30) &
+echo $! > child.pid
+wait
+```''',
           ]),
+          harnessId: 'minimal-test',
+        );
+
+        final result = await harness.run(
+          workspace: workspace,
+          instruction: 'Wait.',
+          modelId: 'fake',
+          timeout: const Duration(milliseconds: 200),
+        );
+
+        expect(result.status, AgentRunStatus.timeout);
+        final childPid = int.parse(
+          (await File(
+            p.join(workspace.path, 'child.pid'),
+          ).readAsString()).trim(),
+        );
+        for (var i = 0; i < 20; i++) {
+          if (!await _pidIsRunning(childPid)) break;
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+        expect(await _pidIsRunning(childPid), isFalse);
+      },
+      skip: Platform.isWindows ? 'POSIX process-tree assertion' : false,
+    );
+
+    test(
+      'bounds command output',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'minimal_agent_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final provider = _ScriptedStreamingProvider([
+          '```bash\nprintf 1234567890\n```',
+          'FINISH',
+        ]);
+        final harness = MinimalAgentHarness(
+          provider: provider,
           harnessId: 'minimal-test',
           maxOutputChars: 4,
         );
@@ -172,9 +268,61 @@ void main() {
 
         expect(result.succeeded, isTrue);
         expect(result.stdoutPreview, '7890');
+        expect(result.metadata['output_truncated'], isTrue);
+        expect(provider.prompts[1], contains('...[truncated]...'));
       },
       skip: Platform.isWindows ? 'bash harness requires POSIX shell' : false,
     );
+
+    test('rejects adversarial replies outside the strict format', () async {
+      for (final reply in [
+        'I will FINISH after checking.',
+        '```bash\ntrue\n```\n```bash\ntrue\n```',
+        '```bash\n\n```',
+      ]) {
+        final workspace = await Directory.systemTemp.createTemp(
+          'minimal_agent_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final result =
+            await MinimalAgentHarness(
+              provider: _ScriptedStreamingProvider([reply]),
+              harnessId: 'minimal-test',
+            ).run(
+              workspace: workspace,
+              instruction: 'Do nothing.',
+              modelId: 'fake',
+              timeout: const Duration(seconds: 2),
+            );
+
+        expect(result.metadata['terminal_reason'], 'malformed_reply');
+      }
+    });
+
+    test('records history truncation', () async {
+      final workspace = await Directory.systemTemp.createTemp('minimal_agent_');
+      addTearDown(() async {
+        if (await workspace.exists()) await workspace.delete(recursive: true);
+      });
+      final result =
+          await MinimalAgentHarness(
+            provider: _ScriptedStreamingProvider([
+              '```bash\nprintf output\n```',
+              'FINISH',
+            ]),
+            harnessId: 'minimal-test',
+            maxHistoryChars: 1,
+          ).run(
+            workspace: workspace,
+            instruction: 'Print output.',
+            modelId: 'fake',
+            timeout: const Duration(seconds: 2),
+          );
+
+      expect(result.metadata['history_truncated'], isTrue);
+    });
   });
 
   test(
