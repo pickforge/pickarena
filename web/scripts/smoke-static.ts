@@ -60,7 +60,7 @@ async function main(): Promise<void> {
   assertNoVisibleRenderingArtifacts(html);
 
   for (const route of requiredRoutePages) {
-    const routePath = resolve(buildRoot, `${route}.html`);
+    const routePath = resolve(buildRoot, route, 'index.html');
     await assertFileExists(routePath);
     const routeHtml = await readFile(routePath, 'utf8');
     if (!routeHtml.includes(publicTitle)) {

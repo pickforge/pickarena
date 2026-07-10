@@ -20,16 +20,16 @@
   const navItems = [
     { href: `${base}/`, label: 'Leaderboard', match: (p: string) => p === `${base}/` },
     {
-      href: `${base}/methodology`,
+      href: `${base}/methodology/`,
       label: 'Methodology',
-      match: (p: string) => p.startsWith(`${base}/methodology`)
+      match: (p: string) => p.startsWith(`${base}/methodology/`)
     },
     {
-      href: `${base}/tasks`,
+      href: `${base}/tasks/`,
       label: 'Tasks',
-      match: (p: string) => p.startsWith(`${base}/tasks`)
+      match: (p: string) => p.startsWith(`${base}/tasks/`)
     },
-    { href: `${base}/run`, label: 'Run', match: (p: string) => p.startsWith(`${base}/run`) }
+    { href: `${base}/run/`, label: 'Run', match: (p: string) => p.startsWith(`${base}/run/`) }
   ];
 
   let theme = $state<'light' | 'dark'>('dark');
@@ -137,9 +137,9 @@
     </div>
     <div class="footer-links">
       <a href={`${base}/`}>Leaderboard</a>
-      <a href={`${base}/methodology`}>Methodology</a>
-      <a href={`${base}/tasks`}>Tasks</a>
-      <a href={`${base}/run`}>Run</a>
+      <a href={`${base}/methodology/`}>Methodology</a>
+      <a href={`${base}/tasks/`}>Tasks</a>
+      <a href={`${base}/run/`}>Run</a>
       <a href="https://pickforge.dev">pickforge.dev</a>
     </div>
     <span class="muted">Static export · leaderboard.v{leaderboard.schemaVersion}</span>

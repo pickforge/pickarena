@@ -48,7 +48,7 @@ bun run smoke   # builds the static site + validates the export`;
   </p>
   <div class="cta-row">
     <a class="button secondary" href="https://github.com/pickforge/pickarena">View the repository</a>
-    <a class="button ghost" href={`${base}/methodology`}>Read the methodology →</a>
+    <a class="button ghost" href={`${base}/methodology/`}>Read the methodology →</a>
   </div>
 </section>
 

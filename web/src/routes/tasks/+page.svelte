@@ -227,6 +227,16 @@
       </p>
     </div>
 
+    {#if board.source.trialSummaryTruncated}
+      <p class="note">
+        <strong>Capped subset.</strong> This export publishes
+        {countText(board.source.trialSummaryCount)} of
+        {countText(board.source.trialSummaryTotalCount)} total trials
+        (limit {countText(board.source.trialSummaryLimit)}). The {trials.length} rows below
+        are the most recent of that subset — not every run.
+      </p>
+    {/if}
+
     <div class="table-wrap">
       <table>
         <thead>

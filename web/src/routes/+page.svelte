@@ -121,8 +121,8 @@
     by side.
   </p>
   <div class="cta-row">
-    <a class="button primary" href={`${base}/methodology`}>Read the methodology</a>
-    <a class="button secondary" href={`${base}/run`}>Run it yourself</a>
+    <a class="button primary" href={`${base}/methodology/`}>Read the methodology</a>
+    <a class="button secondary" href={`${base}/run/`}>Run it yourself</a>
     <a class="button ghost" href="#leaderboard">Jump to leaderboard →</a>
   </div>
 </section>
@@ -359,7 +359,7 @@
   </div>
 
   <div class="cta-row" style="margin-top:1.5rem;">
-    <a class="button secondary" href={`${base}/methodology`}>Full methodology</a>
-    <a class="button ghost" href={`${base}/tasks`}>Browse the task corpus →</a>
+    <a class="button secondary" href={`${base}/methodology/`}>Full methodology</a>
+    <a class="button ghost" href={`${base}/tasks/`}>Browse the task corpus →</a>
   </div>
 </section>

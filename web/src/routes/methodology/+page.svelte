@@ -200,8 +200,8 @@
     </p>
 
     <p style="margin-top:2rem;">
-      <a href={`${base}/tasks`}>Browse the task corpus</a> or
-      <a href={`${base}/run`}>reproduce a run</a>.
+      <a href={`${base}/tasks/`}>Browse the task corpus</a> or
+      <a href={`${base}/run/`}>reproduce a run</a>.
     </p>
   </div>
 </div>
