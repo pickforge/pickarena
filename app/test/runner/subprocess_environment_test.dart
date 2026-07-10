@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:dart_arena/runner/subprocess_environment.dart';
-import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
@@ -122,32 +119,6 @@ void main() {
     );
 
     expect(env, containsPair('FLUTTER_ALREADY_LOCKED', 'true'));
-  });
-
-  test('pins Flutter subprocesses to the inherited SDK toolchain', () {
-    const flutterRoot = '/opt/flutter-sdk';
-    final flutterBin = p.join(flutterRoot, 'bin');
-    final env = benchmarkSubprocessEnvironment(
-      baseEnvironment: {
-        'FLUTTER_ROOT': flutterRoot,
-        'PATH': [
-          '/usr/bin',
-          flutterBin,
-          '/opt/other-flutter/bin',
-        ].join(Platform.pathSeparator),
-      },
-    );
-
-    expect(env, containsPair('FLUTTER_ROOT', flutterRoot));
-    expect(env['PATH']!.split(Platform.pathSeparator).first, flutterBin);
-    expect(
-      resolveFlutterExecutable('flutter', environment: env),
-      p.join(
-        flutterRoot,
-        'bin',
-        Platform.isWindows ? 'flutter.bat' : 'flutter',
-      ),
-    );
   });
 
   test('can isolate user home and config directories', () {

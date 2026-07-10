@@ -348,19 +348,15 @@ class WorkdirManager {
       allowReentrantFlutterTool: allowReentrantFlutterTool,
       homeDirectory: workDir.path,
     );
-    final resolvedExecutable = resolveFlutterExecutable(
-      executable,
-      environment: environment,
-    );
     final processStart = generatedCodeSandbox == null
         ? SandboxedProcessStart(
-            executable: resolvedExecutable,
+            executable: executable,
             arguments: args,
             workingDirectory: workDir.path,
             environment: environment,
           )
         : await generatedCodeSandbox.wrapProcess(
-            executable: resolvedExecutable,
+            executable: executable,
             arguments: args,
             workingDirectory: workDir.path,
             environment: environment,
