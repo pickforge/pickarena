@@ -1,9 +1,10 @@
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
-class OllamaProvider implements ModelProvider {
+class OllamaProvider implements StreamingModelProvider {
   OllamaProvider({
     required this.id,
     required this.displayName,
@@ -74,5 +75,27 @@ class OllamaProvider implements ModelProvider {
       completionTokens: data['eval_count'] as int?,
       latency: stopwatch.elapsed,
     );
+  }
+
+  @override
+  Stream<ModelStreamEvent> generateStream({
+    required String prompt,
+    required String model,
+    Duration? timeout,
+  }) async* {
+    yield const ModelStreamStarted();
+    final response = await generate(
+      prompt: prompt,
+      model: model,
+      timeout: timeout,
+    );
+    if (response.rawText.isNotEmpty) {
+      yield ModelStreamContentDelta(response.rawText);
+    }
+    yield ModelStreamUsage(
+      promptTokens: response.promptTokens,
+      completionTokens: response.completionTokens,
+    );
+    yield const ModelStreamCompleted();
   }
 }

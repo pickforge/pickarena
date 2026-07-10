@@ -4,12 +4,15 @@ import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:path/path.dart' as p;
 
-class DeterministicFakeProvider with Disposable implements ModelProvider {
+class DeterministicFakeProvider
+    with Disposable
+    implements StreamingModelProvider {
   DeterministicFakeProvider({
     this.providerId = 'fake_headless',
     this.providerDisplayName = 'Fake Headless',
@@ -57,6 +60,26 @@ class DeterministicFakeProvider with Disposable implements ModelProvider {
       completionTokens: completionTokens,
       latency: latency,
     );
+  }
+
+  @override
+  Stream<ModelStreamEvent> generateStream({
+    required String prompt,
+    required String model,
+    Duration? timeout,
+  }) async* {
+    final response = await generate(
+      prompt: prompt,
+      model: model,
+      timeout: timeout,
+    );
+    yield const ModelStreamStarted();
+    yield ModelStreamContentDelta(response.rawText);
+    yield ModelStreamUsage(
+      promptTokens: response.promptTokens,
+      completionTokens: response.completionTokens,
+    );
+    yield const ModelStreamCompleted();
   }
 
   @override

@@ -37,6 +37,7 @@ void main() {
       expect(config.tasks, ['bug.off_by_one_pagination']);
       expect(config.providers.single.id, 'openai');
       expect(config.providers.single.models, ['gpt-5.5']);
+      expect(config.providers.single.harness, isNull);
       expect(config.judge!.providerId, 'openai');
       expect(config.taskBundleRoots, isEmpty);
       expect(config.maxConcurrency, 2);
@@ -87,6 +88,22 @@ void main() {
       }, configPath: p.join(Directory.current.path, 'run.json'));
 
       expect(config.requireGeneratedCodeSandbox, isTrue);
+    });
+
+    test('parses the minimal harness selection', () {
+      final config = parseHeadlessCliConfig({
+        ..._validConfig(),
+        'providers': [
+          {
+            'type': 'openai',
+            'models': ['gpt-5.5'],
+            'apiKeyEnv': 'OPENAI_API_KEY',
+            'harness': 'minimal',
+          },
+        ],
+      }, configPath: p.join(Directory.current.path, 'run.json'));
+
+      expect(config.providers.single.harness, 'minimal');
     });
 
     test('rejects malformed required fields and types', () {

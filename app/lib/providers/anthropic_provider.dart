@@ -1,9 +1,11 @@
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
-class AnthropicProvider implements ModelProvider, ModelRuntimeMetadataProvider {
+class AnthropicProvider
+    implements StreamingModelProvider, ModelRuntimeMetadataProvider {
   AnthropicProvider({required this.apiKey, Dio? dio})
     : _dio = dio ?? (Dio()..interceptors.add(PrettyDioLogger()));
 
@@ -91,5 +93,27 @@ class AnthropicProvider implements ModelProvider, ModelRuntimeMetadataProvider {
       completionTokens: usage['output_tokens'] as int?,
       latency: stopwatch.elapsed,
     );
+  }
+
+  @override
+  Stream<ModelStreamEvent> generateStream({
+    required String prompt,
+    required String model,
+    Duration? timeout,
+  }) async* {
+    yield const ModelStreamStarted();
+    final response = await generate(
+      prompt: prompt,
+      model: model,
+      timeout: timeout,
+    );
+    if (response.rawText.isNotEmpty) {
+      yield ModelStreamContentDelta(response.rawText);
+    }
+    yield ModelStreamUsage(
+      promptTokens: response.promptTokens,
+      completionTokens: response.completionTokens,
+    );
+    yield const ModelStreamCompleted();
   }
 }

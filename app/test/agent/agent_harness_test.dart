@@ -3,11 +3,180 @@ import 'dart:io';
 
 import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/agent/droid_agent_harness.dart';
+import 'package:dart_arena/agent/minimal_agent_harness.dart';
+import 'package:dart_arena/core/model_response.dart';
+import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
+  group('MinimalAgentHarness', () {
+    test(
+      'runs scripted bash steps and finishes after editing the workspace',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'minimal_agent_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final provider = _ScriptedStreamingProvider([
+          '```bash\nprintf done > result.txt\n```',
+          '```bash\ntest -f result.txt\n```',
+          'FINISH',
+        ]);
+        final sandbox = _RecordingGeneratedCodeSandbox();
+        final harness = MinimalAgentHarness(
+          provider: provider,
+          harnessId: 'minimal-test',
+          generatedCodeSandbox: sandbox,
+        );
+
+        final result = await harness.run(
+          workspace: workspace,
+          instruction: 'Write done to result.txt.',
+          modelId: 'fake',
+          timeout: const Duration(seconds: 2),
+        );
+
+        expect(result.succeeded, isTrue);
+        expect(result.metadata['terminal_reason'], 'finished');
+        expect(result.metadata['step_count'], 2);
+        expect(result.promptTokens, 6);
+        expect(result.completionTokens, 9);
+        expect(
+          await File(p.join(workspace.path, 'result.txt')).readAsString(),
+          'done',
+        );
+        expect(provider.prompts[1], contains('Previous bash command:'));
+        expect(provider.prompts[1], contains('exit code: 0'));
+        expect(sandbox.seenExecutable, 'bash');
+        expect(sandbox.seenWorkingDirectory, workspace.path);
+        expect(result.metadata['runtimeBoundary'], {
+          'enforced': true,
+          'backend': 'fake-backend',
+        });
+      },
+      skip: Platform.isWindows ? 'bash harness requires POSIX shell' : false,
+    );
+
+    test(
+      'stops when the configured step limit is reached',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'minimal_agent_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final harness = MinimalAgentHarness(
+          provider: _ScriptedStreamingProvider([
+            '```bash\nprintf one > one.txt\n```',
+            '```bash\nprintf two > two.txt\n```',
+          ]),
+          harnessId: 'minimal-test',
+          maxSteps: 1,
+        );
+
+        final result = await harness.run(
+          workspace: workspace,
+          instruction: 'Write files.',
+          modelId: 'fake',
+          timeout: const Duration(seconds: 2),
+        );
+
+        expect(result.status, AgentRunStatus.failure);
+        expect(result.metadata['terminal_reason'], 'max_steps');
+        expect(result.metadata['step_count'], 1);
+        expect(File(p.join(workspace.path, 'one.txt')).existsSync(), isTrue);
+        expect(File(p.join(workspace.path, 'two.txt')).existsSync(), isFalse);
+      },
+      skip: Platform.isWindows ? 'bash harness requires POSIX shell' : false,
+    );
+
+    test(
+      'stops the bash subprocess when the wall-clock timeout expires',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'minimal_agent_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final harness = MinimalAgentHarness(
+          provider: _ScriptedStreamingProvider(['```bash\nsleep 1\n```']),
+          harnessId: 'minimal-test',
+        );
+
+        final result = await harness.run(
+          workspace: workspace,
+          instruction: 'Wait.',
+          modelId: 'fake',
+          timeout: const Duration(milliseconds: 30),
+        );
+
+        expect(result.status, AgentRunStatus.timeout);
+        expect(result.metadata['terminal_reason'], 'timeout');
+      },
+      skip: Platform.isWindows ? 'bash harness requires POSIX shell' : false,
+    );
+
+    test('fails cleanly for a reply without the strict bash format', () async {
+      final workspace = await Directory.systemTemp.createTemp('minimal_agent_');
+      addTearDown(() async {
+        if (await workspace.exists()) await workspace.delete(recursive: true);
+      });
+      final harness = MinimalAgentHarness(
+        provider: _ScriptedStreamingProvider(['Run ls']),
+        harnessId: 'minimal-test',
+      );
+
+      final result = await harness.run(
+        workspace: workspace,
+        instruction: 'Inspect files.',
+        modelId: 'fake',
+        timeout: const Duration(seconds: 2),
+      );
+
+      expect(result.status, AgentRunStatus.failure);
+      expect(result.metadata['terminal_reason'], 'malformed_reply');
+      expect(result.stderrPreview, contains('fenced bash block'));
+    });
+
+    test(
+      'bounds command output',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'minimal_agent_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final harness = MinimalAgentHarness(
+          provider: _ScriptedStreamingProvider([
+            '```bash\nprintf 1234567890\n```',
+            'FINISH',
+          ]),
+          harnessId: 'minimal-test',
+          maxOutputChars: 4,
+        );
+
+        final result = await harness.run(
+          workspace: workspace,
+          instruction: 'Print output.',
+          modelId: 'fake',
+          timeout: const Duration(seconds: 2),
+        );
+
+        expect(result.succeeded, isTrue);
+        expect(result.stdoutPreview, '7890');
+      },
+      skip: Platform.isWindows ? 'bash harness requires POSIX shell' : false,
+    );
+  });
+
   test(
     'DroidAgentHarness invokes droid exec in the workspace with tools enabled',
     () async {
@@ -425,6 +594,50 @@ done
     skip: Platform.isWindows ? 'POSIX shell script test' : false,
     timeout: const Timeout(Duration(seconds: 8)),
   );
+}
+
+class _ScriptedStreamingProvider implements StreamingModelProvider {
+  _ScriptedStreamingProvider(this.replies);
+
+  final List<String> replies;
+  final prompts = <String>[];
+  var _index = 0;
+
+  @override
+  String get id => 'scripted';
+
+  @override
+  String get displayName => 'Scripted';
+
+  @override
+  ProviderMode get mode => ProviderMode.rawApi;
+
+  @override
+  Future<List<ModelInfo>> listModels() async => const [ModelInfo(id: 'fake')];
+
+  @override
+  Future<ModelResponse> generate({
+    required String prompt,
+    required String model,
+    Duration? timeout,
+  }) async => throw UnimplementedError();
+
+  @override
+  Stream<ModelStreamEvent> generateStream({
+    required String prompt,
+    required String model,
+    Duration? timeout,
+  }) async* {
+    prompts.add(prompt);
+    final reply = replies[_index++];
+    yield const ModelStreamStarted();
+    yield ModelStreamContentDelta(reply);
+    yield const ModelStreamUsage(promptTokens: 2, completionTokens: 3);
+    yield const ModelStreamCompleted();
+  }
+
+  @override
+  void dispose() {}
 }
 
 class _RecordingGeneratedCodeSandbox extends GeneratedCodeSandbox {

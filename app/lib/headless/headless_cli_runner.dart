@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/droid_agent_harness.dart';
+import 'package:dart_arena/agent/minimal_agent_harness.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_registry.dart';
@@ -35,6 +36,7 @@ typedef HeadlessCliTaskRegistryBuilder = TaskRegistry Function();
 typedef HeadlessCliAgentHarnessBuilder =
     List<AgentHarness> Function(
       HeadlessCliConfig config,
+      List<ModelProvider> providers,
       GeneratedCodeSandbox? generatedCodeSandbox,
     );
 typedef HeadlessCliGeneratedCodeSandboxBuilder =
@@ -128,6 +130,7 @@ Future<int> runHeadlessCli(
         },
         agentHarnesses: dependencies.agentHarnessBuilder(
           cliConfig,
+          providers,
           generatedCodeSandbox,
         ),
         evaluatorConfig: evaluatorConfig,
@@ -360,19 +363,48 @@ ModelProvider _defaultProviderBuilder(
 
 List<AgentHarness> _defaultAgentHarnessBuilder(
   HeadlessCliConfig config,
+  List<ModelProvider> providers,
   GeneratedCodeSandbox? generatedCodeSandbox,
 ) {
-  final hasDroidProvider = config.providers.any(
-    (provider) => provider.id == 'droid' || provider.type == 'droid',
+  final providersById = {
+    for (final provider in providers) provider.id: provider,
+  };
+  return [
+    for (final configProvider in config.providers)
+      if (configProvider.harness == 'droid' ||
+          (configProvider.harness == null && configProvider.type == 'droid'))
+        DroidAgentHarness(
+          deniedEnvironmentKeys: _configuredApiKeyEnvNames(config),
+          generatedCodeSandbox: generatedCodeSandbox,
+        )
+      else if (configProvider.harness == 'minimal')
+        _minimalHarness(
+          configProvider,
+          providersById[configProvider.id],
+          config,
+          generatedCodeSandbox,
+        ),
+  ];
+}
+
+AgentHarness _minimalHarness(
+  HeadlessCliProviderConfig configProvider,
+  ModelProvider? provider,
+  HeadlessCliConfig config,
+  GeneratedCodeSandbox? generatedCodeSandbox,
+) {
+  if (provider is! StreamingModelProvider) {
+    throw HeadlessCliConfigException(
+      'providers with harness "minimal" must support streaming: '
+      '${configProvider.id}',
+    );
+  }
+  return MinimalAgentHarness(
+    provider: provider,
+    harnessId: configProvider.id,
+    deniedEnvironmentKeys: _configuredApiKeyEnvNames(config),
+    generatedCodeSandbox: generatedCodeSandbox,
   );
-  return hasDroidProvider
-      ? [
-          DroidAgentHarness(
-            deniedEnvironmentKeys: _configuredApiKeyEnvNames(config),
-            generatedCodeSandbox: generatedCodeSandbox,
-          ),
-        ]
-      : const [];
 }
 
 BenchmarkTask _resolveTask(TaskRegistry registry, String taskId) {
