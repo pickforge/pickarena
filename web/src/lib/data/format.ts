@@ -26,19 +26,6 @@ export function formatCount(value: number | null): string {
   return integerFormatter.format(Math.round(value));
 }
 
-export function formatDate(value: string | null): string {
-  if (!value) return 'unknown';
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'unknown';
-
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'UTC'
-  }).format(date);
-}
-
 export function formatDuration(value: number | null): string {
   if (!isFiniteNumber(value)) return 'unknown';
 
@@ -60,10 +47,6 @@ export function formatCost(value: number | null): string {
   if (!isFiniteNumber(value)) return 'unknown';
 
   return currencyFormatter.format(value / 1_000_000);
-}
-
-export function formatModelName(providerId: string, modelId: string): string {
-  return `${providerId} / ${modelId}`;
 }
 
 type ModelIdentity = {

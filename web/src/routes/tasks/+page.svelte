@@ -191,7 +191,8 @@
       </div>
     </div>
 
-    <div class="legend" aria-hidden="true">
+    <div class="legend">
+      <span class="sr-only">Cell background encodes pass rate:</span>
       <span class="swatch strong">≥ 85%</span>
       <span class="swatch mixed">50–85%</span>
       <span class="swatch weak">&lt; 50%</span>

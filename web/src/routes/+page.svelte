@@ -12,7 +12,10 @@
     providerName,
     tokensText
   } from '$lib/data/format';
-  import type { LeaderboardModel } from '$lib/data/leaderboard';
+  import type {
+    LeaderboardModel,
+    LeaderboardPassAtKEntry
+  } from '$lib/data/leaderboard';
   import type { PageData } from './$types';
 
   type ChartMode = 'cost' | 'latency';
@@ -92,6 +95,11 @@
 
   function gridY(fraction: number): number {
     return PLOT.bottom - fraction * (PLOT.bottom - PLOT.top);
+  }
+
+  function passAtOne(model: LeaderboardModel): LeaderboardPassAtKEntry | null {
+    const entry = model.passAtK['1'];
+    return entry && entry.passRate !== null ? entry : null;
   }
 </script>
 
@@ -236,7 +244,7 @@
           <tr>
             <th scope="col" class="num">#</th>
             <th scope="col">Model</th>
-            <th scope="col">Pass@1</th>
+            <th scope="col">Pass rate</th>
             <th scope="col" class="num">Public / hidden</th>
             <th scope="col" class="num">Cost / task</th>
             <th scope="col" class="num">Output tokens</th>
@@ -246,6 +254,7 @@
         </thead>
         <tbody>
           {#each rankedModels as model, index}
+            {@const passOne = passAtOne(model)}
             <tr>
               <td class="rank-cell" class:top={(model.rank ?? index + 1) === 1}>
                 {model.rank ?? index + 1}
@@ -265,6 +274,11 @@
               </td>
               <td>
                 <PassRate rate={model.passRate} ci={model.confidenceInterval} />
+                {#if passOne}
+                  <span class="passrate-ci" style="display:block;margin-top:0.4rem;">
+                    Pass@1 {percentText(passOne.passRate)} · n {passOne.sampleCount}
+                  </span>
+                {/if}
               </td>
               <td class="num">
                 <span class="split">
@@ -283,9 +297,11 @@
       </table>
     </div>
     <p class="muted" style="margin-top:0.9rem;font-size:0.88rem;">
-      Public pass = visible tests and analyzer checks. Hidden pass = clean-baseline
-      behavioral verifiers the agent never sees. A dash means the provider or harness did
-      not report that telemetry — it is shown as unknown, never as zero.
+      Pass rate is the aggregate primary-pass rate over all trials (the ranking metric,
+      with its Wilson 95% interval); Pass@1 is the single-attempt rate over n first
+      attempts. Public pass = visible tests and analyzer checks. Hidden pass =
+      clean-baseline behavioral verifiers the agent never sees. A dash means the provider
+      or harness did not report that telemetry — it is shown as unknown, never as zero.
     </p>
   {:else}
     <p class="empty">No model rows are available yet.</p>

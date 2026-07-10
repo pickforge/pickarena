@@ -85,6 +85,18 @@
     </div>
   </header>
 
+  {#if data.warning}
+    <p class="warning" role="alert">
+      <strong>Data unavailable.</strong> {data.warning} The metrics below may be empty until
+      a valid export is published.
+    </p>
+  {:else if leaderboard.models.length === 0}
+    <p class="warning" role="alert">
+      <strong>No results yet.</strong> This export contains no model rows. Run and publish a
+      benchmark to populate the leaderboard.
+    </p>
+  {/if}
+
   {#if leaderboard.provisional}
     <div class="provisional-banner" role="status">
       <strong>Provisional</strong>
