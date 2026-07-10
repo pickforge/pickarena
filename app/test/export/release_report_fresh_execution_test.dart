@@ -178,11 +178,52 @@ void main() {
       ),
     );
   });
+
+  test('blocks when digest evidence lacks a hiddenVerifierDigests field', () {
+    final blockers = _provenanceBlockers(
+      taskBundleDigestEvidence: const [
+        {'taskId': 'task.a', 'taskVersion': 1, 'track': 'agentic'},
+      ],
+      hiddenVerifierDigests: const <String, Object?>{},
+    );
+    expect(
+      blockers,
+      contains(
+        'Could not recompute hidden verifier digests from the live task '
+        'bundle for a graded result.',
+      ),
+    );
+  });
+
+  test(
+    'blocks an agentic result whose provenance omits the benchmark track',
+    () {
+      final blockers = _provenanceBlockers(
+        taskBundleDigestEvidence: const [
+          {
+            'taskId': 'task.a',
+            'taskVersion': 1,
+            'track': 'agentic',
+            'hiddenVerifierDigests': {'hidden_test': 'aa'},
+          },
+        ],
+        hiddenVerifierDigests: const {'hidden_test': 'aa'},
+        benchmarkTrack: null,
+      );
+      expect(
+        blockers,
+        contains(
+          'Result provenance has a missing or unrecognized benchmark track.',
+        ),
+      );
+    },
+  );
 }
 
 String _provenanceBlockers({
   required List<Map<String, Object?>> taskBundleDigestEvidence,
   required Map<String, Object?> hiddenVerifierDigests,
+  String? benchmarkTrack = 'agentic',
 }) {
   final report = buildReleaseReport(
     leaderboard: {
@@ -217,7 +258,7 @@ String _provenanceBlockers({
           {
             'taskId': 'task.a',
             'taskVersion': 1,
-            'benchmarkTrack': 'agentic',
+            if (benchmarkTrack != null) 'benchmarkTrack': benchmarkTrack,
             'providerId': 'p',
             'modelId': 'm',
             'trialIndex': 0,

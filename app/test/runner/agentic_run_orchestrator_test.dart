@@ -5,6 +5,7 @@ import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
+import 'package:dart_arena/core/patch_capture.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/evaluator_blocking.dart';
@@ -769,4 +770,37 @@ void main() {
       }
     },
   );
+
+  test('blocks grading when patch capture fails', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'agentic_capture_failure_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+
+    final answer = _SpyEvaluator('answer_spy');
+    final result =
+        await AgenticRunOrchestrator(
+          workdirManager: NoOpPrepareWorkdirManager(root: root),
+          patchCapture: const PatchCapture(
+            gitExecutable: 'dart-arena-nonexistent-git',
+          ),
+          now: () => DateTime(2026, 6, 2),
+        ).run(
+          runId: 'run-capture-failure',
+          task: _AgenticBlockingTask([answer]),
+          harness: _FakeHarness((workspace) async {}),
+          providerId: 'fake_agent',
+          modelId: 'm',
+          trialIndex: 0,
+          evaluatorConfig: const EvaluatorConfig(),
+        );
+
+    expect(answer.calls, 0);
+    final environment = result.evaluations.singleWhere(
+      (evaluation) => evaluation.evaluatorId == 'environment',
+    );
+    expect(environment.details['phase'], 'patch_capture');
+  });
 }

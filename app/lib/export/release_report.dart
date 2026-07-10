@@ -8015,7 +8015,8 @@ Map<String, Object?> _provenanceSummary({
   final currentHiddenVerifierDigestsByTaskKey = {
     for (final evidence in taskBundleDigestEvidence)
       if (_taskQaReportKey(evidence) case final key?)
-        key: _objectMap(evidence['hiddenVerifierDigests']),
+        if (evidence.containsKey('hiddenVerifierDigests'))
+          key: _objectMap(evidence['hiddenVerifierDigests']),
   };
   for (final runId in runIds) {
     final provenance = runProvenanceById?[runId];
@@ -8068,7 +8069,14 @@ Map<String, Object?> _provenanceSummary({
       gradingModeCounts[gradingModeKey] =
           (gradingModeCounts[gradingModeKey] ?? 0) + 1;
 
-      if (result['benchmarkTrack'] != 'agentic') {
+      final benchmarkTrack = result['benchmarkTrack'];
+      if (benchmarkTrack == 'codegen') {
+        continue;
+      }
+      if (benchmarkTrack != 'agentic') {
+        blockers.add(
+          'Result provenance has a missing or unrecognized benchmark track.',
+        );
         continue;
       }
 

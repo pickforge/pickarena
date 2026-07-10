@@ -231,47 +231,51 @@ class AgenticRunOrchestrator {
     ];
 
     cancellationCheck?.call();
-    final gradingPrep = await workdirManager.prepare(
-      gradingWorkspace,
-      isFlutter: task.isFlutter,
-      allowInternet: task.allowInternet,
-      remainingTimeout: remainingTimeout,
-      cancellationCheck: cancellationCheck,
-      cancellationSignal: cancellationSignal,
-      generatedCodeSandbox: generatedCodeSandbox,
-      maxCpuCores: task.effectiveResourceLimits.cpus,
-    );
-    cancellationCheck?.call();
     final evaluators = applyTaskResourceLimitsToEvaluators(
       task.evaluatorsFor(evaluatorConfig),
       task,
     );
-    PrepareFailed? patchApplyFailure;
-    if (gradingPrep is PrepareOk) {
+
+    PrepareFailed? gradingFailure;
+    var gradingFailurePhase = 'grading_prepare';
+    if (capturedPatch == null) {
+      gradingFailure = const PrepareFailed('patch capture failed');
+      gradingFailurePhase = 'patch_capture';
+    } else {
       try {
         await workdirManager.applyCapturedPatch(
           gradingWorkspace,
-          capturedPatch?.patch ?? '',
+          capturedPatch.patch,
         );
-        resultProvenance['patchApplied'] =
-            capturedPatch?.hasMeaningfulDiff ?? false;
+        resultProvenance['patchApplied'] = capturedPatch.hasMeaningfulDiff;
       } on Object catch (e) {
-        patchApplyFailure = PrepareFailed(e.toString());
+        gradingFailure = PrepareFailed(e.toString());
+        gradingFailurePhase = 'grading_patch_apply';
+      }
+      if (gradingFailure == null) {
+        cancellationCheck?.call();
+        final gradingPrep = await workdirManager.prepare(
+          gradingWorkspace,
+          isFlutter: task.isFlutter,
+          allowInternet: task.allowInternet,
+          remainingTimeout: remainingTimeout,
+          cancellationCheck: cancellationCheck,
+          cancellationSignal: cancellationSignal,
+          generatedCodeSandbox: generatedCodeSandbox,
+          maxCpuCores: task.effectiveResourceLimits.cpus,
+        );
+        cancellationCheck?.call();
+        if (gradingPrep is PrepareFailed) {
+          gradingFailure = gradingPrep;
+        }
       }
     }
-    if (gradingPrep is PrepareFailed) {
+    if (gradingFailure != null) {
       _addPrepareFailureEvaluations(
         evaluations: evaluations,
         evaluators: evaluators,
-        failure: gradingPrep,
-        phase: 'grading_prepare',
-      );
-    } else if (patchApplyFailure != null) {
-      _addPrepareFailureEvaluations(
-        evaluations: evaluations,
-        evaluators: evaluators,
-        failure: patchApplyFailure,
-        phase: 'grading_patch_apply',
+        failure: gradingFailure,
+        phase: gradingFailurePhase,
       );
     } else {
       for (final evaluator in evaluators) {
