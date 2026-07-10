@@ -50,6 +50,8 @@ class RunProvenanceConfig {
     this.generatedCodeSandboxEnforced = false,
     this.generatedCodeSandboxBackend,
     this.agentHarnessProvenance = const {},
+    this.preset,
+    this.corpusManifest,
   });
 
   final List<BenchmarkTask> tasks;
@@ -63,6 +65,8 @@ class RunProvenanceConfig {
   final bool generatedCodeSandboxEnforced;
   final String? generatedCodeSandboxBackend;
   final Map<String, Map<String, Object?>> agentHarnessProvenance;
+  final String? preset;
+  final Map<String, Object?>? corpusManifest;
 }
 
 class DefaultRunProvenanceEnvironmentProvider
@@ -247,7 +251,7 @@ Future<String> buildRunProvenanceJson({
   };
 
   final json = <String, Object?>{
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'capturedAt': capturedAt.toUtc().toIso8601String(),
     'runId': runId,
     'config': {
@@ -263,6 +267,9 @@ Future<String> buildRunProvenanceJson({
           'backend': config.generatedCodeSandboxBackend,
       },
       'agentHarnesses': config.agentHarnessProvenance,
+      if (config.preset != null) 'preset': config.preset,
+      if (config.corpusManifest != null)
+        'corpusManifest': config.corpusManifest,
       'pricingRegistry': pricingRegistryProvenance(),
       'modelsByProvider': _sortedModelsMap(normalizedModelsByProvider),
       'evaluatorWeights': _sortedNumberMap(evaluatorWeights),

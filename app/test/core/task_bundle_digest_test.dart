@@ -8,6 +8,51 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
+  group('corpus manifest digest', () {
+    test('is deterministic and changes with task version or bundle digest', () {
+      final a = List.filled(64, 'a').join();
+      final b = List.filled(64, 'b').join();
+      final c = List.filled(64, 'c').join();
+      final first = [
+        CorpusManifestEntry(
+          taskId: 'task.b',
+          taskVersion: 1,
+          taskBundleDigest: b,
+        ),
+        CorpusManifestEntry(
+          taskId: 'task.a',
+          taskVersion: 1,
+          taskBundleDigest: a,
+        ),
+      ];
+      final digest = corpusManifestDigestSha256(first);
+
+      expect(corpusManifestDigestSha256(first.reversed), digest);
+      expect(
+        corpusManifestDigestSha256([
+          CorpusManifestEntry(
+            taskId: 'task.a',
+            taskVersion: 2,
+            taskBundleDigest: a,
+          ),
+          first.first,
+        ]),
+        isNot(digest),
+      );
+      expect(
+        corpusManifestDigestSha256([
+          CorpusManifestEntry(
+            taskId: 'task.a',
+            taskVersion: 1,
+            taskBundleDigest: c,
+          ),
+          first.first,
+        ]),
+        isNot(digest),
+      );
+    });
+  });
+
   test('task bundle digest follows declared files and excludes qa', () async {
     final root = await Directory.systemTemp.createTemp('task_bundle_digest_');
     addTearDown(() async {

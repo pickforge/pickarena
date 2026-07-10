@@ -81,6 +81,48 @@ void main() {
       ]);
     });
 
+    test('accepts a preset instead of explicit tasks', () {
+      final config = _validConfig()
+        ..remove('tasks')
+        ..['preset'] = 'mvp';
+
+      expect(
+        parseHeadlessCliConfig(
+          config,
+          configPath: p.join(Directory.current.path, 'run.json'),
+        ).preset,
+        'mvp',
+      );
+    });
+
+    test('rejects a preset with explicit tasks', () {
+      expect(
+        () => parseHeadlessCliConfig({
+          ..._validConfig(),
+          'preset': 'mvp',
+        }, configPath: p.join(Directory.current.path, 'run.json')),
+        throwsA(isA<HeadlessCliConfigException>()),
+      );
+    });
+
+    test('rejects a config without tasks or a preset', () {
+      final config = _validConfig()..remove('tasks');
+
+      expect(
+        () => parseHeadlessCliConfig(
+          config,
+          configPath: p.join(Directory.current.path, 'run.json'),
+        ),
+        throwsA(
+          isA<HeadlessCliConfigException>().having(
+            (error) => error.message,
+            'message',
+            contains('exactly one of tasks or preset must be provided'),
+          ),
+        ),
+      );
+    });
+
     test('parses generated-code sandbox requirement flag', () {
       final config = parseHeadlessCliConfig({
         ..._validConfig(),

@@ -42,6 +42,7 @@ void main() {
       db,
       id: 'compatible-latest',
       completedAt: DateTime.utc(2026, 5, 2),
+      provenanceJson: _presetProvenanceJson(),
     );
     await _seedTaskRun(
       db,
@@ -100,6 +101,9 @@ void main() {
     expect(benchmark['version'], '2026-05-31-master-spec');
     expect(benchmark['taskSetId'], startsWith('taskset-'));
     expect(benchmark['evaluatorSchemaVersion'], 2);
+    expect(benchmark['preset'], 'mvp');
+    expect(benchmark['corpusManifestDigestSha256'], hasLength(64));
+    expect(benchmark['selectedTasks'], hasLength(2));
 
     final pricingRegistry = export['pricingRegistry']! as Map<String, Object?>;
     expect(pricingRegistry['version'], '2026-05-31');
@@ -1370,6 +1374,30 @@ String _harnessProvenanceJson(String kind, {String? agent, String? version}) =>
         },
       },
     });
+
+String _presetProvenanceJson() => jsonEncode({
+  'schemaVersion': 2,
+  'config': {
+    'scoringSchemaVersion': 2,
+    'evaluatorWeights': {'compile': 1.0},
+    'corpusManifest': {
+      'preset': 'mvp',
+      'tasks': [
+        {
+          'taskId': 'task.a',
+          'taskVersion': 1,
+          'taskBundleDigest': List.filled(64, 'a').join(),
+        },
+        {
+          'taskId': 'task.b',
+          'taskVersion': 1,
+          'taskBundleDigest': List.filled(64, 'b').join(),
+        },
+      ],
+      'digestSha256': List.filled(64, 'c').join(),
+    },
+  },
+});
 
 Future<void> _seedTaskRun(
   AppDatabase db, {

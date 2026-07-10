@@ -6,11 +6,13 @@ import 'package:dart_arena/agent/command_template_agent_harness.dart';
 import 'package:dart_arena/agent/droid_agent_harness.dart';
 import 'package:dart_arena/agent/minimal_agent_harness.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
+import 'package:dart_arena/core/task_bundle_digest.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/headless/headless_benchmark_runner.dart';
 import 'package:dart_arena/headless/headless_cli_config.dart';
+import 'package:dart_arena/headless/task_preset.dart';
 import 'package:dart_arena/providers/anthropic_provider.dart';
 import 'package:dart_arena/providers/deepseek_provider.dart';
 import 'package:dart_arena/providers/droid_exec_provider.dart';
@@ -88,21 +90,30 @@ Future<int> runHeadlessCli(
   var runnerInvoked = false;
 
   try {
-    final configPath = _parseConfigArg(args);
-    if (configPath == null) {
+    final cliArgs = _parseConfigArg(args);
+    if (cliArgs == null) {
       out(jsonEncode(_helpJson()));
       return 0;
     }
 
-    final cliConfig = await loadHeadlessCliConfig(File(configPath));
+    final cliConfig = await loadHeadlessCliConfig(
+      File(cliArgs.configPath),
+      presetOverride: cliArgs.preset,
+    );
     final generatedCodeSandbox = await dependencies.generatedCodeSandboxBuilder(
       cliConfig,
     );
     final registry = dependencies.taskRegistryBuilder();
     await _registerFileBackedTasks(registry, cliConfig.taskBundleRoots);
-    final tasks = [
-      for (final taskId in cliConfig.tasks) _resolveTask(registry, taskId),
-    ];
+    final tasks = cliConfig.preset == null
+        ? [for (final taskId in cliConfig.tasks) _resolveTask(registry, taskId)]
+        : selectTaskPreset(cliConfig.preset!, registry.all());
+    if (tasks.isEmpty) {
+      throw HeadlessCliConfigException(
+        'preset ${cliConfig.preset} selected no tasks',
+      );
+    }
+    final corpusManifest = await _corpusManifest(cliConfig.preset, tasks);
     if (cliConfig.providers.any((provider) => provider.type == 'agent_cli') &&
         tasks.any((task) => task.track == BenchmarkTrack.codegen)) {
       throw const HeadlessCliConfigException(
@@ -146,6 +157,8 @@ Future<int> runHeadlessCli(
           for (final harness in agentHarnesses)
             harness.id: _agentHarnessProvenance(harness),
         },
+        preset: cliConfig.preset,
+        corpusManifest: corpusManifest,
         evaluatorConfig: evaluatorConfig,
         evaluatorWeights: cliConfig.evaluatorWeights,
         workdirManager: WorkdirManager(
@@ -206,6 +219,34 @@ Future<int> runHeadlessCli(
   }
 }
 
+Future<Map<String, Object?>?> _corpusManifest(
+  String? preset,
+  List<BenchmarkTask> tasks,
+) async {
+  if (preset == null) return null;
+  final entries = <CorpusManifestEntry>[];
+  for (final task in tasks) {
+    if (task is! FileBackedTask) {
+      throw HeadlessCliConfigException(
+        'preset $preset requires file-backed tasks',
+      );
+    }
+    entries.add(
+      CorpusManifestEntry(
+        taskId: task.id,
+        taskVersion: task.version,
+        taskBundleDigest: await taskBundleDigestSha256(task.bundleDirectory),
+      ),
+    );
+  }
+  entries.sort((a, b) => a.taskId.compareTo(b.taskId));
+  return {
+    'preset': preset,
+    'tasks': [for (final entry in entries) entry.toJson()],
+    'digestSha256': corpusManifestDigestSha256(entries),
+  };
+}
+
 Future<GeneratedCodeSandbox?> _defaultGeneratedCodeSandboxBuilder(
   HeadlessCliConfig config,
 ) async {
@@ -233,11 +274,12 @@ Future<void> _registerFileBackedTasks(
   }
 }
 
-String? _parseConfigArg(List<String> args) {
+_HeadlessCliArgs? _parseConfigArg(List<String> args) {
   if (args.isEmpty || args.contains('--help') || args.contains('-h')) {
     return null;
   }
   String? configPath;
+  String? preset;
   for (var i = 0; i < args.length; i++) {
     final arg = args[i];
     if (arg == '--config') {
@@ -250,6 +292,16 @@ String? _parseConfigArg(List<String> args) {
         );
       }
       configPath = args[++i];
+    } else if (arg == '--preset') {
+      if (i + 1 >= args.length) {
+        throw const HeadlessCliConfigException('--preset requires a name');
+      }
+      if (preset != null) {
+        throw const HeadlessCliConfigException(
+          '--preset may only be provided once',
+        );
+      }
+      preset = args[++i];
     } else {
       throw HeadlessCliConfigException('unknown argument: $arg');
     }
@@ -257,7 +309,14 @@ String? _parseConfigArg(List<String> args) {
   if (configPath == null) {
     throw const HeadlessCliConfigException('--config is required');
   }
-  return configPath;
+  return _HeadlessCliArgs(configPath: configPath, preset: preset);
+}
+
+class _HeadlessCliArgs {
+  const _HeadlessCliArgs({required this.configPath, this.preset});
+
+  final String configPath;
+  final String? preset;
 }
 
 Map<String, Object?> _helpJson() {
@@ -267,6 +326,7 @@ Map<String, Object?> _helpJson() {
         'dart run --verbosity=error dart_arena:dart_arena_headless --config run.json',
     'options': [
       {'name': '--config', 'value': 'path', 'required': true},
+      {'name': '--preset', 'value': 'name', 'required': false},
       {'name': '--help', 'required': false},
     ],
     'configFormat': 'json',

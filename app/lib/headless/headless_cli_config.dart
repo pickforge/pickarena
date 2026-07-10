@@ -27,6 +27,7 @@ class HeadlessCliConfig {
     required this.databasePath,
     required this.timeout,
     this.name,
+    this.preset,
     this.judge,
     this.taskBundleRoots = const [],
     this.maxConcurrency = 4,
@@ -38,6 +39,7 @@ class HeadlessCliConfig {
   final String configPath;
   final String runId;
   final String? name;
+  final String? preset;
   final List<String> tasks;
   final List<HeadlessCliProviderConfig> providers;
   final HeadlessCliJudgeConfig? judge;
@@ -88,7 +90,10 @@ class HeadlessCliJudgeConfig {
   final String model;
 }
 
-Future<HeadlessCliConfig> loadHeadlessCliConfig(File file) async {
+Future<HeadlessCliConfig> loadHeadlessCliConfig(
+  File file, {
+  String? presetOverride,
+}) async {
   Object? decoded;
   try {
     decoded = jsonDecode(await file.readAsString());
@@ -100,6 +105,7 @@ Future<HeadlessCliConfig> loadHeadlessCliConfig(File file) async {
   if (decoded is! Map<String, Object?>) {
     throw const HeadlessCliConfigException('config must be a JSON object');
   }
+  if (presetOverride != null) decoded = {...decoded, 'preset': presetOverride};
   return parseHeadlessCliConfig(
     decoded,
     configPath: p.normalize(p.absolute(file.path)),
@@ -114,9 +120,18 @@ HeadlessCliConfig parseHeadlessCliConfig(
   final runId = _requiredString(json, 'runId');
   _validateSafeSegment(runId, 'runId');
 
-  final tasks = _requiredStringList(json, 'tasks');
-  if (tasks.isEmpty) {
+  final hasTasks = json.containsKey('tasks');
+  final tasks = hasTasks
+      ? _requiredStringList(json, 'tasks')
+      : const <String>[];
+  final preset = _optionalString(json, 'preset');
+  if (hasTasks && tasks.isEmpty) {
     throw const HeadlessCliConfigException('tasks must not be empty');
+  }
+  if ((!hasTasks && preset == null) || (hasTasks && preset != null)) {
+    throw const HeadlessCliConfigException(
+      'exactly one of tasks or preset must be provided',
+    );
   }
 
   final providersJson = _requiredList(json, 'providers');
@@ -169,6 +184,7 @@ HeadlessCliConfig parseHeadlessCliConfig(
     configPath: configPath,
     runId: runId,
     name: _optionalString(json, 'name'),
+    preset: preset,
     tasks: List.unmodifiable(tasks),
     providers: List.unmodifiable(providers),
     judge: judge,

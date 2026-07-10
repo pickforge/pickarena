@@ -30,6 +30,8 @@ class HeadlessBenchmarkConfig {
     required this.modelsByProvider,
     this.agentHarnesses = const [],
     this.agentHarnessProvenance = const {},
+    this.preset,
+    this.corpusManifest,
     required this.evaluatorConfig,
     required this.evaluatorWeights,
     required this.workdirManager,
@@ -60,6 +62,8 @@ class HeadlessBenchmarkConfig {
   final Map<String, List<String>> modelsByProvider;
   final List<AgentHarness> agentHarnesses;
   final Map<String, Map<String, Object?>> agentHarnessProvenance;
+  final String? preset;
+  final Map<String, Object?>? corpusManifest;
   final EvaluatorConfig evaluatorConfig;
   final Map<String, double> evaluatorWeights;
   final WorkdirManager workdirManager;
@@ -223,6 +227,8 @@ class HeadlessBenchmarkRunner {
       generatedCodeSandboxEnforced: config.generatedCodeSandboxEnforced,
       generatedCodeSandboxBackend: config.generatedCodeSandboxBackend,
       agentHarnessProvenance: config.agentHarnessProvenance,
+      preset: config.preset,
+      corpusManifest: config.corpusManifest,
     );
     final provenanceJson = await buildRunProvenanceJson(
       runId: config.runId,

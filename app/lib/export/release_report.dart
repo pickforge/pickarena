@@ -344,7 +344,7 @@ Map<String, Object?> buildReleaseReport({
   );
 
   return {
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'releaseId': options.releaseId,
     'generatedAt': generatedAt.toIso8601String(),
     'status': blockers.isEmpty ? 'ready' : 'blocked',
@@ -362,6 +362,9 @@ Map<String, Object?> buildReleaseReport({
         'evaluatorSchemaVersion': evaluatorSchemaVersion,
         'track': benchmark['track'],
         'dataPolicy': benchmark['dataPolicy'],
+        'preset': benchmark['preset'],
+        'selectedTasks': benchmark['selectedTasks'],
+        'corpusManifestDigestSha256': benchmark['corpusManifestDigestSha256'],
       },
       'source': {
         'anchorRunId': source['anchorRunId'],
@@ -6344,8 +6347,34 @@ Map<String, Object?> _taskQaSummary(
           'track': entry['track'],
           'status': entry['status'],
           'failureCount': _intValue(entry['failureCount']),
+          ..._f2pP2pForTaskQaReport(_taskQaReportForEntry(reports, entry)),
         },
     ],
+  };
+}
+
+Map<String, Object?>? _taskQaReportForEntry(
+  List<Map<String, Object?>> reports,
+  Map<String, Object?> entry,
+) {
+  final key = _taskQaReportKey(entry);
+  if (key == null) return null;
+  for (final report in reports) {
+    if (_taskQaReportKey(report) == key) return report;
+  }
+  return null;
+}
+
+Map<String, Object?> _f2pP2pForTaskQaReport(Map<String, Object?>? report) {
+  final checks = _objectMap(report?['checks']);
+  final f2p = checks['baselineHiddenFailed'];
+  final publicPassed = checks['referencePublicPassed'];
+  final hiddenPassed = checks['referenceHiddenPassed'];
+  return {
+    'f2p': f2p is bool ? f2p : null,
+    'p2p': publicPassed is bool && hiddenPassed is bool
+        ? publicPassed && hiddenPassed
+        : null,
   };
 }
 

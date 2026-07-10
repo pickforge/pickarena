@@ -84,6 +84,7 @@ Future<Map<String, Object?>> buildLeaderboardExport(
     for (final runId in sortedRunIds)
       if (runsById[runId] != null) runsById[runId]!,
   ];
+  final corpusManifest = _corpusManifestForRun(runsById[selected.anchorRunId]);
   final taskKeys = selected.taskRuns.map(_taskKey).toSet();
   final modelKeys = selected.taskRuns
       .map((taskRun) => '${taskRun.providerId}:${taskRun.modelId}')
@@ -132,7 +133,7 @@ Future<Map<String, Object?>> buildLeaderboardExport(
   );
 
   return <String, Object?>{
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'generatedAt': generatedAt.toIso8601String(),
     'benchmark': <String, Object?>{
       'name': 'PickArena',
@@ -143,6 +144,11 @@ Future<Map<String, Object?>> buildLeaderboardExport(
       'evaluatorSchemaVersion': dartArenaEvaluatorSchemaVersion,
       'track': options.track,
       'dataPolicy': options.strategy.kebabName,
+      if (corpusManifest != null) ...{
+        'preset': corpusManifest['preset'],
+        'selectedTasks': corpusManifest['tasks'],
+        'corpusManifestDigestSha256': corpusManifest['digestSha256'],
+      },
     },
     'source': <String, Object?>{
       'anchorRunId': selected.anchorRunId,
@@ -165,6 +171,21 @@ Future<Map<String, Object?>> buildLeaderboardExport(
     'taskModelCells': taskModelCells,
     'trialSummaries': trialSummaries,
   };
+}
+
+Map<String, Object?>? _corpusManifestForRun(Run? run) {
+  if (run == null) return null;
+  final provenance = _decodeRunProvenance(run.provenanceJson);
+  if (provenance == null) return null;
+  final manifest = _objectMap(
+    _objectMap(provenance['config'])['corpusManifest'],
+  );
+  if (manifest['preset'] is! String ||
+      manifest['tasks'] is! List ||
+      manifest['digestSha256'] is! String) {
+    return null;
+  }
+  return manifest;
 }
 
 _SelectedTaskRuns _selectTaskRuns({
