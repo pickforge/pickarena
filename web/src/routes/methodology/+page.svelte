@@ -74,9 +74,11 @@
     </p>
     <p>
       The current public export covers <strong>{countText(board.source.taskCount)} tasks</strong>
-      across <strong>{countText(board.source.taskRunCount)} scored trials</strong>. It is a
-      provisional single-model run; the methodology below is the standard every admitted
-      task and release run must meet, independent of how much data is published yet.
+      across <strong>{countText(board.source.modelCount)}
+        {board.source.modelCount === 1 ? 'model' : 'models'}</strong>
+      and <strong>{countText(board.source.taskRunCount)} scored trials</strong>{#if board.provisional},
+      and is still marked provisional{/if}. The methodology below is the standard every
+      admitted task and release run must meet, independent of how much data is published yet.
     </p>
 
     <h2 id="verifiers">Hidden behavioral verifiers</h2>

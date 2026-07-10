@@ -246,7 +246,7 @@
             <th scope="col">Model</th>
             <th scope="col">Pass rate</th>
             <th scope="col" class="num">Public / hidden</th>
-            <th scope="col" class="num">Cost / task</th>
+            <th scope="col" class="num">Cost / solved task</th>
             <th scope="col" class="num">Output tokens</th>
             <th scope="col" class="num">Steps</th>
             <th scope="col" class="num">Latency</th>
@@ -269,6 +269,11 @@
                   {/if}
                   {#if model.unknownEstimatedCostCount > 0}
                     <span class="flag">cost unknown</span>
+                  {/if}
+                  {#if model.blockedTaskRunCount > 0 || model.blockedEvaluationCount > 0}
+                    <span class="flag" title="Some verifier runs were blocked; pass rate reflects only unblocked runs">
+                      {model.blockedTaskRunCount || model.blockedEvaluationCount} blocked
+                    </span>
                   {/if}
                 </div>
               </td>

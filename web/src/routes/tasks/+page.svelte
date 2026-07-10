@@ -22,13 +22,28 @@
   let tasks = $derived(sortTasks(board.tasks));
   let models = $derived(sortModels(board.models));
   let cellMap = $derived(buildCellMap(board.taskModelCells));
-  let trials = $derived([...board.trialSummaries].slice(0, 24));
+  let trials = $derived(sortTrialsByRecency(board.trialSummaries).slice(0, 24));
   let hasMatrix = $derived(
     models.length > 0 && tasks.length > 0 && board.taskModelCells.length > 0
   );
 
   function sortTasks(input: LeaderboardTask[]): LeaderboardTask[] {
     return [...input].sort((a, b) => a.taskId.localeCompare(b.taskId));
+  }
+
+  function sortTrialsByRecency(
+    input: LeaderboardTrialSummary[]
+  ): LeaderboardTrialSummary[] {
+    return [...input].sort((a, b) => {
+      const at = a.completedAt ? Date.parse(a.completedAt) : NaN;
+      const bt = b.completedAt ? Date.parse(b.completedAt) : NaN;
+      const aValid = Number.isFinite(at);
+      const bValid = Number.isFinite(bt);
+      if (aValid && bValid) return bt - at;
+      if (aValid) return -1;
+      if (bValid) return 1;
+      return 0;
+    });
   }
 
   function sortModels(input: LeaderboardModel[]): LeaderboardModel[] {

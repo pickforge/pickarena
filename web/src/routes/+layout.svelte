@@ -10,6 +10,12 @@
 
   const pickforgeMarkSrc = `${base}/branding/pickforge_mark.png`;
   const leaderboard = $derived(data.leaderboard);
+  const dataWarnings = $derived(
+    [
+      ...leaderboard.source.warnings,
+      ...leaderboard.source.runProvenance.warnings
+    ].filter((warning, index, all) => warning.length > 0 && all.indexOf(warning) === index)
+  );
 
   const navItems = [
     { href: `${base}/`, label: 'Leaderboard', match: (p: string) => p === `${base}/` },
@@ -95,6 +101,14 @@
       <strong>No results yet.</strong> This export contains no model rows. Run and publish a
       benchmark to populate the leaderboard.
     </p>
+  {/if}
+
+  {#if dataWarnings.length > 0}
+    {#each dataWarnings as warning}
+      <p class="warning" role="alert">
+        <strong>Export note.</strong> {warning}
+      </p>
+    {/each}
   {/if}
 
   {#if leaderboard.provisional}
