@@ -80,6 +80,7 @@ Map<String, Object?> _helpJson() {
         'dart run --verbosity=error dart_arena:dart_arena_headless --config run.json',
     'options': [
       {'name': '--config', 'value': 'path', 'required': true},
+      {'name': '--preset', 'value': 'mvp', 'required': false},
       {'name': '--help', 'required': false},
     ],
     'configFormat': 'json',

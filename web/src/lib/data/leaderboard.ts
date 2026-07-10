@@ -341,7 +341,7 @@ function parseLeaderboard(value: unknown): LeaderboardData | null {
     : [];
 
   return {
-    schemaVersion: 1,
+    schemaVersion,
     provisional: value.provisional === true,
     generatedAt: typeof value.generatedAt === 'string' ? value.generatedAt : null,
     benchmark: {

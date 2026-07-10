@@ -202,6 +202,20 @@ Map<String, Object?> buildReleaseReport({
   if (taskSetId == null) {
     blockers.add('Leaderboard benchmark task set id metadata is missing.');
   }
+  final preset = _nonEmptyString(benchmark['preset']);
+  final corpusManifestDigest = _nonEmptyString(
+    benchmark['corpusManifestDigestSha256'],
+  );
+  final selectedTasks = benchmark['selectedTasks'];
+  if (preset == null ||
+      corpusManifestDigest == null ||
+      selectedTasks is! List ||
+      selectedTasks.isEmpty) {
+    blockers.add(
+      'Leaderboard is missing the frozen corpus manifest; run with --preset to '
+      'snapshot the corpus before an official release.',
+    );
+  }
   if (evaluatorSchemaVersion <= 0) {
     blockers.add(
       'Leaderboard benchmark evaluator schema version metadata is missing.',

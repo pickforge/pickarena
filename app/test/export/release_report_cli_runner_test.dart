@@ -10204,6 +10204,13 @@ void main() {
     expect(benchmark['version'], null);
     expect(benchmark['taskSetId'], null);
     expect(benchmark['evaluatorSchemaVersion'], 0);
+    expect(
+      blockers,
+      contains(
+        'Leaderboard is missing the frozen corpus manifest; run with --preset '
+        'to snapshot the corpus before an official release.',
+      ),
+    );
   });
 
   test('blocks report when benchmark evaluator schema is stale', () async {
@@ -10927,6 +10934,10 @@ Map<String, Object?> _leaderboardJson({
       'version': '2026-05-31-master-spec',
       'taskSetId': 'taskset-test',
       'evaluatorSchemaVersion': 2,
+      'preset': 'mvp',
+      'selectedTasks': ['task.a'],
+      'corpusManifestDigestSha256':
+          '0000000000000000000000000000000000000000000000000000000000000000',
     },
     'track': 'agentic',
     'dataPolicy': 'aggregate-compatible',

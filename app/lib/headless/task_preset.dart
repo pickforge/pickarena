@@ -34,7 +34,10 @@ Future<bool> _hasAdmittedQaReport(FileBackedTask task) async {
   );
   try {
     final decoded = jsonDecode(await report.readAsString());
-    return decoded is Map && decoded['status'] == 'admitted';
+    return decoded is Map &&
+        decoded['status'] == 'admitted' &&
+        decoded['taskId'] == task.id &&
+        decoded['taskVersion'] == task.version;
   } on Object {
     return false;
   }

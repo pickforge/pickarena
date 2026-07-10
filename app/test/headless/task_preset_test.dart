@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/core/benchmark_task.dart';
@@ -43,6 +44,31 @@ void main() {
 
     expect(await selectTaskPreset('mvp', [task]), isEmpty);
   });
+
+  test(
+    'mvp excludes tasks whose admitted QA report identity mismatches',
+    () async {
+      final root = Directory(
+        p.join(Directory.current.path, '..', 'tasks', 'flutter'),
+      );
+      final source = (await loadFileBackedTasks(root)).first;
+      final tmp = await Directory.systemTemp.createTemp('dart_arena_preset_');
+      addTearDown(() => tmp.delete(recursive: true));
+      final bundle = Directory(p.join(tmp.path, 'task'));
+      await _copyDirectory(source.bundleDirectory, bundle);
+      final reportFile = File(
+        p.join(bundle.path, 'qa', 'admission_report.json'),
+      );
+      final report =
+          jsonDecode(await reportFile.readAsString()) as Map<String, Object?>;
+      report['taskId'] = 'some.other_task';
+      await reportFile.writeAsString(jsonEncode(report));
+
+      final task = await FileBackedTask.load(bundle);
+
+      expect(await selectTaskPreset('mvp', [task]), isEmpty);
+    },
+  );
 }
 
 Future<void> _copyDirectory(Directory source, Directory destination) async {
