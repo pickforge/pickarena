@@ -36,7 +36,12 @@
 
   $effect(() => {
     if (!browser) return;
-    const stored = localStorage.getItem('pickarena-theme');
+    let stored: string | null = null;
+    try {
+      stored = localStorage.getItem('pickarena-theme');
+    } catch {
+      stored = null;
+    }
     if (stored === 'light' || stored === 'dark') {
       theme = stored;
     } else {
