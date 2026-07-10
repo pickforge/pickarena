@@ -185,7 +185,7 @@ class AgenticRunOrchestrator {
     }
     final resultProvenance = <String, Object?>{
       'gradingMode': 'clean_replay',
-      'patchApplied': capturedPatch?.hasMeaningfulDiff ?? false,
+      'patchApplied': false,
       'patchSha256': capturedPatch?.patchSha256,
       'agentWorkspaceIsolation': workspaceIsolation.toJson(),
       'hiddenFixtureIsolation': hiddenFixtureIsolation,
@@ -223,6 +223,8 @@ class AgenticRunOrchestrator {
         gradingWorkspace,
         capturedPatch?.patch ?? '',
       );
+      resultProvenance['patchApplied'] =
+          capturedPatch?.hasMeaningfulDiff ?? false;
     } on Object catch (e) {
       return _environmentFailureResult(
         runId: runId,

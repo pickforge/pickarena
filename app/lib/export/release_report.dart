@@ -8015,10 +8015,9 @@ Map<String, Object?> _provenanceSummary({
   final currentHiddenVerifierDigestsByTaskKey = {
     for (final evidence in taskBundleDigestEvidence)
       if (_taskQaReportKey(evidence) case final key?)
-        if (_objectMap(evidence['hiddenVerifierDigests']) case final digests
-            when digests.isNotEmpty)
-          key: digests,
+        key: _objectMap(evidence['hiddenVerifierDigests']),
   };
+  var agentWorkspaceRestrictedPathsAbsentResultCount = 0;
   for (final runId in runIds) {
     final provenance = runProvenanceById?[runId];
     if (runProvenanceById != null && provenance == null) {
@@ -8055,9 +8054,13 @@ Map<String, Object?> _provenanceSummary({
         (provenance['resultProvenance'] is! List ||
             resultProvenance.length != expectedResultCount)) {
       blockers.add(
-        'Result was graded in the agent workspace, not a clean replay baseline.',
+        'Run $runId is missing clean-replay result provenance for some results.',
       );
     }
+    var runCleanReplayResultCount = 0;
+    var runHiddenFixtureIsolationAssertedResultCount = 0;
+    var runHiddenFixtureIsolationLeakResultCount = 0;
+    var runAgentWorkspaceRestrictedPathsAbsentResultCount = 0;
     for (final result in resultProvenance) {
       resultProvenanceCount++;
       final gradingMode = result['gradingMode'];
@@ -8068,6 +8071,7 @@ Map<String, Object?> _provenanceSummary({
           (gradingModeCounts[gradingModeKey] ?? 0) + 1;
       if (result['gradingMode'] == 'clean_replay') {
         cleanReplayResultCount++;
+        runCleanReplayResultCount++;
       } else {
         blockers.add(
           'Result was graded in the agent workspace, not a clean replay baseline.',
@@ -8080,6 +8084,7 @@ Map<String, Object?> _provenanceSummary({
       final leakedPaths = _stringList(hiddenFixtureIsolation['leakedPaths']);
       if (hiddenFixtureIsolation['asserted'] == true) {
         hiddenFixtureIsolationAssertedResultCount++;
+        runHiddenFixtureIsolationAssertedResultCount++;
       } else {
         blockers.add(
           'Result is missing hidden verifier fixture isolation provenance.',
@@ -8087,18 +8092,40 @@ Map<String, Object?> _provenanceSummary({
       }
       if (leakedPaths.isNotEmpty) {
         hiddenFixtureIsolationLeakResultCount++;
+        runHiddenFixtureIsolationLeakResultCount++;
         blockers.add(
           'Hidden verifier fixtures were readable from the agent workspace.',
         );
       }
 
+      final agentWorkspaceIsolation = _objectMap(
+        result['agentWorkspaceIsolation'],
+      );
+      if (agentWorkspaceIsolation['restrictedPathsAbsent'] == true) {
+        agentWorkspaceRestrictedPathsAbsentResultCount++;
+        runAgentWorkspaceRestrictedPathsAbsentResultCount++;
+      } else {
+        blockers.add(
+          'Restricted paths were readable from the agent workspace.',
+        );
+      }
+
       final taskKey = _resultProvenanceTaskKey(result);
-      final currentHiddenVerifierDigests = taskKey == null
-          ? null
-          : currentHiddenVerifierDigestsByTaskKey[taskKey];
-      if (_stringMapEquals(
-        _objectMap(result['hiddenVerifierDigests']),
-        currentHiddenVerifierDigests,
+      final storedHiddenVerifierDigests = _objectMap(
+        result['hiddenVerifierDigests'],
+      );
+      if (taskKey == null) {
+        blockers.add(
+          'Result is missing task identity for hidden verifier digest verification.',
+        );
+      } else if (!currentHiddenVerifierDigestsByTaskKey.containsKey(taskKey)) {
+        blockers.add(
+          'Could not recompute hidden verifier digests from the live task '
+          'bundle for a graded result.',
+        );
+      } else if (_stringMapEquals(
+        storedHiddenVerifierDigests,
+        currentHiddenVerifierDigestsByTaskKey[taskKey],
       )) {
         hiddenVerifierDigestMatchedResultCount++;
       } else {
@@ -8170,23 +8197,13 @@ Map<String, Object?> _provenanceSummary({
       'pricingRegistryStatus': pricingRegistryStatus,
       'resultProvenanceCount': resultProvenance.length,
       'gradingModeCounts': _gradingModeCounts(resultProvenance),
-      'cleanReplayResultCount': resultProvenance
-          .where((result) => result['gradingMode'] == 'clean_replay')
-          .length,
-      'hiddenFixtureIsolationAssertedResultCount': resultProvenance
-          .where(
-            (result) =>
-                _objectMap(result['hiddenFixtureIsolation'])['asserted'] ==
-                true,
-          )
-          .length,
-      'hiddenFixtureIsolationLeakResultCount': resultProvenance
-          .where(
-            (result) => _stringList(
-              _objectMap(result['hiddenFixtureIsolation'])['leakedPaths'],
-            ).isNotEmpty,
-          )
-          .length,
+      'cleanReplayResultCount': runCleanReplayResultCount,
+      'hiddenFixtureIsolationAssertedResultCount':
+          runHiddenFixtureIsolationAssertedResultCount,
+      'hiddenFixtureIsolationLeakResultCount':
+          runHiddenFixtureIsolationLeakResultCount,
+      'agentWorkspaceRestrictedPathsAbsentResultCount':
+          runAgentWorkspaceRestrictedPathsAbsentResultCount,
       if (provenance != null) 'provenance': _sanitize(provenance),
     });
   }
@@ -8209,6 +8226,8 @@ Map<String, Object?> _provenanceSummary({
         hiddenFixtureIsolationAssertedResultCount,
     'hiddenFixtureIsolationLeakResultCount':
         hiddenFixtureIsolationLeakResultCount,
+    'agentWorkspaceRestrictedPathsAbsentResultCount':
+        agentWorkspaceRestrictedPathsAbsentResultCount,
     'hiddenVerifierDigestMatchedResultCount':
         hiddenVerifierDigestMatchedResultCount,
     'runs': runs,

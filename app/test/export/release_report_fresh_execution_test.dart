@@ -53,6 +53,7 @@ void main() {
         {
           'taskId': 'task.a',
           'taskVersion': 1,
+          'track': 'agentic',
           'hiddenVerifierDigests': {
             'hidden_test':
                 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
@@ -73,6 +74,7 @@ void main() {
             {
               'taskId': 'task.a',
               'taskVersion': 1,
+              'benchmarkTrack': 'agentic',
               'providerId': 'p',
               'modelId': 'm',
               'trialIndex': 0,
@@ -121,4 +123,141 @@ void main() {
     expect(provenance['cleanReplayResultCount'], 0);
     expect(provenance['hiddenFixtureIsolationLeakResultCount'], 1);
   });
+
+  test('blocks when live hidden verifier evidence is absent', () {
+    final blockers = _provenanceBlockers(
+      taskBundleDigestEvidence: const <Map<String, Object?>>[],
+      hiddenVerifierDigests: const {'hidden_test': 'aa'},
+    );
+    expect(
+      blockers,
+      contains(
+        'Could not recompute hidden verifier digests from the live task '
+        'bundle for a graded result.',
+      ),
+    );
+    expect(
+      blockers,
+      isNot(
+        contains(
+          'Hidden verifier digests drifted from the corpus '
+          'since the run.',
+        ),
+      ),
+    );
+  });
+
+  test('does not block a task that legitimately has no hidden verifiers', () {
+    final blockers = _provenanceBlockers(
+      taskBundleDigestEvidence: const [
+        {
+          'taskId': 'task.a',
+          'taskVersion': 1,
+          'track': 'agentic',
+          'hiddenVerifierDigests': <String, Object?>{},
+        },
+      ],
+      hiddenVerifierDigests: const <String, Object?>{},
+    );
+    expect(
+      blockers,
+      isNot(
+        contains(
+          'Hidden verifier digests drifted from the corpus '
+          'since the run.',
+        ),
+      ),
+    );
+    expect(
+      blockers,
+      isNot(
+        contains(
+          'Could not recompute hidden verifier digests from the '
+          'live task bundle for a graded result.',
+        ),
+      ),
+    );
+  });
+
+  test(
+    'blocks when restricted paths were readable from the agent workspace',
+    () {
+      final blockers = _provenanceBlockers(
+        taskBundleDigestEvidence: const [
+          {
+            'taskId': 'task.a',
+            'taskVersion': 1,
+            'track': 'agentic',
+            'hiddenVerifierDigests': {'hidden_test': 'aa'},
+          },
+        ],
+        hiddenVerifierDigests: const {'hidden_test': 'aa'},
+        restrictedPathsAbsent: false,
+      );
+      expect(
+        blockers,
+        contains('Restricted paths were readable from the agent workspace.'),
+      );
+    },
+  );
+}
+
+String _provenanceBlockers({
+  required List<Map<String, Object?>> taskBundleDigestEvidence,
+  required Map<String, Object?> hiddenVerifierDigests,
+  bool restrictedPathsAbsent = true,
+}) {
+  final report = buildReleaseReport(
+    leaderboard: {
+      'benchmark': const {
+        'dataPolicy': 'aggregate-compatible',
+        'version': 'v1',
+        'taskSetId': 'set',
+        'evaluatorSchemaVersion': 2,
+      },
+      'source': {
+        'runIds': const ['run-1'],
+        'taskRunCount': 1,
+        'runProvenance': const <String, Object?>{},
+      },
+      'models': const <Object?>[],
+      'tasks': const <Object?>[],
+    },
+    taskQaSummary: const <String, Object?>{},
+    taskQaReports: const <Map<String, Object?>>[],
+    taskBundleDigestEvidence: taskBundleDigestEvidence,
+    runProvenanceById: {
+      'run-1': {
+        'combos': const [
+          {
+            'taskId': 'task.a',
+            'providerId': 'p',
+            'modelId': 'm',
+            'trialIndex': 0,
+          },
+        ],
+        'resultProvenance': [
+          {
+            'taskId': 'task.a',
+            'taskVersion': 1,
+            'benchmarkTrack': 'agentic',
+            'providerId': 'p',
+            'modelId': 'm',
+            'trialIndex': 0,
+            'gradingMode': 'clean_replay',
+            'hiddenFixtureIsolation': const {
+              'asserted': true,
+              'leakedPaths': <String>[],
+            },
+            'agentWorkspaceIsolation': {
+              'restrictedPathsAbsent': restrictedPathsAbsent,
+            },
+            'hiddenVerifierDigests': hiddenVerifierDigests,
+          },
+        ],
+      },
+    },
+    options: const ReleaseReportOptions(releaseId: 'test'),
+  );
+  return (report['blockers']! as List<Object?>).join('\n');
 }
