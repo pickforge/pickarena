@@ -203,12 +203,18 @@ Add extra negative cases when the task has likely fake-fix paths, such as delete
 Run task QA from `app/` and write reports to a scratch output first:
 
 ```sh
+bash scripts/warm-flutter-task-pub-cache.sh
 cd app
 dart run --verbosity=error dart_arena:dart_arena_task_qa \
   --task-bundle-root ../tasks/flutter \
   --task <task-id> \
   --out build/task_qa
 ```
+
+The cache warmer is required once on a fresh machine before offline Flutter
+task QA or a Bubblewrap benchmark. It resolves each Flutter baseline in a
+temporary copy, so it warms the shared pub cache without modifying task
+bundles. Task execution remains offline.
 
 Review the generated report before copying it to `tasks/<framework>/<task-id>/qa/admission_report.json`.
 

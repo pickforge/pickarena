@@ -83,5 +83,6 @@ jobs:
           channel: stable
       - run: flutter pub get
         working-directory: app
-      - run: flutter test test/tasks/official_file_backed_task_test.dart
+      - run: bash scripts/warm-flutter-task-pub-cache.sh
+      - run: flutter test --concurrency=1 test/tasks/official_file_backed_task_test.dart
         working-directory: app

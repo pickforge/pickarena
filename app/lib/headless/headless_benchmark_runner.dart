@@ -13,7 +13,6 @@ import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/agentic_run_orchestrator.dart';
 import 'package:dart_arena/runner/codegen_task_executor.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
-import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:dart_arena/storage/dao/plan_dao.dart';
@@ -210,10 +209,9 @@ class HeadlessBenchmarkRunner {
         ),
     ];
 
-    final startEvent = StartRun(
+    final provenanceConfig = RunProvenanceConfig(
       tasks: config.tasks,
       providers: config.providers,
-      modelsByProvider: config.modelsByProvider,
       evaluatorConfig: config.evaluatorConfig,
       useReferencePlan: config.useReferencePlan,
       name: config.name,
@@ -225,7 +223,7 @@ class HeadlessBenchmarkRunner {
     );
     final provenanceJson = await buildRunProvenanceJson(
       runId: config.runId,
-      event: startEvent,
+      config: provenanceConfig,
       normalizedModelsByProvider: normalizedModels,
       combos: [
         for (final combo in plannedCombos)
