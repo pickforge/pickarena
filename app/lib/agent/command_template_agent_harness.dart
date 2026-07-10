@@ -61,10 +61,7 @@ class CommandTemplateAgentConfig {
 }
 
 class CommandTemplateAgentHarness
-    implements
-        AgentHarness,
-        AgentHarnessProvenance,
-        AgentHarnessProviderBinding {
+    implements AgentHarness, AgentHarnessProvenance {
   CommandTemplateAgentHarness({
     required this.providerId,
     required this.config,
@@ -78,7 +75,6 @@ class CommandTemplateAgentHarness
     _validateTemplate(config.arguments);
   }
 
-  @override
   final String providerId;
   final CommandTemplateAgentConfig config;
   final GeneratedCodeSandbox? generatedCodeSandbox;
@@ -87,7 +83,7 @@ class CommandTemplateAgentHarness
   final int maxProcessOutputChars;
 
   @override
-  String get id => '$providerId:command-template:${config.name}';
+  String get id => providerId;
 
   @override
   Map<String, Object?> get provenance => {

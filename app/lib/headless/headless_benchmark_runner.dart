@@ -364,11 +364,7 @@ class HeadlessBenchmarkRunner {
       generatedCodeSandbox: config.generatedCodeSandbox,
     );
     final harnessesByProviderId = <String, AgentHarness>{
-      for (final harness in config.agentHarnesses)
-        (harness is AgentHarnessProviderBinding
-                ? (harness as AgentHarnessProviderBinding).providerId
-                : harness.id):
-            harness,
+      for (final harness in config.agentHarnesses) harness.id: harness,
     };
     final failures = <_HeadlessComboFailure>[];
     var nextIndex = 0;

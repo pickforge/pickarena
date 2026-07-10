@@ -188,6 +188,7 @@ _SelectedTaskRuns _selectTaskRuns({
       final anchorSignature = _RunCompatibilitySignature.fromTaskRuns(
         taskRunsByRunId[anchorRun.id] ?? const <TaskRun>[],
         scoringSchemaVersion: anchorWeights.scoringSchemaVersion,
+        harnessKinds: _harnessKinds(anchorRun),
       );
       final warningKeys = <String>{};
       final selected = <TaskRun>[];
@@ -198,6 +199,7 @@ _SelectedTaskRuns _selectTaskRuns({
         final candidateSignature = _RunCompatibilitySignature.fromTaskRuns(
           entry.value,
           scoringSchemaVersion: candidateWeights.scoringSchemaVersion,
+          harnessKinds: _harnessKinds(candidateRun),
         );
         if (!anchorSignature.isCompatibleWith(candidateSignature)) continue;
 
@@ -1253,12 +1255,14 @@ class _RunCompatibilitySignature {
   const _RunCompatibilitySignature({
     required this.taskKeys,
     required this.harnessIds,
+    required this.harnessKinds,
     required this.scoringSchemaVersion,
   });
 
   factory _RunCompatibilitySignature.fromTaskRuns(
     List<TaskRun> taskRuns, {
     required int? scoringSchemaVersion,
+    required Map<String, String> harnessKinds,
   }) {
     return _RunCompatibilitySignature(
       taskKeys: (taskRuns.map((taskRun) => _taskKey(taskRun)).toSet().toList()
@@ -1270,17 +1274,24 @@ class _RunCompatibilitySignature {
               .toSet()
               .toList()
             ..sort()),
+      harnessKinds:
+          (harnessKinds.entries
+              .map((entry) => '${entry.key}:${entry.value}')
+              .toList()
+            ..sort()),
       scoringSchemaVersion: scoringSchemaVersion,
     );
   }
 
   final List<String> taskKeys;
   final List<String> harnessIds;
+  final List<String> harnessKinds;
   final int? scoringSchemaVersion;
 
   bool isCompatibleWith(_RunCompatibilitySignature other) {
     return _listEquals(taskKeys, other.taskKeys) &&
         _listEquals(harnessIds, other.harnessIds) &&
+        _listEquals(harnessKinds, other.harnessKinds) &&
         (scoringSchemaVersion == null ||
             other.scoringSchemaVersion == null ||
             scoringSchemaVersion == other.scoringSchemaVersion);
@@ -1291,6 +1302,7 @@ class _RunCompatibilitySignature {
     return other is _RunCompatibilitySignature &&
         _listEquals(taskKeys, other.taskKeys) &&
         _listEquals(harnessIds, other.harnessIds) &&
+        _listEquals(harnessKinds, other.harnessKinds) &&
         scoringSchemaVersion == other.scoringSchemaVersion;
   }
 
@@ -1298,8 +1310,36 @@ class _RunCompatibilitySignature {
   int get hashCode => Object.hash(
     Object.hashAll(taskKeys),
     Object.hashAll(harnessIds),
+    Object.hashAll(harnessKinds),
     scoringSchemaVersion,
   );
+}
+
+Map<String, String> _harnessKinds(Run run) {
+  final provenanceJson = run.provenanceJson;
+  if (provenanceJson == null || provenanceJson.trim().isEmpty) return const {};
+  try {
+    final provenance = jsonDecode(provenanceJson);
+    if (provenance is! Map<String, Object?>) return const {};
+    final config = provenance['config'];
+    if (config is! Map<String, Object?>) return const {};
+    final harnesses = config['agentHarnesses'];
+    if (harnesses is! Map<String, Object?>) return const {};
+    return {
+      for (final entry in harnesses.entries)
+        if (entry.value is Map<String, Object?>)
+          entry.key: _harnessKind(entry.value as Map<String, Object?>),
+    };
+  } on Object {
+    return const {};
+  }
+}
+
+String _harnessKind(Map<String, Object?> value) {
+  final kind = value['kind'];
+  final agent = value['agent'];
+  if (kind is! String || kind.isEmpty) return 'unknown';
+  return agent is String && agent.isNotEmpty ? '$kind:$agent' : kind;
 }
 
 bool _listEquals<T>(List<T> a, List<T> b) {

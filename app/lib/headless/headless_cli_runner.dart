@@ -457,7 +457,7 @@ AgentHarness _minimalHarness(
   }
   return MinimalAgentHarness(
     provider: provider,
-    harnessId: '${configProvider.id}:minimal',
+    harnessId: configProvider.id,
     deniedEnvironmentKeys: _configuredApiKeyEnvNames(config),
     generatedCodeSandbox: generatedCodeSandbox,
     requireGeneratedCodeSandbox: config.requireGeneratedCodeSandbox,

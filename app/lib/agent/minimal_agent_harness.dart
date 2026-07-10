@@ -9,11 +9,7 @@ import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 
-class MinimalAgentHarness
-    implements
-        AgentHarness,
-        AgentHarnessProvenance,
-        AgentHarnessProviderBinding {
+class MinimalAgentHarness implements AgentHarness, AgentHarnessProvenance {
   MinimalAgentHarness({
     required this.provider,
     required this.harnessId,
@@ -39,9 +35,6 @@ class MinimalAgentHarness
 
   @override
   String get id => harnessId;
-
-  @override
-  String get providerId => harnessId.substring(0, harnessId.lastIndexOf(':'));
 
   @override
   Map<String, Object?> get provenance => const {

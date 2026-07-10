@@ -18,7 +18,3 @@ abstract class AgentHarness {
 abstract interface class AgentHarnessProvenance {
   Map<String, Object?> get provenance;
 }
-
-abstract interface class AgentHarnessProviderBinding {
-  String get providerId;
-}
