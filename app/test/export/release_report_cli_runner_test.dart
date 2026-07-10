@@ -7047,10 +7047,6 @@ void main() {
     final blockers = (report['blockers']! as List<Object?>).join('\n');
     expect(
       blockers,
-      contains('Run artifact bundle manifest schema version 2 is unsupported.'),
-    );
-    expect(
-      blockers,
       contains(
         'Run artifact bundle checksums schema version 2 is unsupported.',
       ),
@@ -10208,6 +10204,13 @@ void main() {
     expect(benchmark['version'], null);
     expect(benchmark['taskSetId'], null);
     expect(benchmark['evaluatorSchemaVersion'], 0);
+    expect(
+      blockers,
+      contains(
+        'Leaderboard is missing the frozen corpus manifest; run with --preset '
+        'to snapshot the corpus before an official release.',
+      ),
+    );
   });
 
   test('blocks report when benchmark evaluator schema is stale', () async {
@@ -10270,6 +10273,67 @@ void main() {
         (report['leaderboard']! as Map<String, Object?>)['benchmark']!
             as Map<String, Object?>;
     expect(reportBenchmark['evaluatorSchemaVersion'], 1);
+  });
+
+  test('blocks report when corpus manifest digest is not a sha256', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'release_report_corpus_digest_',
+    );
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+    final leaderboardPath = p.join(tmp.path, 'leaderboard.v1.json');
+    final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
+    await taskQaDir.create(recursive: true);
+    final taskQaSummaryPath = p.join(taskQaDir.path, 'admission_summary.json');
+    final reportPath = p.join(taskQaDir.path, 'tasks', 'a', 'report.json');
+    await Directory(p.dirname(reportPath)).create(recursive: true);
+    final leaderboard = _leaderboardJson(sampleCount: 2);
+    final benchmark = leaderboard['benchmark']! as Map<String, Object?>;
+    benchmark['corpusManifestDigestSha256'] = 'not-a-sha256';
+    await File(leaderboardPath).writeAsString(_prettyJson(leaderboard));
+    await File(
+      taskQaSummaryPath,
+    ).writeAsString(_prettyJson(_taskQaSummaryJson(reportPath: reportPath)));
+    await File(reportPath).writeAsString(_prettyJson(_taskQaReportJson()));
+    final databasePath = p.join(tmp.path, 'dart_arena.sqlite');
+    await _seedDatabase(databasePath);
+    final outPath = p.join(tmp.path, 'release_report.v1.json');
+    final stderrLines = <String>[];
+
+    final exitCode = await runReleaseReportCli(
+      [
+        '--leaderboard',
+        leaderboardPath,
+        '--task-qa-summary',
+        taskQaSummaryPath,
+        '--database',
+        databasePath,
+        '--out',
+        outPath,
+        '--release-id',
+        '2026-06-corpus-digest-gated',
+        '--fail-on-blocked',
+      ],
+      dependencies: ReleaseReportCliDependencies(
+        now: () => DateTime.utc(2026, 6, 4, 2, 2),
+      ),
+      stdoutWriter: (_) {},
+      stderrWriter: stderrLines.add,
+    );
+
+    expect(exitCode, 1);
+    expect(stderrLines.single, contains('"status":"blocked"'));
+    final report =
+        jsonDecode(await File(outPath).readAsString()) as Map<String, Object?>;
+    final blockers = (report['blockers']! as List<Object?>).join('\n');
+    expect(
+      blockers,
+      contains(
+        'Leaderboard is missing the frozen corpus manifest; run with --preset '
+        'to snapshot the corpus before an official release.',
+      ),
+    );
   });
 
   test('blocks report when scoring metadata is missing', () async {
@@ -10931,6 +10995,10 @@ Map<String, Object?> _leaderboardJson({
       'version': '2026-05-31-master-spec',
       'taskSetId': 'taskset-test',
       'evaluatorSchemaVersion': 2,
+      'preset': 'mvp',
+      'selectedTasks': ['task.a'],
+      'corpusManifestDigestSha256':
+          '0000000000000000000000000000000000000000000000000000000000000000',
     },
     'track': 'agentic',
     'dataPolicy': 'aggregate-compatible',

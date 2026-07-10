@@ -82,7 +82,7 @@ class RunManifestV1 {
   final Object? provenance;
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'generatedAt': generatedAt,
     'run': run,
     'appVersion': appVersion,

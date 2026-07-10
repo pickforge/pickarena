@@ -162,7 +162,7 @@ void main() {
                 File(p.join(target.path, 'manifest.json')).readAsStringSync(),
               )
               as Map<String, Object?>;
-      expect(manifest['schemaVersion'], 1);
+      expect(manifest['schemaVersion'], 2);
       expect(manifest['appVersion'], '1.0.0+test');
       expect(manifest['driftSchemaVersion'], 7);
       expect((manifest['provenance'] as Map<String, Object?>)['runId'], 'r1');

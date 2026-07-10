@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/core/scoring.dart';
@@ -79,6 +80,82 @@ void main() {
         p.normalize(p.join(Directory.current.path, 'configs', 'tasks/flutter')),
         p.normalize('/abs/tasks'),
       ]);
+    });
+
+    test('accepts a preset instead of explicit tasks', () {
+      final config = _validConfig()
+        ..remove('tasks')
+        ..['preset'] = 'mvp';
+
+      expect(
+        parseHeadlessCliConfig(
+          config,
+          configPath: p.join(Directory.current.path, 'run.json'),
+        ).preset,
+        'mvp',
+      );
+    });
+
+    test('preset override replaces configured tasks', () async {
+      final tmp = await Directory.systemTemp.createTemp('dart_arena_preset_');
+      addTearDown(() => tmp.delete(recursive: true));
+      final file = File(p.join(tmp.path, 'run.json'));
+      await file.writeAsString(jsonEncode(_validConfig()));
+
+      final config = await loadHeadlessCliConfig(file, presetOverride: 'mvp');
+
+      expect(config.preset, 'mvp');
+      expect(config.tasks, isEmpty);
+    });
+
+    test('rejects a preset with explicit tasks', () {
+      expect(
+        () => parseHeadlessCliConfig({
+          ..._validConfig(),
+          'preset': 'mvp',
+        }, configPath: p.join(Directory.current.path, 'run.json')),
+        throwsA(isA<HeadlessCliConfigException>()),
+      );
+    });
+
+    test('rejects a config without tasks or a preset', () {
+      final config = _validConfig()..remove('tasks');
+
+      expect(
+        () => parseHeadlessCliConfig(
+          config,
+          configPath: p.join(Directory.current.path, 'run.json'),
+        ),
+        throwsA(
+          isA<HeadlessCliConfigException>().having(
+            (error) => error.message,
+            'message',
+            contains('exactly one of tasks or preset must be provided'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects blank and unknown presets with config errors', () {
+      for (final preset in ['', '   ', 'bogus']) {
+        final config = _validConfig()
+          ..remove('tasks')
+          ..['preset'] = preset;
+
+        expect(
+          () => parseHeadlessCliConfig(
+            config,
+            configPath: p.join(Directory.current.path, 'run.json'),
+          ),
+          throwsA(
+            isA<HeadlessCliConfigException>().having(
+              (error) => error.message,
+              'message',
+              isNot(isEmpty),
+            ),
+          ),
+        );
+      }
     });
 
     test('parses generated-code sandbox requirement flag', () {

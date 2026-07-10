@@ -140,7 +140,7 @@ void main() {
     expect(exitCode, 0);
     expect(stdoutLines.single, contains('"status":"completed"'));
     final text = File(outPath).readAsStringSync();
-    expect(text, startsWith('{\n  "schemaVersion": 1,'));
+    expect(text, startsWith('{\n  "schemaVersion": 2,'));
     final decoded = jsonDecode(text) as Map<String, Object?>;
     expect(decoded['generatedAt'], '2026-05-31T00:00:00.000Z');
     expect((decoded['models']! as List<Object?>), hasLength(1));

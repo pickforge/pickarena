@@ -68,18 +68,7 @@ cat >"$run_json" <<JSON
 {
   "runId": "$run_id",
   "name": "Spark sandboxed official repeated validation",
-  "tasks": [
-    "accessibility.quantity_stepper_semantics",
-    "async.refresh_deduplicator",
-    "forms.email_validation",
-    "lists.contact_search",
-    "navigation.auth_redirect_race",
-    "persistence.offline_feed_preferences",
-    "platform.channel_mock",
-    "refactor.price_label_formatter",
-    "state.selection_controller",
-    "ui.action_bar_overflow"
-  ],
+  "preset": "mvp",
   "taskBundleRoots": ["../../tasks/flutter"],
   "providers": [
     {

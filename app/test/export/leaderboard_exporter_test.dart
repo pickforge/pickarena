@@ -22,6 +22,7 @@ void main() {
       db,
       id: 'compatible-old',
       completedAt: DateTime.utc(2026, 5, 1),
+      provenanceJson: _presetProvenanceJson(),
     );
     await _seedTaskRun(
       db,
@@ -42,6 +43,7 @@ void main() {
       db,
       id: 'compatible-latest',
       completedAt: DateTime.utc(2026, 5, 2),
+      provenanceJson: _presetProvenanceJson(),
     );
     await _seedTaskRun(
       db,
@@ -100,6 +102,9 @@ void main() {
     expect(benchmark['version'], '2026-05-31-master-spec');
     expect(benchmark['taskSetId'], startsWith('taskset-'));
     expect(benchmark['evaluatorSchemaVersion'], 2);
+    expect(benchmark['preset'], 'mvp');
+    expect(benchmark['corpusManifestDigestSha256'], hasLength(64));
+    expect(benchmark['selectedTasks'], hasLength(2));
 
     final pricingRegistry = export['pricingRegistry']! as Map<String, Object?>;
     expect(pricingRegistry['version'], '2026-05-31');
@@ -165,6 +170,42 @@ void main() {
       expect(source['taskRunCount'], 2);
     },
   );
+
+  test('aggregate-compatible separates corpus manifest digests', () async {
+    await _seedRun(
+      db,
+      id: 'manifest-old',
+      completedAt: DateTime.utc(2026, 5, 1),
+      provenanceJson: _presetProvenanceJson(corpusDigest: 'a'),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'manifest-old-a',
+      runId: 'manifest-old',
+      taskId: 'task.a',
+    );
+    await _seedRun(
+      db,
+      id: 'manifest-latest',
+      completedAt: DateTime.utc(2026, 5, 2),
+      provenanceJson: _presetProvenanceJson(corpusDigest: 'b'),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'manifest-latest-a',
+      runId: 'manifest-latest',
+      taskId: 'task.a',
+    );
+
+    final export = await buildLeaderboardExport(
+      db,
+      options: const LeaderboardExportOptions(track: 'agentic'),
+    );
+
+    expect((export['source']! as Map<String, Object?>)['runIds'], [
+      'manifest-latest',
+    ]);
+  });
 
   test('aggregate-compatible separates command-template versions', () async {
     for (final entry in [
@@ -1370,6 +1411,30 @@ String _harnessProvenanceJson(String kind, {String? agent, String? version}) =>
         },
       },
     });
+
+String _presetProvenanceJson({String corpusDigest = 'c'}) => jsonEncode({
+  'schemaVersion': 2,
+  'config': {
+    'scoringSchemaVersion': 2,
+    'evaluatorWeights': {'compile': 1.0},
+    'corpusManifest': {
+      'preset': 'mvp',
+      'tasks': [
+        {
+          'taskId': 'task.a',
+          'taskVersion': 1,
+          'taskBundleDigest': List.filled(64, 'a').join(),
+        },
+        {
+          'taskId': 'task.b',
+          'taskVersion': 1,
+          'taskBundleDigest': List.filled(64, 'b').join(),
+        },
+      ],
+      'digestSha256': List.filled(64, corpusDigest).join(),
+    },
+  },
+});
 
 Future<void> _seedTaskRun(
   AppDatabase db, {

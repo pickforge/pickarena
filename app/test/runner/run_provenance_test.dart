@@ -192,7 +192,7 @@ void main() {
       );
 
       final decoded = jsonDecode(jsonText) as Map<String, Object?>;
-      expect(decoded['schemaVersion'], 1);
+      expect(decoded['schemaVersion'], 2);
       expect(decoded['runId'], 'run-1');
 
       final config = decoded['config'] as Map<String, Object?>;
