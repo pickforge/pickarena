@@ -266,10 +266,10 @@ wait
           timeout: const Duration(seconds: 2),
         );
 
-        expect(result.succeeded, isTrue);
+        expect(result.status, AgentRunStatus.failure);
+        expect(result.metadata['terminal_reason'], 'output_limit');
         expect(result.stdoutPreview, '7890');
         expect(result.metadata['output_truncated'], isTrue);
-        expect(provider.prompts[1], contains('...[truncated]...'));
       },
       skip: Platform.isWindows ? 'bash harness requires POSIX shell' : false,
     );
@@ -300,6 +300,39 @@ wait
         expect(result.metadata['terminal_reason'], 'malformed_reply');
       }
     });
+
+    test(
+      'terminates output-flooding bash commands at the output limit',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'minimal_agent_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final harness = MinimalAgentHarness(
+          provider: _ScriptedStreamingProvider([
+            '```bash\nwhile :; do printf 0123456789abcdef; done\n```',
+          ]),
+          harnessId: 'minimal-test',
+          maxOutputChars: 128,
+        );
+
+        final result = await harness.run(
+          workspace: workspace,
+          instruction: 'Print output.',
+          modelId: 'fake',
+          timeout: const Duration(seconds: 5),
+        );
+
+        expect(result.status, AgentRunStatus.failure);
+        expect(result.metadata['terminal_reason'], 'output_limit');
+        expect(result.metadata['output_truncated'], isTrue);
+        expect(result.latency, lessThan(const Duration(seconds: 2)));
+      },
+      skip: Platform.isWindows ? 'bash harness requires POSIX shell' : false,
+      timeout: const Timeout(Duration(seconds: 8)),
+    );
 
     test('records history truncation', () async {
       final workspace = await Directory.systemTemp.createTemp('minimal_agent_');
@@ -408,6 +441,7 @@ printf '%s' "$DROID_SANDBOX_MARKER" > sandbox-marker.txt
         instruction: 'use sandbox marker',
         modelId: 'gpt-5.5',
         timeout: const Duration(seconds: 2),
+        allowInternet: false,
       );
 
       expect(
@@ -422,7 +456,7 @@ printf '%s' "$DROID_SANDBOX_MARKER" > sandbox-marker.txt
       expect(sandbox.seenArguments, containsAllInOrder(['--model', 'gpt-5.5']));
       expect(sandbox.seenArguments?.last, contains('use sandbox marker'));
       expect(sandbox.seenWorkingDirectory, workspace.path);
-      expect(sandbox.seenAllowInternet, isTrue);
+      expect(sandbox.seenAllowInternet, isFalse);
       expect(sandbox.seenResourceLimits, isNull);
       final home =
           Platform.environment['HOME'] ??

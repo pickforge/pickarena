@@ -249,6 +249,11 @@ HeadlessCliProviderConfig _parseProvider(
       'providers[$index].harness must be "droid" or "minimal"',
     );
   }
+  if (harness == 'droid' && type != 'droid') {
+    throw HeadlessCliConfigException(
+      'providers[$index].harness "droid" requires provider type "droid"',
+    );
+  }
 
   if (_requiresApiKeyEnv(type) && (apiKeyEnv == null || apiKeyEnv.isEmpty)) {
     throw HeadlessCliConfigException(

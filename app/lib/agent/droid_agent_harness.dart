@@ -73,6 +73,7 @@ class DroidAgentHarness implements AgentHarness {
             deniedKeys,
             factoryCustomModelEnvironmentReferences(modelId),
             _maxProcessOutputChars,
+            allowInternet,
             _generatedCodeSandbox,
           )
         : await _runner(_exe, args, workspace, timeout);
@@ -148,6 +149,7 @@ $instruction
     Iterable<String> deniedEnvironmentKeys,
     Iterable<String> allowedSensitiveEnvironmentKeys,
     int maxProcessOutputChars,
+    bool allowInternet,
     GeneratedCodeSandbox? generatedCodeSandbox,
   ) async {
     final sw = Stopwatch()..start();
@@ -174,7 +176,7 @@ $instruction
               arguments: args,
               workingDirectory: workingDirectory.path,
               environment: environment,
-              allowInternet: true,
+              allowInternet: allowInternet,
               resourceLimits: null,
               extraReadOnlyPaths: _factoryConfigReadOnlyPaths(),
             );

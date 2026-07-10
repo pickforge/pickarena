@@ -144,6 +144,11 @@ class MinimalAgentHarness implements AgentHarness {
         );
       } on TimeoutException {
         return result(AgentRunStatus.timeout, 'timeout');
+      } on _CommandOutputLimitExceeded catch (error) {
+        stdout.write(error.stdout);
+        stderr.write(error.stderr);
+        outputTruncated = true;
+        return result(AgentRunStatus.failure, 'output_limit', exitCode: 1);
       } on Object catch (error) {
         stderr.write('bash error: $error');
         return result(AgentRunStatus.failure, 'error', exitCode: 1);
@@ -228,37 +233,64 @@ class MinimalAgentHarness implements AgentHarness {
     );
     final stdout = _BoundedTailText(maxOutputChars);
     final stderr = _BoundedTailText(maxOutputChars);
-    final stdoutDone = process.stdout
-        .transform(systemEncoding.decoder)
-        .listen(stdout.write)
-        .asFuture<void>();
-    final stderrDone = process.stderr
-        .transform(systemEncoding.decoder)
-        .listen(stderr.write)
-        .asFuture<void>();
-    int exitCode;
+    final outputLimitExceeded = Completer<void>();
+    void markOutputLimitExceeded() {
+      if (!outputLimitExceeded.isCompleted) outputLimitExceeded.complete();
+    }
+
+    final stdoutDone = process.stdout.transform(systemEncoding.decoder).listen((
+      chunk,
+    ) {
+      stdout.write(chunk);
+      if (stdout.exceeded) markOutputLimitExceeded();
+    }).asFuture<void>();
+    final stderrDone = process.stderr.transform(systemEncoding.decoder).listen((
+      chunk,
+    ) {
+      stderr.write(chunk);
+      if (stderr.exceeded) markOutputLimitExceeded();
+    }).asFuture<void>();
+    final timeoutExceeded = Completer<void>();
+    final timeoutTimer = Timer(timeout, () {
+      if (!timeoutExceeded.isCompleted) timeoutExceeded.complete();
+    });
+    var outputLimitHit = false;
     var timedOut = false;
+    int exitCode;
     try {
-      exitCode = await process.exitCode.timeout(timeout);
-    } on TimeoutException {
-      timedOut = true;
-      await DroidAgentHarness.terminateProcessTree(
-        process.pid,
-        ProcessSignal.sigterm,
-      );
-      exitCode = await process.exitCode.timeout(
-        const Duration(seconds: 2),
-        onTimeout: () async {
-          await DroidAgentHarness.terminateProcessTree(
-            process.pid,
-            ProcessSignal.sigkill,
-          );
-          return -1;
-        },
-      );
+      final signal = await Future.any<Object>([
+        process.exitCode,
+        timeoutExceeded.future.then((_) => const _CommandTimedOut()),
+        outputLimitExceeded.future.then((_) => const _CommandOutputLimited()),
+      ]);
+      if (signal is int) {
+        exitCode = signal;
+      } else {
+        timedOut = signal is _CommandTimedOut;
+        outputLimitHit = signal is _CommandOutputLimited;
+        await DroidAgentHarness.terminateProcessTree(
+          process.pid,
+          ProcessSignal.sigterm,
+        );
+        exitCode = await process.exitCode.timeout(
+          const Duration(seconds: 2),
+          onTimeout: () async {
+            await DroidAgentHarness.terminateProcessTree(
+              process.pid,
+              ProcessSignal.sigkill,
+            );
+            return -1;
+          },
+        );
+      }
+    } finally {
+      timeoutTimer.cancel();
     }
     await Future.wait([stdoutDone, stderrDone]);
     if (timedOut) throw TimeoutException('bash command timed out');
+    if (outputLimitHit) {
+      throw _CommandOutputLimitExceeded(stdout.text, stderr.text);
+    }
     return _CommandResult(
       exitCode: exitCode,
       stdout: stdout.text,
@@ -359,6 +391,21 @@ class _CommandResult {
   final String stdout;
   final String stderr;
   final bool outputTruncated;
+}
+
+class _CommandTimedOut {
+  const _CommandTimedOut();
+}
+
+class _CommandOutputLimited {
+  const _CommandOutputLimited();
+}
+
+class _CommandOutputLimitExceeded implements Exception {
+  const _CommandOutputLimitExceeded(this.stdout, this.stderr);
+
+  final String stdout;
+  final String stderr;
 }
 
 class _BoundedTailText {
