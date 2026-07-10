@@ -183,6 +183,36 @@ void main() {
       );
     });
 
+    test('rejects agent_cli providers as judges', () {
+      final config = _validConfig()
+        ..remove('judge')
+        ..['providers'] = [
+          {
+            'type': 'agent_cli',
+            'id': 'codex-cli',
+            'displayName': 'Codex CLI',
+            'models': ['gpt-5.5'],
+            'harness': 'codex',
+            'agentVersion': '1.0.0',
+          },
+        ]
+        ..['judge'] = {'providerId': 'codex-cli', 'model': 'gpt-5.5'};
+
+      expect(
+        () => parseHeadlessCliConfig(
+          config,
+          configPath: p.join(Directory.current.path, 'run.json'),
+        ),
+        throwsA(
+          isA<HeadlessCliConfigException>().having(
+            (error) => error.message,
+            'message',
+            contains('must not reference an agent_cli provider'),
+          ),
+        ),
+      );
+    });
+
     test('rejects malformed required fields and types', () {
       expect(
         () => parseHeadlessCliConfig({

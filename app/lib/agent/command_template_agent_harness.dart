@@ -38,7 +38,7 @@ class CommandTemplateAgentConfig {
       arguments: [
         '-p',
         '--permission-mode',
-        'acceptEdits',
+        'bypassPermissions',
         '--model',
         '{model}',
         '{instruction}',
@@ -148,10 +148,15 @@ class CommandTemplateAgentHarness
         ];
       },
     );
+    final sensitiveValues = {
+      for (final key in _allowedSensitiveEnvironmentKeys)
+        if ((Platform.environment[key] ?? '').isNotEmpty)
+          key: Platform.environment[key]!,
+    };
     return AgentRunResult(
       status: result.status,
-      stdoutPreview: _trim(result.stdoutPreview),
-      stderrPreview: _trim(result.stderrPreview),
+      stdoutPreview: _trim(_redact(result.stdoutPreview, sensitiveValues)),
+      stderrPreview: _trim(_redact(result.stderrPreview, sensitiveValues)),
       exitCode: result.exitCode,
       latency: result.latency,
       promptTokens: result.promptTokens,
@@ -164,6 +169,14 @@ class CommandTemplateAgentHarness
   String _trim(String value) => value.length <= maxPreviewChars
       ? value
       : value.substring(value.length - maxPreviewChars);
+
+  static String _redact(String value, Map<String, String> sensitiveValues) {
+    var redacted = value;
+    for (final entry in sensitiveValues.entries) {
+      redacted = redacted.replaceAll(entry.value, '[REDACTED:${entry.key}]');
+    }
+    return redacted;
+  }
 
   static String _substitute(String value, Map<String, String> values) {
     return value.replaceAllMapped(RegExp(r'\{([a-z]+)\}'), (match) {

@@ -144,6 +144,16 @@ HeadlessCliConfig parseHeadlessCliConfig(
       '${judge.providerId}',
     );
   }
+  if (judge != null &&
+      providers.any(
+        (provider) =>
+            provider.id == judge.providerId && provider.type == 'agent_cli',
+      )) {
+    throw HeadlessCliConfigException(
+      'judge providerId must not reference an agent_cli provider: '
+      '${judge.providerId}',
+    );
+  }
 
   final workdirRoot = _resolvePath(
     _requiredString(json, 'workdirRoot'),

@@ -920,6 +920,48 @@ while :; do printf '0123456789abcdef0123456789abcdef\\n'; done
       skip: Platform.isWindows ? 'POSIX shell script test' : false,
     );
 
+    test(
+      'redacts allowed credential values from CLI previews',
+      () async {
+        final workspace = await Directory.systemTemp.createTemp(
+          'template_redact_',
+        );
+        addTearDown(() async {
+          if (await workspace.exists()) await workspace.delete(recursive: true);
+        });
+        final script = await _writeExecutable(
+          workspace,
+          'fake.sh',
+          r'''#!/bin/sh
+printf %s "$PATH"
+''',
+        );
+        final result =
+            await CommandTemplateAgentHarness(
+              providerId: 'fake-cli',
+              config: CommandTemplateAgentConfig(
+                name: 'fake',
+                executable: script.path,
+                arguments: const ['{instruction}'],
+                version: 'test',
+              ),
+              allowedSensitiveEnvironmentKeys: const ['PATH'],
+            ).run(
+              workspace: workspace,
+              instruction: 'x',
+              modelId: 'm',
+              timeout: const Duration(seconds: 2),
+            );
+
+        expect(result.stdoutPreview, contains('[REDACTED:PATH]'));
+        expect(
+          result.stdoutPreview,
+          isNot(contains(Platform.environment['PATH'])),
+        );
+      },
+      skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    );
+
     test('resolves built-in command presets', () {
       final codex = CommandTemplateAgentConfig.preset(
         'codex',
@@ -942,7 +984,7 @@ while :; do printf '0123456789abcdef0123456789abcdef\\n'; done
       expect(claudeCode.arguments, [
         '-p',
         '--permission-mode',
-        'acceptEdits',
+        'bypassPermissions',
         '--model',
         '{model}',
         '{instruction}',
