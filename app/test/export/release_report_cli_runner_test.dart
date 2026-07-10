@@ -7047,10 +7047,6 @@ void main() {
     final blockers = (report['blockers']! as List<Object?>).join('\n');
     expect(
       blockers,
-      contains('Run artifact bundle manifest schema version 2 is unsupported.'),
-    );
-    expect(
-      blockers,
       contains(
         'Run artifact bundle checksums schema version 2 is unsupported.',
       ),

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/core/scoring.dart';
@@ -93,6 +94,18 @@ void main() {
         ).preset,
         'mvp',
       );
+    });
+
+    test('preset override replaces configured tasks', () async {
+      final tmp = await Directory.systemTemp.createTemp('dart_arena_preset_');
+      addTearDown(() => tmp.delete(recursive: true));
+      final file = File(p.join(tmp.path, 'run.json'));
+      await file.writeAsString(jsonEncode(_validConfig()));
+
+      final config = await loadHeadlessCliConfig(file, presetOverride: 'mvp');
+
+      expect(config.preset, 'mvp');
+      expect(config.tasks, isEmpty);
     });
 
     test('rejects a preset with explicit tasks', () {

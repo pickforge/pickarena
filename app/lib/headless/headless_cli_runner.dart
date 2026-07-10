@@ -107,7 +107,7 @@ Future<int> runHeadlessCli(
     await _registerFileBackedTasks(registry, cliConfig.taskBundleRoots);
     final tasks = cliConfig.preset == null
         ? [for (final taskId in cliConfig.tasks) _resolveTask(registry, taskId)]
-        : selectTaskPreset(cliConfig.preset!, registry.all());
+        : await selectTaskPreset(cliConfig.preset!, registry.all());
     if (tasks.isEmpty) {
       throw HeadlessCliConfigException(
         'preset ${cliConfig.preset} selected no tasks',

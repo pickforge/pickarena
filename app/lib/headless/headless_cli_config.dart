@@ -105,7 +105,11 @@ Future<HeadlessCliConfig> loadHeadlessCliConfig(
   if (decoded is! Map<String, Object?>) {
     throw const HeadlessCliConfigException('config must be a JSON object');
   }
-  if (presetOverride != null) decoded = {...decoded, 'preset': presetOverride};
+  if (presetOverride != null) {
+    decoded = Map<String, Object?>.from(decoded)
+      ..remove('tasks')
+      ..['preset'] = presetOverride;
+  }
   return parseHeadlessCliConfig(
     decoded,
     configPath: p.normalize(p.absolute(file.path)),

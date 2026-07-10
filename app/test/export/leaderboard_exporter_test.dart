@@ -22,6 +22,7 @@ void main() {
       db,
       id: 'compatible-old',
       completedAt: DateTime.utc(2026, 5, 1),
+      provenanceJson: _presetProvenanceJson(),
     );
     await _seedTaskRun(
       db,
@@ -169,6 +170,42 @@ void main() {
       expect(source['taskRunCount'], 2);
     },
   );
+
+  test('aggregate-compatible separates corpus manifest digests', () async {
+    await _seedRun(
+      db,
+      id: 'manifest-old',
+      completedAt: DateTime.utc(2026, 5, 1),
+      provenanceJson: _presetProvenanceJson(corpusDigest: 'a'),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'manifest-old-a',
+      runId: 'manifest-old',
+      taskId: 'task.a',
+    );
+    await _seedRun(
+      db,
+      id: 'manifest-latest',
+      completedAt: DateTime.utc(2026, 5, 2),
+      provenanceJson: _presetProvenanceJson(corpusDigest: 'b'),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'manifest-latest-a',
+      runId: 'manifest-latest',
+      taskId: 'task.a',
+    );
+
+    final export = await buildLeaderboardExport(
+      db,
+      options: const LeaderboardExportOptions(track: 'agentic'),
+    );
+
+    expect((export['source']! as Map<String, Object?>)['runIds'], [
+      'manifest-latest',
+    ]);
+  });
 
   test('aggregate-compatible separates command-template versions', () async {
     for (final entry in [
@@ -1375,7 +1412,7 @@ String _harnessProvenanceJson(String kind, {String? agent, String? version}) =>
       },
     });
 
-String _presetProvenanceJson() => jsonEncode({
+String _presetProvenanceJson({String corpusDigest = 'c'}) => jsonEncode({
   'schemaVersion': 2,
   'config': {
     'scoringSchemaVersion': 2,
@@ -1394,7 +1431,7 @@ String _presetProvenanceJson() => jsonEncode({
           'taskBundleDigest': List.filled(64, 'b').join(),
         },
       ],
-      'digestSha256': List.filled(64, 'c').join(),
+      'digestSha256': List.filled(64, corpusDigest).join(),
     },
   },
 });

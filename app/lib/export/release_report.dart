@@ -14,7 +14,7 @@ const _requiredArtifactBundleChecksumPaths = [
   ..._standardBundleFilePaths,
 ];
 
-const _artifactBundleManifestSchemaVersion = 1;
+const _artifactBundleManifestSchemaVersions = {1, 2};
 const _artifactBundleChecksumsSchemaVersion = 1;
 const _artifactRunResultsSchemaVersion = 1;
 const _taskQaSummarySchemaVersion = 1;
@@ -1752,7 +1752,7 @@ Map<String, Object?> _artifactBundleSummary({
 
   if (schemaVersion <= 0) {
     blockers.add('Run artifact bundle manifest schema version is missing.');
-  } else if (schemaVersion != _artifactBundleManifestSchemaVersion) {
+  } else if (!_artifactBundleManifestSchemaVersions.contains(schemaVersion)) {
     blockers.add(
       'Run artifact bundle manifest schema version $schemaVersion is unsupported.',
     );
@@ -2019,7 +2019,7 @@ Map<String, Object?> _artifactBundleSummary({
 
   final complete =
       schemaVersion > 0 &&
-      schemaVersion == _artifactBundleManifestSchemaVersion &&
+      _artifactBundleManifestSchemaVersions.contains(schemaVersion) &&
       manifestRunId != null &&
       runIdInLeaderboardSource &&
       manifestTaskRunCount > 0 &&
