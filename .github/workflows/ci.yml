@@ -17,8 +17,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - run: flutter pub get
+      - run: dart pub get
         working-directory: app
+      - run: bash scripts/warm-flutter-task-pub-cache.sh
       - run: dart format --set-exit-if-changed bin lib/core lib/export lib/headless lib/runner lib/storage lib/tasks test/core test/headless test/runner test/support test/tasks
         working-directory: app
       - name: Dart test pure engine baseline
@@ -55,7 +56,8 @@ jobs:
             test/evaluators/hidden_test_evaluator_test.dart \
             test/evaluators/llm_judge_evaluator_test.dart \
             test/evaluators/test_author_evaluator_test.dart \
-            test/evaluators/test_evaluator_test.dart
+            test/evaluators/test_evaluator_test.dart \
+            test/evaluators/widget_tree_evaluator_test.dart
           dart test --concurrency=1 \
             test/export/artifact_bundle_test.dart \
             test/export/csv_exporter_test.dart \
@@ -66,7 +68,9 @@ jobs:
             test/export/readme_publisher_test.dart \
             test/export/release_report_cli_runner_test.dart \
             test/headless/headless_benchmark_runner_test.dart \
-            test/headless/headless_cli_config_test.dart
+            test/runner/agentic_run_orchestrator_test.dart \
+            test/headless/headless_cli_config_test.dart \
+            test/headless/headless_cli_runner_test.dart
           dart test --concurrency=1 \
             test/providers/anthropic_provider_test.dart \
             test/providers/deepseek_provider_test.dart \
@@ -113,9 +117,9 @@ jobs:
         working-directory: app
       - run: dart run --verbosity=error dart_arena:dart_arena_headless --help
         working-directory: app
-      - run: flutter analyze
+      - run: dart analyze
         working-directory: app
-      - run: flutter test test/headless
+      - run: dart test --concurrency=1 test/headless
         working-directory: app
 
   web:

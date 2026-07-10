@@ -1,6 +1,3 @@
-@Tags(['flutter'])
-library;
-
 import 'dart:io';
 
 import 'package:dart_arena/core/benchmark_task.dart';
@@ -11,8 +8,8 @@ import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/evaluators/widget_tree_evaluator.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
 
 class _DummyTask extends BenchmarkTask {
   @override
@@ -77,7 +74,10 @@ void main() {
 }
 ''');
 
-    expect(await WorkdirManager(root: root).prepare(dir), isA<PrepareOk>());
+    expect(
+      await WorkdirManager(root: root).prepare(dir, isFlutter: true),
+      isA<PrepareOk>(),
+    );
     final r = await WidgetTreeEvaluator().evaluate(
       EvaluationContext(
         workDir: dir,

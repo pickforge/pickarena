@@ -9,21 +9,13 @@ import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
-import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/task_verifier.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/evaluators/hidden_test_evaluator.dart';
-import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/agentic_run_orchestrator.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
-import 'package:dart_arena/runner/run_bloc.dart';
-import 'package:dart_arena/runner/run_event.dart';
-import 'package:dart_arena/runner/run_state.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
-import 'package:dart_arena/storage/dao/run_dao.dart';
-import 'package:dart_arena/storage/database.dart';
-import 'package:drift/native.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../support/headless_fakes.dart';
@@ -161,34 +153,6 @@ class _CapturingDeniedKeysHarness implements AgentHarness {
   }
 }
 
-class _FakeProvider with Disposable implements ModelProvider {
-  var generateCalls = 0;
-
-  @override
-  String get id => 'fake_agent';
-  @override
-  String get displayName => 'Fake Agent';
-  @override
-  ProviderMode get mode => ProviderMode.agent;
-  @override
-  Future<List<ModelInfo>> listModels() async => [const ModelInfo(id: 'm')];
-  @override
-  Future<ModelResponse> generate({
-    required String prompt,
-    required String model,
-    Duration? timeout,
-  }) async {
-    generateCalls++;
-    return const ModelResponse(
-      rawText: '```dart\nint answer() => 42;\n```',
-      extractedCode: null,
-      promptTokens: 1,
-      completionTokens: 1,
-      latency: Duration(milliseconds: 1),
-    );
-  }
-}
-
 class _AnswerEvaluator implements Evaluator {
   @override
   String get id => 'answer';
@@ -251,15 +215,6 @@ void main() {
     _AnswerEvaluator(),
     ...hiddenVerifiers.map(HiddenTestEvaluator.new),
   ];
-}
-
-class _CodegenTask extends _AgenticAnswerTask {
-  @override
-  String get id => 'codegen.answer';
-  @override
-  BenchmarkTrack get track => BenchmarkTrack.codegen;
-  @override
-  List<Evaluator> evaluatorsFor(EvaluatorConfig config) => [_AnswerEvaluator()];
 }
 
 class _AgenticBlockingTask extends _AgenticAnswerTask {
@@ -685,61 +640,5 @@ void main() {
         expect(blocked.details[blockedByDetailKey], 'environment');
       }
     },
-  );
-
-  test(
-    'RunBloc routes codegen tasks through provider and agentic tasks through harness',
-    () async {
-      final root = await Directory.systemTemp.createTemp('agentic_bloc_');
-      final db = AppDatabase(NativeDatabase.memory());
-      addTearDown(() async {
-        await db.close();
-        if (await root.exists()) await root.delete(recursive: true);
-      });
-
-      var harnessCalls = 0;
-      final provider = _FakeProvider();
-      final bloc = RunBloc(
-        workdirManager: WorkdirManager(root: root),
-        runDao: RunDao(db),
-        now: () => DateTime.now(),
-        idGenerator: () => 'run-mixed',
-        agentHarnesses: [
-          _FakeHarness((workspace) async {
-            harnessCalls++;
-            await File(
-              p.join(workspace.path, 'lib', 'answer.dart'),
-            ).writeAsString('int answer() => 42;\n');
-          }),
-        ],
-      );
-      addTearDown(bloc.close);
-
-      final completedFuture = bloc.stream
-          .firstWhere((state) => state is RunCompleted)
-          .then((state) => state as RunCompleted)
-          .timeout(const Duration(minutes: 1));
-
-      bloc.add(
-        StartRun(
-          tasks: [_CodegenTask(), _AgenticAnswerTask()],
-          providers: [provider],
-          modelsByProvider: const {
-            'fake_agent': ['m'],
-          },
-          evaluatorConfig: const EvaluatorConfig(),
-          maxConcurrency: 1,
-        ),
-      );
-
-      final completed = await completedFuture;
-      expect(provider.generateCalls, 1);
-      expect(harnessCalls, 1);
-      expect(completed.results.map((r) => r.benchmarkTrack).toSet(), {
-        'codegen',
-        'agentic',
-      });
-    },
-    timeout: const Timeout(Duration(minutes: 2)),
   );
 }

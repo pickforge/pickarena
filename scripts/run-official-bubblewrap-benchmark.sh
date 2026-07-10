@@ -62,6 +62,8 @@ fi
 
 mkdir -p "$run_dir"
 
+bash "$script_dir/warm-flutter-task-pub-cache.sh"
+
 cat >"$run_json" <<JSON
 {
   "runId": "$run_id",

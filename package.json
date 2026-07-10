@@ -4,9 +4,9 @@
     "web"
   ],
   "scripts": {
-    "app:pub": "cd app && flutter pub get",
-    "app:analyze": "cd app && flutter analyze",
-    "app:test": "cd app && flutter test",
+    "app:pub": "cd app && dart pub get",
+    "app:analyze": "cd app && dart analyze",
+    "app:test": "cd app && dart test",
     "app:headless": "cd app && dart run --verbosity=error dart_arena:dart_arena_headless",
     "web:install": "cd web && bun install",
     "web:dev": "cd web && bun run dev",

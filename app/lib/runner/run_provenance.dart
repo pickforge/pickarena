@@ -6,12 +6,12 @@ import 'dart:isolate';
 import 'package:dart_arena/analytics/cost_estimator.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
+import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_identity.dart';
 import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_integrity.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/runner/resource_enforcement_policy.dart';
-import 'package:dart_arena/runner/run_event.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 import 'package:path/path.dart' as p;
 
@@ -35,6 +35,32 @@ class RunProvenanceCombo {
 
 abstract class RunProvenanceEnvironmentProvider {
   Future<Map<String, Object?>> capture();
+}
+
+class RunProvenanceConfig {
+  const RunProvenanceConfig({
+    required this.tasks,
+    required this.providers,
+    required this.evaluatorConfig,
+    this.useReferencePlan = false,
+    this.name,
+    this.maxConcurrency = 4,
+    this.trialsPerTask = 1,
+    this.generatedCodeSandboxRequired = false,
+    this.generatedCodeSandboxEnforced = false,
+    this.generatedCodeSandboxBackend,
+  });
+
+  final List<BenchmarkTask> tasks;
+  final List<ModelProvider> providers;
+  final EvaluatorConfig evaluatorConfig;
+  final bool useReferencePlan;
+  final String? name;
+  final int maxConcurrency;
+  final int trialsPerTask;
+  final bool generatedCodeSandboxRequired;
+  final bool generatedCodeSandboxEnforced;
+  final String? generatedCodeSandboxBackend;
 }
 
 class DefaultRunProvenanceEnvironmentProvider
@@ -173,7 +199,7 @@ class DefaultRunProvenanceEnvironmentProvider
 
 Future<String> buildRunProvenanceJson({
   required String runId,
-  required StartRun event,
+  required RunProvenanceConfig config,
   required Map<String, List<String>> normalizedModelsByProvider,
   required List<RunProvenanceCombo> combos,
   required Map<String, double> evaluatorWeights,
@@ -186,7 +212,7 @@ Future<String> buildRunProvenanceJson({
 
   final selectedProviderIds = normalizedModelsByProvider.keys.toSet();
   final providers =
-      event.providers
+      config.providers
           .where((provider) => selectedProviderIds.contains(provider.id))
           .map((provider) {
             final runtimeConfig = _providerRuntimeConfig(provider);
@@ -208,13 +234,13 @@ Future<String> buildRunProvenanceJson({
           .toList()
         ..sort((a, b) => (a['id']! as String).compareTo(b['id']! as String));
 
-  final tasks = event.tasks.map(_taskJson).toList()
+  final tasks = config.tasks.map(_taskJson).toList()
     ..sort((a, b) => (a['id']! as String).compareTo(b['id']! as String));
 
   final sortedCombos = combos.toList()
     ..sort((a, b) => a.index.compareTo(b.index));
   final selectedProvidersById = {
-    for (final provider in event.providers)
+    for (final provider in config.providers)
       if (selectedProviderIds.contains(provider.id)) provider.id: provider,
   };
 
@@ -223,24 +249,23 @@ Future<String> buildRunProvenanceJson({
     'capturedAt': capturedAt.toUtc().toIso8601String(),
     'runId': runId,
     'config': {
-      'name': event.name,
-      'maxConcurrency': event.maxConcurrency.clamp(1, 8),
-      'trialsPerTask': event.trialsPerTask < 1 ? 1 : event.trialsPerTask,
-      'useReferencePlan': event.useReferencePlan,
-      'existingRunId': event.existingRunId,
+      'name': config.name,
+      'maxConcurrency': config.maxConcurrency.clamp(1, 8),
+      'trialsPerTask': config.trialsPerTask < 1 ? 1 : config.trialsPerTask,
+      'useReferencePlan': config.useReferencePlan,
       'scoringSchemaVersion': dartArenaScoringSchemaVersion,
       'generatedCodeSandbox': {
-        'required': event.generatedCodeSandboxRequired,
-        'enforced': event.generatedCodeSandboxEnforced,
-        if (event.generatedCodeSandboxBackend != null)
-          'backend': event.generatedCodeSandboxBackend,
+        'required': config.generatedCodeSandboxRequired,
+        'enforced': config.generatedCodeSandboxEnforced,
+        if (config.generatedCodeSandboxBackend != null)
+          'backend': config.generatedCodeSandboxBackend,
       },
       'pricingRegistry': pricingRegistryProvenance(),
       'modelsByProvider': _sortedModelsMap(normalizedModelsByProvider),
       'evaluatorWeights': _sortedNumberMap(evaluatorWeights),
       'judge': {
-        'providerId': event.evaluatorConfig.judgeProvider?.id,
-        'modelId': event.evaluatorConfig.judgeModel,
+        'providerId': config.evaluatorConfig.judgeProvider?.id,
+        'modelId': config.evaluatorConfig.judgeModel,
       },
     },
     'providers': providers,

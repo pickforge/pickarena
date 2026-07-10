@@ -15,17 +15,8 @@ import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dart_arena/runner/evaluator_resource_limits.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
-import 'package:dart_arena/runner/run_progress_snapshot.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 
-typedef CodegenTaskProgressCallback =
-    void Function(
-      RunComboPhase phase, {
-      String? reasoningPreview,
-      String? answerPreview,
-      int? promptTokens,
-      int? completionTokens,
-    });
 typedef CodegenCancellationCheck = void Function();
 typedef CodegenRemainingTimeout = Duration? Function();
 
@@ -42,8 +33,6 @@ class CodegenTaskExecutor {
   final DateTime Function() now;
   final GeneratedCodeSandbox? generatedCodeSandbox;
 
-  static const _maxPreviewChars = 16 * 1024;
-
   Future<TaskRunResult> run({
     required String runId,
     required BenchmarkTask task,
@@ -53,7 +42,6 @@ class CodegenTaskExecutor {
     required EvaluatorConfig evaluatorConfig,
     String? planId,
     String? planMarkdown,
-    CodegenTaskProgressCallback? onProgress,
     CodegenCancellationCheck? cancellationCheck,
     CodegenRemainingTimeout? remainingTimeout,
     Future<void>? cancellationSignal,
@@ -73,14 +61,11 @@ class CodegenTaskExecutor {
     ModelResponse response;
 
     if (provider is StreamingModelProvider) {
-      var reasoningPreview = '';
-      var answerPreview = '';
       final rawBuf = StringBuffer();
       final stopwatch = Stopwatch()..start();
       int? promptTokens;
       int? completionTokens;
 
-      onProgress?.call(RunComboPhase.streamingResponse);
       cancellationCheck?.call();
       final modelTimeout = _effectiveTimeout(
         taskTimeout,
@@ -94,30 +79,16 @@ class CodegenTaskExecutor {
       )) {
         cancellationCheck?.call();
         switch (event) {
-          case ModelStreamReasoningDelta(:final text):
-            reasoningPreview = _trimPreview(reasoningPreview + text);
-            onProgress?.call(
-              RunComboPhase.streamingResponse,
-              reasoningPreview: reasoningPreview,
-            );
+          case ModelStreamReasoningDelta():
+            break;
           case ModelStreamContentDelta(:final text):
-            answerPreview = _trimPreview(answerPreview + text);
             rawBuf.write(text);
-            onProgress?.call(
-              RunComboPhase.streamingResponse,
-              answerPreview: answerPreview,
-            );
           case ModelStreamUsage(
             promptTokens: final pt,
             completionTokens: final ct,
           ):
             promptTokens = pt;
             completionTokens = ct;
-            onProgress?.call(
-              RunComboPhase.streamingResponse,
-              promptTokens: promptTokens,
-              completionTokens: completionTokens,
-            );
           case ModelStreamStarted():
           case ModelStreamCompleted():
             break;
@@ -134,7 +105,6 @@ class CodegenTaskExecutor {
         latency: stopwatch.elapsed,
       );
     } else {
-      onProgress?.call(RunComboPhase.requestingModel);
       cancellationCheck?.call();
       final modelTimeout = _effectiveTimeout(
         taskTimeout,
@@ -147,20 +117,12 @@ class CodegenTaskExecutor {
         timeout: modelTimeout,
       );
       cancellationCheck?.call();
-      onProgress?.call(
-        RunComboPhase.extractingCode,
-        answerPreview: _trimPreview(response.rawText),
-        promptTokens: response.promptTokens,
-        completionTokens: response.completionTokens,
-      );
     }
 
-    onProgress?.call(RunComboPhase.extractingCode);
     cancellationCheck?.call();
     final extracted = extractDartCode(response.rawText) ?? response.rawText;
     final responseWithCode = _copyWithCode(response, extracted);
 
-    onProgress?.call(RunComboPhase.creatingWorkdir);
     cancellationCheck?.call();
     final dir = await workdirManager.createTaskWorkdir(
       runId: runId,
@@ -174,7 +136,6 @@ class CodegenTaskExecutor {
     );
     cancellationCheck?.call();
 
-    onProgress?.call(RunComboPhase.preparing);
     final evaluators = applyTaskResourceLimitsToEvaluators(
       task.evaluatorsFor(evaluatorConfig),
       task,
@@ -210,7 +171,6 @@ class CodegenTaskExecutor {
         );
       }
     } else {
-      onProgress?.call(RunComboPhase.evaluating);
       for (final evaluator in evaluators) {
         cancellationCheck?.call();
         final blocked = blockedEvaluationFor(
@@ -236,7 +196,6 @@ class CodegenTaskExecutor {
       }
     }
 
-    onProgress?.call(RunComboPhase.persisting);
     cancellationCheck?.call();
     final aggregateScore = aggregate(evaluations, weights);
     final primitives = determineResultPrimitives(
@@ -261,11 +220,6 @@ class CodegenTaskExecutor {
       failureTag: primitives.failureTag,
       planId: planId,
     );
-  }
-
-  String _trimPreview(String value) {
-    if (value.length <= _maxPreviewChars) return value;
-    return value.substring(value.length - _maxPreviewChars);
   }
 
   Duration _effectiveTimeout(
