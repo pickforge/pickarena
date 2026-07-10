@@ -74,7 +74,10 @@ void main() {
 }
 ''');
 
-    expect(await WorkdirManager(root: root).prepare(dir), isA<PrepareOk>());
+    expect(
+      await WorkdirManager(root: root).prepare(dir, isFlutter: true),
+      isA<PrepareOk>(),
+    );
     final r = await WidgetTreeEvaluator().evaluate(
       EvaluationContext(
         workDir: dir,
