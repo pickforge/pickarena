@@ -8,10 +8,12 @@ import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
+import 'package:dart_arena/core/task_integrity.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/patch_capture.dart';
 import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_run_result.dart';
+import 'package:dart_arena/core/workspace_path.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/runner/evaluator_resource_limits.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
@@ -101,8 +103,9 @@ class AgenticRunOrchestrator {
         error: initialPrep.stderr,
       );
     }
+    final String patchBaselineSha;
     try {
-      await workdirManager.resetPatchBaseline(workspace);
+      patchBaselineSha = await workdirManager.resetPatchBaseline(workspace);
     } on Object catch (e) {
       return _environmentFailureResult(
         runId: runId,
@@ -149,7 +152,10 @@ class AgenticRunOrchestrator {
     PatchCaptureResult? capturedPatch;
     EvaluationResult? patchFailure;
     try {
-      capturedPatch = await patchCapture.capture(workspace);
+      capturedPatch = await patchCapture.capture(
+        workspace,
+        baselineRef: patchBaselineSha,
+      );
     } on Object catch (e) {
       patchFailure = EvaluationResult(
         evaluatorId: 'agent_patch',
@@ -157,6 +163,59 @@ class AgenticRunOrchestrator {
         score: 0.0,
         rationale: 'patch capture failed',
         details: {'error': e.toString()},
+      );
+    }
+
+    late final Map<String, Object?> hiddenFixtureIsolation;
+    try {
+      hiddenFixtureIsolation = await _hiddenFixtureIsolation(task, workspace);
+    } on Object catch (e) {
+      return _environmentFailureResult(
+        runId: runId,
+        providerId: providerId,
+        modelId: modelId,
+        task: task,
+        trialIndex: trialIndex,
+        planId: planId,
+        harnessId: harness.id,
+        evaluatorConfig: evaluatorConfig,
+        phase: 'workspace_isolation',
+        rationale: 'workspace isolation evidence failed',
+        error: e,
+      );
+    }
+    final resultProvenance = <String, Object?>{
+      'gradingMode': 'replay_failed',
+      'patchApplied': false,
+      'patchSha256': capturedPatch?.patchSha256,
+      'hiddenFixtureIsolation': hiddenFixtureIsolation,
+      'hiddenVerifierDigests': hiddenVerifierDigests(task),
+    };
+
+    late final Directory gradingWorkspace;
+    try {
+      gradingWorkspace = await workdirManager.createAgenticGradingWorkdir(
+        runId: runId,
+        providerId: providerId,
+        modelId: modelId,
+        taskId: task.id,
+        workspace: task.workspace,
+        trialIndex: trialIndex,
+      );
+    } on Object catch (e) {
+      return _environmentFailureResult(
+        runId: runId,
+        providerId: providerId,
+        modelId: modelId,
+        task: task,
+        trialIndex: trialIndex,
+        planId: planId,
+        harnessId: harness.id,
+        evaluatorConfig: evaluatorConfig,
+        phase: 'grading_workspace',
+        rationale: 'grading workspace preparation failed',
+        error: e,
+        provenance: resultProvenance,
       );
     }
 
@@ -176,29 +235,54 @@ class AgenticRunOrchestrator {
     ];
 
     cancellationCheck?.call();
-    final gradingPrep = await workdirManager.prepare(
-      workspace,
-      isFlutter: task.isFlutter,
-      allowInternet: task.allowInternet,
-      remainingTimeout: remainingTimeout,
-      cancellationCheck: cancellationCheck,
-      cancellationSignal: cancellationSignal,
-      generatedCodeSandbox: generatedCodeSandbox,
-      maxCpuCores: task.effectiveResourceLimits.cpus,
-    );
-    cancellationCheck?.call();
     final evaluators = applyTaskResourceLimitsToEvaluators(
       task.evaluatorsFor(evaluatorConfig),
       task,
     );
-    if (gradingPrep is PrepareFailed) {
+
+    PrepareFailed? gradingFailure;
+    var gradingFailurePhase = 'grading_prepare';
+    if (capturedPatch == null) {
+      gradingFailure = const PrepareFailed('patch capture failed');
+      gradingFailurePhase = 'patch_capture';
+    } else {
+      try {
+        await workdirManager.applyCapturedPatch(
+          gradingWorkspace,
+          capturedPatch.patch,
+        );
+        resultProvenance['patchApplied'] = capturedPatch.hasMeaningfulDiff;
+      } on Object catch (e) {
+        gradingFailure = PrepareFailed(e.toString());
+        gradingFailurePhase = 'grading_patch_apply';
+      }
+      if (gradingFailure == null) {
+        cancellationCheck?.call();
+        final gradingPrep = await workdirManager.prepare(
+          gradingWorkspace,
+          isFlutter: task.isFlutter,
+          allowInternet: task.allowInternet,
+          remainingTimeout: remainingTimeout,
+          cancellationCheck: cancellationCheck,
+          cancellationSignal: cancellationSignal,
+          generatedCodeSandbox: generatedCodeSandbox,
+          maxCpuCores: task.effectiveResourceLimits.cpus,
+        );
+        cancellationCheck?.call();
+        if (gradingPrep is PrepareFailed) {
+          gradingFailure = gradingPrep;
+        }
+      }
+    }
+    if (gradingFailure != null) {
       _addPrepareFailureEvaluations(
         evaluations: evaluations,
         evaluators: evaluators,
-        failure: gradingPrep,
-        phase: 'grading_prepare',
+        failure: gradingFailure,
+        phase: gradingFailurePhase,
       );
     } else {
+      resultProvenance['gradingMode'] = 'clean_replay';
       for (final evaluator in evaluators) {
         final blocked = blockedEvaluationFor(
           evaluatorId: evaluator.id,
@@ -211,7 +295,7 @@ class AgenticRunOrchestrator {
         evaluations.add(
           await evaluator.evaluate(
             EvaluationContext(
-              workDir: workspace,
+              workDir: gradingWorkspace,
               response: response,
               task: task,
               previousResults: evaluations,
@@ -249,6 +333,7 @@ class AgenticRunOrchestrator {
       patchText: patchText,
       trajectoryLogPath: agentResult.trajectoryLogPath,
       planId: planId,
+      provenance: resultProvenance,
     );
   }
 
@@ -283,6 +368,7 @@ class AgenticRunOrchestrator {
     required String? harnessId,
     required String rationale,
     required Object error,
+    Map<String, Object?> provenance = const {},
   }) {
     final response = ModelResponse(
       rawText: error.toString(),
@@ -320,6 +406,7 @@ class AgenticRunOrchestrator {
       primaryPass: primitives.primaryPass,
       failureTag: primitives.failureTag,
       planId: planId,
+      provenance: provenance,
     );
   }
 
@@ -335,6 +422,7 @@ class AgenticRunOrchestrator {
     required String phase,
     required String rationale,
     required Object error,
+    Map<String, Object?> provenance = const {},
   }) {
     final response = ModelResponse(
       rawText: error.toString(),
@@ -384,7 +472,31 @@ class AgenticRunOrchestrator {
       primaryPass: primitives.primaryPass,
       failureTag: primitives.failureTag,
       planId: planId,
+      provenance: provenance,
     );
+  }
+
+  Future<Map<String, Object?>> _hiddenFixtureIsolation(
+    BenchmarkTask task,
+    Directory workspace,
+  ) async {
+    final leakedPaths = <String>{};
+    for (final verifier in task.hiddenVerifiers) {
+      final paths = {verifier.testPath, ...verifier.files.keys};
+      for (final path in paths) {
+        try {
+          final file = resolveWorkspaceFile(workspace, path);
+          final handle = await file.open(mode: FileMode.read);
+          await handle.close();
+          leakedPaths.add(path);
+        } on FileSystemException {
+          continue;
+        } on ArgumentError {
+          continue;
+        }
+      }
+    }
+    return {'asserted': true, 'leakedPaths': leakedPaths.toList()..sort()};
   }
 
   void _addPrepareFailureEvaluations({

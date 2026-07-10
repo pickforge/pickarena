@@ -1,13 +1,22 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 
+const patchBaselineRef = 'arena_baseline';
+
 class PatchCaptureResult {
-  const PatchCaptureResult({required this.patch, required this.status});
+  const PatchCaptureResult({
+    required this.patch,
+    required this.status,
+    required this.patchSha256,
+  });
 
   final String patch;
   final String status;
+  final String patchSha256;
 
   bool get hasMeaningfulDiff => patch.trim().isNotEmpty;
 }
@@ -27,19 +36,24 @@ class PatchCapture {
   final Duration timeout;
   final int maxOutputChars;
 
-  Future<PatchCaptureResult> capture(Directory workspace) async {
+  Future<PatchCaptureResult> capture(
+    Directory workspace, {
+    String baselineRef = patchBaselineRef,
+  }) async {
     const addIntentArgs = ['add', '-N', '.'];
     final intentToAdd = await _runGit(workspace, addIntentArgs);
     _checkGitResult(intentToAdd, addIntentArgs);
     const statusArgs = ['status', '--porcelain'];
-    const diffArgs = ['diff', '--binary'];
+    final diffArgs = ['diff', baselineRef, '--binary'];
     final status = await _runGit(workspace, statusArgs);
     final diff = await _runGit(workspace, diffArgs);
     _checkGitResult(status, statusArgs);
     _checkGitResult(diff, diffArgs);
+    final patch = diff.stdout.toString();
     return PatchCaptureResult(
-      patch: diff.stdout.toString(),
+      patch: patch,
       status: status.stdout.toString(),
+      patchSha256: sha256.convert(utf8.encode(patch)).toString(),
     );
   }
 

@@ -115,10 +115,12 @@ Future<Map<String, Object?>> buildLeaderboardExport(
     evaluationsByTaskRunId,
     modelConfigIndex,
   );
+  final taskBundleDigests = _corpusManifestTaskBundleDigests(corpusManifest);
   final tasks = _buildTaskRows(
     selected.taskRuns,
     warnings,
     evaluationsByTaskRunId,
+    taskBundleDigests,
   );
   final taskModelCells = _buildTaskModelCells(
     selected.taskRuns,
@@ -427,6 +429,7 @@ List<Map<String, Object?>> _buildTaskRows(
   List<TaskRun> taskRuns,
   List<String> warnings,
   Map<String, List<Evaluation>> evaluationsByTaskRunId,
+  Map<String, String> taskBundleDigests,
 ) {
   final groups = <String, List<TaskRun>>{};
   for (final taskRun in taskRuns) {
@@ -468,6 +471,12 @@ List<Map<String, Object?>> _buildTaskRows(
     rows.add(<String, Object?>{
       'taskId': group.first.taskId,
       'taskVersion': group.first.taskVersion,
+      if (taskBundleDigests[_taskManifestKey(
+            group.first.taskId,
+            group.first.taskVersion,
+          )]
+          case final taskBundleDigest?)
+        'taskBundleDigest': taskBundleDigest,
       'benchmarkTrack': group.first.benchmarkTrack,
       'trialCount': sampleCount,
       'sampleCount': sampleCount,
@@ -502,6 +511,28 @@ List<Map<String, Object?>> _buildTaskRows(
   });
   return rows;
 }
+
+Map<String, String> _corpusManifestTaskBundleDigests(
+  Map<String, Object?>? corpusManifest,
+) {
+  if (corpusManifest == null) return const {};
+  final digests = <String, String>{};
+  for (final entry in _objectList(corpusManifest['tasks'])) {
+    final taskId = entry['taskId'];
+    final taskVersion = entry['taskVersion'];
+    final taskBundleDigest = entry['taskBundleDigest'];
+    if (taskId is! String ||
+        taskVersion is! int ||
+        taskBundleDigest is! String) {
+      continue;
+    }
+    digests[_taskManifestKey(taskId, taskVersion)] = taskBundleDigest;
+  }
+  return digests;
+}
+
+String _taskManifestKey(String taskId, int taskVersion) =>
+    '$taskId@v$taskVersion';
 
 List<Map<String, Object?>> _buildTaskModelCells(
   List<TaskRun> taskRuns,

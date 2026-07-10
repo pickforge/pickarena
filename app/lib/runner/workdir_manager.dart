@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:dart_arena/core/patch_capture.dart';
 import 'package:dart_arena/core/path_safety.dart';
 import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/core/workspace_path.dart';
@@ -163,22 +164,63 @@ class WorkdirManager {
         taskPath,
       ),
     );
-    await _recreateCleanRunDirectory(dir);
+    return _assembleAgenticWorkspace(dir, workspace);
+  }
 
-    final fixtureRootPath = workspace.fixtureRootPath;
-    if (fixtureRootPath != null) {
-      await _copyFixtureRoot(Directory(fixtureRootPath), dir);
+  Future<Directory> createAgenticGradingWorkdir({
+    required String runId,
+    required String providerId,
+    required String modelId,
+    required String taskId,
+    required TaskWorkspace workspace,
+    int trialIndex = 0,
+  }) {
+    final taskPath = p.join(
+      _workdirPathSegment(taskId),
+      'trial_${trialIndex}_grading',
+    );
+    final dir = Directory(
+      p.join(
+        root.path,
+        'runs',
+        _workdirPathSegment(runId),
+        _workdirPathSegment(providerId),
+        _workdirPathSegment(modelId, prefix: 'model'),
+        taskPath,
+      ),
+    );
+    return _assembleAgenticWorkspace(dir, workspace);
+  }
+
+  Future<void> applyCapturedPatch(Directory gradingDir, String patch) async {
+    if (patch.isEmpty) return;
+    await _runGit(gradingDir, [
+      'apply',
+      '--binary',
+      '--whitespace=nowarn',
+      '-',
+    ], stdin: patch);
+    await _sanitizeGradingWorkspace(gradingDir);
+  }
+
+  Future<void> _sanitizeGradingWorkspace(Directory dir) async {
+    final toRemove = <FileSystemEntity>[];
+    await for (final entity in dir.list(recursive: true, followLinks: false)) {
+      final relative = p
+          .relative(entity.path, from: dir.path)
+          .replaceAll('\\', '/');
+      if (relative.split('/').first == '.git') continue;
+      if (entity is Link || _shouldExcludeWorkspacePath(relative)) {
+        toRemove.add(entity);
+      }
     }
-
-    for (final entry in workspace.files.entries) {
-      final f = resolveWorkspaceFile(dir, entry.key);
-      if (_shouldExcludeWorkspacePath(entry.key)) continue;
-      await f.parent.create(recursive: true);
-      await f.writeAsString(entry.value);
+    for (final entity in toRemove) {
+      try {
+        await entity.delete(recursive: true);
+      } on FileSystemException {
+        continue;
+      }
     }
-
-    await _initializeBaselineGit(dir);
-    return dir;
   }
 
   Future<WorkdirIsolationEvidence> collectWorkspaceIsolationEvidence(
@@ -318,7 +360,7 @@ class WorkdirManager {
     );
   }
 
-  Future<void> resetPatchBaseline(Directory workDir) {
+  Future<String> resetPatchBaseline(Directory workDir) {
     return _initializeBaselineGit(workDir);
   }
 
@@ -565,6 +607,28 @@ class WorkdirManager {
     }
   }
 
+  Future<Directory> _assembleAgenticWorkspace(
+    Directory dir,
+    TaskWorkspace workspace,
+  ) async {
+    await _recreateCleanRunDirectory(dir);
+
+    final fixtureRootPath = workspace.fixtureRootPath;
+    if (fixtureRootPath != null) {
+      await _copyFixtureRoot(Directory(fixtureRootPath), dir);
+    }
+
+    for (final entry in workspace.files.entries) {
+      final f = resolveWorkspaceFile(dir, entry.key);
+      if (_shouldExcludeWorkspacePath(entry.key)) continue;
+      await f.parent.create(recursive: true);
+      await f.writeAsString(entry.value);
+    }
+
+    await _initializeBaselineGit(dir);
+    return dir;
+  }
+
   bool _isSameOrWithin(String parent, String child) {
     return p.equals(parent, child) || p.isWithin(parent, child);
   }
@@ -604,13 +668,16 @@ class WorkdirManager {
     await dir.create(recursive: true);
   }
 
-  Future<void> _initializeBaselineGit(Directory dir) async {
+  Future<String> _initializeBaselineGit(Directory dir) async {
     await _ensureBaselineGitignore(dir);
     await _runGit(dir, ['init']);
     await _runGit(dir, ['config', 'user.email', 'dart-arena@example.invalid']);
     await _runGit(dir, ['config', 'user.name', 'dart_arena']);
     await _runGit(dir, ['add', '.']);
     await _runGit(dir, ['commit', '--allow-empty', '-m', 'baseline']);
+    await _runGit(dir, ['tag', '-f', patchBaselineRef]);
+    final head = await _runGit(dir, ['rev-parse', 'HEAD']);
+    return head.trim();
   }
 
   Future<void> _ensureBaselineGitignore(Directory dir) async {
@@ -621,6 +688,8 @@ class WorkdirManager {
       '.config/tool_state',
       '.dartServer/',
       '.flutter',
+      '.flutter-plugins',
+      '.flutter-plugins-dependencies',
       'AppData/',
       'build/',
       '.packages',
@@ -648,7 +717,11 @@ class WorkdirManager {
     await gitignore.writeAsString(buffer.toString());
   }
 
-  Future<void> _runGit(Directory dir, List<String> args) async {
+  Future<String> _runGit(
+    Directory dir,
+    List<String> args, {
+    String? stdin,
+  }) async {
     if (gitTimeout.compareTo(Duration.zero) <= 0) {
       throw TimeoutException(
         'baseline git initialization timed out',
@@ -664,6 +737,10 @@ class WorkdirManager {
       environment: _baselineGitEnvironment(),
       includeParentEnvironment: false,
     );
+    if (stdin != null) {
+      process.stdin.add(utf8.encode(stdin));
+      await process.stdin.close();
+    }
 
     final stdoutBuffer = _BoundedTextCollector(gitMaxOutputChars);
     final stderrBuffer = _BoundedTextCollector(gitMaxOutputChars);
@@ -708,7 +785,7 @@ class WorkdirManager {
           signal.exitCode,
         );
       }
-      return;
+      return stdoutBuffer.text;
     }
 
     await _terminateProcessTree(process.pid, ProcessSignal.sigterm);

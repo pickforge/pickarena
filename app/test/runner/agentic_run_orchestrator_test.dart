@@ -5,6 +5,7 @@ import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
+import 'package:dart_arena/core/patch_capture.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/evaluator_blocking.dart';
@@ -21,6 +22,7 @@ import 'package:path/path.dart' as p;
 import '../support/headless_fakes.dart';
 
 class _FakeHarness implements AgentHarness {
+  Directory? workspace;
   _FakeHarness(this.onRun);
 
   final Future<void> Function(Directory workspace) onRun;
@@ -38,6 +40,7 @@ class _FakeHarness implements AgentHarness {
     bool allowInternet = true,
     bool requireGeneratedCodeSandbox = false,
   }) async {
+    this.workspace = workspace;
     await onRun(workspace);
     return const AgentRunResult(
       status: AgentRunStatus.success,
@@ -178,6 +181,29 @@ class _AnswerEvaluator implements Evaluator {
       evaluatorId: id,
       passed: passed,
       score: passed ? 1.0 : 0.0,
+    );
+  }
+}
+
+class _GradingWorkspaceEvaluator implements Evaluator {
+  Directory? workDir;
+
+  @override
+  String get id => 'grading_workspace';
+
+  @override
+  Future<EvaluationResult> evaluate(EvaluationContext ctx) async {
+    workDir = ctx.workDir;
+    final source = await File(
+      p.join(ctx.workDir.path, 'lib', 'answer.dart'),
+    ).readAsString();
+    final passed =
+        source.contains('42') &&
+        p.basename(ctx.workDir.path).endsWith('_grading');
+    return EvaluationResult(
+      evaluatorId: id,
+      passed: passed,
+      score: passed ? 1 : 0,
     );
   }
 }
@@ -406,6 +432,96 @@ void main() {
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );
+
+  test('grades the replayed patch in the sibling grading workspace', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'agentic_orch_clean_replay_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final evaluator = _GradingWorkspaceEvaluator();
+    final task = _AgenticBlockingTask([evaluator]);
+    final harness = _FakeHarness((workspace) async {
+      await File(
+        p.join(workspace.path, 'lib', 'answer.dart'),
+      ).writeAsString('int answer() => 42;\n');
+    });
+
+    final result =
+        await AgenticRunOrchestrator(
+          workdirManager: NoOpPrepareWorkdirManager(root: root),
+        ).run(
+          runId: 'run-clean-replay',
+          task: task,
+          harness: harness,
+          providerId: 'fake_agent',
+          modelId: 'm',
+          trialIndex: 0,
+          evaluatorConfig: const EvaluatorConfig(),
+        );
+
+    expect(
+      result.evaluations
+          .singleWhere((e) => e.evaluatorId == evaluator.id)
+          .passed,
+      isTrue,
+    );
+    expect(evaluator.workDir, isNotNull);
+    expect(p.basename(evaluator.workDir!.path), 'trial_0_grading');
+    expect(
+      p.dirname(evaluator.workDir!.path),
+      p.dirname(harness.workspace!.path),
+    );
+    expect(
+      p.isWithin(harness.workspace!.path, evaluator.workDir!.path),
+      isFalse,
+    );
+    expect(result.provenance['gradingMode'], 'clean_replay');
+    expect(result.provenance['patchApplied'], isTrue);
+    expect(
+      result.provenance['patchSha256'],
+      matches(RegExp(r'^[0-9a-f]{64}$')),
+    );
+  });
+
+  test('records hidden fixture leaks from the agent workspace', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'agentic_orch_fixture_leak_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final task = _AgenticBlockingTask(const []);
+    final result =
+        await AgenticRunOrchestrator(
+          workdirManager: NoOpPrepareWorkdirManager(root: root),
+        ).run(
+          runId: 'run-fixture-leak',
+          task: task,
+          harness: _FakeHarness((workspace) async {
+            final hidden = File(
+              p.join(
+                workspace.path,
+                'test',
+                '_hidden',
+                'answer_hidden_test.dart',
+              ),
+            );
+            await hidden.parent.create(recursive: true);
+            await hidden.writeAsString('leaked');
+          }),
+          providerId: 'fake_agent',
+          modelId: 'm',
+          trialIndex: 0,
+          evaluatorConfig: const EvaluatorConfig(),
+        );
+
+    final isolation =
+        result.provenance['hiddenFixtureIsolation'] as Map<String, Object?>;
+    expect(isolation['asserted'], isTrue);
+    expect(isolation['leakedPaths'], ['test/_hidden/answer_hidden_test.dart']);
+  });
 
   test(
     'passes denied environment keys to the agent harness',
@@ -654,4 +770,37 @@ void main() {
       }
     },
   );
+
+  test('blocks grading when patch capture fails', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'agentic_capture_failure_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+
+    final answer = _SpyEvaluator('answer_spy');
+    final result =
+        await AgenticRunOrchestrator(
+          workdirManager: NoOpPrepareWorkdirManager(root: root),
+          patchCapture: const PatchCapture(
+            gitExecutable: 'dart-arena-nonexistent-git',
+          ),
+          now: () => DateTime(2026, 6, 2),
+        ).run(
+          runId: 'run-capture-failure',
+          task: _AgenticBlockingTask([answer]),
+          harness: _FakeHarness((workspace) async {}),
+          providerId: 'fake_agent',
+          modelId: 'm',
+          trialIndex: 0,
+          evaluatorConfig: const EvaluatorConfig(),
+        );
+
+    expect(answer.calls, 0);
+    final environment = result.evaluations.singleWhere(
+      (evaluation) => evaluation.evaluatorId == 'environment',
+    );
+    expect(environment.details['phase'], 'patch_capture');
+  });
 }

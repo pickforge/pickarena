@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/core/task_bundle_digest.dart';
+import 'package:dart_arena/core/task_integrity.dart';
 import 'package:dart_arena/export/leaderboard_cli_runner.dart';
 import 'package:dart_arena/export/release_report.dart';
 import 'package:dart_arena/storage/database.dart';
+import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
@@ -296,9 +298,15 @@ Future<Map<String, Object?>> _taskBundleDigestEvidence(
     };
   }
   try {
+    final task = await FileBackedTask.load(bundleDirectory);
+    await task.ensureLoaded();
     return {
       ...evidence,
       'taskBundleDigest': await taskBundleDigestSha256(bundleDirectory),
+      'hiddenVerifierDigests': <String, Object?>{
+        for (final entry in hiddenVerifierDigests(task).entries)
+          entry.key: entry.value,
+      },
     };
   } on Object {
     return {

@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:dart_arena/analytics/result_primitives.dart';
+import 'package:dart_arena/core/task_bundle_digest.dart';
 import 'package:dart_arena/core/model_identity.dart';
 
 const _standardBundleFilePaths = [
@@ -219,6 +220,12 @@ Map<String, Object?> buildReleaseReport({
       'snapshot the corpus before an official release.',
     );
   }
+  _validateFrozenCorpusManifest(
+    selectedTasks: selectedTasks,
+    corpusManifestDigest: corpusManifestDigest,
+    taskRows: taskRows,
+    blockers: blockers,
+  );
   if (evaluatorSchemaVersion <= 0) {
     blockers.add(
       'Leaderboard benchmark evaluator schema version metadata is missing.',
@@ -335,6 +342,7 @@ Map<String, Object?> buildReleaseReport({
   final provenance = _provenanceSummary(
     runIds: runIds,
     runProvenanceById: runProvenanceById,
+    taskBundleDigestEvidence: taskBundleDigestEvidence,
     blockers: blockers,
   );
   if (runProvenanceById != null) {
@@ -7890,6 +7898,73 @@ Map<String, Object?> _taskRef(Map<String, Object?> report) => {
 String _taskKey(Map<String, Object?> report) =>
     '${report['taskId']}@v${report['taskVersion']}';
 
+void _validateFrozenCorpusManifest({
+  required Object? selectedTasks,
+  required String? corpusManifestDigest,
+  required List<Map<String, Object?>> taskRows,
+  required Set<String> blockers,
+}) {
+  if (selectedTasks is! List || corpusManifestDigest == null) return;
+  final entries = <CorpusManifestEntry>[];
+  final selectedTaskKeys = <String>{};
+  var valid = true;
+  for (final selectedTask in selectedTasks) {
+    final entry = _objectMap(selectedTask);
+    final taskId = _nonEmptyString(entry['taskId']);
+    final taskVersion = entry['taskVersion'];
+    final taskBundleDigest = _nonEmptyString(entry['taskBundleDigest']);
+    if (taskId == null ||
+        taskVersion is! int ||
+        taskBundleDigest == null ||
+        !_sha256DigestPattern.hasMatch(taskBundleDigest)) {
+      valid = false;
+      continue;
+    }
+    final key = '$taskId@v$taskVersion';
+    if (!selectedTaskKeys.add(key)) valid = false;
+    entries.add(
+      CorpusManifestEntry(
+        taskId: taskId,
+        taskVersion: taskVersion,
+        taskBundleDigest: taskBundleDigest,
+      ),
+    );
+  }
+  final taskRowsByKey = <String, Map<String, Object?>>{};
+  for (final taskRow in taskRows) {
+    final taskId = _nonEmptyString(taskRow['taskId']);
+    final taskVersion = taskRow['taskVersion'];
+    if (taskId == null || taskVersion is! int) {
+      valid = false;
+      continue;
+    }
+    final key = '$taskId@v$taskVersion';
+    if (taskRowsByKey.containsKey(key)) {
+      valid = false;
+      continue;
+    }
+    taskRowsByKey[key] = taskRow;
+  }
+  if (selectedTaskKeys.length != taskRowsByKey.length) valid = false;
+  for (final entry in entries) {
+    final row = taskRowsByKey['${entry.taskId}@v${entry.taskVersion}'];
+    if (row == null || row['taskBundleDigest'] != entry.taskBundleDigest) {
+      valid = false;
+    }
+  }
+  if (!valid) {
+    blockers.add(
+      'Leaderboard frozen corpus manifest entries do not match leaderboard tasks.',
+    );
+  }
+  if (entries.length != selectedTasks.length ||
+      corpusManifestDigestSha256(entries) != corpusManifestDigest) {
+    blockers.add(
+      'Leaderboard frozen corpus manifest digest does not match its entries.',
+    );
+  }
+}
+
 Map<String, Object?> _publicTaskRef(Map<String, Object?> task) => {
   'taskId': task['taskId'],
   'taskVersion': task['taskVersion'],
@@ -7916,6 +7991,7 @@ bool? _boolField(
 Map<String, Object?> _provenanceSummary({
   required List<String> runIds,
   required Map<String, Map<String, Object?>>? runProvenanceById,
+  required List<Map<String, Object?>> taskBundleDigestEvidence,
   required Set<String> blockers,
 }) {
   if (runIds.isNotEmpty && runProvenanceById == null) {
@@ -7930,6 +8006,18 @@ Map<String, Object?> _provenanceSummary({
   var sdkVersionRunCount = 0;
   var dependencySnapshotRunCount = 0;
   var pricingRegistryRunCount = 0;
+  var resultProvenanceCount = 0;
+  var cleanReplayResultCount = 0;
+  final gradingModeCounts = SplayTreeMap<String, int>();
+  var hiddenFixtureIsolationAssertedResultCount = 0;
+  var hiddenFixtureIsolationLeakResultCount = 0;
+  var hiddenVerifierDigestMatchedResultCount = 0;
+  final currentHiddenVerifierDigestsByTaskKey = {
+    for (final evidence in taskBundleDigestEvidence)
+      if (_taskQaReportKey(evidence) case final key?)
+        if (evidence.containsKey('hiddenVerifierDigests'))
+          key: _objectMap(evidence['hiddenVerifierDigests']),
+  };
   for (final runId in runIds) {
     final provenance = runProvenanceById?[runId];
     if (runProvenanceById != null && provenance == null) {
@@ -7956,6 +8044,95 @@ Map<String, Object?> _provenanceSummary({
     final pricingRegistryStatus = provenance == null
         ? 'missing'
         : _pricingRegistryStatus(provenance);
+    final resultProvenance = provenance == null
+        ? const <Map<String, Object?>>[]
+        : _objectMaps(provenance['resultProvenance']);
+    final expectedResultCount = provenance == null
+        ? 0
+        : _objectMaps(provenance['combos']).length;
+    if (provenance != null &&
+        (provenance['resultProvenance'] is! List ||
+            resultProvenance.length != expectedResultCount)) {
+      blockers.add(
+        'Run $runId is missing clean-replay result provenance for some results.',
+      );
+    }
+    var runCleanReplayResultCount = 0;
+    var runHiddenFixtureIsolationAssertedResultCount = 0;
+    var runHiddenFixtureIsolationLeakResultCount = 0;
+    for (final result in resultProvenance) {
+      resultProvenanceCount++;
+      final gradingMode = result['gradingMode'];
+      final gradingModeKey = gradingMode is String && gradingMode.isNotEmpty
+          ? gradingMode
+          : 'missing';
+      gradingModeCounts[gradingModeKey] =
+          (gradingModeCounts[gradingModeKey] ?? 0) + 1;
+
+      final benchmarkTrack = result['benchmarkTrack'];
+      if (benchmarkTrack == 'codegen') {
+        continue;
+      }
+      if (benchmarkTrack != 'agentic') {
+        blockers.add(
+          'Result provenance has a missing or unrecognized benchmark track.',
+        );
+        continue;
+      }
+
+      if (result['gradingMode'] == 'clean_replay') {
+        cleanReplayResultCount++;
+        runCleanReplayResultCount++;
+      } else {
+        blockers.add(
+          'Result was graded in the agent workspace, not a clean replay baseline.',
+        );
+      }
+
+      final hiddenFixtureIsolation = _objectMap(
+        result['hiddenFixtureIsolation'],
+      );
+      final leakedPaths = _stringList(hiddenFixtureIsolation['leakedPaths']);
+      if (hiddenFixtureIsolation['asserted'] == true) {
+        hiddenFixtureIsolationAssertedResultCount++;
+        runHiddenFixtureIsolationAssertedResultCount++;
+      } else {
+        blockers.add(
+          'Result is missing hidden verifier fixture isolation provenance.',
+        );
+      }
+      if (leakedPaths.isNotEmpty) {
+        hiddenFixtureIsolationLeakResultCount++;
+        runHiddenFixtureIsolationLeakResultCount++;
+        blockers.add(
+          'Hidden verifier fixtures were readable from the agent workspace.',
+        );
+      }
+
+      final taskKey = _resultProvenanceTaskKey(result);
+      final storedHiddenVerifierDigests = _objectMap(
+        result['hiddenVerifierDigests'],
+      );
+      if (taskKey == null) {
+        blockers.add(
+          'Result is missing task identity for hidden verifier digest verification.',
+        );
+      } else if (!currentHiddenVerifierDigestsByTaskKey.containsKey(taskKey)) {
+        blockers.add(
+          'Could not recompute hidden verifier digests from the live task '
+          'bundle for a graded result.',
+        );
+      } else if (_stringMapEquals(
+        storedHiddenVerifierDigests,
+        currentHiddenVerifierDigestsByTaskKey[taskKey],
+      )) {
+        hiddenVerifierDigestMatchedResultCount++;
+      } else {
+        blockers.add(
+          'Hidden verifier digests drifted from the corpus since the run.',
+        );
+      }
+    }
     if (provenance != null) {
       if (sandboxStatus['status'] == 'enforced') {
         sandboxEnforcedRunCount++;
@@ -8017,11 +8194,19 @@ Map<String, Object?> _provenanceSummary({
       'sdkVersionStatus': sdkVersionStatus,
       'dependencySnapshotStatus': dependencySnapshotStatus,
       'pricingRegistryStatus': pricingRegistryStatus,
+      'resultProvenanceCount': resultProvenance.length,
+      'gradingModeCounts': _gradingModeCounts(resultProvenance),
+      'cleanReplayResultCount': runCleanReplayResultCount,
+      'hiddenFixtureIsolationAssertedResultCount':
+          runHiddenFixtureIsolationAssertedResultCount,
+      'hiddenFixtureIsolationLeakResultCount':
+          runHiddenFixtureIsolationLeakResultCount,
       if (provenance != null) 'provenance': _sanitize(provenance),
     });
   }
 
   return {
+    'schemaVersion': 2,
     'requiredRunIds': runIds,
     'embeddedRunCount': runs.where((run) => run['status'] == 'present').length,
     'sandboxEnforcedRunCount': sandboxEnforcedRunCount,
@@ -8031,8 +8216,50 @@ Map<String, Object?> _provenanceSummary({
     'sdkVersionRunCount': sdkVersionRunCount,
     'dependencySnapshotRunCount': dependencySnapshotRunCount,
     'pricingRegistryRunCount': pricingRegistryRunCount,
+    'resultProvenanceCount': resultProvenanceCount,
+    'cleanReplayResultCount': cleanReplayResultCount,
+    'gradingModeCounts': gradingModeCounts,
+    'hiddenFixtureIsolationAssertedResultCount':
+        hiddenFixtureIsolationAssertedResultCount,
+    'hiddenFixtureIsolationLeakResultCount':
+        hiddenFixtureIsolationLeakResultCount,
+    'hiddenVerifierDigestMatchedResultCount':
+        hiddenVerifierDigestMatchedResultCount,
     'runs': runs,
   };
+}
+
+bool _stringMapEquals(
+  Map<String, Object?> actual,
+  Map<String, Object?>? expected,
+) {
+  if (expected == null || actual.length != expected.length) return false;
+  for (final entry in expected.entries) {
+    if (actual[entry.key] != entry.value) return false;
+  }
+  return true;
+}
+
+Map<String, int> _gradingModeCounts(
+  Iterable<Map<String, Object?>> resultProvenance,
+) {
+  final counts = SplayTreeMap<String, int>();
+  for (final result in resultProvenance) {
+    final gradingMode = result['gradingMode'];
+    final key = gradingMode is String && gradingMode.isNotEmpty
+        ? gradingMode
+        : 'missing';
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
+}
+
+String? _resultProvenanceTaskKey(Map<String, Object?> result) {
+  final benchmarkTrack = result['benchmarkTrack'];
+  return _taskQaReportKey({
+    ...result,
+    if (benchmarkTrack is String) 'track': benchmarkTrack,
+  });
 }
 
 Map<String, Object?> _generatedCodeSandboxStatus(
