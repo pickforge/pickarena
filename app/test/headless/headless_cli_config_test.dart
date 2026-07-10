@@ -213,6 +213,29 @@ void main() {
       );
     });
 
+    test('rejects agent_cli providers for codegen tasks', () {
+      final config = _validConfig()
+        ..remove('judge')
+        ..['tasks'] = ['codegen.example']
+        ..['providers'] = [
+          {
+            'type': 'agent_cli',
+            'id': 'codex-cli',
+            'displayName': 'Codex CLI',
+            'models': ['gpt-5.5'],
+            'harness': 'codex',
+            'agentVersion': '1.0.0',
+          },
+        ];
+      expect(
+        () => parseHeadlessCliConfig(
+          config,
+          configPath: p.join(Directory.current.path, 'run.json'),
+        ),
+        throwsA(isA<HeadlessCliConfigException>()),
+      );
+    });
+
     test('rejects malformed required fields and types', () {
       expect(
         () => parseHeadlessCliConfig({

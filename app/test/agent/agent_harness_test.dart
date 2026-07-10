@@ -1017,6 +1017,21 @@ printf %s "$PATH"
         throwsArgumentError,
       );
     });
+
+    test('rejects unknown template placeholders', () {
+      expect(
+        () => CommandTemplateAgentHarness(
+          providerId: 'fake-cli',
+          config: const CommandTemplateAgentConfig(
+            name: 'fake',
+            executable: 'fake',
+            arguments: ['{instruction}', '{work_dir}'],
+            version: '1.0.0',
+          ),
+        ),
+        throwsArgumentError,
+      );
+    });
   });
 }
 

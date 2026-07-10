@@ -193,7 +193,7 @@ class CommandTemplateAgentHarness
   static void _validateTemplate(List<String> arguments) {
     var hasInstruction = false;
     for (final argument in arguments) {
-      for (final match in RegExp(r'\{([a-z]+)\}').allMatches(argument)) {
+      for (final match in RegExp(r'\{([^{}]+)\}').allMatches(argument)) {
         hasInstruction = hasInstruction || match.group(1) == 'instruction';
         if (!const {
           'instruction',
