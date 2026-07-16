@@ -8,6 +8,6 @@
 - When a plan or spec is completed, merged, superseded, or no longer active, move it to `docs/plans/old/` or `docs/specs/old/` instead of leaving it in the active folder.
 - Keep consolidated roadmap/master specs in `docs/specs/` while active.
 - Do not permanently delete archived plans/specs unless the user explicitly asks for permanent deletion.
-## Pickforge workspace policy
+## Workspace policy
 
-This repo is part of the Pickforge workspace. Before substantial work, read `../AGENTS.md` (or `/home/dev/Projects/Pickforge/AGENTS.md`) and use the `plan-issue` workflow: GitHub Issues are the canonical plan/progress tracker; local todos are only a mirror. Link PRs to tracking issues and file follow-up issues for valid deferred review/CI problems.
+For substantial work, read `../AGENTS.md` (workspace root) and use the `plan-issue` workflow — GitHub Issues are the canonical plan/progress tracker.
