@@ -28,21 +28,21 @@
         "status": "present",
         "files": {
           "pubspec.yaml": {
-            "sha256": "2a498deb8c1429354f0bc37237f3542c6627d8abe738e9100f3cd41dc8cd402a",
-            "bytes": 3005
+            "sha256": "b61d75727520f9d83d1303865b3c5b000e5c3e6f1d9f6a165f12250c526b57eb",
+            "bytes": 752
           },
           "pubspec.lock": {
-            "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
-            "bytes": 29033
+            "sha256": "2692c4215d210527c34986a1f5d7c46b5bc14ba1e36446a01fcab7193e68e197",
+            "bytes": 18603
           }
         }
       },
       "flutterVersion": "3.41.6",
-      "gitCommit": "1e76b02fc4efaa4b96e1d5a58ae53a7ee8f8a598",
+      "gitCommit": "91d8bd04957199ababbb2f83f46580e91c590c65",
       "gitDirty": false,
       "hostPlatform": "linux",
-      "locale": "C.UTF-8",
-      "operatingSystemVersion": "Linux 7.1.3-1-cachyos #1 SMP PREEMPT_DYNAMIC Mon, 06 Jul 2026 19:44:10 +0000"
+      "locale": "en_US.UTF-8",
+      "operatingSystemVersion": "Linux 7.1.3-2-cachyos #1 SMP PREEMPT_DYNAMIC Wed, 08 Jul 2026 18:34:01 +0000"
     },
     "taskBundleDigest": "da20930cd64b2cfd027ed11bb0500c011e2defe0dc47b15c004a308740560ef4"
   },
@@ -62,17 +62,17 @@
       },
       "memoryMb": {
         "enforced": true,
-        "mechanism": "rssPolling",
-        "kernelEnforced": false
+        "mechanism": "systemdMemoryMax",
+        "kernelEnforced": true
       },
       "maxProcesses": {
         "enforced": true,
-        "mechanism": "processTreePolling",
-        "kernelEnforced": false
+        "mechanism": "systemdTasksMax",
+        "kernelEnforced": true
       },
       "maxOutputBytes": {
         "enforced": true,
-        "mechanism": "boundedOutputCapture",
+        "mechanism": "boundedByteOutputCapture",
         "kernelEnforced": false
       }
     }
@@ -224,7 +224,7 @@
     }
   },
   "status": "admitted",
-  "generatedAt": "2026-07-09T17:26:29.857225Z",
+  "generatedAt": "2026-07-19T06:28:08.068740Z",
   "checks": {
     "baselineHiddenFailed": true,
     "referencePublicPassed": true,
@@ -295,7 +295,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 11.7s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 8.7s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -310,7 +310,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.4s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 1.8s)\n",
             "tool": "flutter"
           }
         },
@@ -424,8 +424,8 @@
           "rationale": "analysis errors present",
           "details": {
             "exitCode": 1,
-            "stdout": "Analyzing segment_refactor_889b88418e99...                      \n\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:19:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:19:56 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:24:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:32:15 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:34:11 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:41:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:48:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:48:53 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:52:55 • undefined_getter\n\n",
-            "stderr": "9 issues found. (ran in 11.7s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \n\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:19:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:19:56 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:24:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:32:15 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:34:11 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:41:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:48:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:48:53 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:52:55 • undefined_getter\n\n",
+            "stderr": "9 issues found. (ran in 8.8s)\n",
             "tool": "flutter"
           }
         },
@@ -439,8 +439,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 1,
-            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \n\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:19:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:19:56 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:24:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:32:15 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:34:11 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:41:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:48:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:48:53 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:52:55 • undefined_getter\n\n",
-            "stderr": "9 issues found. (ran in 2.3s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \n\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:19:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:19:56 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:24:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:32:15 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:34:11 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:41:55 • undefined_getter\n  error • The named parameter 'cents' is required, but there's no corresponding argument • test/price_labels_test.dart:48:19 • missing_required_argument\n  error • The named parameter 'priceCents' isn't defined • test/price_labels_test.dart:48:53 • undefined_named_parameter\n  error • The getter 'priceTextKey' isn't defined for the type 'ProductPriceTile' • test/price_labels_test.dart:52:55 • undefined_getter\n\n",
+            "stderr": "9 issues found. (ran in 1.7s)\n",
             "tool": "flutter"
           }
         },
@@ -491,7 +491,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 11.7s)\n",
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 8.6s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -506,7 +506,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.3s)\n",
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.0s)\n",
             "tool": "flutter"
           }
         },
@@ -620,7 +620,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 11.9s)\n",
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 8.7s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -635,7 +635,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.3s)\n",
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 1.9s)\n",
             "tool": "flutter"
           }
         },
@@ -725,7 +725,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 11.9s)\n",
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 8.6s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -740,7 +740,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.4s)\n",
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.3s)\n",
             "tool": "flutter"
           }
         },
@@ -826,7 +826,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 12.5s)\n",
+            "stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 8.7s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -841,7 +841,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.4s)\n",
+            "raw_stdout": "Analyzing segment_refactor_889b88418e99...                      \nNo issues found! (ran in 2.0s)\n",
             "tool": "flutter"
           }
         },

@@ -28,21 +28,21 @@
         "status": "present",
         "files": {
           "pubspec.yaml": {
-            "sha256": "2a498deb8c1429354f0bc37237f3542c6627d8abe738e9100f3cd41dc8cd402a",
-            "bytes": 3005
+            "sha256": "b61d75727520f9d83d1303865b3c5b000e5c3e6f1d9f6a165f12250c526b57eb",
+            "bytes": 752
           },
           "pubspec.lock": {
-            "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
-            "bytes": 29033
+            "sha256": "2692c4215d210527c34986a1f5d7c46b5bc14ba1e36446a01fcab7193e68e197",
+            "bytes": 18603
           }
         }
       },
       "flutterVersion": "3.41.6",
-      "gitCommit": "1e76b02fc4efaa4b96e1d5a58ae53a7ee8f8a598",
+      "gitCommit": "91d8bd04957199ababbb2f83f46580e91c590c65",
       "gitDirty": false,
       "hostPlatform": "linux",
-      "locale": "C.UTF-8",
-      "operatingSystemVersion": "Linux 7.1.3-1-cachyos #1 SMP PREEMPT_DYNAMIC Mon, 06 Jul 2026 19:44:10 +0000"
+      "locale": "en_US.UTF-8",
+      "operatingSystemVersion": "Linux 7.1.3-2-cachyos #1 SMP PREEMPT_DYNAMIC Wed, 08 Jul 2026 18:34:01 +0000"
     },
     "taskBundleDigest": "e672512f97b1c20bb10fdf497c287f9795a24fee5d5853760d7a8daa8765f7d3"
   },
@@ -62,17 +62,17 @@
       },
       "memoryMb": {
         "enforced": true,
-        "mechanism": "rssPolling",
-        "kernelEnforced": false
+        "mechanism": "systemdMemoryMax",
+        "kernelEnforced": true
       },
       "maxProcesses": {
         "enforced": true,
-        "mechanism": "processTreePolling",
-        "kernelEnforced": false
+        "mechanism": "systemdTasksMax",
+        "kernelEnforced": true
       },
       "maxOutputBytes": {
         "enforced": true,
-        "mechanism": "boundedOutputCapture",
+        "mechanism": "boundedByteOutputCapture",
         "kernelEnforced": false
       }
     }
@@ -179,7 +179,7 @@
     }
   },
   "status": "admitted",
-  "generatedAt": "2026-07-09T17:29:47.947391Z",
+  "generatedAt": "2026-07-19T06:28:08.068740Z",
   "checks": {
     "baselineHiddenFailed": true,
     "referencePublicPassed": true,
@@ -202,7 +202,7 @@
   "verifierQualityAudit": {
     "falsePositiveCount": 0,
     "falseNegativeCount": 0,
-    "disagreementCount": 1,
+    "disagreementCount": 2,
     "infrastructureErrorCount": 0,
     "flakeRunCount": 3,
     "flakeFailureCount": 0,
@@ -249,7 +249,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_state.se_dc7c73ac454e...                      \nNo issues found! (ran in 11.5s)\n",
+            "stdout": "Analyzing segment_state.se_dc7c73ac454e...                      \nNo issues found! (ran in 8.5s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -264,7 +264,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_state.se_dc7c73ac454e...                      \nNo issues found! (ran in 10.6s)\n",
+            "raw_stdout": "Analyzing segment_state.se_dc7c73ac454e...                      \nNo issues found! (ran in 7.8s)\n",
             "tool": "flutter"
           }
         },
@@ -346,8 +346,8 @@
           "rationale": "analysis errors present",
           "details": {
             "exitCode": 1,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_state.se_dc7c73ac454e...                      \n\n  error • The function 'SelectionController' isn't defined • test/selection_controller_test.dart:6:24 • undefined_function\n  error • The function 'SelectionController' isn't defined • test/selection_controller_test.dart:15:24 • undefined_function\n\n",
-            "stderr": "2 issues found. (ran in 11.5s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_state.se_dc7c73ac454e...                      \n\n  error • The function 'SelectionController' isn't defined • test/selection_controller_test.dart:6:24 • undefined_function\n  error • The function 'SelectionController' isn't defined • test/selection_controller_test.dart:15:24 • undefined_function\n\n",
+            "stderr": "2 issues found. (ran in 8.4s)\n",
             "tool": "flutter"
           }
         },
@@ -361,8 +361,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 1,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_state.se_dc7c73ac454e...                      \n\n  error • The function 'SelectionController' isn't defined • test/selection_controller_test.dart:6:24 • undefined_function\n  error • The function 'SelectionController' isn't defined • test/selection_controller_test.dart:15:24 • undefined_function\n\n",
-            "stderr": "2 issues found. (ran in 10.5s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_state.se_dc7c73ac454e...                      \n\n  error • The function 'SelectionController' isn't defined • test/selection_controller_test.dart:6:24 • undefined_function\n  error • The function 'SelectionController' isn't defined • test/selection_controller_test.dart:15:24 • undefined_function\n\n",
+            "stderr": "2 issues found. (ran in 7.7s)\n",
             "tool": "flutter"
           }
         },
@@ -402,18 +402,18 @@
       "description": "Hardcodes the public inbox case and ignores hidden ids.",
       "kind": "overfit",
       "prepare_passed": true,
-      "public_passed": false,
+      "public_passed": true,
       "hidden_passed": false,
       "rejected": true,
       "public_results": [
         {
           "evaluator_id": "compile",
-          "passed": false,
-          "score": 0.0,
-          "rationale": "analysis errors present",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
           "details": {
-            "exitCode": -9,
-            "stdout": "Analyzing segment_state.se_dc7c73ac454e...                      ",
+            "exitCode": 0,
+            "stdout": "Analyzing segment_state.se_dc7c73ac454e...                      \nNo issues found! (ran in 8.5s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -428,21 +428,23 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_state.se_dc7c73ac454e...                      \nNo issues found! (ran in 10.8s)\n",
+            "raw_stdout": "Analyzing segment_state.se_dc7c73ac454e...                      \nNo issues found! (ran in 7.9s)\n",
             "tool": "flutter"
           }
         },
         {
           "evaluator_id": "test",
-          "passed": false,
-          "score": 0.0,
-          "rationale": "blocked by compile",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "2/2 tests passed",
           "details": {
-            "blocked": true,
-            "blocked_by": "compile",
-            "blocked_by_rationale": "analysis errors present",
-            "skipped": true,
-            "reason": "blocked by compile"
+            "total": 2,
+            "passed": 2,
+            "failed": 0,
+            "errored": 0,
+            "failures": [],
+            "exit_code": 0,
+            "tool": "flutter"
           }
         },
         {
@@ -461,7 +463,40 @@
           }
         }
       ],
-      "hidden_results": []
+      "hidden_results": [
+        {
+          "evaluator_id": "selection_controller_hidden",
+          "passed": false,
+          "score": 0.0,
+          "rationale": "0/3 hidden tests passed",
+          "details": {
+            "total": 3,
+            "passed": 0,
+            "failed": 3,
+            "errored": 0,
+            "failures": [
+              {
+                "index": 1,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 2,
+                "message": "hidden verifier failure"
+              },
+              {
+                "index": 3,
+                "message": "hidden verifier failure"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter",
+            "test_path": "test/_hidden/selection_controller_hidden_test.dart",
+            "injected_files": [
+              "test/_hidden/selection_controller_hidden_test.dart"
+            ]
+          }
+        }
+      ]
     }
   ],
   "failureMessages": []
