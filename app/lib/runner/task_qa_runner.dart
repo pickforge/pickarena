@@ -1061,7 +1061,10 @@ Map<String, Object?> taskQaAdmissionReportJson({
     'executionPolicy': {
       'allowInternet': task.allowInternet,
       'resources': task.effectiveResourceLimits.toJson(),
-      'resourceEnforcement': taskResourceEnforcementJson(),
+      'resourceEnforcement': taskResourceEnforcementJson(
+        kernelEnforcementAvailable:
+            report.runtimeIsolation.generatedCodeSandboxEnforced,
+      ),
     },
     'runtimeIsolation': report.runtimeIsolation.toJson(),
     'status': failureMessages.isEmpty ? 'admitted' : 'rejected',

@@ -111,11 +111,16 @@ class ReleaseReportOptions {
     required this.releaseId,
     this.minSamplesPerModel = 2,
     this.minHiddenFlakeRunsPerTask = 3,
+    this.allowMixedEnvironmentAggregates = false,
   });
 
   final String releaseId;
   final int minSamplesPerModel;
   final int minHiddenFlakeRunsPerTask;
+
+  /// Explicit policy escape hatch: permits aggregates spanning multiple
+  /// execution environments (environment IDs, Dart/Flutter versions).
+  final bool allowMixedEnvironmentAggregates;
 }
 
 class ReleaseArtifactBundleInput {
@@ -245,6 +250,8 @@ Map<String, Object?> buildReleaseReport({
     source: source,
     runIds: runIds,
     blockers: blockers,
+    reportWarnings: warnings,
+    allowMixedEnvironmentAggregates: options.allowMixedEnvironmentAggregates,
   );
   final taskModelCellSummary = _taskModelCellSummary(
     rawCells: leaderboard['taskModelCells'],
@@ -5523,6 +5530,8 @@ Map<String, Object?> _sourceRunProvenanceSummary({
   required Map<String, Object?> source,
   required List<String> runIds,
   required Set<String> blockers,
+  required Set<String> reportWarnings,
+  required bool allowMixedEnvironmentAggregates,
 }) {
   final sourceRunProvenance = _objectMap(source['runProvenance']);
   final rawSourceRunProvenance = source['runProvenance'];
@@ -5576,6 +5585,12 @@ Map<String, Object?> _sourceRunProvenanceSummary({
   for (final warning in warnings) {
     blockers.add('Leaderboard source run provenance warning: $warning');
   }
+  _blockMixedEnvironmentAggregates(
+    sourceRunProvenance: sourceRunProvenance,
+    blockers: blockers,
+    reportWarnings: reportWarnings,
+    allowMixedEnvironmentAggregates: allowMixedEnvironmentAggregates,
+  );
   _blockIfIncompleteRunCoverage(
     blockers: blockers,
     fieldLabel: 'stored provenance',
@@ -5643,6 +5658,37 @@ Map<String, Object?> _sourceRunProvenanceSummary({
     'environmentIds': _stringList(sourceRunProvenance['environmentIds']),
     'warnings': warnings,
   };
+}
+
+void _blockMixedEnvironmentAggregates({
+  required Map<String, Object?> sourceRunProvenance,
+  required Set<String> blockers,
+  required Set<String> reportWarnings,
+  required bool allowMixedEnvironmentAggregates,
+}) {
+  const fields = {
+    'environmentIds': 'environment ID',
+    'dartVersions': 'Dart version',
+    'flutterVersions': 'Flutter version',
+  };
+  for (final entry in fields.entries) {
+    final values = _stringList(sourceRunProvenance[entry.key]);
+    if (values.length <= 1) continue;
+    final message =
+        'Leaderboard aggregate spans ${values.length} ${entry.value}s: '
+        '${values.join(', ')}.';
+    if (allowMixedEnvironmentAggregates) {
+      reportWarnings.add(
+        '$message Permitted by allowMixedEnvironmentAggregates policy.',
+      );
+    } else {
+      blockers.add(
+        '$message Aggregates must not span multiple execution environments '
+        'unless the mixed-environment aggregation policy is explicitly '
+        'enabled.',
+      );
+    }
+  }
 }
 
 void _blockIfIncompleteRunCoverage({

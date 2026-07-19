@@ -216,6 +216,7 @@ _SelectedTaskRuns _selectTaskRuns({
           anchorRun,
           taskRunsByRunId[anchorRun.id] ?? const <TaskRun>[],
         ),
+        environmentKey: _environmentKeyForRun(anchorRun),
       );
       final warningKeys = <String>{};
       final selected = <TaskRun>[];
@@ -228,6 +229,7 @@ _SelectedTaskRuns _selectTaskRuns({
           scoringSchemaVersion: candidateWeights.scoringSchemaVersion,
           corpusManifestDigest: _corpusManifestDigestForRun(candidateRun),
           harnessKinds: _harnessKinds(candidateRun, entry.value),
+          environmentKey: _environmentKeyForRun(candidateRun),
         );
         if (!anchorSignature.isCompatibleWith(candidateSignature)) continue;
 
@@ -1258,7 +1260,7 @@ String? _sdkVersion(Object? value) {
   return version.split(RegExp(r'\s+')).first;
 }
 
-String? _environmentId(Map<String, Object?> environment) {
+String? _environmentCompatibilityKey(Map<String, Object?> environment) {
   final dartVersion = _sdkVersion(environment['dartVersion']);
   final flutterVersion = _sdkVersion(environment['flutterVersion']);
   final lockfile = _dependencyLockfile(environment);
@@ -1270,7 +1272,7 @@ String? _environmentId(Map<String, Object?> environment) {
     return null;
   }
 
-  final encoded = jsonEncode({
+  return jsonEncode({
     'dartVersion': dartVersion,
     'flutterVersion': flutterVersion,
     'hostPlatform': hostPlatform,
@@ -1278,7 +1280,12 @@ String? _environmentId(Map<String, Object?> environment) {
         ? null
         : _nonEmptyString(lockfile['sha256']),
   });
-  return sha256.convert(utf8.encode(encoded)).toString().substring(0, 12);
+}
+
+String? _environmentId(Map<String, Object?> environment) {
+  final key = _environmentCompatibilityKey(environment);
+  if (key == null) return null;
+  return sha256.convert(utf8.encode(key)).toString().substring(0, 12);
 }
 
 bool _hasDependencySnapshot(Map<String, Object?> environment) {
@@ -1315,6 +1322,7 @@ class _RunCompatibilitySignature {
     required this.harnessKinds,
     required this.scoringSchemaVersion,
     required this.corpusManifestDigest,
+    required this.environmentKey,
   });
 
   factory _RunCompatibilitySignature.fromTaskRuns(
@@ -1322,6 +1330,7 @@ class _RunCompatibilitySignature {
     required int? scoringSchemaVersion,
     required String? corpusManifestDigest,
     required Map<String, String> harnessKinds,
+    required String? environmentKey,
   }) {
     return _RunCompatibilitySignature(
       taskKeys: (taskRuns.map((taskRun) => _taskKey(taskRun)).toSet().toList()
@@ -1340,6 +1349,7 @@ class _RunCompatibilitySignature {
             ..sort()),
       scoringSchemaVersion: scoringSchemaVersion,
       corpusManifestDigest: corpusManifestDigest,
+      environmentKey: environmentKey,
     );
   }
 
@@ -1348,12 +1358,14 @@ class _RunCompatibilitySignature {
   final List<String> harnessKinds;
   final int? scoringSchemaVersion;
   final String? corpusManifestDigest;
+  final String? environmentKey;
 
   bool isCompatibleWith(_RunCompatibilitySignature other) {
     return _listEquals(taskKeys, other.taskKeys) &&
         _listEquals(harnessIds, other.harnessIds) &&
         _listEquals(harnessKinds, other.harnessKinds) &&
         corpusManifestDigest == other.corpusManifestDigest &&
+        environmentKey == other.environmentKey &&
         (scoringSchemaVersion == null ||
             other.scoringSchemaVersion == null ||
             scoringSchemaVersion == other.scoringSchemaVersion);
@@ -1366,6 +1378,7 @@ class _RunCompatibilitySignature {
         _listEquals(harnessIds, other.harnessIds) &&
         _listEquals(harnessKinds, other.harnessKinds) &&
         corpusManifestDigest == other.corpusManifestDigest &&
+        environmentKey == other.environmentKey &&
         scoringSchemaVersion == other.scoringSchemaVersion;
   }
 
@@ -1376,12 +1389,21 @@ class _RunCompatibilitySignature {
     Object.hashAll(harnessKinds),
     scoringSchemaVersion,
     corpusManifestDigest,
+    environmentKey,
   );
 }
 
 String? _corpusManifestDigestForRun(Run run) {
   final digest = _corpusManifestForRun(run)?['digestSha256'];
   return digest is String && digest.isNotEmpty ? digest : null;
+}
+
+/// Normalized environment-compatibility key (Dart version, Flutter version,
+/// host platform class, dependency-lock digest) for aggregation gating.
+String? _environmentKeyForRun(Run run) {
+  final provenance = _decodeRunProvenance(run.provenanceJson);
+  if (provenance == null) return null;
+  return _environmentCompatibilityKey(_objectMap(provenance['environment']));
 }
 
 Map<String, String> _harnessKinds(Run run, List<TaskRun> taskRuns) {

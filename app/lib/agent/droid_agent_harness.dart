@@ -168,7 +168,7 @@ $instruction
     final workingDirectory = cwdProxy?.directory ?? workspace;
     final effectiveArguments =
         argumentsForWorkingDirectory?.call(workingDirectory) ?? args;
-    final environment = benchmarkSubprocessEnvironment(
+    final environment = harnessSubprocessEnvironment(
       additionalDeniedKeys: deniedEnvironmentKeys,
       allowedSensitiveKeys: allowedSensitiveEnvironmentKeys,
     );
