@@ -181,4 +181,96 @@ void main() {
     expect(env, contains('PATH'));
     expect(env, isNot(contains('FLUTTER_ALREADY_LOCKED')));
   });
+
+  group('harnessSubprocessEnvironment', () {
+    test('only allowlisted keys reach harness subprocesses', () {
+      final env = harnessSubprocessEnvironment(
+        baseEnvironment: const {
+          'PATH': '/usr/bin',
+          'HOME': '/home/dev',
+          'LANG': 'en_US.UTF-8',
+          'LC_ALL': 'en_US.UTF-8',
+          'TERM': 'xterm-256color',
+          'PUB_CACHE': '/home/dev/.pub-cache',
+          'FLUTTER_ROOT': '/opt/flutter',
+          'XDG_RUNTIME_DIR': '/run/user/1000',
+          // Host-controlled VM/tool overrides are intentionally excluded.
+          'DART_VM_OPTIONS': '--enable-vm-service=0',
+          'FLUTTER_STORAGE_BASE_URL': 'https://internal.example/flutter',
+          // Not on the allowlist: benign but unnecessary host details.
+          'HOSTNAME': 'dev-machine',
+          'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus',
+          'DESKTOP_SESSION': 'gnome',
+          'HISTFILE': '/home/dev/.bash_history',
+          'INTERNAL_SERVICE_URL': 'https://internal.example',
+        },
+      );
+
+      expect(env, containsPair('PATH', '/usr/bin'));
+      expect(env, containsPair('HOME', '/home/dev'));
+      expect(env, containsPair('LANG', 'en_US.UTF-8'));
+      expect(env, containsPair('LC_ALL', 'en_US.UTF-8'));
+      expect(env, containsPair('TERM', 'xterm-256color'));
+      expect(env, containsPair('PUB_CACHE', '/home/dev/.pub-cache'));
+      expect(env, containsPair('FLUTTER_ROOT', '/opt/flutter'));
+      expect(env, contains('XDG_RUNTIME_DIR'));
+      expect(env, isNot(contains('DART_VM_OPTIONS')));
+      expect(env, isNot(contains('FLUTTER_STORAGE_BASE_URL')));
+      expect(env, isNot(contains('HOSTNAME')));
+      expect(env, isNot(contains('DBUS_SESSION_BUS_ADDRESS')));
+      expect(env, isNot(contains('DESKTOP_SESSION')));
+      expect(env, isNot(contains('HISTFILE')));
+      expect(env, isNot(contains('INTERNAL_SERVICE_URL')));
+    });
+
+    test('never leaks credentials even when allowlist-shaped', () {
+      final env = harnessSubprocessEnvironment(
+        baseEnvironment: const {
+          'PATH': '/usr/bin',
+          'FLUTTER_STORAGE_TOKEN': 'secret',
+          'DART_API_KEY': 'secret',
+          'OPENAI_API_KEY': 'secret',
+        },
+      );
+
+      expect(env, containsPair('PATH', '/usr/bin'));
+      expect(env, isNot(contains('FLUTTER_STORAGE_TOKEN')));
+      expect(env, isNot(contains('DART_API_KEY')));
+      expect(env, isNot(contains('OPENAI_API_KEY')));
+    });
+
+    test('explicitly allowed sensitive keys pass through for harness auth', () {
+      final env = harnessSubprocessEnvironment(
+        baseEnvironment: const {
+          'PATH': '/usr/bin',
+          'FACTORY_API_KEY': 'droid-auth',
+          'CODEX_HOME': '/opt/codex-auth',
+        },
+        allowedSensitiveKeys: const ['FACTORY_API_KEY', 'CODEX_HOME'],
+      );
+
+      expect(env, containsPair('FACTORY_API_KEY', 'droid-auth'));
+      expect(env, containsPair('CODEX_HOME', '/opt/codex-auth'));
+    });
+
+    test('denied keys override the harness allowlist', () {
+      final env = harnessSubprocessEnvironment(
+        baseEnvironment: const {'PATH': '/usr/bin', 'PUB_CACHE': '/cache'},
+        additionalDeniedKeys: const ['pub_cache'],
+      );
+
+      expect(env, contains('PATH'));
+      expect(env, isNot(contains('PUB_CACHE')));
+    });
+
+    test('supports isolating the harness home directory', () {
+      final env = harnessSubprocessEnvironment(
+        baseEnvironment: const {'PATH': '/usr/bin', 'HOME': '/home/dev'},
+        homeDirectory: '/tmp/dart_arena_home',
+      );
+
+      expect(env, containsPair('HOME', '/tmp/dart_arena_home'));
+      expect(env, containsPair('PUB_CACHE', '/home/dev/.pub-cache'));
+    });
+  });
 }

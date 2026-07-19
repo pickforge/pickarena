@@ -44,6 +44,80 @@ Map<String, String> benchmarkSubprocessEnvironment({
   return environment;
 }
 
+/// Builds the environment for agent-harness subprocesses using a strict
+/// allowlist instead of the deny-list used for tool helpers.
+///
+/// Only baseline shell/locale/temp keys, Dart/Flutter tool keys, and keys the
+/// harness explicitly allows via [allowedSensitiveKeys] (for example Droid
+/// custom-model credentials or command-template agent API keys) reach the
+/// harness. The result is additionally passed through the sensitive-key scrub
+/// so an allowlisted pattern can never resurrect a denied credential.
+Map<String, String> harnessSubprocessEnvironment({
+  Map<String, String>? baseEnvironment,
+  Iterable<String> additionalDeniedKeys = const [],
+  Iterable<String> allowedSensitiveKeys = const [],
+  String? homeDirectory,
+}) {
+  final source = baseEnvironment ?? Platform.environment;
+  final allowedSensitive = {
+    for (final key in allowedSensitiveKeys) key.toUpperCase(),
+  };
+  final allowlisted = {
+    for (final entry in source.entries)
+      if (_isAllowlistedHarnessEnvironmentKey(entry.key) ||
+          allowedSensitive.contains(entry.key.toUpperCase()))
+        entry.key: entry.value,
+  };
+  return benchmarkSubprocessEnvironment(
+    baseEnvironment: allowlisted,
+    additionalDeniedKeys: additionalDeniedKeys,
+    allowedSensitiveKeys: allowedSensitiveKeys,
+    homeDirectory: homeDirectory,
+  );
+}
+
+const _harnessEnvironmentAllowlist = {
+  'PATH',
+  'HOME',
+  'USERPROFILE',
+  'USER',
+  'LOGNAME',
+  'SHELL',
+  'TERM',
+  'COLORTERM',
+  'LANG',
+  'LANGUAGE',
+  'TZ',
+  'TMPDIR',
+  'TMP',
+  'TEMP',
+  'PWD',
+  'PUB_CACHE',
+  'ANALYZER_STATE_LOCATION_OVERRIDE',
+  'FLUTTER_ROOT',
+  'XDG_CONFIG_HOME',
+  'XDG_CACHE_HOME',
+  'XDG_DATA_HOME',
+  'XDG_STATE_HOME',
+  'XDG_RUNTIME_DIR',
+  // Windows process/tool baseline.
+  'APPDATA',
+  'LOCALAPPDATA',
+  'SYSTEMROOT',
+  'SYSTEMDRIVE',
+  'COMSPEC',
+  'PATHEXT',
+  'WINDIR',
+};
+
+const _harnessEnvironmentAllowlistPrefixes = ['LC_'];
+
+bool _isAllowlistedHarnessEnvironmentKey(String key) {
+  final normalized = key.toUpperCase();
+  if (_harnessEnvironmentAllowlist.contains(normalized)) return true;
+  return _harnessEnvironmentAllowlistPrefixes.any(normalized.startsWith);
+}
+
 bool _isSensitiveEnvironmentKey(
   String key,
   Set<String> additionalDeniedKeys,

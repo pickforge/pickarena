@@ -54,8 +54,8 @@ The Bubblewrap backend currently enforces the following controls for generated-c
 - For network-allowed tasks, replaces `PUB_CACHE` with a workdir-local cache.
 - Resets the agentic patch baseline after initial dependency preparation, and ignores benchmark tool-state paths such as `.dart_arena/`, `.flutter`, and `.config/tool_state`, so dependency-prepare and sandbox bookkeeping are not exported as model patches.
 - Scrubs generated-code environments, including proxy variables, credential-file pointers, package-registry pointers, Git helper variables, home/XDG roots, analyzer state roots, and unrelated secret-looking values unless explicitly allowlisted by provider code.
-- Wraps generated-code prepare and evaluator subprocesses that have an effective task `cpus` limit in a `systemd-run --user --scope` cgroup with `CPUQuota=<cpus * 100>%`.
-- Applies evaluator wall-clock timeouts, process-tree termination, bounded stdout/stderr capture, process-count polling, and RSS memory polling from the task effective resource policy.
+- Wraps generated-code prepare subprocesses with `CPUQuota=<cpus * 100>%` and evaluator subprocesses with `CPUQuota`, `MemoryMax=<memoryMb>M`, and `TasksMax=<maxProcesses>` in a `systemd-run --user --scope` cgroup.
+- Applies evaluator wall-clock timeouts, process-tree termination, raw-byte-bounded stdout/stderr capture, and process-count/RSS polling as diagnostic fallback checks.
 - Records a `resourceEnforcement` map next to task `resources`, so release audits distinguish declared limits from enforcement mechanisms.
 - Records effective task network and resource policy in run provenance, task artifacts, task QA metadata, and leaderboard source provenance.
 
@@ -65,12 +65,11 @@ The current Bubblewrap backend does not claim:
 
 - macOS or Windows support.
 - A pinned or reproducible OS/container image.
-- Cgroup-backed `MemoryMax`, `TasksMax`, or equivalent per-benchmark-tree limits.
 - Seccomp filtering beyond Bubblewrap's namespace and mount controls.
 - Isolation of provider/model API calls or Droid harness execution.
 - Complete removal of read-only visibility into host system roots, SDKs, or pub cache content needed to run Flutter/Dart tools.
 
-Today, task `cpus` is enforced through a user systemd cgroup CPU quota when generated-code sandboxing is active. Task `memoryMb`, `maxProcesses`, and `maxOutputBytes` are enforced by evaluator-side polling and output collection, with process-tree cleanup on violation. Release-report readiness blocks official evidence when task resource provenance records any declared resource as not enforced.
+Today, task `cpus`, `memoryMb`, and `maxProcesses` are enforced through a user systemd cgroup when generated-code sandboxing is active. `maxOutputBytes` is enforced on raw process bytes before decoding, with process-tree cleanup on violation. Runs without the kernel-backed sandbox record CPU, memory, and process enforcement as false; release-report readiness blocks that evidence.
 
 ## Unsupported Fallback Behavior
 
@@ -78,7 +77,7 @@ For public or untrusted runs:
 
 - Missing Linux support is an infrastructure failure.
 - Missing or failing `bwrap` is an infrastructure failure.
-- Missing or failing user `systemd-run --scope` cgroup support is an infrastructure failure for public runs with task CPU policy.
+- Missing or failing user `systemd-run --scope` cgroup support is an infrastructure failure for public runs with task CPU, memory, or process policy.
 - A run must not silently downgrade to unsandboxed execution when `requireGeneratedCodeSandbox` is `true`.
 - Release readiness must block if stored provenance does not show generated-code sandbox enforcement with a backend.
 
@@ -99,8 +98,8 @@ Current focused coverage includes:
 - Bubblewrap allowed-network integration proving a task that explicitly allows internet can reach a host loopback server.
 - Bubblewrap mount integration proving `/tmp` is private and system-bind writes do not reach the host.
 - Bubblewrap resource integration proving evaluator process-count enforcement still works when the process is started through Bubblewrap.
-- Bubblewrap resource integration proving evaluator output-limit and RSS memory-limit enforcement still work when the process is started through Bubblewrap.
-- Bubblewrap CPU resource integration proving CPU-limited evaluator subprocesses run through a `systemd-run --user --scope` cgroup wrapper while preserving clean stdout/stderr capture.
+- Bubblewrap resource integration proving raw-byte output limits and memory limits still work when the process is started through Bubblewrap.
+- Bubblewrap resource integration proving CPU, memory, and process limits map to `CPUQuota`, `MemoryMax`, and `TasksMax` in the `systemd-run --user --scope` cgroup wrapper.
 - Bubblewrap hidden-verifier integration proving hidden verifier files are staged outside the generated workdir, mounted read-only into Bubblewrap, unavailable through the workspace `test/_hidden` path, protected from sandboxed tampering, and cleaned up after evaluation.
 - Bubblewrap Flutter cache integration proving SDK cache `lockfile` is backed by a writable sandbox-local overlay even when absent from the host cache.
 - Agentic patch-capture integration proving dependency-prepare and sandbox bookkeeping files are baselined or ignored before the harness runs.

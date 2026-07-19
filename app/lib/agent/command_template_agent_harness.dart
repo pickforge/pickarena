@@ -4,6 +4,7 @@ import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/agent/droid_agent_harness.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
+import 'package:path/path.dart' as p;
 
 class CommandTemplateAgentConfig {
   const CommandTemplateAgentConfig({
@@ -121,6 +122,10 @@ class CommandTemplateAgentHarness
     Iterable<String> deniedEnvironmentKeys = const [],
     bool allowInternet = true,
   }) async {
+    final allowedEnvironmentKeys = {
+      ..._allowedSensitiveEnvironmentKeys,
+      ..._presetEnvironmentKeys(config.name),
+    };
     final result = await DroidAgentHarness.runExternalProcess(
       config.executable,
       const [],
@@ -129,8 +134,8 @@ class CommandTemplateAgentHarness
       {
         ..._deniedEnvironmentKeys,
         ...deniedEnvironmentKeys,
-      }.difference(_allowedSensitiveEnvironmentKeys),
-      _allowedSensitiveEnvironmentKeys,
+      }.difference(allowedEnvironmentKeys),
+      allowedEnvironmentKeys,
       maxProcessOutputChars,
       allowInternet,
       generatedCodeSandbox,
@@ -212,21 +217,41 @@ class CommandTemplateAgentHarness
     }
   }
 
+  static Iterable<String> _presetEnvironmentKeys(String name) => switch (name) {
+    'codex' => const ['CODEX_HOME'],
+    'claude-code' => const ['CLAUDE_CONFIG_DIR'],
+    _ => const [],
+  };
+
   static Iterable<String> _presetConfigPaths(String name) {
     final home =
         Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
-    if (home.isEmpty) return const [];
+    String? environmentPath(String key, String fallback) {
+      final configured = Platform.environment[key]?.trim();
+      if (configured != null && configured.isNotEmpty) return configured;
+      return home.isEmpty ? null : p.join(home, fallback);
+    }
+
     final paths = switch (name) {
-      'codex' => ['$home/.codex'],
-      'claude-code' => ['$home/.claude', '$home/.claude.json'],
-      'opencode' => ['$home/.config/opencode', '$home/.local/share/opencode'],
-      _ => const <String>[],
+      'codex' => [environmentPath('CODEX_HOME', '.codex')],
+      'claude-code' => [
+        environmentPath('CLAUDE_CONFIG_DIR', '.claude'),
+        if (home.isNotEmpty) p.join(home, '.claude.json'),
+      ],
+      'opencode' => [
+        if (environmentPath('XDG_CONFIG_HOME', '.config') case final root?)
+          p.join(root, 'opencode'),
+        if (environmentPath('XDG_DATA_HOME', '.local/share') case final root?)
+          p.join(root, 'opencode'),
+      ],
+      _ => const <String?>[],
     };
     return [
-      for (final path in paths)
-        if (FileSystemEntity.typeSync(path) != FileSystemEntityType.notFound)
+      for (final path in paths.whereType<String>())
+        if (path.isNotEmpty &&
+            FileSystemEntity.typeSync(path) != FileSystemEntityType.notFound)
           path,
     ];
   }

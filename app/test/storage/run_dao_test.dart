@@ -57,6 +57,72 @@ void main() {
     await db.close();
   });
 
+  test('persistTaskRun is atomic: failed evaluation insert rolls back the '
+      'task-run row', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final dao = RunDao(db);
+
+    await dao.startRun(runId: 'r1', startedAt: DateTime(2026, 5, 2));
+    final completedAt = DateTime(2026, 5, 2);
+    final result = TaskRunResult(
+      runId: 'r1',
+      providerId: 'ollama_local',
+      modelId: 'llama3',
+      taskId: 'bug.off_by_one_pagination',
+      response: const ModelResponse(
+        rawText: 'hi',
+        extractedCode: null,
+        promptTokens: null,
+        completionTokens: null,
+        latency: Duration(milliseconds: 50),
+      ),
+      evaluations: const [
+        EvaluationResult(evaluatorId: 'compile', passed: true, score: 1.0),
+      ],
+      aggregateScore: 1.0,
+      completedAt: completedAt,
+    );
+    // Pre-insert a conflicting evaluation row so the evaluation insert inside
+    // persistTaskRun violates the primary key and the transaction aborts.
+    final taskRunId =
+        'r1-ollama_local-llama3-bug.off_by_one_pagination'
+        '-${completedAt.microsecondsSinceEpoch}';
+    await db
+        .into(db.taskRuns)
+        .insert(
+          TaskRunsCompanion.insert(
+            id: 'other-task-run',
+            runId: 'r1',
+            providerId: 'p',
+            modelId: 'm',
+            taskId: 't',
+            responseText: '',
+            latencyMs: 1,
+            aggregateScore: 0,
+            completedAt: completedAt,
+          ),
+        );
+    await db
+        .into(db.evaluations)
+        .insert(
+          EvaluationsCompanion.insert(
+            id: '$taskRunId-compile-0',
+            taskRunId: 'other-task-run',
+            evaluatorId: 'compile',
+            passed: true,
+            score: 1.0,
+            detailsJson: '{}',
+          ),
+        );
+
+    await expectLater(dao.persistTaskRun(result), throwsA(anything));
+
+    final taskRuns = await dao.taskRunsForRun('r1');
+    expect(taskRuns.map((taskRun) => taskRun.id), isNot(contains(taskRunId)));
+
+    await db.close();
+  });
+
   test('persistTaskRun stores result primitive metadata', () async {
     final db = AppDatabase(NativeDatabase.memory());
     final dao = RunDao(db);

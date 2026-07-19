@@ -165,6 +165,7 @@ Future<int> runReleaseReportCli(
         releaseId: parsed.releaseId,
         minSamplesPerModel: parsed.minSamplesPerModel,
         minHiddenFlakeRunsPerTask: parsed.minHiddenFlakeRunsPerTask,
+        allowMixedEnvironmentAggregates: parsed.allowMixedEnvironmentAggregates,
       ),
       now: dependencies.now,
     );
@@ -685,6 +686,7 @@ _ParsedArgs? _parseArgs(List<String> args) {
   var releaseId = 'local-candidate';
   var minSamplesPerModel = 2;
   var minHiddenFlakeRunsPerTask = 3;
+  var allowMixedEnvironmentAggregates = false;
   var failOnBlocked = false;
 
   for (var i = 0; i < args.length; i++) {
@@ -725,6 +727,8 @@ _ParsedArgs? _parseArgs(List<String> args) {
           _requiredValue(args, ++i, arg),
           arg,
         );
+      case '--allow-mixed-environment-aggregates':
+        allowMixedEnvironmentAggregates = true;
       case '--fail-on-blocked':
         failOnBlocked = true;
       default:
@@ -801,6 +805,7 @@ _ParsedArgs? _parseArgs(List<String> args) {
     releaseId: releaseId,
     minSamplesPerModel: minSamplesPerModel,
     minHiddenFlakeRunsPerTask: minHiddenFlakeRunsPerTask,
+    allowMixedEnvironmentAggregates: allowMixedEnvironmentAggregates,
     failOnBlocked: failOnBlocked,
   );
 }
@@ -879,6 +884,7 @@ Map<String, Object?> _helpJson() {
         'required': false,
         'default': 3,
       },
+      {'name': '--allow-mixed-environment-aggregates', 'required': false},
       {'name': '--fail-on-blocked', 'required': false},
       {'name': '--help', 'required': false},
     ],
@@ -915,6 +921,7 @@ class _ParsedArgs {
     required this.releaseId,
     required this.minSamplesPerModel,
     required this.minHiddenFlakeRunsPerTask,
+    required this.allowMixedEnvironmentAggregates,
     required this.failOnBlocked,
   });
 
@@ -934,6 +941,7 @@ class _ParsedArgs {
   final String releaseId;
   final int minSamplesPerModel;
   final int minHiddenFlakeRunsPerTask;
+  final bool allowMixedEnvironmentAggregates;
   final bool failOnBlocked;
 }
 

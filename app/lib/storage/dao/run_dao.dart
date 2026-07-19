@@ -55,48 +55,48 @@ class RunDao {
     final trialPart = r.trialIndex == 0 ? '' : '-trial${r.trialIndex}';
     final taskRunId =
         '${r.runId}-${r.providerId}-${r.modelId}-${r.taskId}$trialPart-${r.completedAt.microsecondsSinceEpoch}';
-    await _db
-        .into(_db.taskRuns)
-        .insert(
-          TaskRunsCompanion.insert(
-            id: taskRunId,
-            runId: r.runId,
-            providerId: r.providerId,
-            modelId: r.modelId,
-            taskId: r.taskId,
-            responseText: r.response.rawText,
-            promptTokens: Value(r.response.promptTokens),
-            completionTokens: Value(r.response.completionTokens),
-            latencyMs: r.response.latency.inMilliseconds,
-            aggregateScore: r.aggregateScore,
-            completedAt: r.completedAt,
-            planId: Value(r.planId),
-            trialIndex: Value(r.trialIndex),
-            taskVersion: Value(r.taskVersion),
-            benchmarkTrack: Value(r.benchmarkTrack),
-            harnessId: Value(r.harnessId),
-            primaryPass: Value(r.primaryPass),
-            failureTag: Value(r.failureTag),
-            patchText: Value(r.patchText),
-            trajectoryLogPath: Value(r.trajectoryLogPath),
-          ),
-        );
-    for (var i = 0; i < r.evaluations.length; i++) {
-      final e = r.evaluations[i];
+    await _db.transaction(() async {
       await _db
-          .into(_db.evaluations)
+          .into(_db.taskRuns)
           .insert(
-            EvaluationsCompanion.insert(
-              id: '$taskRunId-${e.evaluatorId}-$i',
-              taskRunId: taskRunId,
-              evaluatorId: e.evaluatorId,
-              passed: e.passed,
-              score: e.score,
-              rationale: Value(e.rationale),
-              detailsJson: jsonEncode(e.details),
+            TaskRunsCompanion.insert(
+              id: taskRunId,
+              runId: r.runId,
+              providerId: r.providerId,
+              modelId: r.modelId,
+              taskId: r.taskId,
+              responseText: r.response.rawText,
+              promptTokens: Value(r.response.promptTokens),
+              completionTokens: Value(r.response.completionTokens),
+              latencyMs: r.response.latency.inMilliseconds,
+              aggregateScore: r.aggregateScore,
+              completedAt: r.completedAt,
+              planId: Value(r.planId),
+              trialIndex: Value(r.trialIndex),
+              taskVersion: Value(r.taskVersion),
+              benchmarkTrack: Value(r.benchmarkTrack),
+              harnessId: Value(r.harnessId),
+              primaryPass: Value(r.primaryPass),
+              failureTag: Value(r.failureTag),
+              patchText: Value(r.patchText),
+              trajectoryLogPath: Value(r.trajectoryLogPath),
             ),
           );
-    }
+      await _db.batch((batch) {
+        batch.insertAll(_db.evaluations, [
+          for (var i = 0; i < r.evaluations.length; i++)
+            EvaluationsCompanion.insert(
+              id: '$taskRunId-${r.evaluations[i].evaluatorId}-$i',
+              taskRunId: taskRunId,
+              evaluatorId: r.evaluations[i].evaluatorId,
+              passed: r.evaluations[i].passed,
+              score: r.evaluations[i].score,
+              rationale: Value(r.evaluations[i].rationale),
+              detailsJson: jsonEncode(r.evaluations[i].details),
+            ),
+        ]);
+      });
+    });
   }
 
   Future<List<TaskRun>> taskRunsForRun(String runId) {

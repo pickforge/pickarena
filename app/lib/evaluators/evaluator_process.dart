@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
@@ -65,7 +66,11 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
           workingDirectory: workingDirectory,
           environment: environment,
           allowInternet: allowInternet,
-          resourceLimits: SandboxResourceLimits(cpuCores: maxCpuCores),
+          resourceLimits: SandboxResourceLimits(
+            cpuCores: maxCpuCores,
+            memoryMb: maxMemoryMb,
+            maxProcesses: maxProcesses,
+          ),
           extraReadOnlyPaths: extraReadOnlyPaths,
         );
   final process = await Process.start(
@@ -111,14 +116,12 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
     }
   }
 
-  final stdoutText = process.stdout.transform(systemEncoding.decoder);
-  final stderrText = process.stderr.transform(systemEncoding.decoder);
-  final stdoutDone = stdoutText.listen((chunk) {
-    stdoutBuffer.write(chunk);
+  final stdoutDone = process.stdout.listen((chunk) {
+    stdoutBuffer.writeBytes(chunk);
     if (stdoutBuffer.exceeded) markOutputLimitExceeded();
   }).asFuture<void>();
-  final stderrDone = stderrText.listen((chunk) {
-    stderrBuffer.write(chunk);
+  final stderrDone = process.stderr.listen((chunk) {
+    stderrBuffer.writeBytes(chunk);
     if (stderrBuffer.exceeded) markOutputLimitExceeded();
   }).asFuture<void>();
 
@@ -364,27 +367,36 @@ bool _tryKillPid(int pid, ProcessSignal? signal) {
   }
 }
 
+/// Collects raw process output, enforcing the limit on undecoded bytes so
+/// multibyte encodings cannot exceed the byte contract before decode.
 class _BoundedTextCollector {
-  _BoundedTextCollector(this.maxChars) : assert(maxChars > 0);
+  _BoundedTextCollector(this.maxBytes) : assert(maxBytes > 0);
 
-  final int maxChars;
-  final _buffer = StringBuffer();
+  final int maxBytes;
+  final _bytes = BytesBuilder(copy: false);
   bool exceeded = false;
 
-  String get text => _buffer.toString();
+  String get text {
+    final bytes = _bytes.toBytes();
+    try {
+      return systemEncoding.decode(bytes);
+    } on Object {
+      return String.fromCharCodes(bytes);
+    }
+  }
 
-  void write(String chunk) {
+  void writeBytes(List<int> chunk) {
     if (exceeded) return;
-    final remaining = maxChars - _buffer.length;
+    final remaining = maxBytes - _bytes.length;
     if (remaining <= 0) {
       exceeded = true;
       return;
     }
     if (chunk.length <= remaining) {
-      _buffer.write(chunk);
+      _bytes.add(chunk);
       return;
     }
-    _buffer.write(chunk.substring(0, remaining));
+    _bytes.add(chunk.sublist(0, remaining));
     exceeded = true;
   }
 }

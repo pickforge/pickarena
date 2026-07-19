@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:dart_arena/analytics/result_primitives.dart';
 import 'package:dart_arena/core/task_bundle_digest.dart';
 import 'package:dart_arena/core/model_identity.dart';
+import 'package:dart_arena/export/environment_compatibility.dart';
 
 const _standardBundleFilePaths = [
   'report.md',
@@ -111,11 +112,16 @@ class ReleaseReportOptions {
     required this.releaseId,
     this.minSamplesPerModel = 2,
     this.minHiddenFlakeRunsPerTask = 3,
+    this.allowMixedEnvironmentAggregates = false,
   });
 
   final String releaseId;
   final int minSamplesPerModel;
   final int minHiddenFlakeRunsPerTask;
+
+  /// Explicit policy escape hatch: permits aggregates spanning multiple
+  /// execution environments (environment IDs, Dart/Flutter versions).
+  final bool allowMixedEnvironmentAggregates;
 }
 
 class ReleaseArtifactBundleInput {
@@ -245,6 +251,8 @@ Map<String, Object?> buildReleaseReport({
     source: source,
     runIds: runIds,
     blockers: blockers,
+    reportWarnings: warnings,
+    allowMixedEnvironmentAggregates: options.allowMixedEnvironmentAggregates,
   );
   final taskModelCellSummary = _taskModelCellSummary(
     rawCells: leaderboard['taskModelCells'],
@@ -5523,6 +5531,8 @@ Map<String, Object?> _sourceRunProvenanceSummary({
   required Map<String, Object?> source,
   required List<String> runIds,
   required Set<String> blockers,
+  required Set<String> reportWarnings,
+  required bool allowMixedEnvironmentAggregates,
 }) {
   final sourceRunProvenance = _objectMap(source['runProvenance']);
   final rawSourceRunProvenance = source['runProvenance'];
@@ -5576,6 +5586,12 @@ Map<String, Object?> _sourceRunProvenanceSummary({
   for (final warning in warnings) {
     blockers.add('Leaderboard source run provenance warning: $warning');
   }
+  _blockMixedEnvironmentAggregates(
+    sourceRunProvenance: sourceRunProvenance,
+    blockers: blockers,
+    reportWarnings: reportWarnings,
+    allowMixedEnvironmentAggregates: allowMixedEnvironmentAggregates,
+  );
   _blockIfIncompleteRunCoverage(
     blockers: blockers,
     fieldLabel: 'stored provenance',
@@ -5645,6 +5661,37 @@ Map<String, Object?> _sourceRunProvenanceSummary({
   };
 }
 
+void _blockMixedEnvironmentAggregates({
+  required Map<String, Object?> sourceRunProvenance,
+  required Set<String> blockers,
+  required Set<String> reportWarnings,
+  required bool allowMixedEnvironmentAggregates,
+}) {
+  const fields = {
+    'environmentIds': 'environment ID',
+    'dartVersions': 'Dart version',
+    'flutterVersions': 'Flutter version',
+  };
+  for (final entry in fields.entries) {
+    final values = _stringList(sourceRunProvenance[entry.key]);
+    if (values.length <= 1) continue;
+    final message =
+        'Leaderboard aggregate spans ${values.length} ${entry.value}s: '
+        '${values.join(', ')}.';
+    if (allowMixedEnvironmentAggregates) {
+      reportWarnings.add(
+        '$message Permitted by allowMixedEnvironmentAggregates policy.',
+      );
+    } else {
+      blockers.add(
+        '$message Aggregates must not span multiple execution environments '
+        'unless the mixed-environment aggregation policy is explicitly '
+        'enabled.',
+      );
+    }
+  }
+}
+
 void _blockIfIncompleteRunCoverage({
   required Set<String> blockers,
   required String fieldLabel,
@@ -5681,6 +5728,21 @@ void _crossCheckSourceRunProvenance({
     blockers.add(
       'Leaderboard source run provenance ${entry.value} count does not match '
       'stored run provenance.',
+    );
+  }
+
+  const environmentFields = {
+    'environmentIds': 'environment IDs',
+    'dartVersions': 'Dart versions',
+    'flutterVersions': 'Flutter versions',
+  };
+  for (final entry in environmentFields.entries) {
+    final sourceValues = _stringList(sourceRunProvenance[entry.key])..sort();
+    final storedValues = _stringList(storedRunProvenance[entry.key])..sort();
+    if (_stringListsEqual(sourceValues, storedValues)) continue;
+    blockers.add(
+      'Leaderboard source run provenance ${entry.value} do not match stored '
+      'run provenance.',
     );
   }
 }
@@ -7167,6 +7229,20 @@ Map<String, Object?> _verifierAudit(
           'Task QA report ${_taskKey(report)} has incomplete task resource limit metadata.',
         );
       }
+
+      final resourceEnforcementStatus = _taskResourceEnforcementStatus(
+        executionPolicy,
+      );
+      if (resourceEnforcementStatus != 'present') {
+        tasksWithExecutionPolicyIssues.add({
+          ...taskRef,
+          'status': resourceEnforcementStatus,
+        });
+        blockers.add(
+          'Task QA report ${_taskKey(report)} has incomplete or unenforced '
+          'task resource limit provenance.',
+        );
+      }
     }
     final hiddenDigests = _objectMap(report['hiddenVerifierDigests']);
     if (hiddenDigests.isEmpty) {
@@ -8006,6 +8082,9 @@ Map<String, Object?> _provenanceSummary({
   var sdkVersionRunCount = 0;
   var dependencySnapshotRunCount = 0;
   var pricingRegistryRunCount = 0;
+  final dartVersions = <String>{};
+  final flutterVersions = <String>{};
+  final environmentIds = <String>{};
   var resultProvenanceCount = 0;
   var cleanReplayResultCount = 0;
   final gradingModeCounts = SplayTreeMap<String, int>();
@@ -8134,6 +8213,16 @@ Map<String, Object?> _provenanceSummary({
       }
     }
     if (provenance != null) {
+      final environment = _objectMap(provenance['environment']);
+      final dartVersion = environmentSdkVersion(environment['dartVersion']);
+      final flutterVersion = environmentSdkVersion(
+        environment['flutterVersion'],
+      );
+      final environmentId = environmentCompatibilityId(environment);
+      if (dartVersion != null) dartVersions.add(dartVersion);
+      if (flutterVersion != null) flutterVersions.add(flutterVersion);
+      if (environmentId != null) environmentIds.add(environmentId);
+
       if (sandboxStatus['status'] == 'enforced') {
         sandboxEnforcedRunCount++;
       } else {
@@ -8216,6 +8305,9 @@ Map<String, Object?> _provenanceSummary({
     'sdkVersionRunCount': sdkVersionRunCount,
     'dependencySnapshotRunCount': dependencySnapshotRunCount,
     'pricingRegistryRunCount': pricingRegistryRunCount,
+    'dartVersions': dartVersions.toList()..sort(),
+    'flutterVersions': flutterVersions.toList()..sort(),
+    'environmentIds': environmentIds.toList()..sort(),
     'resultProvenanceCount': resultProvenanceCount,
     'cleanReplayResultCount': cleanReplayResultCount,
     'gradingModeCounts': gradingModeCounts,
@@ -8357,8 +8449,11 @@ String _taskResourceEnforcementStatus(Map<String, Object?> policy) {
     if (enforced is! bool) return 'incomplete_enforcement';
     final mechanism = _nonEmptyString(field['mechanism']);
     if (mechanism == null) return 'incomplete_enforcement';
-    if (field['kernelEnforced'] is! bool) return 'incomplete_enforcement';
-    if (!enforced) sawNotEnforced = true;
+    final kernelEnforced = field['kernelEnforced'];
+    if (kernelEnforced is! bool) return 'incomplete_enforcement';
+    if (!enforced || (key != 'maxOutputBytes' && !kernelEnforced)) {
+      sawNotEnforced = true;
+    }
   }
   return sawNotEnforced ? 'not_enforced' : 'present';
 }
@@ -8592,6 +8687,14 @@ List<String> _stringList(Object? value) {
     for (final item in value)
       if (item is String) item,
   ];
+}
+
+bool _stringListsEqual(List<String> left, List<String> right) {
+  if (left.length != right.length) return false;
+  for (var index = 0; index < left.length; index++) {
+    if (left[index] != right[index]) return false;
+  }
+  return true;
 }
 
 List<String> _nonEmptyStringList(Object? value) {

@@ -233,10 +233,18 @@ Future<void> _expectOfficialAdmissionReportSatisfied(
     dependencySnapshot['files'],
     containsPair('pubspec.lock', isA<Map<String, Object?>>()),
   );
+  // The checked-in report was generated with the claimed sandbox state; the
+  // claim itself is verified against reality by _verifyOfficialSandboxClaims.
+  final admissionSandboxClaim =
+      ((admission['runtimeIsolation']
+              as Map<String, Object?>)['generatedCodeSandbox']
+          as Map<String, Object?>);
   expect(admission['executionPolicy'], {
     'allowInternet': false,
     'resources': task.resourceLimits.toJson(),
-    'resourceEnforcement': taskResourceEnforcementJson(),
+    'resourceEnforcement': taskResourceEnforcementJson(
+      kernelEnforcementAvailable: admissionSandboxClaim['enforced'] == true,
+    ),
   });
   final sandboxClaims = _verifyOfficialSandboxClaims(
     taskId: task.id,

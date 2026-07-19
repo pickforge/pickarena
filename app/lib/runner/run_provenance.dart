@@ -241,8 +241,16 @@ Future<String> buildRunProvenanceJson({
           .toList()
         ..sort((a, b) => (a['id']! as String).compareTo(b['id']! as String));
 
-  final tasks = config.tasks.map(_taskJson).toList()
-    ..sort((a, b) => (a['id']! as String).compareTo(b['id']! as String));
+  final tasks =
+      config.tasks
+          .map(
+            (task) => _taskJson(
+              task,
+              kernelEnforcementAvailable: config.generatedCodeSandboxEnforced,
+            ),
+          )
+          .toList()
+        ..sort((a, b) => (a['id']! as String).compareTo(b['id']! as String));
 
   final sortedCombos = combos.toList()
     ..sort((a, b) => a.index.compareTo(b.index));
@@ -344,7 +352,10 @@ String appendResultProvenance(
   ).convert({...decoded, 'resultProvenance': resultProvenance});
 }
 
-Map<String, Object?> _taskJson(BenchmarkTask task) {
+Map<String, Object?> _taskJson(
+  BenchmarkTask task, {
+  required bool kernelEnforcementAvailable,
+}) {
   final timeout = task.timeout;
   return {
     'id': task.id,
@@ -360,7 +371,9 @@ Map<String, Object?> _taskJson(BenchmarkTask task) {
     'executionPolicy': {
       'allowInternet': task.allowInternet,
       'resources': task.effectiveResourceLimits.toJson(),
-      'resourceEnforcement': taskResourceEnforcementJson(),
+      'resourceEnforcement': taskResourceEnforcementJson(
+        kernelEnforcementAvailable: kernelEnforcementAvailable,
+      ),
     },
     'generatedCodePath': task.generatedCodePath,
     'isFlutter': task.isFlutter,

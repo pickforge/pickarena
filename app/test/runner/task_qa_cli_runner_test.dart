@@ -146,7 +146,9 @@ void main() {
       expect(report['executionPolicy'], {
         'allowInternet': false,
         'resources': defaultTaskResourceLimits.toJson(),
-        'resourceEnforcement': taskResourceEnforcementJson(),
+        'resourceEnforcement': taskResourceEnforcementJson(
+          kernelEnforcementAvailable: false,
+        ),
       });
       expect(report['release'], {
         'corpus': 'public_diagnostic',

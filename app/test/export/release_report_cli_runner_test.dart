@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:dart_arena/core/task_bundle_digest.dart';
 import 'package:dart_arena/core/task_integrity.dart';
+import 'package:dart_arena/export/environment_compatibility.dart';
 import 'package:dart_arena/export/release_report_cli_runner.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
@@ -11,6 +12,21 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
+
+final _fixtureRunEnvironmentId = environmentCompatibilityId({
+  'dartVersion': '3.9.0',
+  'flutterVersion': '3.35.0',
+  'dependencySnapshot': {
+    'status': 'present',
+    'files': {
+      'pubspec.lock': {
+        'sha256':
+            '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+        'bytes': 12345,
+      },
+    },
+  },
+})!;
 
 void main() {
   test('release report CLI help emits JSON', () async {
@@ -2104,7 +2120,7 @@ void main() {
       'generatedCodeSandboxBackends': ['test-sandbox'],
       'dartVersions': ['3.9.0'],
       'flutterVersions': ['3.35.0'],
-      'environmentIds': ['test-env-1'],
+      'environmentIds': [_fixtureRunEnvironmentId],
       'warnings': <Object?>[],
     });
     expect(leaderboard['taskModelCells'], {
@@ -11060,7 +11076,7 @@ Map<String, Object?> _leaderboardJson({
         'generatedCodeSandboxBackends': ['test-sandbox'],
         'dartVersions': ['3.9.0'],
         'flutterVersions': ['3.35.0'],
-        'environmentIds': ['test-env-1'],
+        'environmentIds': [_fixtureRunEnvironmentId],
         'warnings': <String>[],
       },
   },
@@ -12554,6 +12570,7 @@ Map<String, Object?> _taskQaReportJson({
             'maxProcesses': 64,
             'maxOutputBytes': 1048576,
           },
+          'resourceEnforcement': _fullyEnforcedResourcePolicy(),
         },
   'checks': {
     'baselineHiddenFailed': true,

@@ -30,9 +30,15 @@ class SandboxedProcessStart {
 }
 
 class SandboxResourceLimits {
-  const SandboxResourceLimits({this.cpuCores});
+  const SandboxResourceLimits({
+    this.cpuCores,
+    this.memoryMb,
+    this.maxProcesses,
+  });
 
   final int? cpuCores;
+  final int? memoryMb;
+  final int? maxProcesses;
 }
 
 abstract class GeneratedCodeSandbox {
@@ -219,6 +225,10 @@ class BubblewrapGeneratedCodeSandbox extends GeneratedCodeSandbox {
           '--expand-environment=no',
           '-p',
           'CPUQuota=100%',
+          '-p',
+          'MemoryMax=8G',
+          '-p',
+          'TasksMax=64',
           '/usr/bin/env',
           'true',
         ],
@@ -229,14 +239,16 @@ class BubblewrapGeneratedCodeSandbox extends GeneratedCodeSandbox {
     } on Object catch (error) {
       throw GeneratedCodeSandboxException(
         'Bubblewrap generated-code sandbox requires a user systemd cgroup '
-        'scope for CPU enforcement, but "$executable" could not be started: '
+        'scope for resource enforcement, but "$executable" could not be '
+        'started: '
         '$error',
       );
     }
     if (result.exitCode != 0) {
       throw GeneratedCodeSandboxException(
         'Bubblewrap generated-code sandbox requires a user systemd cgroup '
-        'scope for CPU enforcement, but "$executable --user --scope" exited '
+        'scope for resource enforcement, but "$executable --user --scope" '
+        'exited '
         'with code ${result.exitCode}: ${result.stderr}',
       );
     }
@@ -247,10 +259,24 @@ class BubblewrapGeneratedCodeSandbox extends GeneratedCodeSandbox {
     SandboxResourceLimits? resourceLimits,
   ) {
     final cpuCores = resourceLimits?.cpuCores;
-    if (cpuCores == null) return processStart;
-    if (cpuCores <= 0) {
+    final memoryMb = resourceLimits?.memoryMb;
+    final maxProcesses = resourceLimits?.maxProcesses;
+    if (cpuCores == null && memoryMb == null && maxProcesses == null) {
+      return processStart;
+    }
+    if (cpuCores != null && cpuCores <= 0) {
       throw GeneratedCodeSandboxException(
         'Generated-code CPU limit must be positive, got $cpuCores.',
+      );
+    }
+    if (memoryMb != null && memoryMb <= 0) {
+      throw GeneratedCodeSandboxException(
+        'Generated-code memory limit must be positive, got $memoryMb.',
+      );
+    }
+    if (maxProcesses != null && maxProcesses <= 0) {
+      throw GeneratedCodeSandboxException(
+        'Generated-code process limit must be positive, got $maxProcesses.',
       );
     }
     return SandboxedProcessStart(
@@ -260,8 +286,9 @@ class BubblewrapGeneratedCodeSandbox extends GeneratedCodeSandbox {
         '--scope',
         '--quiet',
         '--expand-environment=no',
-        '-p',
-        'CPUQuota=${cpuCores * 100}%',
+        if (cpuCores != null) ...['-p', 'CPUQuota=${cpuCores * 100}%'],
+        if (memoryMb != null) ...['-p', 'MemoryMax=${memoryMb}M'],
+        if (maxProcesses != null) ...['-p', 'TasksMax=$maxProcesses'],
         processStart.executable,
         ...processStart.arguments,
       ],

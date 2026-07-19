@@ -29,21 +29,21 @@
         "status": "present",
         "files": {
           "pubspec.yaml": {
-            "sha256": "2a498deb8c1429354f0bc37237f3542c6627d8abe738e9100f3cd41dc8cd402a",
-            "bytes": 3005
+            "sha256": "b61d75727520f9d83d1303865b3c5b000e5c3e6f1d9f6a165f12250c526b57eb",
+            "bytes": 752
           },
           "pubspec.lock": {
-            "sha256": "a525ac392cf5af32fd57b9e9cc9c98224faa82a69a7411cc338b53f6130718f4",
-            "bytes": 29033
+            "sha256": "2692c4215d210527c34986a1f5d7c46b5bc14ba1e36446a01fcab7193e68e197",
+            "bytes": 18603
           }
         }
       },
       "flutterVersion": "3.41.6",
-      "gitCommit": "1e76b02fc4efaa4b96e1d5a58ae53a7ee8f8a598",
+      "gitCommit": "531e69809e742137852643886ffbc93f635608c4",
       "gitDirty": false,
       "hostPlatform": "linux",
-      "locale": "C.UTF-8",
-      "operatingSystemVersion": "Linux 7.1.3-1-cachyos #1 SMP PREEMPT_DYNAMIC Mon, 06 Jul 2026 19:44:10 +0000"
+      "locale": "en_US.UTF-8",
+      "operatingSystemVersion": "Linux 7.1.3-2-cachyos #1 SMP PREEMPT_DYNAMIC Wed, 08 Jul 2026 18:34:01 +0000"
     },
     "taskBundleDigest": "36f818f37f1d599edf3204494b9aa9548dea798f1f671ce9fbdf5abb4005b907"
   },
@@ -63,17 +63,17 @@
       },
       "memoryMb": {
         "enforced": true,
-        "mechanism": "rssPolling",
-        "kernelEnforced": false
+        "mechanism": "systemdMemoryMax",
+        "kernelEnforced": true
       },
       "maxProcesses": {
         "enforced": true,
-        "mechanism": "processTreePolling",
-        "kernelEnforced": false
+        "mechanism": "systemdTasksMax",
+        "kernelEnforced": true
       },
       "maxOutputBytes": {
         "enforced": true,
-        "mechanism": "boundedOutputCapture",
+        "mechanism": "boundedByteOutputCapture",
         "kernelEnforced": false
       }
     }
@@ -225,7 +225,7 @@
     }
   },
   "status": "admitted",
-  "generatedAt": "2026-07-09T17:04:20.330303Z",
+  "generatedAt": "2026-07-19T07:51:28.746668Z",
   "checks": {
     "baselineHiddenFailed": true,
     "referencePublicPassed": true,
@@ -296,7 +296,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 11.3s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 8.4s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -311,7 +311,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 9.5s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 7.1s)\n",
             "tool": "flutter"
           }
         },
@@ -413,8 +413,8 @@
           "rationale": "analysis errors present",
           "details": {
             "exitCode": 1,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \n\n  error • The named parameter 'onValueChanged' is required, but there's no corresponding argument • test/quantity_stepper_test.dart:13:13 • missing_required_argument\n  error • The named parameter 'onChanged' isn't defined • test/quantity_stepper_test.dart:17:9 • undefined_named_parameter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:33:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:35:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:60:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:89:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:104:34 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:120:34 • undefined_getter\n\n",
-            "stderr": "8 issues found. (ran in 11.3s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \n\n  error • The named parameter 'onValueChanged' is required, but there's no corresponding argument • test/quantity_stepper_test.dart:13:13 • missing_required_argument\n  error • The named parameter 'onChanged' isn't defined • test/quantity_stepper_test.dart:17:9 • undefined_named_parameter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:33:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:35:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:60:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:89:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:104:34 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:120:34 • undefined_getter\n\n",
+            "stderr": "8 issues found. (ran in 8.4s)\n",
             "tool": "flutter"
           }
         },
@@ -428,8 +428,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 1,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \n\n  error • The named parameter 'onValueChanged' is required, but there's no corresponding argument • test/quantity_stepper_test.dart:13:13 • missing_required_argument\n  error • The named parameter 'onChanged' isn't defined • test/quantity_stepper_test.dart:17:9 • undefined_named_parameter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:33:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:35:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:60:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:89:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:104:34 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:120:34 • undefined_getter\n\n",
-            "stderr": "8 issues found. (ran in 9.6s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \n\n  error • The named parameter 'onValueChanged' is required, but there's no corresponding argument • test/quantity_stepper_test.dart:13:13 • missing_required_argument\n  error • The named parameter 'onChanged' isn't defined • test/quantity_stepper_test.dart:17:9 • undefined_named_parameter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:33:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:35:39 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:60:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:89:49 • undefined_getter\n  error • The getter 'decrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:104:34 • undefined_getter\n  error • The getter 'incrementButtonKey' isn't defined for the type 'QuantityStepper' • test/quantity_stepper_test.dart:120:34 • undefined_getter\n\n",
+            "stderr": "8 issues found. (ran in 7.1s)\n",
             "tool": "flutter"
           }
         },
@@ -480,7 +480,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 11.4s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 8.3s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -495,7 +495,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 9.6s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 7.1s)\n",
             "tool": "flutter"
           }
         },
@@ -597,7 +597,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 11.7s)\n",
+            "stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 8.4s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -612,7 +612,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 9.5s)\n",
+            "raw_stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 7.3s)\n",
             "tool": "flutter"
           }
         },
@@ -714,7 +714,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 11.7s)\n",
+            "stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 8.4s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -729,7 +729,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 9.5s)\n",
+            "raw_stdout": "Analyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 7.1s)\n",
             "tool": "flutter"
           }
         },
@@ -835,7 +835,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 11.4s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 8.3s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -850,7 +850,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.18.3 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 9.5s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_accessib_d5e4553bf0e9...                      \nNo issues found! (ran in 7.2s)\n",
             "tool": "flutter"
           }
         },

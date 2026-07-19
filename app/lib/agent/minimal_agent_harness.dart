@@ -210,7 +210,7 @@ class MinimalAgentHarness implements AgentHarness, AgentHarnessProvenance {
     required Iterable<String> deniedEnvironmentKeys,
     required bool allowInternet,
   }) async {
-    final environment = benchmarkSubprocessEnvironment(
+    final environment = harnessSubprocessEnvironment(
       additionalDeniedKeys: deniedEnvironmentKeys,
       homeDirectory: workspace.path,
     );
