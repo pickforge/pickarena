@@ -536,6 +536,56 @@ void main() {
     expect(encoded, isNot(contains('secret-provider-config')));
   });
 
+  test('source rejects legacy polling-only resource enforcement', () async {
+    final provenance =
+        jsonDecode(_completeRunProvenanceJson()) as Map<String, Object?>;
+    final task =
+        (provenance['tasks']! as List<Object?>).single as Map<String, Object?>;
+    final policy = task['executionPolicy']! as Map<String, Object?>;
+    final enforcement = policy['resourceEnforcement']! as Map<String, Object?>;
+    enforcement['memoryMb'] = {
+      'enforced': true,
+      'mechanism': 'rssPolling',
+      'kernelEnforced': false,
+    };
+    enforcement['maxProcesses'] = {
+      'enforced': true,
+      'mechanism': 'processTreePolling',
+      'kernelEnforced': false,
+    };
+    await _seedRun(
+      db,
+      id: 'legacy-polling',
+      completedAt: DateTime.utc(2026, 5, 1),
+      provenanceJson: jsonEncode(provenance),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'legacy-polling-a',
+      runId: 'legacy-polling',
+      taskId: 'task.a',
+    );
+
+    final export = await buildLeaderboardExport(
+      db,
+      options: const LeaderboardExportOptions(
+        track: 'agentic',
+        strategy: LeaderboardExportStrategy.latestRun,
+      ),
+    );
+
+    final summary =
+        (export['source']! as Map<String, Object?>)['runProvenance']!
+            as Map<String, Object?>;
+    expect(summary['taskResourceLimitRunCount'], 0);
+    expect(
+      summary['warnings'],
+      contains(
+        'Run legacy-polling has incomplete or unenforced task resource limit provenance.',
+      ),
+    );
+  });
+
   test('latest-run exports only the latest completed run for track', () async {
     await _seedRun(db, id: 'old', completedAt: DateTime.utc(2026, 5, 1));
     await _seedTaskRun(db, id: 'old-a', runId: 'old', taskId: 'task.a');

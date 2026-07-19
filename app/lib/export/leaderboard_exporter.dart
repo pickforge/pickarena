@@ -8,6 +8,7 @@ import 'package:dart_arena/core/evaluation_status.dart';
 import 'package:dart_arena/core/evaluator_classification.dart';
 import 'package:dart_arena/core/model_identity.dart';
 import 'package:dart_arena/core/scoring.dart';
+import 'package:dart_arena/export/environment_compatibility.dart';
 import 'package:dart_arena/storage/database.dart';
 import 'package:crypto/crypto.dart';
 
@@ -1114,7 +1115,7 @@ class _SourceRunProvenanceSummary {
         warnings.add('Run ${run.id} has incomplete SDK version provenance.');
       }
 
-      final environmentId = _environmentId(environment);
+      final environmentId = environmentCompatibilityId(environment);
       if (environmentId != null) environmentIds.add(environmentId);
 
       if (_hasDependencySnapshot(environment)) {
@@ -1247,46 +1248,16 @@ bool _hasTaskResourceEnforcement(Map<String, Object?> policy) {
     if (field['enforced'] != true) return false;
     final mechanism = _nonEmptyString(field['mechanism']);
     if (mechanism == null) return false;
-    if (field['kernelEnforced'] is! bool) return false;
+    final kernelEnforced = field['kernelEnforced'];
+    if (kernelEnforced is! bool) return false;
+    if (key != 'maxOutputBytes' && !kernelEnforced) return false;
   }
   return true;
 }
 
 bool _positiveNumber(Object? value) => value is num && value > 0;
 
-String? _sdkVersion(Object? value) {
-  final version = _nonEmptyString(value);
-  if (version == null || version == 'unknown') return null;
-  return version.split(RegExp(r'\s+')).first;
-}
-
-String? _environmentCompatibilityKey(Map<String, Object?> environment) {
-  final dartVersion = _sdkVersion(environment['dartVersion']);
-  final flutterVersion = _sdkVersion(environment['flutterVersion']);
-  final lockfile = _dependencyLockfile(environment);
-  final hostPlatform = _nonEmptyString(environment['hostPlatform']);
-  if (dartVersion == null &&
-      flutterVersion == null &&
-      lockfile == null &&
-      hostPlatform == null) {
-    return null;
-  }
-
-  return jsonEncode({
-    'dartVersion': dartVersion,
-    'flutterVersion': flutterVersion,
-    'hostPlatform': hostPlatform,
-    'pubspecLockSha256': lockfile == null
-        ? null
-        : _nonEmptyString(lockfile['sha256']),
-  });
-}
-
-String? _environmentId(Map<String, Object?> environment) {
-  final key = _environmentCompatibilityKey(environment);
-  if (key == null) return null;
-  return sha256.convert(utf8.encode(key)).toString().substring(0, 12);
-}
+String? _sdkVersion(Object? value) => environmentSdkVersion(value);
 
 bool _hasDependencySnapshot(Map<String, Object?> environment) {
   final snapshot = _objectMap(environment['dependencySnapshot']);
@@ -1403,7 +1374,7 @@ String? _corpusManifestDigestForRun(Run run) {
 String? _environmentKeyForRun(Run run) {
   final provenance = _decodeRunProvenance(run.provenanceJson);
   if (provenance == null) return null;
-  return _environmentCompatibilityKey(_objectMap(provenance['environment']));
+  return environmentCompatibilityKey(_objectMap(provenance['environment']));
 }
 
 Map<String, String> _harnessKinds(Run run, List<TaskRun> taskRuns) {

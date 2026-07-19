@@ -244,11 +244,13 @@ void main() {
         baseEnvironment: const {
           'PATH': '/usr/bin',
           'FACTORY_API_KEY': 'droid-auth',
+          'CODEX_HOME': '/opt/codex-auth',
         },
-        allowedSensitiveKeys: const ['FACTORY_API_KEY'],
+        allowedSensitiveKeys: const ['FACTORY_API_KEY', 'CODEX_HOME'],
       );
 
       expect(env, containsPair('FACTORY_API_KEY', 'droid-auth'));
+      expect(env, containsPair('CODEX_HOME', '/opt/codex-auth'));
     });
 
     test('denied keys override the harness allowlist', () {

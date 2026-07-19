@@ -225,6 +225,10 @@ class BubblewrapGeneratedCodeSandbox extends GeneratedCodeSandbox {
           '--expand-environment=no',
           '-p',
           'CPUQuota=100%',
+          '-p',
+          'MemoryMax=8G',
+          '-p',
+          'TasksMax=64',
           '/usr/bin/env',
           'true',
         ],
@@ -235,14 +239,16 @@ class BubblewrapGeneratedCodeSandbox extends GeneratedCodeSandbox {
     } on Object catch (error) {
       throw GeneratedCodeSandboxException(
         'Bubblewrap generated-code sandbox requires a user systemd cgroup '
-        'scope for CPU enforcement, but "$executable" could not be started: '
+        'scope for resource enforcement, but "$executable" could not be '
+        'started: '
         '$error',
       );
     }
     if (result.exitCode != 0) {
       throw GeneratedCodeSandboxException(
         'Bubblewrap generated-code sandbox requires a user systemd cgroup '
-        'scope for CPU enforcement, but "$executable --user --scope" exited '
+        'scope for resource enforcement, but "$executable --user --scope" '
+        'exited '
         'with code ${result.exitCode}: ${result.stderr}',
       );
     }
