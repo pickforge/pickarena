@@ -240,7 +240,9 @@ void main() {
           'maxProcesses': 64,
           'maxOutputBytes': 1048576,
         },
-        'resourceEnforcement': taskResourceEnforcementJson(),
+        'resourceEnforcement': taskResourceEnforcementJson(
+          kernelEnforcementAvailable: false,
+        ),
       });
       expect(taskJson['generatedCodePath'], 'lib/answer.dart');
       expect(taskJson['isFlutter'], isTrue);
@@ -367,7 +369,9 @@ void main() {
         'maxProcesses': 64,
         'maxOutputBytes': 2048,
       },
-      'resourceEnforcement': taskResourceEnforcementJson(),
+      'resourceEnforcement': taskResourceEnforcementJson(
+        kernelEnforcementAvailable: false,
+      ),
     });
   });
 

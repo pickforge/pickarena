@@ -164,6 +164,51 @@ void main() {
   );
 
   test(
+    'memory and process limits map to systemd MemoryMax and TasksMax',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_bwrap_kernel_limits_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final workDir = Directory(p.join(root.path, 'work'))..createSync();
+
+      final spec =
+          await const BubblewrapGeneratedCodeSandbox(
+            bwrapExecutable: 'bwrap-test',
+            systemdRunExecutable: 'systemd-run-test',
+          ).wrapProcess(
+            executable: '/usr/bin/env',
+            arguments: const ['true'],
+            workingDirectory: workDir.path,
+            environment: {'PATH': '/usr/bin:/bin'},
+            allowInternet: false,
+            resourceLimits: const SandboxResourceLimits(
+              cpuCores: 2,
+              memoryMb: 8192,
+              maxProcesses: 64,
+            ),
+          );
+
+      expect(spec.executable, 'systemd-run-test');
+      expect(
+        spec.arguments,
+        containsAllInOrder([
+          '-p',
+          'CPUQuota=200%',
+          '-p',
+          'MemoryMax=8192M',
+          '-p',
+          'TasksMax=64',
+          'bwrap-test',
+        ]),
+      );
+    },
+    skip: Platform.isLinux ? false : 'Bubblewrap is Linux-only',
+  );
+
+  test(
     'extra read-only paths are mounted without binding their parent roots',
     () async {
       final root = await Directory.systemTemp.createTemp(
@@ -493,22 +538,36 @@ echo private-temp-read-only-system
       final workDir = Directory(p.join(root.path, 'work'))..createSync();
 
       final result = await runEvaluatorProcess(
-        'sh',
-        const ['-c', 'sleep 10 & sleep 10 & wait'],
+        'python3',
+        const [
+          '-c',
+          '''
+import os
+import sys
+import time
+try:
+    for _ in range(20):
+        pid = os.fork()
+        if pid == 0:
+            time.sleep(10)
+            os._exit(0)
+except OSError:
+    sys.exit(42)
+''',
+        ],
         workingDirectory: workDir.path,
         environment: {'PATH': '/usr/bin:/bin', 'HOME': workDir.path},
         generatedCodeSandbox: const BubblewrapGeneratedCodeSandbox(),
         allowInternet: false,
         timeout: const Duration(seconds: 5),
-        maxProcesses: 1,
+        maxProcesses: 8,
       );
 
       final reason =
           'stdout=${result.stdout} stderr=${result.stderr} '
           'timedOut=${result.timedOut} processLimit=${result.processLimitExceeded}';
-      expect(result.exitCode, -1, reason: reason);
-      expect(result.processLimitExceeded, isTrue, reason: reason);
-      expect(result.observedProcessCount, greaterThan(1));
+      expect(result.exitCode, 42, reason: reason);
+      expect(result.timedOut, isFalse, reason: reason);
     },
     skip: Platform.isLinux ? false : 'Bubblewrap is Linux-only',
   );

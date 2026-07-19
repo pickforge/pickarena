@@ -207,6 +207,87 @@ void main() {
     ]);
   });
 
+  test('aggregate-compatible separates incompatible environments', () async {
+    final incompatibleRuns = {
+      'env-dart': _environmentProvenanceJson(dartVersion: '3.11.3'),
+      'env-flutter': _environmentProvenanceJson(flutterVersion: '3.41.5'),
+      'env-host': _environmentProvenanceJson(hostPlatform: 'macos'),
+      'env-lock': _environmentProvenanceJson(lockDigestChar: 'b'),
+    };
+    for (final entry in incompatibleRuns.entries) {
+      await _seedRun(
+        db,
+        id: entry.key,
+        completedAt: DateTime.utc(2026, 5, 1),
+        provenanceJson: entry.value,
+      );
+      await _seedTaskRun(
+        db,
+        id: '${entry.key}-a',
+        runId: entry.key,
+        taskId: 'task.a',
+      );
+    }
+    await _seedRun(
+      db,
+      id: 'env-latest',
+      completedAt: DateTime.utc(2026, 5, 2),
+      provenanceJson: _environmentProvenanceJson(),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'env-latest-a',
+      runId: 'env-latest',
+      taskId: 'task.a',
+    );
+
+    final export = await buildLeaderboardExport(
+      db,
+      options: const LeaderboardExportOptions(track: 'agentic'),
+    );
+
+    expect((export['source']! as Map<String, Object?>)['runIds'], [
+      'env-latest',
+    ]);
+  });
+
+  test('aggregate-compatible aggregates matching environments', () async {
+    await _seedRun(
+      db,
+      id: 'same-env-old',
+      completedAt: DateTime.utc(2026, 5, 1),
+      provenanceJson: _environmentProvenanceJson(dartVersion: '3.11.4'),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'same-env-old-a',
+      runId: 'same-env-old',
+      taskId: 'task.a',
+    );
+    await _seedRun(
+      db,
+      id: 'same-env-latest',
+      completedAt: DateTime.utc(2026, 5, 2),
+      provenanceJson: _environmentProvenanceJson(dartVersion: '3.11.4'),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'same-env-latest-a',
+      runId: 'same-env-latest',
+      taskId: 'task.a',
+    );
+
+    final export = await buildLeaderboardExport(
+      db,
+      options: const LeaderboardExportOptions(track: 'agentic'),
+    );
+
+    expect((export['source']! as Map<String, Object?>)['runIds'], [
+      'same-env-latest',
+      'same-env-old',
+    ]);
+  });
+
   test('aggregate-compatible separates command-template versions', () async {
     for (final entry in [
       ('old', DateTime.utc(2026, 5, 1), '1.0.0'),
@@ -1411,6 +1492,33 @@ String _harnessProvenanceJson(String kind, {String? agent, String? version}) =>
         },
       },
     });
+
+String _environmentProvenanceJson({
+  String dartVersion = '3.11.4',
+  String flutterVersion = '3.41.6',
+  String hostPlatform = 'linux',
+  String lockDigestChar = 'a',
+}) => jsonEncode({
+  'schemaVersion': 2,
+  'config': {
+    'scoringSchemaVersion': 2,
+    'evaluatorWeights': {'compile': 1.0},
+  },
+  'environment': {
+    'hostPlatform': hostPlatform,
+    'dartVersion': dartVersion,
+    'flutterVersion': flutterVersion,
+    'dependencySnapshot': {
+      'status': 'present',
+      'files': {
+        'pubspec.lock': {
+          'sha256': List.filled(64, lockDigestChar).join(),
+          'bytes': 123,
+        },
+      },
+    },
+  },
+});
 
 String _presetProvenanceJson({String corpusDigest = 'c'}) => jsonEncode({
   'schemaVersion': 2,

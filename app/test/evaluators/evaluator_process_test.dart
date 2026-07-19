@@ -6,6 +6,58 @@ import 'package:path/path.dart' as p;
 
 void main() {
   test(
+    'output limit counts raw bytes before decode, not decoded chars',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_eval_byte_limit_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+
+      // 600 snowman characters are 600 decoded chars but 1800 UTF-8 bytes:
+      // under a 1024-char limit, over the 1024-byte contract.
+      final result = await runEvaluatorProcess(
+        'sh',
+        const [
+          '-c',
+          r'''i=0; while [ $i -lt 600 ]; do printf '\342\230\203'; i=$((i+1)); done''',
+        ],
+        workingDirectory: tmp.path,
+        environment: {'PATH': '/usr/bin:/bin'},
+        timeout: const Duration(seconds: 10),
+        maxOutputChars: 1024,
+      );
+
+      expect(result.outputLimitExceeded, isTrue);
+      expect(result.stdout.codeUnits.length, lessThanOrEqualTo(1024));
+    },
+    skip: Platform.isWindows,
+  );
+
+  test('output under the byte limit is captured completely', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'dart_arena_eval_byte_ok_',
+    );
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+
+    final result = await runEvaluatorProcess(
+      'sh',
+      const ['-c', 'printf hello-bytes'],
+      workingDirectory: tmp.path,
+      environment: {'PATH': '/usr/bin:/bin'},
+      timeout: const Duration(seconds: 10),
+      maxOutputChars: 1024,
+    );
+
+    expect(result.exitCode, 0);
+    expect(result.outputLimitExceeded, isFalse);
+    expect(result.stdout, 'hello-bytes');
+  }, skip: Platform.isWindows);
+
+  test(
     'resource probe helpers scrub sensitive environment variables',
     () async {
       final tmp = await Directory.systemTemp.createTemp(
