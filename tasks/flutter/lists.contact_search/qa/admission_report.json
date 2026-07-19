@@ -38,7 +38,7 @@
         }
       },
       "flutterVersion": "3.41.6",
-      "gitCommit": "91d8bd04957199ababbb2f83f46580e91c590c65",
+      "gitCommit": "531e69809e742137852643886ffbc93f635608c4",
       "gitDirty": false,
       "hostPlatform": "linux",
       "locale": "en_US.UTF-8",
@@ -179,7 +179,7 @@
     }
   },
   "status": "admitted",
-  "generatedAt": "2026-07-19T06:28:08.068740Z",
+  "generatedAt": "2026-07-19T07:51:28.746668Z",
   "checks": {
     "baselineHiddenFailed": true,
     "referencePublicPassed": true,
@@ -249,7 +249,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 8.4s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 8.6s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -264,7 +264,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 7.6s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 7.6s)\n",
             "tool": "flutter"
           }
         },
@@ -350,8 +350,8 @@
           "rationale": "analysis errors present",
           "details": {
             "exitCode": 1,
-            "stdout": "Analyzing segment_lists.co_208bac7e66c7...                      \n\n  error • Const variables must be initialized with a constant value • test/contact_search_controller_test.dart:6:5 • const_initialized_with_non_constant_value\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:6:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:6:5 • non_constant_list_element\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:7:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:7:5 • non_constant_list_element\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:13:23 • undefined_method\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:19:31 • undefined_method\n\n",
-            "stderr": "7 issues found. (ran in 8.5s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \n\n  error • Const variables must be initialized with a constant value • test/contact_search_controller_test.dart:6:5 • const_initialized_with_non_constant_value\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:6:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:6:5 • non_constant_list_element\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:7:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:7:5 • non_constant_list_element\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:13:23 • undefined_method\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:19:31 • undefined_method\n\n",
+            "stderr": "7 issues found. (ran in 8.4s)\n",
             "tool": "flutter"
           }
         },
@@ -365,7 +365,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 1,
-            "raw_stdout": "Analyzing segment_lists.co_208bac7e66c7...                      \n\n  error • Const variables must be initialized with a constant value • test/contact_search_controller_test.dart:6:5 • const_initialized_with_non_constant_value\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:6:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:6:5 • non_constant_list_element\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:7:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:7:5 • non_constant_list_element\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:13:23 • undefined_method\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:19:31 • undefined_method\n\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \n\n  error • Const variables must be initialized with a constant value • test/contact_search_controller_test.dart:6:5 • const_initialized_with_non_constant_value\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:6:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:6:5 • non_constant_list_element\n  error • The function 'Contact' isn't defined • test/contact_search_controller_test.dart:7:5 • undefined_function\n  error • The values in a const list literal must be constants • test/contact_search_controller_test.dart:7:5 • non_constant_list_element\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:13:23 • undefined_method\n  error • The method 'filter' isn't defined for the type 'ContactSearchController' • test/contact_search_controller_test.dart:19:31 • undefined_method\n\n",
             "stderr": "7 issues found. (ran in 7.7s)\n",
             "tool": "flutter"
           }
@@ -417,7 +417,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 8.5s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 8.4s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -432,7 +432,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 7.7s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_lists.co_208bac7e66c7...                      \nNo issues found! (ran in 7.9s)\n",
             "tool": "flutter"
           }
         },

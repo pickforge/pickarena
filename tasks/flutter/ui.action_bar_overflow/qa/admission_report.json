@@ -39,7 +39,7 @@
         }
       },
       "flutterVersion": "3.41.6",
-      "gitCommit": "91d8bd04957199ababbb2f83f46580e91c590c65",
+      "gitCommit": "531e69809e742137852643886ffbc93f635608c4",
       "gitDirty": false,
       "hostPlatform": "linux",
       "locale": "en_US.UTF-8",
@@ -255,7 +255,7 @@
     }
   },
   "status": "admitted",
-  "generatedAt": "2026-07-19T06:28:08.068740Z",
+  "generatedAt": "2026-07-19T07:51:28.746668Z",
   "checks": {
     "baselineHiddenFailed": true,
     "referencePublicPassed": true,
@@ -326,7 +326,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.3s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.4s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -341,7 +341,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.3s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.1s)\n",
             "tool": "flutter"
           }
         },
@@ -411,8 +411,8 @@
           "rationale": "analysis errors present",
           "details": {
             "exitCode": 1,
-            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \n\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:7:17 • non_type_as_type_argument\n  error • The named parameter 'primaryLabel' isn't defined • test/responsive_action_bar_test.dart:18:13 • undefined_named_parameter\n  error • The named parameter 'onPrimaryPressed' isn't defined • test/responsive_action_bar_test.dart:19:13 • undefined_named_parameter\n  error • The named parameter 'actions' isn't defined • test/responsive_action_bar_test.dart:20:13 • undefined_named_parameter\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:28:6 • non_type_as_type_argument\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:33:11 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:34:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:41:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:48:5 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:75:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:77:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:81:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:85:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:88:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:90:53 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:92:53 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:115:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:119:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:124:44 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:133:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:137:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:141:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:145:57 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:147:57 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:151:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:155:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:159:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:167:42 • undefined_method\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:189:24 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:190:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:197:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:204:9 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:222:45 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:223:45 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:226:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:233:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:238:55 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:256:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:258:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:261:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:267:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:269:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:272:43 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:274:53 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:278:38 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:282:38 • undefined_method\n\n",
-            "stderr": "46 issues found. (ran in 8.3s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \n\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:7:17 • non_type_as_type_argument\n  error • The named parameter 'primaryLabel' isn't defined • test/responsive_action_bar_test.dart:18:13 • undefined_named_parameter\n  error • The named parameter 'onPrimaryPressed' isn't defined • test/responsive_action_bar_test.dart:19:13 • undefined_named_parameter\n  error • The named parameter 'actions' isn't defined • test/responsive_action_bar_test.dart:20:13 • undefined_named_parameter\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:28:6 • non_type_as_type_argument\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:33:11 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:34:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:41:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:48:5 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:75:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:77:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:81:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:85:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:88:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:90:53 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:92:53 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:115:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:119:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:124:44 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:133:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:137:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:141:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:145:57 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:147:57 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:151:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:155:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:159:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:167:42 • undefined_method\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:189:24 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:190:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:197:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:204:9 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:222:45 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:223:45 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:226:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:233:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:238:55 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:256:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:258:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:261:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:267:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:269:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:272:43 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:274:53 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:278:38 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:282:38 • undefined_method\n\n",
+            "stderr": "46 issues found. (ran in 8.4s)\n",
             "tool": "flutter"
           }
         },
@@ -426,8 +426,8 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 1,
-            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \n\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:7:17 • non_type_as_type_argument\n  error • The named parameter 'primaryLabel' isn't defined • test/responsive_action_bar_test.dart:18:13 • undefined_named_parameter\n  error • The named parameter 'onPrimaryPressed' isn't defined • test/responsive_action_bar_test.dart:19:13 • undefined_named_parameter\n  error • The named parameter 'actions' isn't defined • test/responsive_action_bar_test.dart:20:13 • undefined_named_parameter\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:28:6 • non_type_as_type_argument\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:33:11 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:34:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:41:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:48:5 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:75:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:77:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:81:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:85:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:88:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:90:53 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:92:53 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:115:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:119:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:124:44 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:133:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:137:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:141:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:145:57 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:147:57 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:151:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:155:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:159:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:167:42 • undefined_method\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:189:24 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:190:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:197:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:204:9 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:222:45 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:223:45 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:226:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:233:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:238:55 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:256:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:258:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:261:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:267:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:269:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:272:43 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:274:53 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:278:38 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:282:38 • undefined_method\n\n",
-            "stderr": "46 issues found. (ran in 7.7s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \n\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:7:17 • non_type_as_type_argument\n  error • The named parameter 'primaryLabel' isn't defined • test/responsive_action_bar_test.dart:18:13 • undefined_named_parameter\n  error • The named parameter 'onPrimaryPressed' isn't defined • test/responsive_action_bar_test.dart:19:13 • undefined_named_parameter\n  error • The named parameter 'actions' isn't defined • test/responsive_action_bar_test.dart:20:13 • undefined_named_parameter\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:28:6 • non_type_as_type_argument\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:33:11 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:34:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:41:5 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:48:5 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:75:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:77:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:81:38 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:85:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:88:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:90:53 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:92:53 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:115:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:119:42 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:124:44 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:133:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:137:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:141:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:145:57 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:147:57 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:151:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:155:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:159:42 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:167:42 • undefined_method\n  error • The name 'ResponsiveActionBarAction' isn't a type, so it can't be used as a type argument • test/responsive_action_bar_test.dart:189:24 • non_type_as_type_argument\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:190:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:197:9 • undefined_function\n  error • The function 'ResponsiveActionBarAction' isn't defined • test/responsive_action_bar_test.dart:204:9 • undefined_function\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:222:45 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:223:45 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:226:42 • undefined_method\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:233:42 • undefined_method\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:238:55 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:256:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:258:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:261:43 • undefined_getter\n  error • The getter 'primaryButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:267:43 • undefined_getter\n  error • The method 'actionButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:269:38 • undefined_method\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:272:43 • undefined_getter\n  error • The getter 'overflowButtonKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:274:53 • undefined_getter\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:278:38 • undefined_method\n  error • The method 'overflowItemKey' isn't defined for the type 'ResponsiveActionBar' • test/responsive_action_bar_test.dart:282:38 • undefined_method\n\n",
+            "stderr": "46 issues found. (ran in 7.3s)\n",
             "tool": "flutter"
           }
         },
@@ -478,7 +478,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.3s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.5s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -493,7 +493,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.2s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.3s)\n",
             "tool": "flutter"
           }
         },
@@ -550,12 +550,12 @@
       "public_results": [
         {
           "evaluator_id": "compile",
-          "passed": false,
-          "score": 0.0,
-          "rationale": "analysis errors present",
+          "passed": true,
+          "score": 1.0,
+          "rationale": "compiles cleanly",
           "details": {
-            "exitCode": -9,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      ",
+            "exitCode": 0,
+            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.5s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -570,21 +570,40 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.3s)\n",
+            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.2s)\n",
             "tool": "flutter"
           }
         },
         {
           "evaluator_id": "test",
           "passed": false,
-          "score": 0.0,
-          "rationale": "blocked by compile",
+          "score": 0.5,
+          "rationale": "2/4 tests passed",
           "details": {
-            "blocked": true,
-            "blocked_by": "compile",
-            "blocked_by_rationale": "analysis errors present",
-            "skipped": true,
-            "reason": "blocked by compile"
+            "total": 4,
+            "passed": 2,
+            "failed": 0,
+            "errored": 2,
+            "failures": [
+              {
+                "name": "compact bar keeps primary visible and moves secondary actions to overflow",
+                "message": "Test failed. See exception logs above.\nThe test description was: compact bar keeps primary visible and moves secondary actions to overflow"
+              },
+              {
+                "name": "compact bar keeps primary visible and moves secondary actions to overflow",
+                "message": "error"
+              },
+              {
+                "name": "public API keys are stable across direct and overflow modes",
+                "message": "Test failed. See exception logs above.\nThe test description was: public API keys are stable across direct and overflow modes"
+              },
+              {
+                "name": "public API keys are stable across direct and overflow modes",
+                "message": "error"
+              }
+            ],
+            "exit_code": 1,
+            "tool": "flutter"
           }
         },
         {
@@ -636,31 +655,22 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.2s)\n",
+            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.3s)\n",
             "tool": "flutter"
           }
         },
         {
           "evaluator_id": "test",
           "passed": false,
-          "score": 0.75,
-          "rationale": "3/4 tests passed",
+          "score": 0.0,
+          "rationale": "no tests found",
           "details": {
-            "total": 4,
-            "passed": 3,
+            "total": 0,
+            "passed": 0,
             "failed": 0,
-            "errored": 1,
-            "failures": [
-              {
-                "name": "compact bar keeps primary visible and moves secondary actions to overflow",
-                "message": "Test failed. See exception logs above.\nThe test description was: compact bar keeps primary visible and moves secondary actions to overflow"
-              },
-              {
-                "name": "compact bar keeps primary visible and moves secondary actions to overflow",
-                "message": "error"
-              }
-            ],
-            "exit_code": 1,
+            "errored": 0,
+            "failures": [],
+            "exit_code": -9,
             "tool": "flutter"
           }
         },
@@ -698,7 +708,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.5s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.5s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -713,7 +723,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.3s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.2s)\n",
             "tool": "flutter"
           }
         },
@@ -775,7 +785,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.3s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.2s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -790,7 +800,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Analyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.7s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.8s)\n",
             "tool": "flutter"
           }
         },
@@ -852,7 +862,7 @@
           "rationale": "compiles cleanly",
           "details": {
             "exitCode": 0,
-            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.4s)\n",
+            "stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 8.2s)\n",
             "stderr": "",
             "tool": "flutter"
           }
@@ -867,7 +877,7 @@
             "warnings": 0,
             "infos": 0,
             "exit_code": 0,
-            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.0s)\n",
+            "raw_stdout": "Resolving dependencies...\nDownloading packages...\n  matcher 0.12.19 (0.12.20 available)\n  meta 1.17.0 (1.19.0 available)\n  test_api 0.7.10 (0.7.13 available)\n  vector_math 2.2.0 (2.4.0 available)\nGot dependencies!\n4 packages have newer versions incompatible with dependency constraints.\nTry `flutter pub outdated` for more information.\nAnalyzing segment_ui.actio_6e0942fcfc07...                      \nNo issues found! (ran in 7.7s)\n",
             "tool": "flutter"
           }
         },
