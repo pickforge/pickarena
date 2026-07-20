@@ -37,6 +37,61 @@ void main() {
   );
 
   test(
+    'missing shebang interpreter preserves infrastructure spawn failure',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_eval_shebang_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+      final executable = await _writeExecutable(
+        tmp,
+        'missing-interpreter',
+        '#!/definitely/missing/interpreter\nexit 0\n',
+      );
+
+      await expectLater(
+        runEvaluatorProcess(
+          executable.path,
+          const [],
+          workingDirectory: tmp.path,
+          environment: const {'PATH': '/usr/bin:/bin'},
+          timeout: const Duration(seconds: 2),
+        ),
+        throwsA(
+          isA<ProcessException>()
+              .having(
+                (error) => error.executable,
+                'executable',
+                executable.path,
+              )
+              .having((error) => error.errorCode, 'errorCode', 2),
+        ),
+      );
+    },
+    skip: !Platform.isLinux,
+  );
+
+  test('legitimate exit 127 remains an evaluator result', () async {
+    final tmp = await Directory.systemTemp.createTemp('dart_arena_eval_127_');
+    addTearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+
+    final result = await runEvaluatorProcess(
+      'sh',
+      const ['-c', 'exit 127'],
+      workingDirectory: tmp.path,
+      environment: const {'PATH': '/usr/bin:/bin'},
+      timeout: const Duration(seconds: 2),
+    );
+
+    expect(result.exitCode, 127);
+    expect(result.timedOut, isFalse);
+  }, skip: !Platform.isLinux);
+
+  test(
     'output limit counts raw bytes before decode, not decoded chars',
     () async {
       final tmp = await Directory.systemTemp.createTemp(

@@ -41,6 +41,147 @@ void main() {
   );
 
   test(
+    'propagates a missing shebang interpreter as an exec failure',
+    () async {
+      final temp = await Directory.systemTemp.createTemp(
+        'dart_arena_subprocess_shebang_',
+      );
+      addTearDown(() async {
+        if (await temp.exists()) await temp.delete(recursive: true);
+      });
+      final script = await _writeFile(
+        temp,
+        'missing-interpreter',
+        '#!/definitely/missing/interpreter\nexit 0\n',
+        executable: true,
+      );
+
+      await expectLater(
+        runBoundedSubprocess(
+          executable: script.path,
+          arguments: const [],
+          workingDirectory: temp.path,
+          environment: const {'PATH': '/usr/bin:/bin'},
+          maxOutputBytes: 128,
+          timeout: const Duration(seconds: 2),
+        ),
+        throwsA(
+          isA<ProcessException>()
+              .having((error) => error.executable, 'executable', script.path)
+              .having((error) => error.errorCode, 'errorCode', 2),
+        ),
+      );
+    },
+    skip: !Platform.isLinux,
+  );
+
+  test(
+    'propagates a non-executable target as an exec failure',
+    () async {
+      final temp = await Directory.systemTemp.createTemp(
+        'dart_arena_subprocess_permissions_',
+      );
+      addTearDown(() async {
+        if (await temp.exists()) await temp.delete(recursive: true);
+      });
+      final script = await _writeFile(
+        temp,
+        'non-executable',
+        '#!/bin/sh\nexit 0\n',
+      );
+
+      await expectLater(
+        runBoundedSubprocess(
+          executable: script.path,
+          arguments: const [],
+          workingDirectory: temp.path,
+          environment: const {'PATH': '/usr/bin:/bin'},
+          maxOutputBytes: 128,
+          timeout: const Duration(seconds: 2),
+        ),
+        throwsA(
+          isA<ProcessException>()
+              .having((error) => error.executable, 'executable', script.path)
+              .having((error) => error.errorCode, 'errorCode', 13),
+        ),
+      );
+    },
+    skip: !Platform.isLinux,
+  );
+
+  test(
+    'uses execvp permission precedence across PATH candidates',
+    () async {
+      final temp = await Directory.systemTemp.createTemp(
+        'dart_arena_subprocess_path_',
+      );
+      addTearDown(() async {
+        if (await temp.exists()) await temp.delete(recursive: true);
+      });
+      final blocked = Directory('${temp.path}/blocked')..createSync();
+      final runnable = Directory('${temp.path}/runnable')..createSync();
+      await _writeFile(blocked, 'candidate', '#!/bin/sh\nexit 1\n');
+      await _writeFile(
+        runnable,
+        'candidate',
+        '#!/bin/sh\nprintf fallback\n',
+        executable: true,
+      );
+
+      final result = await runBoundedSubprocess(
+        executable: 'candidate',
+        arguments: const [],
+        workingDirectory: temp.path,
+        environment: {'PATH': '${blocked.path}:${runnable.path}'},
+        maxOutputBytes: 128,
+        timeout: const Duration(seconds: 2),
+      );
+
+      expect(result.termination, BoundedSubprocessTermination.exited);
+      expect(result.exitCode, 0);
+      expect(result.stdout, 'fallback');
+    },
+    skip: !Platform.isLinux,
+  );
+
+  test(
+    'preserves the exact target environment across the launcher',
+    () async {
+      final result = await runBoundedSubprocess(
+        executable: '/usr/bin/env',
+        arguments: const [],
+        workingDirectory: Directory.current.path,
+        environment: const {'ONLY_TARGET_VALUE': 'preserved'},
+        includeParentEnvironment: false,
+        maxOutputBytes: 128,
+        timeout: const Duration(seconds: 2),
+      );
+
+      expect(result.termination, BoundedSubprocessTermination.exited);
+      expect(result.exitCode, 0);
+      expect(result.stdout, 'ONLY_TARGET_VALUE=preserved\n');
+    },
+    skip: !Platform.isLinux,
+  );
+
+  test(
+    'keeps legitimate target exits 126 and 127 as ordinary exits',
+    () async {
+      for (final exitCode in const [126, 127]) {
+        final result = await _runShell(
+          'exit $exitCode',
+          maxOutputBytes: 128,
+          timeout: const Duration(seconds: 2),
+        );
+
+        expect(result.termination, BoundedSubprocessTermination.exited);
+        expect(result.exitCode, exitCode);
+      }
+    },
+    skip: !Platform.isLinux,
+  );
+
+  test(
     'drains stdout and stderr concurrently without backpressure hangs',
     () async {
       final result = await _runShell(
@@ -325,6 +466,21 @@ wait
     skip: Platform.isWindows,
     timeout: const Timeout(Duration(seconds: 8)),
   );
+}
+
+Future<File> _writeFile(
+  Directory directory,
+  String name,
+  String contents, {
+  bool executable = false,
+}) async {
+  final file = File('${directory.path}/$name');
+  await file.writeAsString(contents);
+  if (executable) {
+    final chmod = await Process.run('chmod', ['+x', file.path]);
+    expect(chmod.exitCode, 0, reason: chmod.stderr.toString());
+  }
+  return file;
 }
 
 Future<BoundedSubprocessResult> _runShell(

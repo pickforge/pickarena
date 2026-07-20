@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dart_arena/runner/subprocess_environment.dart';
-import 'package:path/path.dart' as p;
 
 enum BoundedSubprocessTermination {
   exited,
@@ -58,6 +57,13 @@ typedef BoundedSubprocessSignalSender =
 
 int maxEncodedOutputBytes(int maxCharacters) => maxCharacters * 4;
 
+const _linuxHandshakeRoot = '/tmp';
+const _execHandshakeTimeout = Duration(seconds: 5);
+const _maxExecHandshakeBytes = 4096;
+const _solSocket = 1;
+const _soPeerCredentials = 17;
+const _peerCredentialsSize = 12;
+
 Future<BoundedSubprocessResult> runBoundedSubprocess({
   required String executable,
   required List<String> arguments,
@@ -78,25 +84,23 @@ Future<BoundedSubprocessResult> runBoundedSubprocess({
   assert(maxOutputCharacters == null || maxOutputCharacters > 0);
   final setsid = Platform.isLinux ? _installedSystemTool('setsid') : null;
   final startsProcessGroup = setsid != null;
-  final targetExecutable = startsProcessGroup
-      ? _resolveExecutable(
+  final process = startsProcessGroup
+      ? await _startLinuxProcessGroup(
+          setsid,
           executable,
           arguments,
           workingDirectory: workingDirectory,
           environment: environment,
           includeParentEnvironment: includeParentEnvironment,
         )
-      : executable;
-  final process = await Process.start(
-    setsid ?? targetExecutable,
-    startsProcessGroup
-        ? ['--wait', '--', targetExecutable, ...arguments]
-        : arguments,
-    workingDirectory: workingDirectory,
-    runInShell: false,
-    environment: environment,
-    includeParentEnvironment: includeParentEnvironment,
-  );
+      : await Process.start(
+          executable,
+          arguments,
+          workingDirectory: workingDirectory,
+          runInShell: false,
+          environment: environment,
+          includeParentEnvironment: includeParentEnvironment,
+        );
   final processState = _ProcessState(process);
   final stdout = _BoundedByteCollector(
     maxOutputBytes,
@@ -218,6 +222,370 @@ Future<BoundedSubprocessResult> runBoundedSubprocess({
     stderrLimitExceeded: stderr.exceeded,
     externalLimit: externalLimit,
   );
+}
+
+const _pythonLinuxExecLauncher = r'''
+import json
+import os
+import signal
+import socket
+import struct
+import sys
+
+handshake = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+handshake.set_inheritable(False)
+handshake.connect(sys.argv[1])
+
+def read_exact(length):
+    chunks = []
+    remaining = length
+    while remaining:
+        chunk = handshake.recv(remaining)
+        if not chunk:
+            raise RuntimeError('Incomplete target environment')
+        chunks.append(chunk)
+        remaining -= len(chunk)
+    return b''.join(chunks)
+
+environment_length = struct.unpack('!I', read_exact(4))[0]
+environment = json.loads(read_exact(environment_length))
+executable = sys.argv[2]
+target_arguments = sys.argv[2:]
+for signal_name in ('SIGPIPE', 'SIGXFSZ'):
+    signal_number = getattr(signal, signal_name, None)
+    if signal_number is not None:
+        signal.signal(signal_number, signal.SIG_DFL)
+try:
+    if '/' in executable:
+        os.execve(executable, target_arguments, environment)
+    else:
+        os.execvpe(executable, target_arguments, environment)
+except OSError as error:
+    message = (error.strerror or str(error)).encode('utf-8', 'replace')
+    handshake.sendall(struct.pack('!I', error.errno or 0) + message)
+    handshake.close()
+    raise SystemExit(127 if error.errno == 2 else 126)
+''';
+
+const _dartLinuxExecLauncher = r'''
+import 'dart:async';
+import 'dart:convert';
+import 'dart:ffi';
+import 'dart:io';
+import 'dart:typed_data';
+
+typedef _ExecNative = Int32 Function(
+  Pointer<Uint8>,
+  Pointer<Pointer<Uint8>>,
+  Pointer<Pointer<Uint8>>,
+);
+typedef _ExecDart = int Function(
+  Pointer<Uint8>,
+  Pointer<Pointer<Uint8>>,
+  Pointer<Pointer<Uint8>>,
+);
+typedef _MallocNative = Pointer<Void> Function(IntPtr);
+typedef _MallocDart = Pointer<Void> Function(int);
+typedef _ErrnoNative = Pointer<Int32> Function();
+typedef _ErrnoDart = Pointer<Int32> Function();
+typedef _StrerrorNative = Pointer<Uint8> Function(Int32);
+typedef _StrerrorDart = Pointer<Uint8> Function(int);
+typedef _SignalNative = Pointer<Void> Function(Int32, Pointer<Void>);
+typedef _SignalDart = Pointer<Void> Function(int, Pointer<Void>);
+
+final _libc = DynamicLibrary.process();
+final _malloc = _libc.lookupFunction<_MallocNative, _MallocDart>('malloc');
+final _execve = _libc.lookupFunction<_ExecNative, _ExecDart>('execve');
+final _execvpe = _libc.lookupFunction<_ExecNative, _ExecDart>('execvpe');
+final _errno = _libc.lookupFunction<_ErrnoNative, _ErrnoDart>(
+  '__errno_location',
+);
+final _strerror = _libc.lookupFunction<_StrerrorNative, _StrerrorDart>(
+  'strerror',
+);
+final _signal = _libc.lookupFunction<_SignalNative, _SignalDart>('signal');
+
+Pointer<Uint8> _nativeString(String value) {
+  final bytes = [...utf8.encode(value), 0];
+  final pointer = _malloc(bytes.length).cast<Uint8>();
+  pointer.asTypedList(bytes.length).setAll(0, bytes);
+  return pointer;
+}
+
+Pointer<Pointer<Uint8>> _nativeVector(List<String> values) {
+  final pointer = _malloc(
+    (values.length + 1) * sizeOf<Pointer<Void>>(),
+  ).cast<Pointer<Uint8>>();
+  for (var index = 0; index < values.length; index++) {
+    pointer[index] = _nativeString(values[index]);
+  }
+  pointer[values.length] = nullptr;
+  return pointer;
+}
+
+String _errorMessage(int errorCode) {
+  final pointer = _strerror(errorCode);
+  final bytes = <int>[];
+  for (var index = 0; pointer[index] != 0; index++) {
+    bytes.add(pointer[index]);
+  }
+  return utf8.decode(bytes, allowMalformed: true);
+}
+
+Future<Uint8List> _readMessage(Socket socket) {
+  final completer = Completer<Uint8List>();
+  final bytes = BytesBuilder(copy: false);
+  late final StreamSubscription<Uint8List> subscription;
+  subscription = socket.listen(
+    (chunk) {
+      if (completer.isCompleted) return;
+      bytes.add(chunk);
+      final payload = bytes.toBytes();
+      if (payload.length < 4) return;
+      final length = ByteData.sublistView(payload).getUint32(0);
+      if (payload.length < 4 + length) return;
+      subscription.pause();
+      completer.complete(Uint8List.sublistView(payload, 4, 4 + length));
+    },
+    onError: completer.completeError,
+    onDone: () {
+      if (!completer.isCompleted) {
+        completer.completeError(
+          const FormatException('Incomplete target environment'),
+        );
+      }
+    },
+  );
+  return completer.future;
+}
+
+Future<void> main(List<String> arguments) async {
+  final handshake = await Socket.connect(
+    InternetAddress(arguments[0], type: InternetAddressType.unix),
+    0,
+  );
+  final environment = (jsonDecode(
+    utf8.decode(await _readMessage(handshake)),
+  ) as Map<String, dynamic>).cast<String, String>();
+  final executable = arguments[1];
+  final targetArguments = arguments.sublist(1);
+  final environmentEntries = environment.entries
+      .map((entry) => '${entry.key}=${entry.value}')
+      .toList(growable: false);
+
+  const signalPipe = 13;
+  const signalFileSizeExceeded = 25;
+  _signal(signalPipe, nullptr);
+  _signal(signalFileSizeExceeded, nullptr);
+  final executablePointer = _nativeString(executable);
+  final argumentPointers = _nativeVector(targetArguments);
+  final environmentPointers = _nativeVector(environmentEntries);
+  if (executable.contains('/')) {
+    _execve(executablePointer, argumentPointers, environmentPointers);
+  } else {
+    _execvpe(executablePointer, argumentPointers, environmentPointers);
+  }
+
+  final errorCode = _errno().value;
+  final message = utf8.encode(_errorMessage(errorCode));
+  final response = Uint8List(4 + message.length);
+  ByteData.sublistView(response).setUint32(0, errorCode);
+  response.setRange(4, response.length, message);
+  handshake.add(response);
+  await handshake.flush();
+  await handshake.close();
+  exit(errorCode == 2 ? 127 : 126);
+}
+''';
+
+Future<Process> _startLinuxProcessGroup(
+  String setsid,
+  String targetExecutable,
+  List<String> arguments, {
+  required String workingDirectory,
+  required Map<String, String> environment,
+  required bool includeParentEnvironment,
+}) async {
+  final targetEnvironment = <String, String>{
+    if (includeParentEnvironment) ...Platform.environment,
+    ...environment,
+  };
+  final handshakeDirectory = await Directory(
+    _linuxHandshakeRoot,
+  ).createTemp('dart_arena_exec_');
+  final launcher = File('${handshakeDirectory.path}/launcher.dart');
+  final socketPath = '${handshakeDirectory.path}/handshake.sock';
+  ServerSocket? server;
+  Process? process;
+  try {
+    final python = _installedSystemTool('python3');
+    if (python == null) {
+      await launcher.writeAsString(_dartLinuxExecLauncher);
+    }
+    server = await ServerSocket.bind(
+      InternetAddress(socketPath, type: InternetAddressType.unix),
+      0,
+    );
+    process = await Process.start(
+      setsid,
+      [
+        '--wait',
+        '--',
+        if (python != null) ...[
+          python,
+          '-I',
+          '-S',
+          '-c',
+          _pythonLinuxExecLauncher,
+        ] else ...[
+          Platform.resolvedExecutable,
+          launcher.path,
+        ],
+        socketPath,
+        targetExecutable,
+        ...arguments,
+      ],
+      workingDirectory: workingDirectory,
+      runInShell: false,
+      environment: {
+        'PATH':
+            targetEnvironment['PATH'] ??
+            Platform.environment['PATH'] ??
+            '/usr/bin:/bin',
+      },
+      includeParentEnvironment: false,
+    );
+
+    late final _ExecHandshake result;
+    try {
+      result = await _receiveExecHandshake(
+        server,
+        process.pid,
+        targetEnvironment,
+        cleanupHandshake: () async {
+          if (await handshakeDirectory.exists()) {
+            await handshakeDirectory.delete(recursive: true);
+          }
+        },
+      ).timeout(_execHandshakeTimeout);
+    } on TimeoutException {
+      await _drainFailedLauncher(process, terminate: true);
+      throw ProcessException(
+        targetExecutable,
+        arguments,
+        'Subprocess launcher did not complete its exec handshake',
+      );
+    } on Object catch (error) {
+      await _drainFailedLauncher(process, terminate: true);
+      throw ProcessException(
+        targetExecutable,
+        arguments,
+        'Subprocess launcher failed: $error',
+      );
+    }
+
+    final errorCode = result.errorCode;
+    if (errorCode != null) {
+      final exception = ProcessException(
+        targetExecutable,
+        arguments,
+        result.message,
+        errorCode,
+      );
+      await _drainFailedLauncher(process);
+      throw exception;
+    }
+    return process;
+  } finally {
+    await server?.close();
+    if (await handshakeDirectory.exists()) {
+      await handshakeDirectory.delete(recursive: true);
+    }
+  }
+}
+
+Future<_ExecHandshake> _receiveExecHandshake(
+  ServerSocket server,
+  int expectedPid,
+  Map<String, String> targetEnvironment, {
+  required Future<void> Function() cleanupHandshake,
+}) async {
+  await for (final socket in server) {
+    final credentials = socket.getRawOption(
+      RawSocketOption(
+        _solSocket,
+        _soPeerCredentials,
+        Uint8List(_peerCredentialsSize),
+      ),
+    );
+    final peerPid = ByteData.sublistView(credentials).getInt32(0, Endian.host);
+    if (peerPid != expectedPid) {
+      socket.destroy();
+      continue;
+    }
+
+    await cleanupHandshake();
+    final bytes = BytesBuilder(copy: false);
+    try {
+      final environment = utf8.encode(jsonEncode(targetEnvironment));
+      final header = ByteData(4)..setUint32(0, environment.length);
+      socket.add(header.buffer.asUint8List());
+      socket.add(environment);
+      await socket.flush();
+      await for (final chunk in socket) {
+        bytes.add(chunk);
+        if (bytes.length > _maxExecHandshakeBytes) break;
+      }
+    } finally {
+      socket.destroy();
+    }
+    final payload = bytes.takeBytes();
+    if (payload.isEmpty) return const _ExecHandshake.success();
+    if (payload.length < 4) {
+      throw const FormatException('Incomplete exec failure handshake');
+    }
+    final errorCode = ByteData.sublistView(payload).getUint32(0);
+    final message = utf8.decode(payload.sublist(4), allowMalformed: true);
+    return _ExecHandshake.failure(errorCode, message);
+  }
+  throw const SocketException('Exec handshake socket closed unexpectedly');
+}
+
+Future<void> _drainFailedLauncher(
+  Process process, {
+  bool terminate = false,
+}) async {
+  final drains = Future.wait<void>([
+    process.stdout.drain<void>(),
+    process.stderr.drain<void>(),
+  ]);
+  try {
+    await process.stdin.close();
+  } on Object {
+    // The failed launcher may already have closed stdin.
+  }
+  if (terminate) {
+    _tryKillPid(-process.pid, ProcessSignal.sigkill);
+    _tryKillPid(process.pid, ProcessSignal.sigkill);
+  }
+  try {
+    await Future.wait<void>([
+      drains,
+      process.exitCode.then<void>((_) {}),
+    ]).timeout(const Duration(seconds: 2));
+  } on TimeoutException {
+    _tryKillPid(-process.pid, ProcessSignal.sigkill);
+    _tryKillPid(process.pid, ProcessSignal.sigkill);
+  }
+}
+
+class _ExecHandshake {
+  const _ExecHandshake.success() : errorCode = null, message = '';
+
+  const _ExecHandshake.failure(this.errorCode, this.message);
+
+  final int? errorCode;
+  final String message;
 }
 
 Future<void> _writeStdin(Process process, List<int>? bytes) async {
@@ -404,54 +772,6 @@ String? _installedSystemTool(String name) {
     if (File(path).existsSync()) return path;
   }
   return null;
-}
-
-String _resolveExecutable(
-  String executable,
-  List<String> arguments, {
-  required String workingDirectory,
-  required Map<String, String> environment,
-  required bool includeParentEnvironment,
-}) {
-  final candidates = <String>[];
-  if (p.isAbsolute(executable) || executable.contains('/')) {
-    candidates.add(
-      p.isAbsolute(executable)
-          ? executable
-          : p.join(workingDirectory, executable),
-    );
-  } else {
-    final path =
-        environment['PATH'] ??
-        (includeParentEnvironment ? Platform.environment['PATH'] : null) ??
-        Platform.environment['PATH'] ??
-        '/usr/bin:/bin';
-    for (final root in path.split(':')) {
-      final searchRoot = root.isEmpty || !p.isAbsolute(root)
-          ? p.join(workingDirectory, root)
-          : root;
-      candidates.add(p.join(searchRoot, executable));
-    }
-  }
-
-  var foundNonExecutable = false;
-  for (final candidate in candidates) {
-    if (FileSystemEntity.typeSync(candidate, followLinks: true) !=
-        FileSystemEntityType.file) {
-      continue;
-    }
-    if (File(candidate).statSync().mode & 0x49 == 0) {
-      foundNonExecutable = true;
-      continue;
-    }
-    return p.normalize(p.absolute(candidate));
-  }
-  throw ProcessException(
-    executable,
-    arguments,
-    foundNonExecutable ? 'Permission denied' : 'No such file or directory',
-    foundNonExecutable ? 13 : 2,
-  );
 }
 
 Future<ProcessResult?> _tryRunProcess(
