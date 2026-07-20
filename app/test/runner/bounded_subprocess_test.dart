@@ -6,6 +6,16 @@ import 'package:dart_arena/runner/bounded_subprocess.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('selects direct mode when trusted python is unavailable', () {
+    expect(
+      selectLinuxExecLauncherForTesting(
+        setsid: '/usr/bin/setsid',
+        python3: null,
+      ),
+      isNull,
+    );
+  });
+
   test(
     'propagates missing absolute and PATH executable spawn failures',
     () async {
@@ -151,7 +161,7 @@ void main() {
         executable: '/usr/bin/env',
         arguments: const [],
         workingDirectory: Directory.current.path,
-        environment: const {'ONLY_TARGET_VALUE': 'preserved'},
+        environment: const {'ONLY_TARGET_VALUE': 'preserved=value'},
         includeParentEnvironment: false,
         maxOutputBytes: 128,
         timeout: const Duration(seconds: 2),
@@ -159,7 +169,41 @@ void main() {
 
       expect(result.termination, BoundedSubprocessTermination.exited);
       expect(result.exitCode, 0);
-      expect(result.stdout, 'ONLY_TARGET_VALUE=preserved\n');
+      expect(result.stdout, 'ONLY_TARGET_VALUE=preserved=value\n');
+    },
+    skip: !Platform.isLinux,
+  );
+
+  test(
+    'reports malformed target environments as spawn failures',
+    () async {
+      const malformedEnvironments = <Map<String, String>>[
+        {'': 'value'},
+        {'BAD=KEY': 'value'},
+        {'BAD\u0000KEY': 'value'},
+        {'BAD_VALUE': 'bad\u0000value'},
+      ];
+
+      for (final environment in malformedEnvironments) {
+        await expectLater(
+          runBoundedSubprocess(
+            executable: '/usr/bin/env',
+            arguments: const [],
+            workingDirectory: Directory.current.path,
+            environment: environment,
+            includeParentEnvironment: false,
+            maxOutputBytes: 128,
+            timeout: const Duration(seconds: 2),
+          ),
+          throwsA(
+            isA<ProcessException>().having(
+              (error) => error.errorCode,
+              'errorCode',
+              22,
+            ),
+          ),
+        );
+      }
     },
     skip: !Platform.isLinux,
   );
