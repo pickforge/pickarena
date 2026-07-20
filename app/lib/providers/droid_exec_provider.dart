@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/providers/factory_custom_model_environment.dart';
 import 'package:dart_arena/providers/model_provider.dart';
+import 'package:dart_arena/runner/bounded_subprocess.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 
 class DroidProcessResult {
@@ -62,91 +63,33 @@ class DroidExecProvider implements ModelProvider, ModelRuntimeMetadataProvider {
     Iterable<String> allowedSensitiveEnvironmentKeys,
     int maxProcessOutputChars,
   ) async {
-    final process = await Process.start(
-      exe,
-      args,
-      runInShell: false,
+    final processResult = await runBoundedSubprocess(
+      executable: exe,
+      arguments: args,
+      workingDirectory: Directory.current.path,
       environment: benchmarkSubprocessEnvironment(
         additionalDeniedKeys: deniedEnvironmentKeys,
         allowedSensitiveKeys: allowedSensitiveEnvironmentKeys,
       ),
-      includeParentEnvironment: false,
+      maxOutputBytes: maxProcessOutputChars,
+      timeout: timeout,
+      capture: BoundedSubprocessCapture.trailing,
     );
-    final stdoutBuffer = _BoundedTailTextCollector(maxProcessOutputChars);
-    final stderrBuffer = _BoundedTailTextCollector(maxProcessOutputChars);
-    final outputLimitExceeded = Completer<void>();
-    void markOutputLimitExceeded() {
-      if (!outputLimitExceeded.isCompleted) {
-        outputLimitExceeded.complete();
-      }
-    }
-
-    final stdoutDone = process.stdout.transform(systemEncoding.decoder).listen((
-      chunk,
-    ) {
-      stdoutBuffer.write(chunk);
-      if (stdoutBuffer.exceeded) markOutputLimitExceeded();
-    }).asFuture<void>();
-    final stderrDone = process.stderr.transform(systemEncoding.decoder).listen((
-      chunk,
-    ) {
-      stderrBuffer.write(chunk);
-      if (stderrBuffer.exceeded) markOutputLimitExceeded();
-    }).asFuture<void>();
-
-    var timedOut = false;
-    var outputLimitHit = false;
-    int exitCode;
-    Timer? timeoutTimer;
-    final timeoutExceeded = Completer<void>();
-    if (timeout != null) {
-      timeoutTimer = Timer(timeout, () {
-        if (!timeoutExceeded.isCompleted) timeoutExceeded.complete();
-      });
-    }
-    try {
-      final signal = await Future.any<Object>([
-        process.exitCode,
-        if (timeout != null)
-          timeoutExceeded.future.then(
-            (_) => const _DroidProcessTimeoutExceeded(),
-          ),
-        outputLimitExceeded.future.then(
-          (_) => const _DroidProcessOutputLimitExceeded(),
-        ),
-      ]);
-      if (signal is int) {
-        exitCode = signal;
-      } else {
-        timedOut = signal is _DroidProcessTimeoutExceeded;
-        outputLimitHit = signal is _DroidProcessOutputLimitExceeded;
-        await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
-        exitCode = await process.exitCode.timeout(
-          const Duration(seconds: 2),
-          onTimeout: () async {
-            await _terminateProcessTree(process.pid, ProcessSignal.sigkill);
-            return -1;
-          },
-        );
-      }
-    } finally {
-      timeoutTimer?.cancel();
-    }
-    await Future.wait([stdoutDone, stderrDone]);
-    if (timedOut) {
+    if (processResult.termination == BoundedSubprocessTermination.timedOut) {
       throw TimeoutException('droid exec timed out', timeout);
     }
-    final stderr = stderrBuffer.text;
-    final stderrWithLimit = outputLimitHit
+    final stderrWithLimit = processResult.outputLimitExceeded
         ? [
             'droid exec output exceeded $maxProcessOutputChars characters',
-            if (stderr.isNotEmpty) stderr,
+            if (processResult.stderr.isNotEmpty) processResult.stderr,
           ].join('\n')
-        : stderr;
+        : processResult.stderr;
     return DroidProcessResult(
-      stdout: stdoutBuffer.text,
+      stdout: processResult.stdout,
       stderr: stderrWithLimit,
-      exitCode: outputLimitHit && exitCode == 0 ? -1 : exitCode,
+      exitCode: processResult.outputLimitExceeded && processResult.exitCode == 0
+          ? -1
+          : processResult.exitCode,
     );
   }
 
@@ -304,113 +247,4 @@ class DroidExecProvider implements ModelProvider, ModelRuntimeMetadataProvider {
       latency: sw.elapsed,
     );
   }
-
-  static Future<void> _terminateProcessTree(
-    int pid,
-    ProcessSignal signal,
-  ) async {
-    if (Platform.isWindows) {
-      final args = ['/PID', '$pid', '/T'];
-      if (signal == ProcessSignal.sigkill) args.add('/F');
-      await _tryRunProcess('taskkill', args);
-      return;
-    }
-
-    final descendants = await _descendantPids(pid);
-    for (final childPid in descendants.reversed) {
-      _killPid(childPid, signal);
-    }
-    _killPid(pid, signal);
-  }
-
-  static Future<List<int>> _descendantPids(int pid) async {
-    final descendants = <int>[];
-    for (final childPid in await _childPids(pid)) {
-      descendants.add(childPid);
-      descendants.addAll(await _descendantPids(childPid));
-    }
-    return descendants;
-  }
-
-  static Future<List<int>> _childPids(int pid) async {
-    final pgrep = await _tryRunProcess('pgrep', ['-P', '$pid']);
-    if (pgrep?.exitCode == 0) {
-      return _parsePids(pgrep!.stdout.toString());
-    }
-
-    final ps = await _tryRunProcess('ps', ['-o', 'pid=', '--ppid', '$pid']);
-    if (ps?.exitCode == 0) {
-      return _parsePids(ps!.stdout.toString());
-    }
-    return const [];
-  }
-
-  static Future<ProcessResult?> _tryRunProcess(
-    String executable,
-    List<String> arguments,
-  ) async {
-    try {
-      return await Process.run(
-        executable,
-        arguments,
-        runInShell: false,
-        environment: benchmarkSubprocessEnvironment(),
-        includeParentEnvironment: false,
-      );
-    } on Object {
-      return null;
-    }
-  }
-
-  static List<int> _parsePids(String output) => output
-      .split(RegExp(r'\s+'))
-      .map((s) => int.tryParse(s.trim()))
-      .whereType<int>()
-      .toList(growable: false);
-
-  static void _killPid(int pid, ProcessSignal signal) {
-    if (!_tryKillPid(pid, signal)) {
-      _tryKillPid(pid, null);
-    }
-  }
-
-  static bool _tryKillPid(int pid, ProcessSignal? signal) {
-    try {
-      return signal == null
-          ? Process.killPid(pid)
-          : Process.killPid(pid, signal);
-    } on Object {
-      return false;
-    }
-  }
-}
-
-class _DroidProcessTimeoutExceeded {
-  const _DroidProcessTimeoutExceeded();
-}
-
-class _DroidProcessOutputLimitExceeded {
-  const _DroidProcessOutputLimitExceeded();
-}
-
-class _BoundedTailTextCollector {
-  _BoundedTailTextCollector(this.maxChars);
-
-  final int maxChars;
-  final _buffer = StringBuffer();
-  var exceeded = false;
-
-  void write(String chunk) {
-    if (chunk.isEmpty) return;
-    _buffer.write(chunk);
-    if (_buffer.length > maxChars) {
-      exceeded = true;
-      final value = _buffer.toString();
-      _buffer
-        ..clear()
-        ..write(value.substring(value.length - maxChars));
-    }
-  }
-
-  String get text => _buffer.toString();
 }

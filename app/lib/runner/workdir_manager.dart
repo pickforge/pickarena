@@ -7,6 +7,7 @@ import 'package:dart_arena/core/patch_capture.dart';
 import 'package:dart_arena/core/path_safety.dart';
 import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/core/workspace_path.dart';
+import 'package:dart_arena/runner/bounded_subprocess.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 import 'package:path/path.dart' as p;
@@ -421,181 +422,42 @@ class WorkdirManager {
             allowInternet: sandboxAllowInternet,
             resourceLimits: SandboxResourceLimits(cpuCores: maxCpuCores),
           );
-    final process = await Process.start(
-      processStart.executable,
-      processStart.arguments,
-      workingDirectory: processStart.workingDirectory,
-      runInShell: false,
-      environment: processStart.environment,
-      includeParentEnvironment: false,
-    );
-    final stdoutBuffer = _BoundedTextCollector(prepareMaxOutputChars);
-    final stderrBuffer = _BoundedTextCollector(prepareMaxOutputChars);
-    final outputLimitExceeded = Completer<_PrepareProcessSignal>();
-    void markOutputLimitExceeded() {
-      if (!outputLimitExceeded.isCompleted) {
-        outputLimitExceeded.complete(
-          const _PrepareProcessOutputLimitExceeded(),
-        );
-      }
-    }
-
-    final stdoutText = process.stdout.transform(systemEncoding.decoder);
-    final stderrText = process.stderr.transform(systemEncoding.decoder);
-    final stdoutDone = stdoutText.listen((chunk) {
-      stdoutBuffer.write(chunk);
-      if (stdoutBuffer.exceeded) markOutputLimitExceeded();
-    }).asFuture<void>();
-    final stderrDone = stderrText.listen((chunk) {
-      stderrBuffer.write(chunk);
-      if (stderrBuffer.exceeded) markOutputLimitExceeded();
-    }).asFuture<void>();
-
     final timeout = remainingTimeout?.call();
-    if (timeout != null && timeout.compareTo(Duration.zero) <= 0) {
-      await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
-      await _awaitProcessExit(process);
-      await Future.wait([stdoutDone, stderrDone]);
-      throw TimeoutException('prepare timed out', timeout);
-    }
-
-    final timeoutExceeded = Completer<_PrepareProcessSignal>();
-    final timeoutTimer = timeout == null
-        ? null
-        : Timer(timeout, () {
-            if (!timeoutExceeded.isCompleted) {
-              timeoutExceeded.complete(_PrepareProcessTimedOut(timeout));
-            }
-          });
-    late final _PrepareProcessSignal signal;
-    try {
-      signal = await Future.any<_PrepareProcessSignal>([
-        process.exitCode.then(_PrepareProcessExit.new),
-        if (timeout != null) timeoutExceeded.future,
-        outputLimitExceeded.future,
-        if (cancellationSignal != null)
-          cancellationSignal.then((_) => const _PrepareProcessCancelled()),
-      ]);
-    } finally {
-      timeoutTimer?.cancel();
-    }
-
-    if (signal is _PrepareProcessExit) {
-      await Future.wait([stdoutDone, stderrDone]);
+    final result = await runBoundedSubprocess(
+      executable: processStart.executable,
+      arguments: processStart.arguments,
+      workingDirectory: processStart.workingDirectory,
+      environment: processStart.environment,
+      maxOutputBytes: prepareMaxOutputChars,
+      timeout: timeout,
+      cancellationSignal: cancellationSignal,
+      helperEnvironment: benchmarkSubprocessEnvironment(
+        additionalDeniedKeys: deniedEnvironmentKeys,
+      ),
+    );
+    if (result.termination == BoundedSubprocessTermination.exited) {
       cancellationCheck?.call();
       return _PrepareProcessResult(
-        stdout: stdoutBuffer.text,
-        stderr: stderrBuffer.text,
-        exitCode: signal.exitCode,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        exitCode: result.exitCode,
         outputLimitExceeded: false,
       );
     }
-
-    await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
-    await _awaitProcessExit(process);
-    await Future.wait([stdoutDone, stderrDone]);
-    if (signal is _PrepareProcessTimedOut) {
-      throw TimeoutException('prepare timed out', signal.timeout);
+    if (result.termination == BoundedSubprocessTermination.timedOut) {
+      throw TimeoutException('prepare timed out', timeout);
     }
-    if (signal is _PrepareProcessOutputLimitExceeded) {
+    if (result.outputLimitExceeded) {
       return _PrepareProcessResult(
-        stdout: stdoutBuffer.text,
+        stdout: result.stdout,
         stderr:
             'prepare output exceeded $prepareMaxOutputChars characters\n'
-            '${stdoutBuffer.text}\n${stderrBuffer.text}',
+            '${result.stdout}\n${result.stderr}',
         exitCode: -1,
         outputLimitExceeded: true,
       );
     }
     throw TimeoutException('prepare cancelled');
-  }
-
-  Future<void> _awaitProcessExit(Process process) async {
-    await process.exitCode.timeout(
-      const Duration(seconds: 2),
-      onTimeout: () async {
-        await _terminateProcessTree(process.pid, ProcessSignal.sigkill);
-        return -1;
-      },
-    );
-  }
-
-  Future<void> _terminateProcessTree(int pid, ProcessSignal signal) async {
-    if (Platform.isWindows) {
-      final args = ['/PID', '$pid', '/T'];
-      if (signal == ProcessSignal.sigkill) args.add('/F');
-      await _tryRunProcess('taskkill', args);
-      return;
-    }
-
-    final descendants = await _descendantPids(pid);
-    for (final childPid in descendants.reversed) {
-      _killPid(childPid, signal);
-    }
-    _killPid(pid, signal);
-  }
-
-  Future<List<int>> _descendantPids(int pid) async {
-    final descendants = <int>[];
-    for (final childPid in await _childPids(pid)) {
-      descendants.add(childPid);
-      descendants.addAll(await _descendantPids(childPid));
-    }
-    return descendants;
-  }
-
-  Future<List<int>> _childPids(int pid) async {
-    final pgrep = await _tryRunProcess('pgrep', ['-P', '$pid']);
-    if (pgrep?.exitCode == 0) {
-      return _parsePids(pgrep!.stdout.toString());
-    }
-
-    final ps = await _tryRunProcess('ps', ['-o', 'pid=', '--ppid', '$pid']);
-    if (ps?.exitCode == 0) {
-      return _parsePids(ps!.stdout.toString());
-    }
-    return const [];
-  }
-
-  Future<ProcessResult?> _tryRunProcess(
-    String executable,
-    List<String> arguments,
-  ) async {
-    try {
-      return await Process.run(
-        executable,
-        arguments,
-        runInShell: false,
-        environment: benchmarkSubprocessEnvironment(
-          additionalDeniedKeys: deniedEnvironmentKeys,
-        ),
-        includeParentEnvironment: false,
-      );
-    } on Object {
-      return null;
-    }
-  }
-
-  List<int> _parsePids(String output) => output
-      .split(RegExp(r'\s+'))
-      .map((s) => int.tryParse(s.trim()))
-      .whereType<int>()
-      .toList(growable: false);
-
-  void _killPid(int pid, ProcessSignal signal) {
-    if (!_tryKillPid(pid, signal)) {
-      _tryKillPid(pid, null);
-    }
-  }
-
-  bool _tryKillPid(int pid, ProcessSignal? signal) {
-    try {
-      return signal == null
-          ? Process.killPid(pid)
-          : Process.killPid(pid, signal);
-    } on Object {
-      return false;
-    }
   }
 
   Future<void> _copyFixtureRoot(Directory sourceRoot, Directory target) async {
@@ -782,83 +644,41 @@ class WorkdirManager {
       );
     }
 
-    final process = await Process.start(
-      gitExecutable,
-      args,
+    final environment = _baselineGitEnvironment();
+    final result = await runBoundedSubprocess(
+      executable: gitExecutable,
+      arguments: args,
       workingDirectory: dir.path,
-      runInShell: false,
-      environment: _baselineGitEnvironment(),
-      includeParentEnvironment: false,
+      environment: environment,
+      maxOutputBytes: gitMaxOutputChars,
+      timeout: gitTimeout,
+      stdinBytes: stdin == null ? null : utf8.encode(stdin),
+      helperEnvironment: environment,
     );
-    if (stdin != null) {
-      process.stdin.add(utf8.encode(stdin));
-      await process.stdin.close();
-    }
-
-    final stdoutBuffer = _BoundedTextCollector(gitMaxOutputChars);
-    final stderrBuffer = _BoundedTextCollector(gitMaxOutputChars);
-    final outputLimitExceeded = Completer<_GitProcessSignal>();
-    void markOutputLimitExceeded() {
-      if (!outputLimitExceeded.isCompleted) {
-        outputLimitExceeded.complete(const _GitProcessOutputLimitExceeded());
-      }
-    }
-
-    final stdoutText = process.stdout.transform(systemEncoding.decoder);
-    final stderrText = process.stderr.transform(systemEncoding.decoder);
-    final stdoutDone = stdoutText.listen((chunk) {
-      stdoutBuffer.write(chunk);
-      if (stdoutBuffer.exceeded) markOutputLimitExceeded();
-    }).asFuture<void>();
-    final stderrDone = stderrText.listen((chunk) {
-      stderrBuffer.write(chunk);
-      if (stderrBuffer.exceeded) markOutputLimitExceeded();
-    }).asFuture<void>();
-
-    final timeoutExceeded = Completer<_GitProcessSignal>();
-    final timeoutTimer = Timer(gitTimeout, () {
-      if (!timeoutExceeded.isCompleted) {
-        timeoutExceeded.complete(_GitProcessTimedOut(gitTimeout));
-      }
-    });
-    final signal = await Future.any<_GitProcessSignal>([
-      process.exitCode.then(_GitProcessExit.new),
-      timeoutExceeded.future,
-      outputLimitExceeded.future,
-    ]);
-    timeoutTimer.cancel();
-
-    if (signal is _GitProcessExit) {
-      await Future.wait([stdoutDone, stderrDone]);
-      if (signal.exitCode != 0) {
-        throw ProcessException(
-          gitExecutable,
-          args,
-          '${stdoutBuffer.text}\n${stderrBuffer.text}',
-          signal.exitCode,
-        );
-      }
-      return stdoutBuffer.text;
-    }
-
-    await _terminateProcessTree(process.pid, ProcessSignal.sigterm);
-    await _awaitProcessExit(process);
-    await Future.wait([stdoutDone, stderrDone]);
-
-    if (signal is _GitProcessTimedOut) {
+    if (result.termination == BoundedSubprocessTermination.timedOut) {
       throw TimeoutException(
         'baseline git initialization timed out',
-        signal.timeout,
+        gitTimeout,
       );
     }
-
-    throw ProcessException(
-      gitExecutable,
-      args,
-      'baseline git output exceeded $gitMaxOutputChars characters\n'
-      '${stdoutBuffer.text}\n${stderrBuffer.text}',
-      -1,
-    );
+    if (result.outputLimitExceeded) {
+      throw ProcessException(
+        gitExecutable,
+        args,
+        'baseline git output exceeded $gitMaxOutputChars characters\n'
+        '${result.stdout}\n${result.stderr}',
+        -1,
+      );
+    }
+    if (result.exitCode != 0) {
+      throw ProcessException(
+        gitExecutable,
+        args,
+        '${result.stdout}\n${result.stderr}',
+        result.exitCode,
+      );
+    }
+    return result.stdout;
   }
 
   Map<String, String> _baselineGitEnvironment() {
@@ -873,49 +693,6 @@ class WorkdirManager {
   }
 }
 
-class _BoundedTextCollector {
-  _BoundedTextCollector(this.maxChars);
-
-  final int maxChars;
-  final _buffer = StringBuffer();
-  bool exceeded = false;
-
-  String get text => _buffer.toString();
-
-  void write(String chunk) {
-    if (exceeded) return;
-    final remaining = maxChars - _buffer.length;
-    if (chunk.length <= remaining) {
-      _buffer.write(chunk);
-      return;
-    }
-    if (remaining > 0) {
-      _buffer.write(chunk.substring(0, remaining));
-    }
-    exceeded = true;
-  }
-}
-
-sealed class _GitProcessSignal {
-  const _GitProcessSignal();
-}
-
-class _GitProcessExit extends _GitProcessSignal {
-  const _GitProcessExit(this.exitCode);
-
-  final int exitCode;
-}
-
-class _GitProcessTimedOut extends _GitProcessSignal {
-  const _GitProcessTimedOut(this.timeout);
-
-  final Duration timeout;
-}
-
-class _GitProcessOutputLimitExceeded extends _GitProcessSignal {
-  const _GitProcessOutputLimitExceeded();
-}
-
 class _PrepareProcessResult {
   const _PrepareProcessResult({
     required this.stdout,
@@ -928,28 +705,4 @@ class _PrepareProcessResult {
   final String stderr;
   final int exitCode;
   final bool outputLimitExceeded;
-}
-
-sealed class _PrepareProcessSignal {
-  const _PrepareProcessSignal();
-}
-
-class _PrepareProcessExit extends _PrepareProcessSignal {
-  const _PrepareProcessExit(this.exitCode);
-
-  final int exitCode;
-}
-
-class _PrepareProcessTimedOut extends _PrepareProcessSignal {
-  const _PrepareProcessTimedOut(this.timeout);
-
-  final Duration timeout;
-}
-
-class _PrepareProcessCancelled extends _PrepareProcessSignal {
-  const _PrepareProcessCancelled();
-}
-
-class _PrepareProcessOutputLimitExceeded extends _PrepareProcessSignal {
-  const _PrepareProcessOutputLimitExceeded();
 }

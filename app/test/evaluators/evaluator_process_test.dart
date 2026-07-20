@@ -58,6 +58,35 @@ void main() {
   }, skip: Platform.isWindows);
 
   test(
+    'timeout remains primary when TERM handling floods output',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_eval_timeout_output_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+
+      final result = await runEvaluatorProcess(
+        'sh',
+        const [
+          '-c',
+          "trap 'head -c 4096 /dev/zero; exit 0' TERM; while :; do sleep 1; done",
+        ],
+        workingDirectory: tmp.path,
+        environment: {'PATH': '/usr/bin:/bin'},
+        timeout: const Duration(milliseconds: 100),
+        maxOutputChars: 128,
+      );
+
+      expect(result.timedOut, isTrue);
+      expect(result.stdout.length, 128);
+      expect(result.outputLimitExceeded, isFalse);
+    },
+    skip: Platform.isWindows,
+  );
+
+  test(
     'resource probe helpers scrub sensitive environment variables',
     () async {
       final tmp = await Directory.systemTemp.createTemp(

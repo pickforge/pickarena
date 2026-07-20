@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
-import 'package:dart_arena/agent/droid_agent_harness.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/model_stream_event.dart';
+import 'package:dart_arena/runner/bounded_subprocess.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 
@@ -229,79 +229,26 @@ class MinimalAgentHarness implements AgentHarness, AgentHarnessProvenance {
             environment: environment,
             allowInternet: allowInternet,
           );
-    final process = await Process.start(
-      processStart.executable,
-      processStart.arguments,
+    final result = await runBoundedSubprocess(
+      executable: processStart.executable,
+      arguments: processStart.arguments,
       workingDirectory: processStart.workingDirectory,
-      runInShell: false,
       environment: processStart.environment,
-      includeParentEnvironment: false,
+      maxOutputBytes: maxOutputChars,
+      timeout: timeout,
+      capture: BoundedSubprocessCapture.trailing,
     );
-    final stdout = _BoundedTailText(maxOutputChars);
-    final stderr = _BoundedTailText(maxOutputChars);
-    final outputLimitExceeded = Completer<void>();
-    void markOutputLimitExceeded() {
-      if (!outputLimitExceeded.isCompleted) outputLimitExceeded.complete();
+    if (result.termination == BoundedSubprocessTermination.timedOut) {
+      throw TimeoutException('bash command timed out');
     }
-
-    final stdoutDone = process.stdout.transform(systemEncoding.decoder).listen((
-      chunk,
-    ) {
-      stdout.write(chunk);
-      if (stdout.exceeded) markOutputLimitExceeded();
-    }).asFuture<void>();
-    final stderrDone = process.stderr.transform(systemEncoding.decoder).listen((
-      chunk,
-    ) {
-      stderr.write(chunk);
-      if (stderr.exceeded) markOutputLimitExceeded();
-    }).asFuture<void>();
-    final timeoutExceeded = Completer<void>();
-    final timeoutTimer = Timer(timeout, () {
-      if (!timeoutExceeded.isCompleted) timeoutExceeded.complete();
-    });
-    var outputLimitHit = false;
-    var timedOut = false;
-    int exitCode;
-    try {
-      final signal = await Future.any<Object>([
-        process.exitCode,
-        timeoutExceeded.future.then((_) => const _CommandTimedOut()),
-        outputLimitExceeded.future.then((_) => const _CommandOutputLimited()),
-      ]);
-      if (signal is int) {
-        exitCode = signal;
-      } else {
-        timedOut = signal is _CommandTimedOut;
-        outputLimitHit = signal is _CommandOutputLimited;
-        await DroidAgentHarness.terminateProcessTree(
-          process.pid,
-          ProcessSignal.sigterm,
-        );
-        exitCode = await process.exitCode.timeout(
-          const Duration(seconds: 2),
-          onTimeout: () async {
-            await DroidAgentHarness.terminateProcessTree(
-              process.pid,
-              ProcessSignal.sigkill,
-            );
-            return -1;
-          },
-        );
-      }
-    } finally {
-      timeoutTimer.cancel();
-    }
-    await Future.wait([stdoutDone, stderrDone]);
-    if (timedOut) throw TimeoutException('bash command timed out');
-    if (outputLimitHit) {
-      throw _CommandOutputLimitExceeded(stdout.text, stderr.text);
+    if (result.outputLimitExceeded) {
+      throw _CommandOutputLimitExceeded(result.stdout, result.stderr);
     }
     return _CommandResult(
-      exitCode: exitCode,
-      stdout: stdout.text,
-      stderr: stderr.text,
-      outputTruncated: stdout.exceeded || stderr.exceeded,
+      exitCode: result.exitCode,
+      stdout: result.stdout,
+      stderr: result.stderr,
+      outputTruncated: result.stdoutLimitExceeded || result.stderrLimitExceeded,
     );
   }
 
@@ -397,14 +344,6 @@ class _CommandResult {
   final String stdout;
   final String stderr;
   final bool outputTruncated;
-}
-
-class _CommandTimedOut {
-  const _CommandTimedOut();
-}
-
-class _CommandOutputLimited {
-  const _CommandOutputLimited();
 }
 
 class _CommandOutputLimitExceeded implements Exception {
