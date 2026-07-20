@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/analytics/result_primitives.dart';
@@ -18,6 +20,7 @@ import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/runner/evaluator_resource_limits.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
+import 'package:path/path.dart' as p;
 
 class AgenticRunOrchestrator {
   AgenticRunOrchestrator({
@@ -122,6 +125,31 @@ class AgenticRunOrchestrator {
       );
     }
 
+    late final _WorkspaceManifestSnapshot preAgentManifest;
+    late final WorkdirIsolationEvidence preAgentIsolation;
+    try {
+      preAgentManifest = await _workspaceFileManifest(workspace);
+      preAgentIsolation = await workdirManager
+          .collectWorkspaceIsolationEvidence(
+            workspace,
+            ignoreBenchmarkInfrastructure: true,
+          );
+    } on Object catch (e) {
+      return _environmentFailureResult(
+        runId: runId,
+        providerId: providerId,
+        modelId: modelId,
+        task: task,
+        trialIndex: trialIndex,
+        planId: planId,
+        harnessId: harness.id,
+        evaluatorConfig: evaluatorConfig,
+        phase: 'pre_agent_workspace_isolation',
+        rationale: 'pre-agent workspace isolation evidence failed',
+        error: e,
+      );
+    }
+
     cancellationCheck?.call();
     final harnessStopwatch = Stopwatch()..start();
     late final AgentRunResult agentResult;
@@ -166,9 +194,22 @@ class AgenticRunOrchestrator {
       );
     }
 
+    late final _WorkspaceManifestSnapshot postAgentManifest;
+    late final WorkdirIsolationEvidence postAgentIsolation;
     late final Map<String, Object?> hiddenFixtureIsolation;
     try {
-      hiddenFixtureIsolation = await _hiddenFixtureIsolation(task, workspace);
+      postAgentManifest = await _workspaceFileManifest(workspace);
+      postAgentIsolation = await workdirManager
+          .collectWorkspaceIsolationEvidence(
+            workspace,
+            ignoreBenchmarkInfrastructure: true,
+          );
+      hiddenFixtureIsolation = await _hiddenFixtureIsolation(
+        task,
+        workspace,
+        preAgentManifest: preAgentManifest,
+        postAgentManifest: postAgentManifest,
+      );
     } on Object catch (e) {
       return _environmentFailureResult(
         runId: runId,
@@ -189,6 +230,10 @@ class AgenticRunOrchestrator {
       'patchApplied': false,
       'patchSha256': capturedPatch?.patchSha256,
       'hiddenFixtureIsolation': hiddenFixtureIsolation,
+      'agentWorkspaceIsolation': {
+        'preAgent': preAgentIsolation.toJson(),
+        'postAgent': postAgentIsolation.toJson(),
+      },
       'hiddenVerifierDigests': hiddenVerifierDigests(task),
     };
 
@@ -218,6 +263,11 @@ class AgenticRunOrchestrator {
         provenance: resultProvenance,
       );
     }
+
+    resultProvenance['workspacePaths'] = {
+      'agent': _workspaceProvenancePath(workspace),
+      'grading': _workspaceProvenancePath(gradingWorkspace),
+    };
 
     final patchText = capturedPatch == null
         ? null
@@ -476,14 +526,28 @@ class AgenticRunOrchestrator {
     );
   }
 
+  String _workspaceProvenancePath(Directory workspace) => p
+      .relative(
+        p.absolute(workspace.path),
+        from: p.absolute(workdirManager.root.path),
+      )
+      .replaceAll('\\', '/');
+
   Future<Map<String, Object?>> _hiddenFixtureIsolation(
     BenchmarkTask task,
-    Directory workspace,
-  ) async {
+    Directory workspace, {
+    required _WorkspaceManifestSnapshot preAgentManifest,
+    required _WorkspaceManifestSnapshot postAgentManifest,
+  }) async {
     final leakedPaths = <String>{};
     for (final verifier in task.hiddenVerifiers) {
       final paths = {verifier.testPath, ...verifier.files.keys};
       for (final path in paths) {
+        final normalizedPath = p.normalize(path).replaceAll('\\', '/');
+        if (preAgentManifest.files.containsKey(normalizedPath) ||
+            postAgentManifest.files.containsKey(normalizedPath)) {
+          leakedPaths.add(path);
+        }
         try {
           final file = resolveWorkspaceFile(workspace, path);
           final handle = await file.open(mode: FileMode.read);
@@ -496,7 +560,52 @@ class AgenticRunOrchestrator {
         }
       }
     }
-    return {'asserted': true, 'leakedPaths': leakedPaths.toList()..sort()};
+
+    final prePaths = preAgentManifest.files.keys.toSet();
+    final postPaths = postAgentManifest.files.keys.toSet();
+    final sharedPaths = prePaths.intersection(postPaths);
+    return {
+      'asserted': true,
+      'leakedPaths': leakedPaths.toList()..sort(),
+      'preAgentManifestSha256': preAgentManifest.digest,
+      'postAgentManifestSha256': postAgentManifest.digest,
+      'addedFileCount': postPaths.difference(prePaths).length,
+      'removedFileCount': prePaths.difference(postPaths).length,
+      'modifiedFileCount': sharedPaths
+          .where(
+            (path) =>
+                preAgentManifest.files[path] != postAgentManifest.files[path],
+          )
+          .length,
+    };
+  }
+
+  Future<_WorkspaceManifestSnapshot> _workspaceFileManifest(
+    Directory workspace,
+  ) async {
+    final files = <String, String>{};
+    await for (final entity in workspace.list(
+      recursive: true,
+      followLinks: false,
+    )) {
+      if (entity is! File) continue;
+      final relativePath = p
+          .relative(entity.path, from: workspace.path)
+          .replaceAll('\\', '/');
+      files[relativePath] = (await entity.stat()).size.toString();
+    }
+    final entries = files.entries.toList()
+      ..sort((left, right) => left.key.compareTo(right.key));
+    final digest = sha256
+        .convert(
+          utf8.encode(
+            entries
+                .map((entry) => '${entry.key}\u0000${entry.value}')
+                .join('\n'),
+          ),
+        )
+        .toString();
+    return _WorkspaceManifestSnapshot(files: files, digest: digest);
   }
 
   void _addPrepareFailureEvaluations({
@@ -699,4 +808,11 @@ class AgenticRunOrchestrator {
     if (remaining.compareTo(Duration.zero) <= 0) return Duration.zero;
     return remaining.compareTo(taskTimeout) < 0 ? remaining : taskTimeout;
   }
+}
+
+class _WorkspaceManifestSnapshot {
+  const _WorkspaceManifestSnapshot({required this.files, required this.digest});
+
+  final Map<String, String> files;
+  final String digest;
 }

@@ -140,6 +140,67 @@ void main() {
     },
   );
 
+  test(
+    'agent workspace isolation ignores benchmark infrastructure only',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_agent_isolation_evidence_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final workDir = Directory(p.join(root.path, 'runs', 'r', 'p', 'm', 't'));
+      await File(
+        p.join(workDir.path, 'lib', 'visible.dart'),
+      ).create(recursive: true);
+      await File(
+        p.join(workDir.path, 'lib', 'visible.dart'),
+      ).writeAsString('visible');
+      await File(p.join(workDir.path, '.git', 'index')).create(recursive: true);
+      await File(p.join(workDir.path, '.git', 'index')).writeAsString('git');
+      await File(
+        p.join(workDir.path, '.dart_tool', 'package_config.json'),
+      ).create(recursive: true);
+      await File(
+        p.join(workDir.path, '.dart_tool', 'package_config.json'),
+      ).writeAsString('{}');
+
+      final manager = WorkdirManager(root: root);
+      final evidence = await manager.collectWorkspaceIsolationEvidence(
+        workDir,
+        ignoreBenchmarkInfrastructure: true,
+      );
+
+      expect(evidence.restrictedPathsAbsent, isTrue);
+      expect(evidence.restrictedPathCount, 0);
+      expect(evidence.visibleFileCount, 1);
+
+      await File(
+        p.join(workDir.path, 'reference', 'answer.dart'),
+      ).create(recursive: true);
+      final leakedEvidence = await manager.collectWorkspaceIsolationEvidence(
+        workDir,
+        ignoreBenchmarkInfrastructure: true,
+      );
+      expect(leakedEvidence.restrictedPathsAbsent, isFalse);
+      expect(leakedEvidence.restrictedPathCount, greaterThan(0));
+
+      await Directory(
+        p.join(workDir.path, 'reference'),
+      ).delete(recursive: true);
+      await File(
+        p.join(workDir.path, 'lib', 'build', 'reference', 'answer.dart'),
+      ).create(recursive: true);
+      final nestedLeakEvidence = await manager
+          .collectWorkspaceIsolationEvidence(
+            workDir,
+            ignoreBenchmarkInfrastructure: true,
+          );
+      expect(nestedLeakEvidence.restrictedPathsAbsent, isFalse);
+      expect(nestedLeakEvidence.restrictedPathCount, greaterThan(0));
+    },
+  );
+
   test('uses safe modelId path segments', () async {
     final root = await Directory.systemTemp.createTemp('dart_arena_sanitize_');
     final mgr = WorkdirManager(root: root);

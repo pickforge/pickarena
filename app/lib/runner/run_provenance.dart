@@ -322,6 +322,24 @@ String appendResultProvenance(
   if (decoded is! Map<String, Object?>) {
     throw const FormatException('run provenance must be a JSON object');
   }
+  final taskBundleDigests = <String, String>{};
+  final config = decoded['config'];
+  final corpusManifest = config is Map ? config['corpusManifest'] : null;
+  final manifestTasks = corpusManifest is Map ? corpusManifest['tasks'] : null;
+  if (manifestTasks is List) {
+    for (final item in manifestTasks) {
+      if (item is! Map) continue;
+      final taskId = item['taskId'];
+      final taskVersion = item['taskVersion'];
+      final taskBundleDigest = item['taskBundleDigest'];
+      if (taskId is String &&
+          taskVersion is int &&
+          taskBundleDigest is String) {
+        taskBundleDigests['$taskId@v$taskVersion'] = taskBundleDigest;
+      }
+    }
+  }
+
   final resultProvenance =
       [
         for (final result in results)
@@ -333,6 +351,9 @@ String appendResultProvenance(
             'trialIndex': result.trialIndex,
             'benchmarkTrack': result.benchmarkTrack,
             ...result.provenance,
+            if (taskBundleDigests['${result.taskId}@v${result.taskVersion}']
+                case final taskBundleDigest?)
+              'taskBundleDigest': taskBundleDigest,
           },
       ]..sort((a, b) {
         final task = (a['taskId']! as String).compareTo(b['taskId']! as String);

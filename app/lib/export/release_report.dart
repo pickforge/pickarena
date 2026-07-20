@@ -1,9 +1,11 @@
 import 'dart:collection';
 
 import 'package:dart_arena/analytics/result_primitives.dart';
+import 'package:dart_arena/core/collection_equality.dart';
 import 'package:dart_arena/core/task_bundle_digest.dart';
 import 'package:dart_arena/core/model_identity.dart';
 import 'package:dart_arena/export/environment_compatibility.dart';
+import 'package:path/path.dart' as p;
 
 const _standardBundleFilePaths = [
   'report.md',
@@ -229,7 +231,9 @@ Map<String, Object?> buildReleaseReport({
   _validateFrozenCorpusManifest(
     selectedTasks: selectedTasks,
     corpusManifestDigest: corpusManifestDigest,
+    benchmarkTrack: _nonEmptyString(benchmark['track']),
     taskRows: taskRows,
+    taskBundleDigestEvidence: taskBundleDigestEvidence,
     blockers: blockers,
   );
   if (evaluatorSchemaVersion <= 0) {
@@ -351,6 +355,7 @@ Map<String, Object?> buildReleaseReport({
     runIds: runIds,
     runProvenanceById: runProvenanceById,
     taskBundleDigestEvidence: taskBundleDigestEvidence,
+    trialSummaries: trialSummaries,
     blockers: blockers,
   );
   if (runProvenanceById != null) {
@@ -5739,7 +5744,7 @@ void _crossCheckSourceRunProvenance({
   for (final entry in environmentFields.entries) {
     final sourceValues = _stringList(sourceRunProvenance[entry.key])..sort();
     final storedValues = _stringList(storedRunProvenance[entry.key])..sort();
-    if (_stringListsEqual(sourceValues, storedValues)) continue;
+    if (orderedListEquals(sourceValues, storedValues)) continue;
     blockers.add(
       'Leaderboard source run provenance ${entry.value} do not match stored '
       'run provenance.',
@@ -7977,12 +7982,14 @@ String _taskKey(Map<String, Object?> report) =>
 void _validateFrozenCorpusManifest({
   required Object? selectedTasks,
   required String? corpusManifestDigest,
+  required String? benchmarkTrack,
   required List<Map<String, Object?>> taskRows,
+  required List<Map<String, Object?>> taskBundleDigestEvidence,
   required Set<String> blockers,
 }) {
   if (selectedTasks is! List || corpusManifestDigest == null) return;
   final entries = <CorpusManifestEntry>[];
-  final selectedTaskKeys = <String>{};
+  final selectedTasksByKey = <String, CorpusManifestEntry>{};
   var valid = true;
   for (final selectedTask in selectedTasks) {
     final entry = _objectMap(selectedTask);
@@ -7996,36 +8003,64 @@ void _validateFrozenCorpusManifest({
       valid = false;
       continue;
     }
-    final key = '$taskId@v$taskVersion';
-    if (!selectedTaskKeys.add(key)) valid = false;
-    entries.add(
-      CorpusManifestEntry(
-        taskId: taskId,
-        taskVersion: taskVersion,
-        taskBundleDigest: taskBundleDigest,
-      ),
+    final manifestEntry = CorpusManifestEntry(
+      taskId: taskId,
+      taskVersion: taskVersion,
+      taskBundleDigest: taskBundleDigest,
     );
+    final key = '$taskId@v$taskVersion';
+    if (selectedTasksByKey.containsKey(key)) valid = false;
+    selectedTasksByKey[key] = manifestEntry;
+    entries.add(manifestEntry);
   }
-  final taskRowsByKey = <String, Map<String, Object?>>{};
+
+  final liveDigestsByKey = {
+    for (final evidence in taskBundleDigestEvidence)
+      if (_taskQaReportKey(evidence) case final key?)
+        if (_nonEmptyString(evidence['taskBundleDigest']) case final digest?)
+          key: digest,
+  };
+  final taskRowKeys = <String>{};
   for (final taskRow in taskRows) {
     final taskId = _nonEmptyString(taskRow['taskId']);
     final taskVersion = taskRow['taskVersion'];
-    if (taskId == null || taskVersion is! int) {
+    final track = _nonEmptyString(
+      taskRow['benchmarkTrack'] ?? taskRow['track'],
+    );
+    if (taskId == null ||
+        taskVersion is! int ||
+        track == null ||
+        track != benchmarkTrack) {
       valid = false;
       continue;
     }
     final key = '$taskId@v$taskVersion';
-    if (taskRowsByKey.containsKey(key)) {
+    if (!taskRowKeys.add(key)) {
       valid = false;
       continue;
     }
-    taskRowsByKey[key] = taskRow;
-  }
-  if (selectedTaskKeys.length != taskRowsByKey.length) valid = false;
-  for (final entry in entries) {
-    final row = taskRowsByKey['${entry.taskId}@v${entry.taskVersion}'];
-    if (row == null || row['taskBundleDigest'] != entry.taskBundleDigest) {
+    final selectedTask = selectedTasksByKey[key];
+    if (selectedTask == null ||
+        taskRow['taskBundleDigest'] != selectedTask.taskBundleDigest) {
       valid = false;
+      continue;
+    }
+    final liveKey = _taskQaKey(
+      taskId: taskId,
+      taskVersion: taskVersion,
+      track: track,
+    );
+    final liveDigest = liveDigestsByKey[liveKey];
+    if (liveDigest == null) {
+      blockers.add(
+        'Could not recompute the full task bundle digest from the live task '
+        'bundle for an exported leaderboard task.',
+      );
+    } else if (liveDigest != selectedTask.taskBundleDigest) {
+      blockers.add(
+        'Full task bundle digest drifted from the frozen corpus manifest '
+        'since the run.',
+      );
     }
   }
   if (!valid) {
@@ -8068,6 +8103,7 @@ Map<String, Object?> _provenanceSummary({
   required List<String> runIds,
   required Map<String, Map<String, Object?>>? runProvenanceById,
   required List<Map<String, Object?>> taskBundleDigestEvidence,
+  required List<Map<String, Object?>> trialSummaries,
   required Set<String> blockers,
 }) {
   if (runIds.isNotEmpty && runProvenanceById == null) {
@@ -8090,12 +8126,22 @@ Map<String, Object?> _provenanceSummary({
   final gradingModeCounts = SplayTreeMap<String, int>();
   var hiddenFixtureIsolationAssertedResultCount = 0;
   var hiddenFixtureIsolationLeakResultCount = 0;
+  var hiddenFixtureManifestCrossCheckedResultCount = 0;
+  var agentWorkspaceIsolationAssertedResultCount = 0;
+  var workspaceSeparatedResultCount = 0;
   var hiddenVerifierDigestMatchedResultCount = 0;
+  var taskBundleDigestMatchedResultCount = 0;
   final currentHiddenVerifierDigestsByTaskKey = {
     for (final evidence in taskBundleDigestEvidence)
       if (_taskQaReportKey(evidence) case final key?)
         if (evidence.containsKey('hiddenVerifierDigests'))
           key: _objectMap(evidence['hiddenVerifierDigests']),
+  };
+  final currentTaskBundleDigestsByTaskKey = {
+    for (final evidence in taskBundleDigestEvidence)
+      if (_taskQaReportKey(evidence) case final key?)
+        if (_nonEmptyString(evidence['taskBundleDigest']) case final digest?)
+          key: digest,
   };
   for (final runId in runIds) {
     final provenance = runProvenanceById?[runId];
@@ -8123,19 +8169,50 @@ Map<String, Object?> _provenanceSummary({
     final pricingRegistryStatus = provenance == null
         ? 'missing'
         : _pricingRegistryStatus(provenance);
-    final resultProvenance = provenance == null
+    final allResultProvenance = provenance == null
         ? const <Map<String, Object?>>[]
         : _objectMaps(provenance['resultProvenance']);
-    final expectedResultCount = provenance == null
-        ? 0
-        : _objectMaps(provenance['combos']).length;
-    if (provenance != null &&
-        (provenance['resultProvenance'] is! List ||
-            resultProvenance.length != expectedResultCount)) {
+    final plannedCombos = provenance == null
+        ? const <Map<String, Object?>>[]
+        : _objectMaps(provenance['combos']);
+    final exportedTrials = [
+      for (final trial in trialSummaries)
+        if (trial['runId'] == runId) trial,
+    ];
+    final exportedResultKeysToComboKeys = <String, String>{};
+    final exportedComboKeys = <String>{};
+    var exportedComboIdentityValid = true;
+    for (final trial in exportedTrials) {
+      final comboKey = _provenanceComboKey(trial);
+      final resultKey = _resultProvenanceKey(trial);
+      if (comboKey == null ||
+          resultKey == null ||
+          !exportedComboKeys.add(comboKey) ||
+          exportedResultKeysToComboKeys.containsKey(resultKey)) {
+        exportedComboIdentityValid = false;
+        continue;
+      }
+      exportedResultKeysToComboKeys[resultKey] = comboKey;
+    }
+    final plannedComboCounts = _provenanceComboCounts(plannedCombos);
+    final resultCounts = _resultProvenanceCounts(allResultProvenance);
+    if (!exportedComboIdentityValid ||
+        exportedResultKeysToComboKeys.entries.any(
+          (entry) =>
+              plannedComboCounts[entry.value] != 1 ||
+              resultCounts[entry.key] != 1,
+        )) {
       blockers.add(
-        'Run $runId is missing clean-replay result provenance for some results.',
+        'Run $runId does not contain each exported planned result combo '
+        'exactly once in stored provenance.',
       );
     }
+    final exportedResultKeys = exportedResultKeysToComboKeys.keys.toSet();
+    final resultProvenance = [
+      for (final result in allResultProvenance)
+        if (_resultProvenanceKey(result) case final key?)
+          if (exportedResultKeys.contains(key)) result,
+    ];
     var runCleanReplayResultCount = 0;
     var runHiddenFixtureIsolationAssertedResultCount = 0;
     var runHiddenFixtureIsolationLeakResultCount = 0;
@@ -8168,6 +8245,34 @@ Map<String, Object?> _provenanceSummary({
         );
       }
 
+      final workspacePaths = _objectMap(result['workspacePaths']);
+      final agentWorkspacePath = _nonEmptyString(workspacePaths['agent']);
+      final gradingWorkspacePath = _nonEmptyString(workspacePaths['grading']);
+      if (agentWorkspacePath != null &&
+          gradingWorkspacePath != null &&
+          !p.equals(
+            p.normalize(agentWorkspacePath),
+            p.normalize(gradingWorkspacePath),
+          )) {
+        workspaceSeparatedResultCount++;
+      } else {
+        blockers.add(
+          'Result does not independently prove that grading used a workspace '
+          'separate from the agent workspace.',
+        );
+      }
+
+      final agentWorkspaceIsolation = _objectMap(
+        result['agentWorkspaceIsolation'],
+      );
+      if (_agentWorkspaceIsolationAsserted(agentWorkspaceIsolation)) {
+        agentWorkspaceIsolationAssertedResultCount++;
+      } else {
+        blockers.add(
+          'Result is missing fail-closed agent workspace isolation evidence.',
+        );
+      }
+
       final hiddenFixtureIsolation = _objectMap(
         result['hiddenFixtureIsolation'],
       );
@@ -8178,6 +8283,23 @@ Map<String, Object?> _provenanceSummary({
       } else {
         blockers.add(
           'Result is missing hidden verifier fixture isolation provenance.',
+        );
+      }
+      final preAgentManifestSha256 = _nonEmptyString(
+        hiddenFixtureIsolation['preAgentManifestSha256'],
+      );
+      final postAgentManifestSha256 = _nonEmptyString(
+        hiddenFixtureIsolation['postAgentManifestSha256'],
+      );
+      if (preAgentManifestSha256 != null &&
+          postAgentManifestSha256 != null &&
+          _sha256DigestPattern.hasMatch(preAgentManifestSha256) &&
+          _sha256DigestPattern.hasMatch(postAgentManifestSha256)) {
+        hiddenFixtureManifestCrossCheckedResultCount++;
+      } else {
+        blockers.add(
+          'Result is missing the pre/post agent workspace manifest '
+          'cross-check for hidden fixture leaks.',
         );
       }
       if (leakedPaths.isNotEmpty) {
@@ -8201,15 +8323,37 @@ Map<String, Object?> _provenanceSummary({
           'Could not recompute hidden verifier digests from the live task '
           'bundle for a graded result.',
         );
-      } else if (_stringMapEquals(
+      } else if (shallowMapEquals(
         storedHiddenVerifierDigests,
-        currentHiddenVerifierDigestsByTaskKey[taskKey],
+        currentHiddenVerifierDigestsByTaskKey[taskKey]!,
       )) {
         hiddenVerifierDigestMatchedResultCount++;
       } else {
         blockers.add(
           'Hidden verifier digests drifted from the corpus since the run.',
         );
+      }
+
+      final storedTaskBundleDigest = _nonEmptyString(
+        result['taskBundleDigest'],
+      );
+      final currentTaskBundleDigest = taskKey == null
+          ? null
+          : currentTaskBundleDigestsByTaskKey[taskKey];
+      if (storedTaskBundleDigest == null ||
+          !_sha256DigestPattern.hasMatch(storedTaskBundleDigest)) {
+        blockers.add('Result is missing its frozen full task bundle digest.');
+      } else if (currentTaskBundleDigest == null) {
+        blockers.add(
+          'Could not recompute the full task bundle digest from the live task '
+          'bundle for a graded result.',
+        );
+      } else if (storedTaskBundleDigest != currentTaskBundleDigest) {
+        blockers.add(
+          'Full task bundle digest drifted from the corpus since the run.',
+        );
+      } else {
+        taskBundleDigestMatchedResultCount++;
       }
     }
     if (provenance != null) {
@@ -8315,21 +8459,16 @@ Map<String, Object?> _provenanceSummary({
         hiddenFixtureIsolationAssertedResultCount,
     'hiddenFixtureIsolationLeakResultCount':
         hiddenFixtureIsolationLeakResultCount,
+    'hiddenFixtureManifestCrossCheckedResultCount':
+        hiddenFixtureManifestCrossCheckedResultCount,
+    'agentWorkspaceIsolationAssertedResultCount':
+        agentWorkspaceIsolationAssertedResultCount,
+    'workspaceSeparatedResultCount': workspaceSeparatedResultCount,
     'hiddenVerifierDigestMatchedResultCount':
         hiddenVerifierDigestMatchedResultCount,
+    'taskBundleDigestMatchedResultCount': taskBundleDigestMatchedResultCount,
     'runs': runs,
   };
-}
-
-bool _stringMapEquals(
-  Map<String, Object?> actual,
-  Map<String, Object?>? expected,
-) {
-  if (expected == null || actual.length != expected.length) return false;
-  for (final entry in expected.entries) {
-    if (actual[entry.key] != entry.value) return false;
-  }
-  return true;
 }
 
 Map<String, int> _gradingModeCounts(
@@ -8344,6 +8483,71 @@ Map<String, int> _gradingModeCounts(
     counts[key] = (counts[key] ?? 0) + 1;
   }
   return counts;
+}
+
+String? _provenanceComboKey(Map<String, Object?> value) {
+  final taskId = _nonEmptyString(value['taskId']);
+  final providerId = _nonEmptyString(value['providerId']);
+  final modelId = _nonEmptyString(value['modelId']);
+  final trialIndex = value['trialIndex'];
+  if (taskId == null ||
+      providerId == null ||
+      modelId == null ||
+      trialIndex is! int ||
+      trialIndex < 0) {
+    return null;
+  }
+  return [taskId, providerId, modelId, trialIndex].join('\u001f');
+}
+
+String? _resultProvenanceKey(Map<String, Object?> value) {
+  final comboKey = _provenanceComboKey(value);
+  final taskVersion = value['taskVersion'];
+  final benchmarkTrack = _nonEmptyString(value['benchmarkTrack']);
+  if (comboKey == null ||
+      taskVersion is! int ||
+      taskVersion <= 0 ||
+      benchmarkTrack == null) {
+    return null;
+  }
+  return [comboKey, taskVersion, benchmarkTrack].join('\u001f');
+}
+
+Map<String, int> _provenanceComboCounts(Iterable<Map<String, Object?>> values) {
+  final counts = <String, int>{};
+  for (final value in values) {
+    final key = _provenanceComboKey(value);
+    if (key != null) counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
+}
+
+Map<String, int> _resultProvenanceCounts(
+  Iterable<Map<String, Object?>> values,
+) {
+  final counts = <String, int>{};
+  for (final value in values) {
+    final key = _resultProvenanceKey(value);
+    if (key != null) counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
+}
+
+bool _agentWorkspaceIsolationAsserted(Map<String, Object?> isolation) {
+  for (final stage in const ['preAgent', 'postAgent']) {
+    final evidence = _objectMap(isolation[stage]);
+    if (evidence['workdirUnderRunsRoot'] != true ||
+        evidence['rootConfined'] != true ||
+        evidence['relativePathsOnly'] != true ||
+        evidence['restrictedPathsAbsent'] != true ||
+        evidence['restrictedPathCount'] != 0 ||
+        evidence['symlinkCount'] != 0 ||
+        evidence['unreadableFileCount'] != 0 ||
+        evidence['symlinksFollowed'] != false) {
+      return false;
+    }
+  }
+  return true;
 }
 
 String? _resultProvenanceTaskKey(Map<String, Object?> result) {
@@ -8687,14 +8891,6 @@ List<String> _stringList(Object? value) {
     for (final item in value)
       if (item is String) item,
   ];
-}
-
-bool _stringListsEqual(List<String> left, List<String> right) {
-  if (left.length != right.length) return false;
-  for (var index = 0; index < left.length; index++) {
-    if (left[index] != right[index]) return false;
-  }
-  return true;
 }
 
 List<String> _nonEmptyStringList(Object? value) {
