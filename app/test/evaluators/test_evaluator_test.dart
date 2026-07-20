@@ -160,14 +160,14 @@ void main() {
       );
       final result = await TestEvaluator(
         timeout: const Duration(seconds: 60),
-        maxOutputChars: 2048,
+        maxOutputBytes: 2048,
       ).evaluate(_ctx(dir));
 
       expect(result.passed, isFalse);
       expect(result.score, 0.0);
       expect(result.rationale, 'test process output limit exceeded');
       expect(result.details['output_limit_exceeded'], isTrue);
-      expect(result.details['max_output_chars'], 2048);
+      expect(result.details['max_output_bytes'], 2048);
       expect(result.details['timed_out'], isNull);
       expect(result.details['exit_code'], -1);
     },
@@ -189,14 +189,14 @@ void main() {
       final result = await TestEvaluator(
         dartExecutable: fakeDart.path,
         timeout: const Duration(seconds: 5),
-        maxOutputChars: 128,
+        maxOutputBytes: 128,
       ).evaluate(_ctx(dir));
 
       expect(result.passed, isFalse);
       expect(result.score, 0.0);
       expect(result.rationale, 'test process output limit exceeded');
       expect(result.details['output_limit_exceeded'], isTrue);
-      expect(result.details['max_output_chars'], 128);
+      expect(result.details['max_output_bytes'], 128);
       expect(result.details['timed_out'], isNull);
     },
     skip: Platform.isWindows ? 'POSIX shell script test' : false,

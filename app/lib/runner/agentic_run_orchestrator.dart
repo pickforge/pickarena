@@ -724,7 +724,7 @@ class AgenticRunOrchestrator {
       'metadata',
       'metadata_redacted_count',
       'output_limit_exceeded',
-      'max_output_chars',
+      'max_output_bytes',
       'stepcount',
       'peakcontext',
       'peakcontexttokens',

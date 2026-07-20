@@ -68,7 +68,8 @@ class PatchCapture {
       arguments: args,
       workingDirectory: workspace.path,
       environment: processEnvironment,
-      maxOutputBytes: maxOutputChars,
+      maxOutputBytes: maxEncodedOutputBytes(maxOutputChars),
+      maxOutputCharacters: maxOutputChars,
       timeout: timeout,
       helperEnvironment: processEnvironment,
     );

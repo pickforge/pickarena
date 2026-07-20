@@ -12,14 +12,14 @@ class HiddenTestEvaluator implements Evaluator {
   HiddenTestEvaluator(
     this.verifier, {
     this.timeout,
-    this.maxOutputChars = TestEvaluator.defaultMaxOutputChars,
+    this.maxOutputBytes = TestEvaluator.defaultMaxOutputBytes,
     this.maxProcesses,
     this.maxMemoryMb,
   });
 
   final VerifierFixture verifier;
   final Duration? timeout;
-  final int maxOutputChars;
+  final int maxOutputBytes;
   final int? maxProcesses;
   final int? maxMemoryMb;
 
@@ -63,7 +63,7 @@ class HiddenTestEvaluator implements Evaluator {
       final result = await TestEvaluator(
         testPath: stagedTestPath,
         timeout: timeout,
-        maxOutputChars: maxOutputChars,
+        maxOutputBytes: maxOutputBytes,
         maxProcesses: maxProcesses,
         maxMemoryMb: maxMemoryMb,
         readOnlyPaths: [stagingRoot.path],
@@ -129,8 +129,8 @@ class HiddenTestEvaluator implements Evaluator {
           if (result.details['timeout_ms'] != null)
             'timeout_ms': result.details['timeout_ms'],
           if (outputLimitExceeded) 'output_limit_exceeded': true,
-          if (outputLimitExceeded && result.details['max_output_chars'] != null)
-            'max_output_chars': result.details['max_output_chars'],
+          if (outputLimitExceeded && result.details['max_output_bytes'] != null)
+            'max_output_bytes': result.details['max_output_bytes'],
           if (processLimitExceeded) 'process_limit_exceeded': true,
           if (processLimitExceeded && result.details['max_processes'] != null)
             'max_processes': result.details['max_processes'],

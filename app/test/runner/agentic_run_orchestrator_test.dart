@@ -671,7 +671,7 @@ void main() {
           'stepCount': 6,
           'peakContextTokens': 12000,
           'output_limit_exceeded': true,
-          'max_output_chars': 128,
+          'max_output_bytes': 128,
           'runtimeBoundary': {'enforced': true, 'backend': 'bubblewrap'},
           'metadata': {'workspacePath': privateWorkspace, 'stepCount': 7},
           'exception': 'StateError',
@@ -693,7 +693,7 @@ void main() {
       expect(details, containsPair('stepCount', 6));
       expect(details, containsPair('peakContextTokens', 12000));
       expect(details, containsPair('output_limit_exceeded', true));
-      expect(details, containsPair('max_output_chars', 128));
+      expect(details, containsPair('max_output_bytes', 128));
       expect(details['runtimeBoundary'], {
         'enforced': true,
         'backend': 'bubblewrap',

@@ -842,7 +842,7 @@ class TaskQaRunner {
     final qaEvaluator = switch (evaluator) {
       TestEvaluator(
         :final testPath,
-        :final maxOutputChars,
+        :final maxOutputBytes,
         :final maxProcesses,
         :final maxMemoryMb,
         :final dartExecutable,
@@ -851,7 +851,7 @@ class TaskQaRunner {
         TestEvaluator(
           testPath: testPath,
           timeout: evaluatorTimeout,
-          maxOutputChars: maxOutputChars,
+          maxOutputBytes: maxOutputBytes,
           maxProcesses: maxProcesses,
           maxMemoryMb: maxMemoryMb,
           dartExecutable: dartExecutable,
@@ -859,14 +859,14 @@ class TaskQaRunner {
         ),
       HiddenTestEvaluator(
         :final verifier,
-        :final maxOutputChars,
+        :final maxOutputBytes,
         :final maxProcesses,
         :final maxMemoryMb,
       ) =>
         HiddenTestEvaluator(
           verifier,
           timeout: evaluatorTimeout,
-          maxOutputChars: maxOutputChars,
+          maxOutputBytes: maxOutputBytes,
           maxProcesses: maxProcesses,
           maxMemoryMb: maxMemoryMb,
         ),

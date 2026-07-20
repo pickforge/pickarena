@@ -198,7 +198,8 @@ $instruction
         arguments: processStart.arguments,
         workingDirectory: processStart.workingDirectory,
         environment: processStart.environment,
-        maxOutputBytes: maxProcessOutputChars,
+        maxOutputBytes: maxEncodedOutputBytes(maxProcessOutputChars),
+        maxOutputCharacters: maxProcessOutputChars,
         timeout: timeout,
         capture: BoundedSubprocessCapture.trailing,
       );

@@ -104,14 +104,14 @@ environment:
       final result = await CompileEvaluator(
         dartExecutable: fakeDart.path,
         timeout: const Duration(seconds: 5),
-        maxOutputChars: 32,
+        maxOutputBytes: 32,
       ).evaluate(_ctx(dir));
 
       expect(result.passed, isFalse);
       expect(result.score, 0.0);
       expect(result.rationale, 'analysis output limit exceeded');
       expect(result.details['output_limit_exceeded'], isTrue);
-      expect(result.details['max_output_chars'], 32);
+      expect(result.details['max_output_bytes'], 32);
       expect(result.details['exitCode'], -1);
     },
     skip: Platform.isWindows ? 'POSIX shell script test' : false,

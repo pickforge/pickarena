@@ -20,13 +20,13 @@ void main() {
     );
 
     expect(evaluator, isA<TestEvaluator>());
-    expect((evaluator as TestEvaluator).maxOutputChars, 4096);
+    expect((evaluator as TestEvaluator).maxOutputBytes, 4096);
   });
 
   test('task output limit caps custom public test limit', () {
     final evaluator = applyResourceLimitsToEvaluator(
       TestEvaluator(
-        maxOutputChars: 2048,
+        maxOutputBytes: 2048,
         dartExecutable: '/fake/dart',
         flutterExecutable: '/fake/flutter',
       ),
@@ -34,18 +34,18 @@ void main() {
     );
 
     final testEvaluator = evaluator as TestEvaluator;
-    expect(testEvaluator.maxOutputChars, 1024);
+    expect(testEvaluator.maxOutputBytes, 1024);
     expect(testEvaluator.dartExecutable, '/fake/dart');
     expect(testEvaluator.flutterExecutable, '/fake/flutter');
   });
 
   test('stricter custom public test limit is preserved', () {
     final evaluator = applyResourceLimitsToEvaluator(
-      TestEvaluator(maxOutputChars: 512),
+      TestEvaluator(maxOutputBytes: 512),
       const TaskResourceLimits(maxOutputBytes: 1024),
     );
 
-    expect((evaluator as TestEvaluator).maxOutputChars, 512);
+    expect((evaluator as TestEvaluator).maxOutputBytes, 512);
   });
 
   test('task output limit applies to hidden test evaluator', () {
@@ -55,7 +55,7 @@ void main() {
     );
 
     expect(evaluator, isA<HiddenTestEvaluator>());
-    expect((evaluator as HiddenTestEvaluator).maxOutputChars, 256);
+    expect((evaluator as HiddenTestEvaluator).maxOutputBytes, 256);
   });
 
   test('task output limit applies to analyze evaluator', () {
@@ -65,7 +65,7 @@ void main() {
     );
 
     expect(evaluator, isA<AnalyzeEvaluator>());
-    expect((evaluator as AnalyzeEvaluator).maxOutputChars, 768);
+    expect((evaluator as AnalyzeEvaluator).maxOutputBytes, 768);
   });
 
   test('task output limit applies to compile evaluator', () {
@@ -75,7 +75,7 @@ void main() {
     );
 
     expect(evaluator, isA<CompileEvaluator>());
-    expect((evaluator as CompileEvaluator).maxOutputChars, 768);
+    expect((evaluator as CompileEvaluator).maxOutputBytes, 768);
   });
 
   test('task output limit applies to widget tree evaluator', () {
@@ -85,7 +85,7 @@ void main() {
     );
 
     expect(evaluator, isA<WidgetTreeEvaluator>());
-    expect((evaluator as WidgetTreeEvaluator).maxOutputChars, 768);
+    expect((evaluator as WidgetTreeEvaluator).maxOutputBytes, 768);
   });
 
   test('task output limit applies to test author evaluator', () {
@@ -98,7 +98,7 @@ void main() {
     );
 
     expect(evaluator, isA<TestAuthorEvaluator>());
-    expect((evaluator as TestAuthorEvaluator).maxOutputChars, 768);
+    expect((evaluator as TestAuthorEvaluator).maxOutputBytes, 768);
   });
 
   test('task process limit applies to bounded evaluators', () {
@@ -205,7 +205,7 @@ void main() {
     ], _PartialLimitTask());
 
     final evaluator = evaluators.single as TestEvaluator;
-    expect(evaluator.maxOutputChars, 2048);
+    expect(evaluator.maxOutputBytes, 2048);
     expect(evaluator.maxProcesses, 64);
     expect(evaluator.maxMemoryMb, 8192);
   });

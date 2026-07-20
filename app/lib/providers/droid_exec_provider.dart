@@ -71,7 +71,8 @@ class DroidExecProvider implements ModelProvider, ModelRuntimeMetadataProvider {
         additionalDeniedKeys: deniedEnvironmentKeys,
         allowedSensitiveKeys: allowedSensitiveEnvironmentKeys,
       ),
-      maxOutputBytes: maxProcessOutputChars,
+      maxOutputBytes: maxEncodedOutputBytes(maxProcessOutputChars),
+      maxOutputCharacters: maxProcessOutputChars,
       timeout: timeout,
       capture: BoundedSubprocessCapture.trailing,
     );

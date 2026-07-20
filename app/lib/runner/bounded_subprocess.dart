@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dart_arena/runner/subprocess_environment.dart';
+import 'package:path/path.dart' as p;
 
 enum BoundedSubprocessTermination {
   exited,
@@ -52,6 +53,10 @@ class BoundedSubprocessMonitor {
 
 typedef BoundedSubprocessMonitorFactory =
     BoundedSubprocessMonitor Function(int pid);
+typedef BoundedSubprocessSignalSender =
+    bool Function(int pid, ProcessSignal? signal);
+
+int maxEncodedOutputBytes(int maxCharacters) => maxCharacters * 4;
 
 Future<BoundedSubprocessResult> runBoundedSubprocess({
   required String executable,
@@ -59,6 +64,7 @@ Future<BoundedSubprocessResult> runBoundedSubprocess({
   required String workingDirectory,
   required Map<String, String> environment,
   required int maxOutputBytes,
+  int? maxOutputCharacters,
   bool includeParentEnvironment = false,
   Duration? timeout,
   Future<void>? cancellationSignal,
@@ -66,20 +72,42 @@ Future<BoundedSubprocessResult> runBoundedSubprocess({
   List<int>? stdinBytes,
   Map<String, String>? helperEnvironment,
   BoundedSubprocessMonitorFactory? monitor,
+  BoundedSubprocessSignalSender signalSender = _tryKillPid,
 }) async {
   assert(maxOutputBytes > 0);
-  final startsProcessGroup =
-      Platform.isLinux && File('/usr/bin/setsid').existsSync();
+  assert(maxOutputCharacters == null || maxOutputCharacters > 0);
+  final setsid = Platform.isLinux ? _installedSystemTool('setsid') : null;
+  final startsProcessGroup = setsid != null;
+  final targetExecutable = startsProcessGroup
+      ? _resolveExecutable(
+          executable,
+          arguments,
+          workingDirectory: workingDirectory,
+          environment: environment,
+          includeParentEnvironment: includeParentEnvironment,
+        )
+      : executable;
   final process = await Process.start(
-    startsProcessGroup ? '/usr/bin/setsid' : executable,
-    startsProcessGroup ? ['--wait', executable, ...arguments] : arguments,
+    setsid ?? targetExecutable,
+    startsProcessGroup
+        ? ['--wait', '--', targetExecutable, ...arguments]
+        : arguments,
     workingDirectory: workingDirectory,
     runInShell: false,
     environment: environment,
     includeParentEnvironment: includeParentEnvironment,
   );
-  final stdout = _BoundedByteCollector(maxOutputBytes, capture);
-  final stderr = _BoundedByteCollector(maxOutputBytes, capture);
+  final processState = _ProcessState(process);
+  final stdout = _BoundedByteCollector(
+    maxOutputBytes,
+    capture,
+    maxCharacters: maxOutputCharacters,
+  );
+  final stderr = _BoundedByteCollector(
+    maxOutputBytes,
+    capture,
+    maxCharacters: maxOutputCharacters,
+  );
   final outputLimitExceeded = Completer<_SubprocessSignal>();
 
   void collect(_BoundedByteCollector collector, List<int> chunk) {
@@ -95,7 +123,12 @@ Future<BoundedSubprocessResult> runBoundedSubprocess({
   final stderrSubscription = process.stderr.listen(
     (chunk) => collect(stderr, chunk),
   );
-  final streams = _ProcessStreams(stdoutSubscription, stderrSubscription);
+  final streams = _ProcessStreams(
+    stdoutSubscription,
+    stderrSubscription,
+    closeStdout: stdout.close,
+    closeStderr: stderr.close,
+  );
   final stdinDone = _writeStdin(process, stdinBytes);
   final timeoutExceeded = Completer<_SubprocessSignal>();
   final timeoutAlreadyExceeded =
@@ -114,11 +147,12 @@ Future<BoundedSubprocessResult> runBoundedSubprocess({
   } on Object {
     timeoutTimer?.cancel();
     await _stopAndDrain(
-      process,
+      processState,
       streams,
       stdinDone,
       helperEnvironment: helperEnvironment,
       processGroup: startsProcessGroup,
+      signalSender: signalSender,
     );
     rethrow;
   }
@@ -128,7 +162,7 @@ Future<BoundedSubprocessResult> runBoundedSubprocess({
     signal = timeoutAlreadyExceeded
         ? const _TimedOut()
         : await Future.any<_SubprocessSignal>([
-            process.exitCode.then(_Exited.new),
+            processState.exitCode.then(_Exited.new),
             if (timeout != null) timeoutExceeded.future,
             if (cancellationSignal != null)
               cancellationSignal.then((_) => const _Cancelled()),
@@ -144,19 +178,21 @@ Future<BoundedSubprocessResult> runBoundedSubprocess({
   final exitCode = signal is _Exited
       ? signal.exitCode
       : await _stopAndDrain(
-          process,
+          processState,
           streams,
           stdinDone,
           helperEnvironment: helperEnvironment,
           processGroup: startsProcessGroup,
+          signalSender: signalSender,
         );
   if (signal is _Exited) {
     await _drainAfterExit(
-      process,
+      processState,
       streams,
       stdinDone,
       helperEnvironment: helperEnvironment,
       processGroup: startsProcessGroup,
+      signalSender: signalSender,
     );
   }
 
@@ -194,59 +230,75 @@ Future<void> _writeStdin(Process process, List<int>? bytes) async {
 }
 
 Future<void> _drainAfterExit(
-  Process process,
+  _ProcessState process,
   _ProcessStreams streams,
   Future<void> stdinDone, {
   Map<String, String>? helperEnvironment,
   required bool processGroup,
+  required BoundedSubprocessSignalSender signalSender,
 }) async {
   if (streams.isDone) {
     await stdinDone;
     return;
   }
+  final retainedDescendants = <int>{};
   await _terminateProcessTree(
     process.pid,
     ProcessSignal.sigterm,
+    retainedDescendants: retainedDescendants,
+    rootExited: () => true,
     environment: helperEnvironment,
     processGroup: processGroup,
+    signalSender: signalSender,
   );
   await _awaitDrainWithEscalation(
     process,
     streams,
     stdinDone,
+    retainedDescendants: retainedDescendants,
     helperEnvironment: helperEnvironment,
     processGroup: processGroup,
+    signalSender: signalSender,
   );
 }
 
 Future<int> _stopAndDrain(
-  Process process,
+  _ProcessState process,
   _ProcessStreams streams,
   Future<void> stdinDone, {
   Map<String, String>? helperEnvironment,
   required bool processGroup,
+  required BoundedSubprocessSignalSender signalSender,
 }) async {
+  final retainedDescendants = <int>{};
   await _terminateProcessTree(
     process.pid,
     ProcessSignal.sigterm,
+    retainedDescendants: retainedDescendants,
+    rootExited: () => process.exited,
     environment: helperEnvironment,
     processGroup: processGroup,
+    signalSender: signalSender,
   );
   return _awaitDrainWithEscalation(
     process,
     streams,
     stdinDone,
+    retainedDescendants: retainedDescendants,
     helperEnvironment: helperEnvironment,
     processGroup: processGroup,
+    signalSender: signalSender,
   );
 }
 
 Future<int> _awaitDrainWithEscalation(
-  Process process,
+  _ProcessState process,
   _ProcessStreams streams,
   Future<void> stdinDone, {
+  required Set<int> retainedDescendants,
   Map<String, String>? helperEnvironment,
   required bool processGroup,
+  required BoundedSubprocessSignalSender signalSender,
 }) async {
   final completed = await _waitForExitAndDrain(process, streams, stdinDone)
       .then<int?>((value) => value)
@@ -256,8 +308,11 @@ Future<int> _awaitDrainWithEscalation(
   await _terminateProcessTree(
     process.pid,
     ProcessSignal.sigkill,
+    retainedDescendants: retainedDescendants,
+    rootExited: () => process.exited,
     environment: helperEnvironment,
     processGroup: processGroup,
+    signalSender: signalSender,
   );
   final killed = await _waitForExitAndDrain(process, streams, stdinDone)
       .then<int?>((value) => value)
@@ -272,7 +327,7 @@ Future<int> _awaitDrainWithEscalation(
 }
 
 Future<int> _waitForExitAndDrain(
-  Process process,
+  _ProcessState process,
   _ProcessStreams streams,
   Future<void> stdinDone,
 ) async {
@@ -284,29 +339,36 @@ Future<int> _waitForExitAndDrain(
 Future<void> _terminateProcessTree(
   int pid,
   ProcessSignal signal, {
+  required Set<int> retainedDescendants,
+  required bool Function() rootExited,
   Map<String, String>? environment,
   required bool processGroup,
+  required BoundedSubprocessSignalSender signalSender,
 }) async {
   if (Platform.isWindows) {
+    if (rootExited()) return;
     final args = ['/PID', '$pid', '/T'];
     if (signal == ProcessSignal.sigkill) args.add('/F');
     await _tryRunProcess('taskkill', args, environment: environment);
     return;
   }
 
-  if (processGroup) {
-    _tryKillPid(-pid, signal);
-    _killPid(pid, signal);
+  final descendantRoots = {...retainedDescendants};
+  if (!rootExited()) descendantRoots.add(pid);
+  if (descendantRoots.isNotEmpty) {
+    retainedDescendants.addAll(
+      await _descendantPids(descendantRoots, environment: environment),
+    );
   }
-  final descendants = await _descendantPids(pid, environment: environment);
-  for (final childPid in descendants.reversed) {
-    _killPid(childPid, signal);
+  if (processGroup) signalSender(-pid, signal);
+  for (final childPid in retainedDescendants.toList().reversed) {
+    _killPid(childPid, signal, signalSender);
   }
-  if (!processGroup) _killPid(pid, signal);
+  if (!rootExited()) _killPid(pid, signal, signalSender);
 }
 
 Future<List<int>> _descendantPids(
-  int pid, {
+  Set<int> roots, {
   Map<String, String>? environment,
 }) async {
   final ps = await _tryRunProcess(_systemTool('ps'), const [
@@ -321,8 +383,8 @@ Future<List<int>> _descendantPids(
     childrenByParent.putIfAbsent(values[1], () => []).add(values[0]);
   }
   final descendants = <int>[];
-  final pending = <int>[pid];
-  final seen = <int>{pid};
+  final pending = roots.toList();
+  final seen = {...roots};
   while (pending.isNotEmpty) {
     final parent = pending.removeLast();
     for (final child in childrenByParent[parent] ?? const <int>[]) {
@@ -334,12 +396,62 @@ Future<List<int>> _descendantPids(
   return descendants;
 }
 
-String _systemTool(String name) {
+String _systemTool(String name) => _installedSystemTool(name) ?? name;
+
+String? _installedSystemTool(String name) {
   for (final root in const ['/usr/bin', '/bin']) {
     final path = '$root/$name';
     if (File(path).existsSync()) return path;
   }
-  return name;
+  return null;
+}
+
+String _resolveExecutable(
+  String executable,
+  List<String> arguments, {
+  required String workingDirectory,
+  required Map<String, String> environment,
+  required bool includeParentEnvironment,
+}) {
+  final candidates = <String>[];
+  if (p.isAbsolute(executable) || executable.contains('/')) {
+    candidates.add(
+      p.isAbsolute(executable)
+          ? executable
+          : p.join(workingDirectory, executable),
+    );
+  } else {
+    final path =
+        environment['PATH'] ??
+        (includeParentEnvironment ? Platform.environment['PATH'] : null) ??
+        Platform.environment['PATH'] ??
+        '/usr/bin:/bin';
+    for (final root in path.split(':')) {
+      final searchRoot = root.isEmpty || !p.isAbsolute(root)
+          ? p.join(workingDirectory, root)
+          : root;
+      candidates.add(p.join(searchRoot, executable));
+    }
+  }
+
+  var foundNonExecutable = false;
+  for (final candidate in candidates) {
+    if (FileSystemEntity.typeSync(candidate, followLinks: true) !=
+        FileSystemEntityType.file) {
+      continue;
+    }
+    if (File(candidate).statSync().mode & 0x49 == 0) {
+      foundNonExecutable = true;
+      continue;
+    }
+    return p.normalize(p.absolute(candidate));
+  }
+  throw ProcessException(
+    executable,
+    arguments,
+    foundNonExecutable ? 'Permission denied' : 'No such file or directory',
+    foundNonExecutable ? 13 : 2,
+  );
 }
 
 Future<ProcessResult?> _tryRunProcess(
@@ -366,8 +478,12 @@ List<int> _parsePids(String output) => output
     .whereType<int>()
     .toList(growable: false);
 
-void _killPid(int pid, ProcessSignal signal) {
-  if (!_tryKillPid(pid, signal)) _tryKillPid(pid, null);
+void _killPid(
+  int pid,
+  ProcessSignal signal,
+  BoundedSubprocessSignalSender signalSender,
+) {
+  if (!signalSender(pid, signal)) signalSender(pid, null);
 }
 
 bool _tryKillPid(int pid, ProcessSignal? signal) {
@@ -378,42 +494,73 @@ bool _tryKillPid(int pid, ProcessSignal? signal) {
   }
 }
 
+class _ProcessState {
+  _ProcessState(this.process) {
+    exitCode = process.exitCode.whenComplete(() => exited = true);
+  }
+
+  final Process process;
+  late final Future<int> exitCode;
+  bool exited = false;
+
+  int get pid => process.pid;
+}
+
 class _ProcessStreams {
-  _ProcessStreams(this._stdout, this._stderr) {
+  _ProcessStreams(
+    this._stdout,
+    this._stderr, {
+    required void Function() closeStdout,
+    required void Function() closeStderr,
+  }) : _closeStdout = closeStdout,
+       _closeStderr = closeStderr {
     done = Future.wait<void>([
-      _stdout.asFuture<void>(),
-      _stderr.asFuture<void>(),
+      _stdout.asFuture<void>().whenComplete(_closeStdout),
+      _stderr.asFuture<void>().whenComplete(_closeStderr),
     ]).whenComplete(() => isDone = true);
   }
 
   final StreamSubscription<List<int>> _stdout;
   final StreamSubscription<List<int>> _stderr;
+  final void Function() _closeStdout;
+  final void Function() _closeStderr;
   late final Future<void> done;
   bool isDone = false;
 
-  Future<void> cancel() =>
-      Future.wait<void>([_stdout.cancel(), _stderr.cancel()]);
+  Future<void> cancel() async {
+    await Future.wait<void>([_stdout.cancel(), _stderr.cancel()]);
+    _closeStdout();
+    _closeStderr();
+  }
 }
 
 class _BoundedByteCollector {
-  _BoundedByteCollector(this.maxBytes, this.capture)
-    : _tail = capture == BoundedSubprocessCapture.trailing
+  _BoundedByteCollector(this.maxBytes, this.capture, {int? maxCharacters})
+    : _maxCharacters = maxCharacters,
+      _characterLimit = maxCharacters == null
+          ? null
+          : _CharacterLimitTracker(maxCharacters),
+      _tail = capture == BoundedSubprocessCapture.trailing
           ? Uint8List(maxBytes)
           : null;
 
   final int maxBytes;
   final BoundedSubprocessCapture capture;
+  final int? _maxCharacters;
+  final _CharacterLimitTracker? _characterLimit;
   final BytesBuilder _head = BytesBuilder(copy: false);
   final Uint8List? _tail;
   var _tailStart = 0;
   var _tailLength = 0;
   var _seenBytes = 0;
 
-  bool get exceeded => _seenBytes > maxBytes;
+  bool get exceeded =>
+      _seenBytes > maxBytes || (_characterLimit?.exceeded ?? false);
 
   void add(List<int> chunk) {
     if (chunk.isEmpty) return;
     _seenBytes += chunk.length;
+    _characterLimit?.add(chunk);
     if (capture == BoundedSubprocessCapture.leading) {
       final remaining = maxBytes - _head.length;
       if (remaining > 0) {
@@ -445,7 +592,18 @@ class _BoundedByteCollector {
     }
   }
 
-  String get text => _decode(bytes);
+  void close() => _characterLimit?.close();
+
+  String get text {
+    final decoded = _decode(bytes);
+    final maxCharacters = _maxCharacters;
+    if (maxCharacters == null || decoded.length <= maxCharacters) {
+      return decoded;
+    }
+    return capture == BoundedSubprocessCapture.leading
+        ? decoded.substring(0, maxCharacters)
+        : decoded.substring(decoded.length - maxCharacters);
+  }
 
   List<int> get bytes {
     if (capture == BoundedSubprocessCapture.leading) return _head.toBytes();
@@ -469,6 +627,64 @@ class _BoundedByteCollector {
     } on Object {
       return String.fromCharCodes(bytes);
     }
+  }
+}
+
+class _CharacterLimitTracker {
+  _CharacterLimitTracker(int maxCharacters)
+    : _counter = _CharacterCountingSink(maxCharacters) {
+    final decoder = Platform.isWindows
+        ? systemEncoding.decoder
+        : const Utf8Decoder(allowMalformed: true);
+    _sink = decoder.startChunkedConversion(
+      StringConversionSink.fromStringSink(_counter),
+    );
+  }
+
+  final _CharacterCountingSink _counter;
+  late final Sink<List<int>> _sink;
+  bool _closed = false;
+
+  bool get exceeded => _counter.exceeded;
+
+  void add(List<int> bytes) {
+    if (!_closed) _sink.add(bytes);
+  }
+
+  void close() {
+    if (_closed) return;
+    _closed = true;
+    _sink.close();
+  }
+}
+
+class _CharacterCountingSink implements StringSink {
+  _CharacterCountingSink(this.maxCharacters);
+
+  final int maxCharacters;
+  var _length = 0;
+
+  bool get exceeded => _length > maxCharacters;
+
+  @override
+  void write(Object? object) {
+    _length += object.toString().length;
+  }
+
+  @override
+  void writeAll(Iterable<Object?> objects, [String separator = '']) {
+    write(objects.join(separator));
+  }
+
+  @override
+  void writeCharCode(int charCode) {
+    _length += String.fromCharCode(charCode).length;
+  }
+
+  @override
+  void writeln([Object? object = '']) {
+    write(object);
+    _length++;
   }
 }
 

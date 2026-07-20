@@ -5,7 +5,7 @@ import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 
 const defaultEvaluatorProcessTimeout = Duration(minutes: 5);
-const defaultEvaluatorMaxOutputChars = 1024 * 1024;
+const defaultEvaluatorMaxOutputBytes = 1024 * 1024;
 
 class EvaluatorProcessResult {
   const EvaluatorProcessResult({
@@ -38,7 +38,7 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
   required Map<String, String> environment,
   bool includeParentEnvironment = false,
   Duration? timeout = defaultEvaluatorProcessTimeout,
-  int maxOutputChars = defaultEvaluatorMaxOutputChars,
+  int maxOutputBytes = defaultEvaluatorMaxOutputBytes,
   int? maxCpuCores,
   int? maxProcesses,
   int? maxMemoryMb,
@@ -74,7 +74,7 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
         );
   BoundedSubprocessMonitor resourceMonitor(int pid) {
     final limitExceeded = Completer<Object>();
-    Object? observedLimit;
+    final observedLimits = _EvaluatorObservedLimits();
     var resourceCheckRunning = false;
     final timer = Timer.periodic(const Duration(milliseconds: 100), (_) async {
       if (resourceCheckRunning) return;
@@ -86,13 +86,7 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
         );
         final processCount = 1 + descendants.length;
         if (maxProcesses != null && processCount > maxProcesses) {
-          observedLimit = _EvaluatorProcessLimitExceeded(
-            processCount: processCount,
-          );
-          if (!limitExceeded.isCompleted) {
-            limitExceeded.complete(observedLimit!);
-          }
-          return;
+          observedLimits.processCount = processCount;
         }
         if (maxMemoryMb != null) {
           final memoryMb = await _processTreeMemoryMb(
@@ -101,11 +95,11 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
             environment: helperEnvironment,
           );
           if (memoryMb != null && memoryMb > maxMemoryMb) {
-            observedLimit = _EvaluatorMemoryLimitExceeded(memoryMb: memoryMb);
-            if (!limitExceeded.isCompleted) {
-              limitExceeded.complete(observedLimit!);
-            }
+            observedLimits.memoryMb = memoryMb;
           }
+        }
+        if (observedLimits.exceeded && !limitExceeded.isCompleted) {
+          limitExceeded.complete(observedLimits);
         }
       } finally {
         resourceCheckRunning = false;
@@ -113,7 +107,7 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
     });
     return BoundedSubprocessMonitor(
       signal: limitExceeded.future,
-      observed: () => observedLimit,
+      observed: () => observedLimits.exceeded ? observedLimits : null,
       dispose: timer.cancel,
     );
   }
@@ -127,7 +121,7 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
         ? includeParentEnvironment
         : false,
     timeout: timeout,
-    maxOutputBytes: maxOutputChars,
+    maxOutputBytes: maxOutputBytes,
     helperEnvironment: helperEnvironment,
     monitor: maxProcesses != null || maxMemoryMb != null
         ? resourceMonitor
@@ -145,12 +139,16 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
         result.outputLimitExceeded ||
         (result.termination == BoundedSubprocessTermination.exited &&
             (result.stdoutLimitExceeded || result.stderrLimitExceeded)),
-    processLimitExceeded: externalLimit is _EvaluatorProcessLimitExceeded,
-    memoryLimitExceeded: externalLimit is _EvaluatorMemoryLimitExceeded,
-    observedProcessCount: externalLimit is _EvaluatorProcessLimitExceeded
+    processLimitExceeded:
+        externalLimit is _EvaluatorObservedLimits &&
+        externalLimit.processCount != null,
+    memoryLimitExceeded:
+        externalLimit is _EvaluatorObservedLimits &&
+        externalLimit.memoryMb != null,
+    observedProcessCount: externalLimit is _EvaluatorObservedLimits
         ? externalLimit.processCount
         : null,
-    observedMemoryMb: externalLimit is _EvaluatorMemoryLimitExceeded
+    observedMemoryMb: externalLimit is _EvaluatorObservedLimits
         ? externalLimit.memoryMb
         : null,
   );
@@ -236,14 +234,9 @@ List<int> _parsePids(String output) => output
     .whereType<int>()
     .toList(growable: false);
 
-class _EvaluatorProcessLimitExceeded {
-  const _EvaluatorProcessLimitExceeded({required this.processCount});
+class _EvaluatorObservedLimits {
+  int? processCount;
+  int? memoryMb;
 
-  final int processCount;
-}
-
-class _EvaluatorMemoryLimitExceeded {
-  const _EvaluatorMemoryLimitExceeded({required this.memoryMb});
-
-  final int memoryMb;
+  bool get exceeded => processCount != null || memoryMb != null;
 }

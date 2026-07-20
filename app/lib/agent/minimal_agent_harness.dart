@@ -234,7 +234,8 @@ class MinimalAgentHarness implements AgentHarness, AgentHarnessProvenance {
       arguments: processStart.arguments,
       workingDirectory: processStart.workingDirectory,
       environment: processStart.environment,
-      maxOutputBytes: maxOutputChars,
+      maxOutputBytes: maxEncodedOutputBytes(maxOutputChars),
+      maxOutputCharacters: maxOutputChars,
       timeout: timeout,
       capture: BoundedSubprocessCapture.trailing,
     );

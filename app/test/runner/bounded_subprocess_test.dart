@@ -1,10 +1,45 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_arena/runner/bounded_subprocess.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test(
+    'propagates missing absolute and PATH executable spawn failures',
+    () async {
+      final temp = await Directory.systemTemp.createTemp(
+        'dart_arena_subprocess_missing_',
+      );
+      addTearDown(() async {
+        if (await temp.exists()) await temp.delete(recursive: true);
+      });
+      final missingAbsolute = '${temp.path}/missing-command';
+
+      for (final executable in [missingAbsolute, 'missing-path-command']) {
+        await expectLater(
+          runBoundedSubprocess(
+            executable: executable,
+            arguments: const ['argument'],
+            workingDirectory: temp.path,
+            environment: {'PATH': temp.path},
+            maxOutputBytes: 128,
+            timeout: const Duration(seconds: 2),
+          ),
+          throwsA(
+            isA<ProcessException>().having(
+              (error) => error.executable,
+              'executable',
+              executable,
+            ),
+          ),
+        );
+      }
+    },
+    skip: Platform.isWindows,
+  );
+
   test(
     'drains stdout and stderr concurrently without backpressure hangs',
     () async {
@@ -44,6 +79,29 @@ wait
       );
       expect(result.stdoutLimitExceeded, isTrue);
       expect(result.stdout.length, 128);
+    },
+    skip: Platform.isWindows,
+  );
+
+  test(
+    'preserves character-based adapter limits within a raw-byte bound',
+    () async {
+      final result = await runBoundedSubprocess(
+        executable: 'sh',
+        arguments: const [
+          '-c',
+          r"printf '\342\230\203\342\230\203\342\230\203\342\230\203\342\230\203'",
+        ],
+        workingDirectory: Directory.current.path,
+        environment: {'PATH': Platform.environment['PATH'] ?? '/usr/bin:/bin'},
+        maxOutputBytes: maxEncodedOutputBytes(4),
+        maxOutputCharacters: 4,
+        timeout: const Duration(seconds: 5),
+      );
+
+      expect(result.stdoutLimitExceeded, isTrue);
+      expect(result.stdout, '☃☃☃☃');
+      expect(utf8.encode(result.stdout).length, 12);
     },
     skip: Platform.isWindows,
   );
@@ -149,7 +207,58 @@ wait
   );
 
   test(
-    'escalates from TERM to KILL for an unresponsive process group',
+    'does not direct-signal a root whose exit code already completed',
+    () async {
+      final temp = await Directory.systemTemp.createTemp(
+        'dart_arena_subprocess_reaped_root_',
+      );
+      addTearDown(() async {
+        if (await temp.exists()) await temp.delete(recursive: true);
+      });
+      final pidFile = File('${temp.path}/child.pid');
+      final monitorSignal = Completer<Object>();
+      final sentSignals = <({int pid, ProcessSignal? signal})>[];
+      int? rootPid;
+
+      final result = await _runShell(
+        "sleep 20 & echo \$! > '${pidFile.path}'; exit 0",
+        maxOutputBytes: 128,
+        timeout: const Duration(seconds: 5),
+        monitor: (pid) {
+          rootPid = pid;
+          return BoundedSubprocessMonitor(
+            signal: monitorSignal.future,
+            observed: () => null,
+            dispose: () {},
+          );
+        },
+        signalSender: (pid, signal) {
+          sentSignals.add((pid: pid, signal: signal));
+          try {
+            return signal == null
+                ? Process.killPid(pid)
+                : Process.killPid(pid, signal);
+          } on Object {
+            return false;
+          }
+        },
+      );
+
+      expect(result.termination, BoundedSubprocessTermination.exited);
+      expect(rootPid, isNotNull);
+      expect(
+        sentSignals,
+        contains((pid: -rootPid!, signal: ProcessSignal.sigterm)),
+      );
+      expect(sentSignals.where((sent) => sent.pid > 0), isEmpty);
+      final childPid = int.parse((await pidFile.readAsString()).trim());
+      expect(await _pidIsRunning(childPid), isFalse);
+    },
+    skip: Platform.isWindows,
+  );
+
+  test(
+    'escalates to KILL when both root and child ignore TERM',
     () async {
       final temp = await Directory.systemTemp.createTemp(
         'dart_arena_subprocess_kill_',
@@ -158,19 +267,63 @@ wait
         if (await temp.exists()) await temp.delete(recursive: true);
       });
       final pidFile = File('${temp.path}/child.pid');
+      final sentSignals = <({int pid, ProcessSignal? signal})>[];
 
       final result = await _runShell(
-        "trap '' TERM; sleep 20 & echo \$! > '${pidFile.path}'; wait",
+        "trap '' TERM; sh -c 'trap \"\" TERM; echo \$\$ > \"${pidFile.path}\"; while :; do sleep 1; done' & while [ ! -s '${pidFile.path}' ]; do sleep 0.01; done; wait",
         maxOutputBytes: 128,
-        timeout: const Duration(milliseconds: 100),
+        timeout: const Duration(milliseconds: 200),
+        signalSender: (pid, signal) {
+          sentSignals.add((pid: pid, signal: signal));
+          return _sendSignal(pid, signal);
+        },
       );
 
       expect(result.termination, BoundedSubprocessTermination.timedOut);
+      expect(
+        sentSignals.any((sent) => sent.signal == ProcessSignal.sigkill),
+        isTrue,
+      );
       final pid = int.parse((await pidFile.readAsString()).trim());
       await Future<void>.delayed(const Duration(milliseconds: 100));
       expect(await _pidIsRunning(pid), isFalse);
     },
     skip: Platform.isWindows,
+    timeout: const Timeout(Duration(seconds: 8)),
+  );
+
+  test(
+    'kills a TERM-ignoring descendant that escapes the root session',
+    () async {
+      final setsid = _setsidPath();
+      if (setsid == null) return;
+      final temp = await Directory.systemTemp.createTemp(
+        'dart_arena_subprocess_escaped_',
+      );
+      addTearDown(() async {
+        if (await temp.exists()) await temp.delete(recursive: true);
+      });
+      final pidFile = File('${temp.path}/child.pid');
+      final sentSignals = <({int pid, ProcessSignal? signal})>[];
+
+      final result = await _runShell(
+        "trap '' TERM; '$setsid' sh -c 'trap \"\" TERM; echo \$\$ > \"${pidFile.path}\"; while :; do sleep 1; done' & while [ ! -s '${pidFile.path}' ]; do sleep 0.01; done; wait",
+        maxOutputBytes: 128,
+        timeout: const Duration(milliseconds: 200),
+        signalSender: (pid, signal) {
+          sentSignals.add((pid: pid, signal: signal));
+          return _sendSignal(pid, signal);
+        },
+      );
+
+      expect(result.termination, BoundedSubprocessTermination.timedOut);
+      final pid = int.parse((await pidFile.readAsString()).trim());
+      expect(sentSignals, contains((pid: pid, signal: ProcessSignal.sigkill)));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(await _pidIsRunning(pid), isFalse);
+    },
+    skip: Platform.isWindows,
+    timeout: const Timeout(Duration(seconds: 8)),
   );
 }
 
@@ -179,6 +332,8 @@ Future<BoundedSubprocessResult> _runShell(
   required int maxOutputBytes,
   required Duration timeout,
   Future<void>? cancellationSignal,
+  BoundedSubprocessMonitorFactory? monitor,
+  BoundedSubprocessSignalSender? signalSender,
 }) {
   return runBoundedSubprocess(
     executable: 'sh',
@@ -188,7 +343,24 @@ Future<BoundedSubprocessResult> _runShell(
     maxOutputBytes: maxOutputBytes,
     timeout: timeout,
     cancellationSignal: cancellationSignal,
+    monitor: monitor,
+    signalSender: signalSender ?? _sendSignal,
   );
+}
+
+bool _sendSignal(int pid, ProcessSignal? signal) {
+  try {
+    return signal == null ? Process.killPid(pid) : Process.killPid(pid, signal);
+  } on Object {
+    return false;
+  }
+}
+
+String? _setsidPath() {
+  for (final path in const ['/usr/bin/setsid', '/bin/setsid']) {
+    if (File(path).existsSync()) return path;
+  }
+  return null;
 }
 
 Future<bool> _pidIsRunning(int pid) async {

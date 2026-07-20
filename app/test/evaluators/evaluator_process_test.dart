@@ -6,6 +6,37 @@ import 'package:path/path.dart' as p;
 
 void main() {
   test(
+    'missing executable preserves infrastructure spawn failure',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_eval_missing_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+      final executable = p.join(tmp.path, 'missing-evaluator');
+
+      await expectLater(
+        runEvaluatorProcess(
+          executable,
+          const [],
+          workingDirectory: tmp.path,
+          environment: {'PATH': '/usr/bin:/bin'},
+          timeout: const Duration(seconds: 2),
+        ),
+        throwsA(
+          isA<ProcessException>().having(
+            (error) => error.executable,
+            'executable',
+            executable,
+          ),
+        ),
+      );
+    },
+    skip: Platform.isWindows,
+  );
+
+  test(
     'output limit counts raw bytes before decode, not decoded chars',
     () async {
       final tmp = await Directory.systemTemp.createTemp(
@@ -15,8 +46,8 @@ void main() {
         if (await tmp.exists()) await tmp.delete(recursive: true);
       });
 
-      // 600 snowman characters are 600 decoded chars but 1800 UTF-8 bytes:
-      // under a 1024-char limit, over the 1024-byte contract.
+      // 600 snowman characters are 1800 UTF-8 bytes, over the
+      // 1024-byte contract.
       final result = await runEvaluatorProcess(
         'sh',
         const [
@@ -26,7 +57,7 @@ void main() {
         workingDirectory: tmp.path,
         environment: {'PATH': '/usr/bin:/bin'},
         timeout: const Duration(seconds: 10),
-        maxOutputChars: 1024,
+        maxOutputBytes: 1024,
       );
 
       expect(result.outputLimitExceeded, isTrue);
@@ -49,7 +80,7 @@ void main() {
       workingDirectory: tmp.path,
       environment: {'PATH': '/usr/bin:/bin'},
       timeout: const Duration(seconds: 10),
-      maxOutputChars: 1024,
+      maxOutputBytes: 1024,
     );
 
     expect(result.exitCode, 0);
@@ -76,12 +107,40 @@ void main() {
         workingDirectory: tmp.path,
         environment: {'PATH': '/usr/bin:/bin'},
         timeout: const Duration(milliseconds: 100),
-        maxOutputChars: 128,
+        maxOutputBytes: 128,
       );
 
       expect(result.timedOut, isTrue);
       expect(result.stdout.length, 128);
       expect(result.outputLimitExceeded, isFalse);
+    },
+    skip: Platform.isWindows,
+  );
+
+  test(
+    'preserves simultaneous process and memory limit observations',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_eval_limits_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+
+      final result = await runEvaluatorProcess(
+        'sh',
+        const ['-c', 'sleep 20 & wait'],
+        workingDirectory: tmp.path,
+        environment: {'PATH': '/usr/bin:/bin'},
+        timeout: const Duration(seconds: 5),
+        maxProcesses: 1,
+        maxMemoryMb: 0,
+      );
+
+      expect(result.processLimitExceeded, isTrue);
+      expect(result.memoryLimitExceeded, isTrue);
+      expect(result.observedProcessCount, greaterThan(1));
+      expect(result.observedMemoryMb, greaterThan(0));
     },
     skip: Platform.isWindows,
   );
