@@ -201,6 +201,57 @@ void main() {
     },
   );
 
+  test(
+    'agent workspace isolation skips only infrastructure symlinks',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'dart_arena_agent_isolation_symlink_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final workDir = Directory(p.join(root.path, 'runs', 'r', 'p', 'm', 't'));
+      await workDir.create(recursive: true);
+      final target = File(p.join(workDir.path, 'target.txt'));
+      await target.writeAsString('target');
+      await Link(
+        p.join(workDir.path, '.dart_tool', 'cache-link'),
+      ).create(target.path, recursive: true);
+
+      final manager = WorkdirManager(root: root);
+      final infrastructureOnly = await manager
+          .collectWorkspaceIsolationEvidence(
+            workDir,
+            ignoreBenchmarkInfrastructure: true,
+          );
+      expect(infrastructureOnly.symlinkCount, 0);
+      expect(infrastructureOnly.restrictedPathCount, 0);
+
+      await Link(
+        p.join(workDir.path, 'lib', 'visible-link'),
+      ).create(target.path, recursive: true);
+      final withVisibleLink = await manager.collectWorkspaceIsolationEvidence(
+        workDir,
+        ignoreBenchmarkInfrastructure: true,
+      );
+      expect(withVisibleLink.symlinkCount, 1);
+      expect(withVisibleLink.restrictedPathCount, 0);
+
+      await Link(
+        p.join(workDir.path, 'build', '_hidden'),
+      ).create(target.path, recursive: true);
+      final withRestrictedInfrastructureLink = await manager
+          .collectWorkspaceIsolationEvidence(
+            workDir,
+            ignoreBenchmarkInfrastructure: true,
+          );
+      expect(withRestrictedInfrastructureLink.symlinkCount, 1);
+      expect(withRestrictedInfrastructureLink.restrictedPathCount, 1);
+      expect(withRestrictedInfrastructureLink.restrictedPathsAbsent, isFalse);
+    },
+    skip: Platform.isWindows ? 'POSIX symlink test' : false,
+  );
+
   test('uses safe modelId path segments', () async {
     final root = await Directory.systemTemp.createTemp('dart_arena_sanitize_');
     final mgr = WorkdirManager(root: root);

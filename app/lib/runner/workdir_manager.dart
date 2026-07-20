@@ -263,10 +263,6 @@ class WorkdirManager {
           restrictedPathCount++;
           continue;
         }
-        if (ignoreBenchmarkInfrastructure && entity is Link) {
-          symlinkCount++;
-          continue;
-        }
         if (ignoreBenchmarkInfrastructure &&
             _isBenchmarkInfrastructurePath(normalizedRelativePath)) {
           continue;
