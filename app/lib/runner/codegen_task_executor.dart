@@ -7,12 +7,12 @@ import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
-import 'package:dart_arena/core/objective_evaluation.dart';
 import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/model_stream_event.dart';
 import 'package:dart_arena/runner/evaluator_resource_limits.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
+import 'package:dart_arena/runner/objective_evaluation.dart';
 import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 

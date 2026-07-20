@@ -45,7 +45,7 @@ Future<List<EvaluationResult>> runObjectiveEvaluators({
   return evaluations;
 }
 
-/// Records a hard failure ([failure]) that blocks every remaining
+/// Records [failure] as a hard blocker and blocks every remaining
 /// [evaluators] from running, inserting a blocked placeholder for each of
 /// them. If [evaluations] already carries a hard downstream blocker (see
 /// [hasHardDownstreamBlocker]), [failure] is not appended again; the
@@ -55,9 +55,9 @@ Future<List<EvaluationResult>> runObjectiveEvaluators({
 List<EvaluationResult> blockEvaluatorsForHardFailure({
   required List<EvaluationResult> evaluations,
   required Iterable<Evaluator> evaluators,
-  required EvaluationResult? failure,
+  required EvaluationResult failure,
 }) {
-  if (failure != null && !hasHardDownstreamBlocker(evaluations)) {
+  if (!hasHardDownstreamBlocker(evaluations)) {
     evaluations.add(failure);
   }
   for (final evaluator in evaluators) {

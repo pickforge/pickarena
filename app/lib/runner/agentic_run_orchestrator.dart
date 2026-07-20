@@ -11,7 +11,6 @@ import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_integrity.dart';
 import 'package:dart_arena/core/model_response.dart';
-import 'package:dart_arena/core/objective_evaluation.dart';
 import 'package:dart_arena/core/patch_capture.dart';
 import 'package:dart_arena/core/scoring.dart';
 import 'package:dart_arena/core/task_run_result.dart';
@@ -19,6 +18,7 @@ import 'package:dart_arena/core/workspace_path.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/runner/evaluator_resource_limits.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
+import 'package:dart_arena/runner/objective_evaluation.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:path/path.dart' as p;
 
