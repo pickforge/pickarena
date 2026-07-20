@@ -241,9 +241,8 @@ _SelectedTaskRuns _selectTaskRuns({
             environmentKey: candidateEnvironmentKey,
           );
           final isCompatible = anchorGroupSignatures.any(
-            (anchorSignature) => anchorSignature.isCompatibleWith(
-              groupSignature,
-            ),
+            (anchorSignature) =>
+                anchorSignature.isCompatibleWith(groupSignature),
           );
           if (isCompatible) matchedTaskRuns.addAll(group.taskRuns);
         }
@@ -1381,7 +1380,9 @@ List<_HarnessGroup> _harnessGroupsForRun(Run run, List<TaskRun> taskRuns) {
   for (final taskRun in taskRuns) {
     final harnessId = taskRun.harnessId;
     final label = harnessId == null ? null : labels[taskRun.id];
-    final key = harnessId == null ? '\u0000no-harness' : '$harnessId\u0000$label';
+    final key = harnessId == null
+        ? '\u0000no-harness'
+        : '$harnessId\u0000$label';
     groups.putIfAbsent(key, () => <TaskRun>[]).add(taskRun);
     metaByKey[key] = (harnessId: harnessId, label: label);
   }
