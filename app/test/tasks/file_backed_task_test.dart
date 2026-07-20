@@ -46,7 +46,26 @@ void main() {
     }
   });
 
-  test('rejects digesting a changed manifest after task load', () async {
+  test('rejects digesting a byte-changed manifest after task load', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'file_backed_manifest_bytes_drift_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final bundle = await writeAnswerFileBackedBundle(root);
+    final task = await FileBackedTask.load(bundle);
+    await task.ensureLoaded();
+    final manifest = File(p.join(bundle.path, 'task.yaml'));
+    await manifest.writeAsString('${await manifest.readAsString()}# changed\n');
+
+    await expectLater(
+      task.bundleInspection.taskBundleDigestSha256(),
+      throwsStateError,
+    );
+  });
+
+  test('rejects digesting a changed declaration after task load', () async {
     final root = await Directory.systemTemp.createTemp(
       'file_backed_manifest_digest_drift_',
     );
@@ -72,6 +91,35 @@ void main() {
       throwsStateError,
     );
   });
+
+  test(
+    'rejects reads and digests after the bundle root becomes a symlink',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'file_backed_root_symlink_swap_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final bundle = await writeAnswerFileBackedBundle(root);
+      final task = await FileBackedTask.load(bundle);
+      final relocated = Directory('${bundle.path}_relocated');
+      await bundle.rename(relocated.path);
+      await Link(bundle.path).create(relocated.path);
+
+      expect(
+        () => task.bundleInspection.readText(
+          task.bundleInspection.instructionPath,
+        ),
+        throwsArgumentError,
+      );
+      await expectLater(
+        task.bundleInspection.taskBundleDigestSha256(),
+        throwsArgumentError,
+      );
+    },
+    skip: Platform.isWindows ? 'POSIX symlink test' : false,
+  );
 
   test(
     'discovers tasks deterministically with manifest versions and tracks',

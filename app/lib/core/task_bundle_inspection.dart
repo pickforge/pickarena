@@ -41,13 +41,9 @@ class TaskBundleInspection {
     required this.negativeCases,
     required String root,
     required Uint8List manifestBytes,
-    required String manifestIdentity,
-    required String declarationIdentity,
     required List<String> digestRelativePaths,
   }) : _root = root,
        _manifestBytes = manifestBytes,
-       _manifestIdentity = manifestIdentity,
-       _declarationIdentity = declarationIdentity,
        _digestRelativePaths = digestRelativePaths;
 
   final Directory bundleDirectory;
@@ -64,8 +60,6 @@ class TaskBundleInspection {
   final List<TaskBundleFileSet> negativeCases;
   final String _root;
   final Uint8List _manifestBytes;
-  final String _manifestIdentity;
-  final String _declarationIdentity;
   final List<String> _digestRelativePaths;
 
   static Future<TaskBundleInspection> inspect(Directory bundleDirectory) async {
@@ -147,38 +141,22 @@ class TaskBundleInspection {
       negativeCases: List.unmodifiable(negativeCases),
       root: root,
       manifestBytes: manifestBytes,
-      manifestIdentity: jsonEncode([
-        schemaVersion,
-        taskId,
-        taskVersion,
-        track.name,
-      ]),
-      declarationIdentity: _buildDeclarationIdentity(
-        instructionPath: instructionPath,
-        judgeRubricPath: judgeRubricPath,
-        workspace: workspace,
-        hiddenVerifiers: hiddenVerifiers,
-        reference: reference,
-        negativeCases: negativeCases,
-      ),
       digestRelativePaths: List.unmodifiable(relativePaths),
     );
   }
 
   Future<void> validateDeclaredFiles() async {
-    await _rejectSymlinksInInspectionRoots(bundleDirectory);
+    _validateBundleRootPath(_root, bundleDirectory.path);
+    await _rejectSymlinksInInspectionRoots(_root);
     for (final relativePath in _digestRelativePaths) {
       _resolveBundleFile(_root, relativePath);
     }
   }
 
   Future<String> taskBundleDigestSha256() async {
-    final fresh = await TaskBundleInspection.inspect(bundleDirectory);
-    if (fresh._manifestIdentity != _manifestIdentity ||
-        fresh._declarationIdentity != _declarationIdentity) {
-      throw StateError(
-        'Task bundle manifest identity or declared paths changed since inspection',
-      );
+    final fresh = await TaskBundleInspection.inspect(Directory(_root));
+    if (!_bytesEqual(fresh._manifestBytes, _manifestBytes)) {
+      throw StateError('Task bundle manifest changed since inspection');
     }
     return fresh._digestCurrentInspection();
   }
@@ -381,27 +359,6 @@ bool _isIgnoredBundleFile(String relativePath) {
       basename.startsWith('._');
 }
 
-String _buildDeclarationIdentity({
-  required String instructionPath,
-  required String? judgeRubricPath,
-  required TaskBundleFileSet workspace,
-  required List<TaskBundleFileSet> hiddenVerifiers,
-  required TaskBundleFileSet? reference,
-  required List<TaskBundleFileSet> negativeCases,
-}) => jsonEncode({
-  'instructionPath': instructionPath,
-  'judgeRubricPath': judgeRubricPath,
-  'workspace': _fileSetIdentity(workspace),
-  'hiddenVerifiers': hiddenVerifiers.map(_fileSetIdentity).toList(),
-  'reference': reference == null ? null : _fileSetIdentity(reference),
-  'negativeCases': negativeCases.map(_fileSetIdentity).toList(),
-});
-
-Map<String, Object> _fileSetIdentity(TaskBundleFileSet fileSet) => {
-  'root': fileSet.root,
-  'files': SplayTreeMap<String, String>.of(fileSet.files),
-};
-
 bool _bytesEqual(Uint8List first, Uint8List second) {
   if (first.length != second.length) return false;
   for (var i = 0; i < first.length; i++) {
@@ -423,27 +380,31 @@ String _normalizeEnumName(String value) {
 
 String _validatedBundleRoot(Directory bundleDirectory) {
   final root = p.normalize(p.absolute(bundleDirectory.path));
+  _validateBundleRootPath(root, bundleDirectory.path);
+  return root;
+}
+
+void _validateBundleRootPath(String root, String displayPath) {
   final rootType = FileSystemEntity.typeSync(root, followLinks: false);
   if (rootType == FileSystemEntityType.link) {
     throw ArgumentError.value(
-      bundleDirectory.path,
+      displayPath,
       'bundleDirectory',
       'must not be a symlink',
     );
   }
   if (rootType != FileSystemEntityType.directory) {
     throw ArgumentError.value(
-      bundleDirectory.path,
+      displayPath,
       'bundleDirectory',
       'must be an existing directory',
     );
   }
-  return root;
 }
 
-Future<void> _rejectSymlinksInInspectionRoots(Directory bundleDirectory) async {
+Future<void> _rejectSymlinksInInspectionRoots(String bundleRoot) async {
   for (final root in taskBundleInspectionFileRoots) {
-    final path = p.join(bundleDirectory.path, root);
+    final path = p.join(bundleRoot, root);
     final type = FileSystemEntity.typeSync(path, followLinks: false);
     if (type == FileSystemEntityType.notFound) continue;
     if (type == FileSystemEntityType.link) {
@@ -468,6 +429,7 @@ Future<void> _rejectSymlinksInInspectionRoots(Directory bundleDirectory) async {
 }
 
 File _resolveBundleFile(String root, String relativePath) {
+  _validateBundleRootPath(root, root);
   final canonical = taskBundleRelativePath(relativePath, 'relativePath');
   final parts = p.posix.split(canonical);
   var current = root;
