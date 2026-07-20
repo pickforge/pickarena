@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:isolate';
 
 import 'package:dart_arena/export/leaderboard_exporter.dart';
 import 'package:dart_arena/storage/database.dart';
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:test/test.dart';
@@ -15,6 +18,72 @@ void main() {
 
   tearDown(() async {
     await db.close();
+  });
+
+  test(
+    'shared leaderboard compatibility corpus matches its manifest',
+    () async {
+      final manifest = await _loadLeaderboardFixtureManifest();
+      for (final entry in _fixtureEntries(manifest.decoded)) {
+        final fixtureBytes = await File.fromUri(
+          manifest.uri.resolve(entry['file']! as String),
+        ).readAsBytes();
+        expect(
+          sha256.convert(fixtureBytes).toString(),
+          entry['sha256'],
+          reason: entry['id']! as String,
+        );
+
+        final normalized = _normalizeLeaderboardFixture(
+          utf8.decode(fixtureBytes),
+        );
+        expect(
+          normalized == null ? 'reject' : 'accept',
+          entry['outcome'],
+          reason: entry['id']! as String,
+        );
+        expect(
+          normalized,
+          entry['normalizedProjection'],
+          reason: entry['id']! as String,
+        );
+      }
+    },
+  );
+
+  test('fixed current export matches the current-v2 projection', () async {
+    await _seedRun(
+      db,
+      id: 'compat-run',
+      completedAt: DateTime.utc(2026, 5, 1),
+      provenanceJson: _presetProvenanceJson(includeTaskB: false),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'compat-trial',
+      runId: 'compat-run',
+      taskId: 'task.a',
+      completedAt: DateTime.utc(2026, 5, 1, 12),
+    );
+
+    final export = await buildLeaderboardExport(
+      db,
+      options: const LeaderboardExportOptions(track: 'agentic'),
+      now: () => DateTime.utc(2026, 5, 31),
+    );
+    final manifest = await _loadLeaderboardFixtureManifest();
+    final current = _fixtureEntries(
+      manifest.decoded,
+    ).singleWhere((entry) => entry['id'] == 'current-v2');
+    final fixtureBytes = await File.fromUri(
+      manifest.uri.resolve(current['file']! as String),
+    ).readAsBytes();
+
+    expect(jsonDecode(utf8.decode(fixtureBytes)), export);
+    expect(
+      _normalizeLeaderboardFixture(jsonEncode(export)),
+      current['normalizedProjection'],
+    );
   });
 
   test('aggregate-compatible aggregates compatible completed runs', () async {
@@ -2114,7 +2183,10 @@ String _environmentProvenanceJson({
   },
 });
 
-String _presetProvenanceJson({String corpusDigest = 'c'}) => jsonEncode({
+String _presetProvenanceJson({
+  String corpusDigest = 'c',
+  bool includeTaskB = true,
+}) => jsonEncode({
   'schemaVersion': 2,
   'config': {
     'scoringSchemaVersion': 2,
@@ -2127,11 +2199,12 @@ String _presetProvenanceJson({String corpusDigest = 'c'}) => jsonEncode({
           'taskVersion': 1,
           'taskBundleDigest': List.filled(64, 'a').join(),
         },
-        {
-          'taskId': 'task.b',
-          'taskVersion': 1,
-          'taskBundleDigest': List.filled(64, 'b').join(),
-        },
+        if (includeTaskB)
+          {
+            'taskId': 'task.b',
+            'taskVersion': 1,
+            'taskBundleDigest': List.filled(64, 'b').join(),
+          },
       ],
       'digestSha256': List.filled(64, corpusDigest).join(),
     },
@@ -2206,4 +2279,212 @@ Future<void> _seedEvaluation(
           detailsJson: jsonEncode(details),
         ),
       );
+}
+
+Future<({Uri uri, Map<String, Object?> decoded})>
+_loadLeaderboardFixtureManifest() async {
+  final exporterUri = await Isolate.resolvePackageUri(
+    Uri.parse('package:dart_arena/export/leaderboard_exporter.dart'),
+  );
+  if (exporterUri == null) {
+    throw StateError('Could not resolve the dart_arena package location.');
+  }
+  final manifestUri = exporterUri.resolve(
+    '../../../fixtures/leaderboard/compatibility/v1/manifest.v1.json',
+  );
+  final bytes = await File.fromUri(manifestUri).readAsBytes();
+  final decoded = _objectMap(jsonDecode(utf8.decode(bytes)));
+  expect(decoded['fixtureManifestVersion'], 1);
+  expect(decoded['artifactFamily'], 'leaderboard.v1.json');
+  expect(decoded['supportedArtifactSchemaVersions'], [1, 2]);
+  return (uri: manifestUri, decoded: decoded);
+}
+
+List<Map<String, Object?>> _fixtureEntries(Map<String, Object?> manifest) =>
+    _objectList(manifest['entries']);
+
+Map<String, Object?>? _normalizeLeaderboardFixture(String text) {
+  try {
+    final value = jsonDecode(text);
+    if (value is! Map) return null;
+    final artifact = _objectMap(value);
+    final schemaVersionValue = artifact['schemaVersion'];
+    if (!_isNonNegativeInteger(schemaVersionValue)) return null;
+    final schemaVersion = (schemaVersionValue as num).toInt();
+    if (schemaVersion != 1 && schemaVersion != 2) return null;
+    if (artifact['benchmark'] is! Map || artifact['source'] is! Map) {
+      return null;
+    }
+    if (artifact['models'] is! List || artifact['tasks'] is! List) return null;
+
+    final benchmark = _objectMap(artifact['benchmark']);
+    final source = _objectMap(artifact['source']);
+    final title = benchmark['title'];
+    final track = benchmark['track'];
+    final dataPolicy = benchmark['dataPolicy'];
+    final taskCount = source['taskCount'];
+    final taskRunCount = source['taskRunCount'];
+    if (!_isNonEmptyString(title) ||
+        !_isNonEmptyString(track) ||
+        !_leaderboardDataPolicies.contains(dataPolicy) ||
+        !_isNonNegativeInteger(taskCount) ||
+        !_isNonNegativeInteger(taskRunCount)) {
+      return null;
+    }
+
+    final models = _objectList(artifact['models']);
+    final tasks = _objectList(artifact['tasks']);
+    final scoring = _objectMap(artifact['scoring']);
+    return <String, Object?>{
+      'schemaVersion': schemaVersion,
+      'generatedAt': _nullableString(artifact['generatedAt']),
+      'benchmark': <String, Object?>{
+        'title': title,
+        'version': _nullableString(benchmark['version']),
+        'taskSetId': _nullableString(benchmark['taskSetId']),
+        'evaluatorSchemaVersion':
+            _finiteNumber(benchmark['evaluatorSchemaVersion']) ?? 0,
+        'track': track,
+        'dataPolicy': dataPolicy,
+        'preset': _nullableString(benchmark['preset']),
+        'selectedTasks': [
+          for (final task in _objectList(benchmark['selectedTasks']))
+            <String, Object?>{
+              'taskId': _stringOr(task['taskId'], 'unknown-task'),
+              'taskVersion': _stringOrNumber(task['taskVersion']),
+              'taskBundleDigest': _nullableString(task['taskBundleDigest']),
+            },
+        ],
+        'corpusManifestDigestSha256': _nullableString(
+          benchmark['corpusManifestDigestSha256'],
+        ),
+      },
+      'source': <String, Object?>{
+        'anchorRunId': _nullableString(source['anchorRunId']),
+        'runIds': _stringList(source['runIds']),
+        'taskCount': taskCount,
+        'taskRunCount': taskRunCount,
+        'modelCount': _finiteNumber(source['modelCount']) ?? models.length,
+      },
+      'scoring': <String, Object?>{
+        'schemaVersion': _finiteNumber(scoring['schemaVersion']) ?? 0,
+        'primaryMetric': _nullableString(scoring['primaryMetric']),
+        'rankingMetric': _nullableString(scoring['rankingMetric']),
+      },
+      'models': [for (final model in models) _projectModel(model)],
+      'tasks': [for (final task in tasks) _projectTask(task)],
+      'taskModelCells': [
+        for (final cell in _objectList(artifact['taskModelCells']))
+          _projectTaskModelCell(cell),
+      ],
+      'trialSummaries': [
+        for (final trial in _objectList(artifact['trialSummaries']))
+          _projectTrialSummary(trial),
+      ],
+    };
+  } on Object {
+    return null;
+  }
+}
+
+Map<String, Object?> _projectModel(Map<String, Object?> model) => {
+  'providerId': _stringOr(model['providerId'], 'unknown-provider'),
+  'modelId': _stringOr(model['modelId'], 'unknown-model'),
+  'rank': _finiteNumber(model['rank']),
+  'score': _finiteNumber(model['score']),
+  'passRate': _finiteNumber(model['passRate']),
+  'trialCount':
+      _finiteNumber(model['trialCount']) ??
+      _finiteNumber(model['sampleCount']) ??
+      0,
+  'passCount': _finiteNumber(model['passCount']) ?? 0,
+  'sampleCount': _finiteNumber(model['sampleCount']) ?? 0,
+};
+
+Map<String, Object?> _projectTask(Map<String, Object?> task) => {
+  'taskId': _stringOr(task['taskId'], 'unknown-task'),
+  'taskVersion': _stringOrNumber(task['taskVersion']),
+  'taskBundleDigest': _nullableString(task['taskBundleDigest']),
+  'benchmarkTrack': _nullableString(task['benchmarkTrack']),
+  'trialCount':
+      _finiteNumber(task['trialCount']) ??
+      _finiteNumber(task['sampleCount']) ??
+      0,
+  'sampleCount': _finiteNumber(task['sampleCount']) ?? 0,
+  'modelCount': _finiteNumber(task['modelCount']) ?? 0,
+  'passRate': _finiteNumber(task['passRate']),
+};
+
+Map<String, Object?> _projectTaskModelCell(Map<String, Object?> cell) => {
+  'providerId': _stringOr(cell['providerId'], 'unknown-provider'),
+  'modelId': _stringOr(cell['modelId'], 'unknown-model'),
+  'taskId': _stringOr(cell['taskId'], 'unknown-task'),
+  'taskVersion': _stringOrNumber(cell['taskVersion']),
+  'benchmarkTrack': _nullableString(cell['benchmarkTrack']),
+  'trialCount':
+      _finiteNumber(cell['trialCount']) ??
+      _finiteNumber(cell['sampleCount']) ??
+      0,
+  'passCount': _finiteNumber(cell['passCount']) ?? 0,
+  'sampleCount': _finiteNumber(cell['sampleCount']) ?? 0,
+  'passRate': _finiteNumber(cell['passRate']),
+  'errorCount': _finiteNumber(cell['errorCount']) ?? 0,
+};
+
+Map<String, Object?> _projectTrialSummary(Map<String, Object?> trial) => {
+  'trialId': _stringOr(trial['trialId'], 'unknown-trial'),
+  'runId': _stringOr(trial['runId'], 'unknown-run'),
+  'providerId': _stringOr(trial['providerId'], 'unknown-provider'),
+  'modelId': _stringOr(trial['modelId'], 'unknown-model'),
+  'taskId': _stringOr(trial['taskId'], 'unknown-task'),
+  'taskVersion': _stringOrNumber(trial['taskVersion']),
+  'benchmarkTrack': _nullableString(trial['benchmarkTrack']),
+  'trialIndex': _finiteNumber(trial['trialIndex']) ?? 0,
+  'completedAt': _nullableString(trial['completedAt']),
+  'primaryPass': trial['primaryPass'] is bool ? trial['primaryPass'] : null,
+  'failureTag': _stringOr(trial['failureTag'], 'unknown'),
+  'aggregateScore': _finiteNumber(trial['aggregateScore']),
+};
+
+const _leaderboardDataPolicies = {
+  'aggregate-compatible',
+  'latest-run',
+  'best-observed',
+};
+
+bool _isNonEmptyString(Object? value) =>
+    value is String && value.trim().isNotEmpty;
+
+bool _isNonNegativeInteger(Object? value) =>
+    value is num && value.isFinite && value >= 0 && value == value.truncate();
+
+String? _nullableString(Object? value) => value is String ? value : null;
+
+Object? _stringOrNumber(Object? value) =>
+    value is String || value is num ? value : null;
+
+String _stringOr(Object? value, String fallback) =>
+    value is String && value.isNotEmpty ? value : fallback;
+
+num? _finiteNumber(Object? value) =>
+    value is num && value.isFinite ? value : null;
+
+List<String> _stringList(Object? value) => value is List
+    ? [
+        for (final entry in value)
+          if (entry is String) entry,
+      ]
+    : const [];
+
+Map<String, Object?> _objectMap(Object? value) {
+  if (value is! Map) return const {};
+  return value.map((key, value) => MapEntry('$key', value));
+}
+
+List<Map<String, Object?>> _objectList(Object? value) {
+  if (value is! List) return const [];
+  return [
+    for (final entry in value)
+      if (entry is Map) _objectMap(entry),
+  ];
 }

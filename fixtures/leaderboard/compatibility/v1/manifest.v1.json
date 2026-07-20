@@ -1,0 +1,156 @@
+{
+  "fixtureManifestVersion": 1,
+  "artifactFamily": "leaderboard.v1.json",
+  "supportedArtifactSchemaVersions": [1, 2],
+  "entries": [
+    {
+      "id": "current-v2",
+      "file": "current-v2.json",
+      "sha256": "e72f33bbee8bc8bde116ddf3426b9e64c27140d9362e28f895648b50433d9720",
+      "outcome": "accept",
+      "normalizedProjection": {
+        "schemaVersion": 2,
+        "generatedAt": "2026-05-31T00:00:00.000Z",
+        "benchmark": {
+          "title": "PickArena by Pickforge Studio",
+          "version": "2026-05-31-master-spec",
+          "taskSetId": "taskset-8cc0f1685901d8a6",
+          "evaluatorSchemaVersion": 2,
+          "track": "agentic",
+          "dataPolicy": "aggregate-compatible",
+          "preset": "mvp",
+          "selectedTasks": [
+            {
+              "taskId": "task.a",
+              "taskVersion": 1,
+              "taskBundleDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "corpusManifestDigestSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "source": {
+          "anchorRunId": "compat-run",
+          "runIds": ["compat-run"],
+          "taskCount": 1,
+          "taskRunCount": 1,
+          "modelCount": 1
+        },
+        "scoring": {
+          "schemaVersion": 2,
+          "primaryMetric": "primary_pass",
+          "rankingMetric": "primary_pass_rate"
+        },
+        "models": [
+          {
+            "providerId": "openai",
+            "modelId": "gpt-5",
+            "rank": 1,
+            "score": 1.0,
+            "passRate": 1.0,
+            "trialCount": 1,
+            "passCount": 1,
+            "sampleCount": 1
+          }
+        ],
+        "tasks": [
+          {
+            "taskId": "task.a",
+            "taskVersion": 1,
+            "taskBundleDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "benchmarkTrack": "agentic",
+            "trialCount": 1,
+            "sampleCount": 1,
+            "modelCount": 1,
+            "passRate": 1.0
+          }
+        ],
+        "taskModelCells": [
+          {
+            "providerId": "openai",
+            "modelId": "gpt-5",
+            "taskId": "task.a",
+            "taskVersion": 1,
+            "benchmarkTrack": "agentic",
+            "trialCount": 1,
+            "passCount": 1,
+            "sampleCount": 1,
+            "passRate": 1.0,
+            "errorCount": 0
+          }
+        ],
+        "trialSummaries": [
+          {
+            "trialId": "a3a0d363b206",
+            "runId": "compat-run",
+            "providerId": "openai",
+            "modelId": "gpt-5",
+            "taskId": "task.a",
+            "taskVersion": 1,
+            "benchmarkTrack": "agentic",
+            "trialIndex": 0,
+            "completedAt": "2026-05-01T12:00:00.000Z",
+            "primaryPass": true,
+            "failureTag": "pass",
+            "aggregateScore": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "legacy-v1-minimal",
+      "file": "legacy-v1-minimal.json",
+      "sha256": "b19803b8631489fbc079f97f8e0451744d746bbe919ffa65960ce17fc5858408",
+      "outcome": "accept",
+      "normalizedProjection": {
+        "schemaVersion": 1,
+        "generatedAt": null,
+        "benchmark": {
+          "title": "Legacy leaderboard",
+          "version": null,
+          "taskSetId": null,
+          "evaluatorSchemaVersion": 0,
+          "track": "agentic",
+          "dataPolicy": "latest-run",
+          "preset": null,
+          "selectedTasks": [],
+          "corpusManifestDigestSha256": null
+        },
+        "source": {
+          "anchorRunId": null,
+          "runIds": [],
+          "taskCount": 0,
+          "taskRunCount": 0,
+          "modelCount": 0
+        },
+        "scoring": {
+          "schemaVersion": 0,
+          "primaryMetric": null,
+          "rankingMetric": null
+        },
+        "models": [],
+        "tasks": [],
+        "taskModelCells": [],
+        "trialSummaries": []
+      }
+    },
+    {"id":"malformed-json","file":"malformed-json.json","sha256":"a8530a511bd06e418f4bc6562d9f5345ad3aa12916bdc1988c3b80dd62ef14f7","outcome":"reject","normalizedProjection":null},
+    {"id":"non-object-root","file":"non-object-root.json","sha256":"1fb3ffcf3df89e31f56932d4a64a23eede8a2f6707898bf14d1fc42a78286868","outcome":"reject","normalizedProjection":null},
+    {"id":"missing-schema-version","file":"missing-schema-version.json","sha256":"15de34a293823e9630b777cd12a9f3a841263be812e027f1169e3102aa211c3c","outcome":"reject","normalizedProjection":null},
+    {"id":"fractional-schema-version","file":"fractional-schema-version.json","sha256":"8e0f81531341d44487cbbc5fcdfbe0e106aa82cebf508bbabccf1847ddea79a8","outcome":"reject","normalizedProjection":null},
+    {"id":"future-schema-version","file":"future-schema-version.json","sha256":"5177a9116a16c016945c2736e195127201c976fd68a76f7062c1643dfc8b387f","outcome":"reject","normalizedProjection":null},
+    {"id":"past-schema-version","file":"past-schema-version.json","sha256":"3cb1101a58c5be6ac3612695334a2326fc9dc804717969219299666b82ba1e04","outcome":"reject","normalizedProjection":null},
+    {"id":"string-schema-version","file":"string-schema-version.json","sha256":"f7dcf2b2534a250c8582231d83702c6cacdbd364e99bc9ea609d955fecbc4b36","outcome":"reject","normalizedProjection":null},
+    {"id":"missing-benchmark","file":"missing-benchmark.json","sha256":"4f08cd697de544aecd8deb33fe80927250acf7d32f141e84cc6b9ac097c31283","outcome":"reject","normalizedProjection":null},
+    {"id":"invalid-benchmark","file":"invalid-benchmark.json","sha256":"5fe66f791b08d76566546a1e5e9f1fc8efd4794cab01cd4ce731ce48dc6286eb","outcome":"reject","normalizedProjection":null},
+    {"id":"missing-source","file":"missing-source.json","sha256":"c3d5d5656989d76f8027a66d0d8b1bc1fdb2a08352a5550fdecf90da69a45712","outcome":"reject","normalizedProjection":null},
+    {"id":"invalid-source","file":"invalid-source.json","sha256":"ffca0bc9e3242e4a5dbc9476a3a35a0b2693355e58446553ae8c4504d12db3e1","outcome":"reject","normalizedProjection":null},
+    {"id":"missing-count","file":"missing-count.json","sha256":"df9907b5e355997885caaecb061a7fa7095e9ed5f6d866277a10967bcfd3a08d","outcome":"reject","normalizedProjection":null},
+    {"id":"negative-count","file":"negative-count.json","sha256":"bcb1f83b96520a716cd0e2938de1133a1d7cb5920dc6aa07239fc4f06a5fe431","outcome":"reject","normalizedProjection":null},
+    {"id":"fractional-count","file":"fractional-count.json","sha256":"15a418c731c8bab719e06b7bd1891c790cdf402500bd4f5469b69c6452f67c67","outcome":"reject","normalizedProjection":null},
+    {"id":"invalid-models","file":"invalid-models.json","sha256":"778a201b337dd82e567fae8f52499965e66dca36d7a2a6106f45cc83a118a7ab","outcome":"reject","normalizedProjection":null},
+    {"id":"invalid-tasks","file":"invalid-tasks.json","sha256":"36ec4dcb76a84f48d74d051a84bbcc0c05735b59356fd11809aa9a249bcd4d41","outcome":"reject","normalizedProjection":null},
+    {"id":"empty-title","file":"empty-title.json","sha256":"00ab3c9e9517c1deb73609e67c59efb5668a1bd76c4b3e870b64c5b3b23dc635","outcome":"reject","normalizedProjection":null},
+    {"id":"empty-track","file":"empty-track.json","sha256":"c2005cb5239b976b657b4fb07ff7141ff37300c5161a95151fa53b6efd2dfd50","outcome":"reject","normalizedProjection":null},
+    {"id":"invalid-data-policy","file":"invalid-data-policy.json","sha256":"86bbe939bf55a2f240ac3e199786446276a19f28a25d126bdfb47c9278a5dc2c","outcome":"reject","normalizedProjection":null}
+  ]
+}

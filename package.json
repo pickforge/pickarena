@@ -11,6 +11,7 @@
     "web:install": "cd web && bun install",
     "web:dev": "cd web && bun run dev",
     "web:check": "cd web && bun run check",
+    "web:test": "cd web && bun run test",
     "web:build": "cd web && bun run build",
     "web:smoke": "cd web && bun run smoke",
     "bench:official:bubblewrap": "bash scripts/run-official-bubblewrap-benchmark.sh",

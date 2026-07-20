@@ -1,0 +1,384 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-31T00:00:00.000Z",
+  "benchmark": {
+    "name": "PickArena",
+    "brand": "Pickforge Studio",
+    "title": "PickArena by Pickforge Studio",
+    "version": "2026-05-31-master-spec",
+    "taskSetId": "taskset-8cc0f1685901d8a6",
+    "evaluatorSchemaVersion": 2,
+    "track": "agentic",
+    "dataPolicy": "aggregate-compatible",
+    "preset": "mvp",
+    "selectedTasks": [
+      {
+        "taskId": "task.a",
+        "taskVersion": 1,
+        "taskBundleDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "corpusManifestDigestSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "source": {
+    "anchorRunId": "compat-run",
+    "runIds": [
+      "compat-run"
+    ],
+    "taskCount": 1,
+    "taskRunCount": 1,
+    "modelCount": 1,
+    "trialSummaryCount": 1,
+    "trialSummaryTotalCount": 1,
+    "trialSummaryTruncated": false,
+    "trialSummaryLimit": 1000,
+    "warnings": [],
+    "judgeOverhead": {
+      "evaluationCount": 0,
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "knownEstimatedCostCount": 0,
+      "unknownEstimatedCostCount": 0,
+      "totalEstimatedCostMicros": 0,
+      "pricingStatusCounts": {}
+    },
+    "runProvenance": {
+      "runCount": 1,
+      "embeddedRunCount": 1,
+      "sandboxEnforcedRunCount": 0,
+      "taskExecutionPolicyRunCount": 0,
+      "networkDisabledTaskPolicyRunCount": 0,
+      "taskResourceLimitRunCount": 0,
+      "sdkVersionRunCount": 0,
+      "dependencySnapshotRunCount": 0,
+      "pricingRegistryRunCount": 0,
+      "generatedCodeSandboxBackends": [],
+      "dartVersions": [],
+      "flutterVersions": [],
+      "environmentIds": [],
+      "warnings": [
+        "Run compat-run does not record generated-code sandbox enforcement.",
+        "Run compat-run does not record network-disabled task execution policy.",
+        "Run compat-run has incomplete SDK version provenance.",
+        "Run compat-run has incomplete dependency lockfile provenance.",
+        "Run compat-run has incomplete or unenforced task resource limit provenance.",
+        "Run compat-run has incomplete pricing registry provenance.",
+        "Run compat-run has incomplete task execution policy provenance."
+      ]
+    }
+  },
+  "scoring": {
+    "schemaVersion": 2,
+    "primaryMetric": "primary_pass",
+    "rankingMetric": "primary_pass_rate",
+    "confidenceInterval": "wilson_95",
+    "llmJudgePolicy": "diagnostic_only",
+    "diffSizePolicy": "diagnostic_only_full_patch",
+    "diagnosticOnlyEvaluatorIds": [
+      "diff_size"
+    ],
+    "objectiveEvaluatorIds": [
+      "analyze",
+      "compile",
+      "hidden_test",
+      "test",
+      "test_author",
+      "widget_tree"
+    ],
+    "secondaryEvaluatorIds": [
+      "diff_size",
+      "llm_judge"
+    ],
+    "hiddenVerifierPattern": "*_hidden",
+    "failureTags": [
+      "pass",
+      "hidden_verifier_failed",
+      "public_tests_failed",
+      "analysis_failed",
+      "compile_failed",
+      "harness_timeout",
+      "harness_error",
+      "no_patch",
+      "invalid_output",
+      "environment_error",
+      "unknown"
+    ],
+    "objectiveFailureCaps": {
+      "compile": 0.2,
+      "analyze": 0.35,
+      "public_test": 0.6,
+      "hidden_verifier": 0.6
+    },
+    "defaultEvaluatorWeights": {
+      "analyze": 0.5,
+      "compile": 0.5,
+      "hidden_test": 1.0,
+      "llm_judge": 0.7,
+      "test": 1.0,
+      "test_author": 4.0,
+      "widget_tree": 1.0
+    }
+  },
+  "pricingRegistry": {
+    "version": "2026-05-31",
+    "currency": "USD",
+    "modelCount": 7,
+    "models": {
+      "anthropic:claude-opus-4.7": {
+        "inputCostPerMToken": 15.0,
+        "outputCostPerMToken": 75.0,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      },
+      "anthropic:claude-sonnet-4.5": {
+        "inputCostPerMToken": 3.0,
+        "outputCostPerMToken": 15.0,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      },
+      "deepseek:deepseek-v4-flash": {
+        "inputCostPerMToken": 0.14,
+        "outputCostPerMToken": 0.28,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      },
+      "deepseek:deepseek-v4-pro": {
+        "inputCostPerMToken": 1.0,
+        "outputCostPerMToken": 3.0,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      },
+      "openai:gpt-5": {
+        "inputCostPerMToken": 1.25,
+        "outputCostPerMToken": 10.0,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      },
+      "openai:gpt-5.3-codex": {
+        "inputCostPerMToken": 1.25,
+        "outputCostPerMToken": 10.0,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      },
+      "openai:gpt-5.5": {
+        "inputCostPerMToken": 1.25,
+        "outputCostPerMToken": 10.0,
+        "source": "manual",
+        "effectiveFrom": "2026-05-31"
+      }
+    }
+  },
+  "models": [
+    {
+      "providerId": "openai",
+      "modelId": "gpt-5",
+      "baseModelId": "gpt-5",
+      "modelConfig": {},
+      "rank": 1,
+      "score": 1.0,
+      "passRate": 1.0,
+      "trialCount": 1,
+      "passCount": 1,
+      "sampleCount": 1,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        }
+      },
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 1,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 1,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 1,
+        "completeTraceMetricCount": 0
+      },
+      "tokenUsageCoverage": {
+        "sampleCount": 1,
+        "promptTokensKnownCount": 1,
+        "promptTokensUnknownCount": 0,
+        "completionTokensKnownCount": 1,
+        "completionTokensUnknownCount": 0,
+        "completeTokenUsageCount": 1
+      },
+      "publicPassCount": 0,
+      "publicSampleCount": 0,
+      "publicPassRate": null,
+      "hiddenPassCount": 0,
+      "hiddenSampleCount": 0,
+      "hiddenPassRate": null,
+      "confidenceInterval": {
+        "lower": 0.20654998073085312,
+        "upper": 1.0
+      },
+      "lowSample": true,
+      "medianLatencyMs": 1000,
+      "medianPromptTokens": 10,
+      "medianCompletionTokens": 20,
+      "medianEstimatedCostMicros": 213,
+      "knownEstimatedCostCount": 1,
+      "unknownEstimatedCostCount": 0,
+      "totalEstimatedCostMicros": 213,
+      "costPerSolvedTaskMicros": 213,
+      "cheapestPassingEstimatedCostMicros": 213,
+      "failureBreakdown": {
+        "pass": 1
+      },
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0
+    }
+  ],
+  "tasks": [
+    {
+      "taskId": "task.a",
+      "taskVersion": 1,
+      "taskBundleDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "benchmarkTrack": "agentic",
+      "trialCount": 1,
+      "sampleCount": 1,
+      "modelCount": 1,
+      "passRate": 1.0,
+      "confidenceInterval": {
+        "lower": 0.20654998073085312,
+        "upper": 1.0
+      },
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        }
+      },
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 1,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 1,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 1,
+        "completeTraceMetricCount": 0
+      },
+      "tokenUsageCoverage": {
+        "sampleCount": 1,
+        "promptTokensKnownCount": 1,
+        "promptTokensUnknownCount": 0,
+        "completionTokensKnownCount": 1,
+        "completionTokensUnknownCount": 0,
+        "completeTokenUsageCount": 1
+      },
+      "publicPassCount": 0,
+      "publicSampleCount": 0,
+      "publicPassRate": null,
+      "hiddenPassCount": 0,
+      "hiddenSampleCount": 0,
+      "hiddenPassRate": null,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0
+    }
+  ],
+  "taskModelCells": [
+    {
+      "providerId": "openai",
+      "modelId": "gpt-5",
+      "baseModelId": "gpt-5",
+      "modelConfig": {},
+      "taskId": "task.a",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialCount": 1,
+      "passCount": 1,
+      "sampleCount": 1,
+      "passRate": 1.0,
+      "confidenceInterval": {
+        "lower": 0.20654998073085312,
+        "upper": 1.0
+      },
+      "errorCount": 0,
+      "passAtK": {
+        "1": {
+          "k": 1,
+          "passCount": 1,
+          "sampleCount": 1,
+          "passRate": 1.0
+        }
+      },
+      "medianStepCount": null,
+      "medianPeakContextTokens": null,
+      "traceMetricCoverage": {
+        "sampleCount": 1,
+        "stepCountKnownCount": 0,
+        "stepCountUnknownCount": 1,
+        "peakContextTokensKnownCount": 0,
+        "peakContextTokensUnknownCount": 1,
+        "completeTraceMetricCount": 0
+      },
+      "tokenUsageCoverage": {
+        "sampleCount": 1,
+        "promptTokensKnownCount": 1,
+        "promptTokensUnknownCount": 0,
+        "completionTokensKnownCount": 1,
+        "completionTokensUnknownCount": 0,
+        "completeTokenUsageCount": 1
+      },
+      "publicPassCount": 0,
+      "publicSampleCount": 0,
+      "publicPassRate": null,
+      "hiddenPassCount": 0,
+      "hiddenSampleCount": 0,
+      "hiddenPassRate": null,
+      "blockedEvaluationCount": 0,
+      "blockedTaskRunCount": 0,
+      "medianLatencyMs": 1000,
+      "medianPromptTokens": 10,
+      "medianCompletionTokens": 20,
+      "medianEstimatedCostMicros": 213,
+      "knownEstimatedCostCount": 1,
+      "unknownEstimatedCostCount": 0,
+      "failureBreakdown": {
+        "pass": 1
+      }
+    }
+  ],
+  "trialSummaries": [
+    {
+      "trialId": "a3a0d363b206",
+      "runId": "compat-run",
+      "providerId": "openai",
+      "modelId": "gpt-5",
+      "baseModelId": "gpt-5",
+      "modelConfig": {},
+      "taskId": "task.a",
+      "taskVersion": 1,
+      "benchmarkTrack": "agentic",
+      "trialIndex": 0,
+      "completedAt": "2026-05-01T12:00:00.000Z",
+      "primaryPass": true,
+      "failureTag": "pass",
+      "aggregateScore": 1.0,
+      "publicPassed": null,
+      "hiddenPassed": null,
+      "blockedEvaluationCount": 0,
+      "stepCount": null,
+      "peakContextTokens": null,
+      "traceMetricStatus": {
+        "stepCount": "unknown",
+        "peakContextTokens": "unknown"
+      },
+      "latencyMs": 1000,
+      "promptTokens": 10,
+      "completionTokens": 20,
+      "tokenUsageStatus": {
+        "promptTokens": "reported",
+        "completionTokens": "reported"
+      },
+      "estimatedCostMicros": 213
+    }
+  ]
+}
