@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:dart_arena/analytics/result_primitives.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/code_extractor.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
@@ -8,7 +7,7 @@ import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
-import 'package:dart_arena/core/scoring.dart';
+import 'package:dart_arena/core/objective_evaluation.dart';
 import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/providers/model_provider.dart';
 import 'package:dart_arena/providers/model_stream_event.dart';
@@ -155,52 +154,34 @@ class CodegenTaskExecutor {
     final evaluations = <EvaluationResult>[];
 
     if (prepResult is PrepareFailed) {
-      evaluations.add(
-        environmentFailureEvaluation(
+      blockEvaluatorsForHardFailure(
+        evaluations: evaluations,
+        evaluators: evaluators,
+        failure: environmentFailureEvaluation(
           rationale: 'prepare failed',
           stderr: prepResult.stderr,
         ),
       );
-      for (final evaluator in evaluators) {
-        evaluations.add(
-          blockedEvaluationFor(
-            evaluatorId: evaluator.id,
-            previousResults: evaluations,
-            blockAllDownstream: true,
-          )!,
-        );
-      }
     } else {
-      for (final evaluator in evaluators) {
-        cancellationCheck?.call();
-        final blocked = blockedEvaluationFor(
-          evaluatorId: evaluator.id,
-          previousResults: evaluations,
-        );
-        if (blocked != null) {
-          evaluations.add(blocked);
-          continue;
-        }
-        final result = await evaluator.evaluate(
-          EvaluationContext(
-            workDir: dir,
-            response: responseWithCode,
-            task: task,
-            previousResults: evaluations,
-            deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
-            generatedCodeSandbox: generatedCodeSandbox,
-          ),
-        );
-        cancellationCheck?.call();
-        evaluations.add(result);
-      }
+      await runObjectiveEvaluators(
+        evaluators: evaluators,
+        evaluations: evaluations,
+        contextFor: (previousResults) => EvaluationContext(
+          workDir: dir,
+          response: responseWithCode,
+          task: task,
+          previousResults: previousResults,
+          deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
+          generatedCodeSandbox: generatedCodeSandbox,
+        ),
+        cancellationCheck: cancellationCheck,
+      );
     }
 
     cancellationCheck?.call();
-    final aggregateScore = aggregate(evaluations, weights);
-    final primitives = determineResultPrimitives(
+    final outcome = finalizeObjectiveEvaluation(
       evaluations: evaluations,
-      aggregateScore: aggregateScore,
+      weights: weights,
       response: responseWithCode,
     );
 
@@ -210,14 +191,14 @@ class CodegenTaskExecutor {
       modelId: modelId,
       taskId: task.id,
       response: responseWithCode,
-      evaluations: evaluations,
-      aggregateScore: aggregateScore,
+      evaluations: outcome.evaluations,
+      aggregateScore: outcome.aggregateScore,
       completedAt: now(),
       trialIndex: trialIndex,
       taskVersion: task.version,
       benchmarkTrack: task.track.name,
-      primaryPass: primitives.primaryPass,
-      failureTag: primitives.failureTag,
+      primaryPass: outcome.primaryPass,
+      failureTag: outcome.failureTag,
       planId: planId,
     );
   }
