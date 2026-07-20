@@ -46,6 +46,33 @@ void main() {
     }
   });
 
+  test('rejects digesting a changed manifest after task load', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'file_backed_manifest_digest_drift_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final bundle = await writeAnswerFileBackedBundle(root);
+    final task = await FileBackedTask.load(bundle);
+    await task.ensureLoaded();
+    await File(
+      p.join(bundle.path, 'baseline', 'instruction-v2.md'),
+    ).writeAsString('Updated instruction.\n');
+    final manifest = File(p.join(bundle.path, 'task.yaml'));
+    await manifest.writeAsString(
+      (await manifest.readAsString()).replaceFirst(
+        'instructionPath: instruction.md',
+        'instructionPath: baseline/instruction-v2.md',
+      ),
+    );
+
+    await expectLater(
+      task.bundleInspection.taskBundleDigestSha256(),
+      throwsStateError,
+    );
+  });
+
   test(
     'discovers tasks deterministically with manifest versions and tracks',
     () async {

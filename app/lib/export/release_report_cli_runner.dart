@@ -302,6 +302,15 @@ Future<Map<String, Object?>> _taskBundleDigestEvidence(
     final inspection = await TaskBundleInspection.inspect(bundleDirectory);
     final task = await FileBackedTask.fromInspection(inspection);
     await task.ensureLoaded();
+    if (task.id != report['taskId'] ||
+        task.version != report['taskVersion'] ||
+        task.track.name != report['track']) {
+      return {
+        ...evidence,
+        'taskBundleDigestUnavailableReason':
+            'loaded task identity does not match task QA report',
+      };
+    }
     return {
       ...evidence,
       'taskBundleDigest': await inspection.taskBundleDigestSha256(),

@@ -6,9 +6,24 @@ enum TaskBundleCompatibilityMutation {
   none,
   missingManifest,
   corruptManifest,
+  malformedSchemaVersion,
+  unsupportedSchemaVersion,
+  malformedTaskVersion,
+  malformedTrack,
+  unsupportedTrack,
+  malformedReferenceType,
+  unsupportedReferenceType,
+  incompleteDeclaredFiles,
   instructionTraversal,
+  backslashDeclaredPath,
+  allowedRootMismatch,
+  ignoredOsMetadata,
+  declaredIgnoredOsMetadata,
+  normalizedDuplicateSource,
+  normalizedDuplicateDestination,
   missingHiddenVerifier,
   instructionSymlink,
+  straySymlink,
 }
 
 class TaskBundleCompatibilityFixture {
@@ -38,9 +53,79 @@ const taskBundleCompatibilityFixtures = [
     mutation: TaskBundleCompatibilityMutation.corruptManifest,
   ),
   TaskBundleCompatibilityFixture(
+    'malformed schema version',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.malformedSchemaVersion,
+  ),
+  TaskBundleCompatibilityFixture(
+    'unsupported schema version',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.unsupportedSchemaVersion,
+  ),
+  TaskBundleCompatibilityFixture(
+    'malformed task version',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.malformedTaskVersion,
+  ),
+  TaskBundleCompatibilityFixture(
+    'malformed track',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.malformedTrack,
+  ),
+  TaskBundleCompatibilityFixture(
+    'unsupported track',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.unsupportedTrack,
+  ),
+  TaskBundleCompatibilityFixture(
+    'malformed reference type',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.malformedReferenceType,
+  ),
+  TaskBundleCompatibilityFixture(
+    'unsupported reference type',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.unsupportedReferenceType,
+  ),
+  TaskBundleCompatibilityFixture(
+    'incomplete declared files',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.incompleteDeclaredFiles,
+  ),
+  TaskBundleCompatibilityFixture(
     'traversing instruction path',
     accepted: false,
     mutation: TaskBundleCompatibilityMutation.instructionTraversal,
+  ),
+  TaskBundleCompatibilityFixture(
+    'backslash in declared path',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.backslashDeclaredPath,
+  ),
+  TaskBundleCompatibilityFixture(
+    'declared file outside admitted roots',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.allowedRootMismatch,
+  ),
+  TaskBundleCompatibilityFixture(
+    'undeclared OS metadata',
+    accepted: true,
+    mutation: TaskBundleCompatibilityMutation.ignoredOsMetadata,
+  ),
+  TaskBundleCompatibilityFixture(
+    'declared OS metadata',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.declaredIgnoredOsMetadata,
+  ),
+  TaskBundleCompatibilityFixture(
+    'duplicate normalized source path',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.normalizedDuplicateSource,
+  ),
+  TaskBundleCompatibilityFixture(
+    'duplicate normalized destination path',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.normalizedDuplicateDestination,
   ),
   TaskBundleCompatibilityFixture(
     'missing hidden verifier fixture',
@@ -51,6 +136,12 @@ const taskBundleCompatibilityFixtures = [
     'symlinked instruction',
     accepted: false,
     mutation: TaskBundleCompatibilityMutation.instructionSymlink,
+    requiresSymlink: true,
+  ),
+  TaskBundleCompatibilityFixture(
+    'stray symlink under inspected root',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.straySymlink,
     requiresSymlink: true,
   ),
 ];
@@ -68,14 +159,78 @@ Future<Directory> writeTaskBundleCompatibilityFixture(
       await manifest.delete();
     case TaskBundleCompatibilityMutation.corruptManifest:
       await manifest.writeAsString('workspace: [\n');
+    case TaskBundleCompatibilityMutation.malformedSchemaVersion:
+      await _replaceManifest(
+        manifest,
+        'schemaVersion: 1',
+        'schemaVersion: one',
+      );
+    case TaskBundleCompatibilityMutation.unsupportedSchemaVersion:
+      await _replaceManifest(manifest, 'schemaVersion: 1', 'schemaVersion: 2');
+    case TaskBundleCompatibilityMutation.malformedTaskVersion:
+      await _replaceManifest(manifest, 'version: 2', 'version: two');
+    case TaskBundleCompatibilityMutation.malformedTrack:
+      await _replaceManifest(manifest, 'track: codegen', 'track: [codegen]');
+    case TaskBundleCompatibilityMutation.unsupportedTrack:
+      await _replaceManifest(manifest, 'track: codegen', 'track: future');
+    case TaskBundleCompatibilityMutation.malformedReferenceType:
+      await _replaceManifest(manifest, '  type: files', '  type: [files]');
+    case TaskBundleCompatibilityMutation.unsupportedReferenceType:
+      await _replaceManifest(manifest, '  type: files', '  type: archive');
+    case TaskBundleCompatibilityMutation.incompleteDeclaredFiles:
+      await _replaceManifest(
+        manifest,
+        '''workspace:
+  root: baseline
+  files:
+    pubspec.yaml: pubspec.yaml
+    lib/answer.dart: lib/answer.dart
+    test/answer_test.dart: test/answer_test.dart''',
+        '''workspace:
+  root: baseline
+  files: []''',
+      );
     case TaskBundleCompatibilityMutation.instructionTraversal:
       final outsideInstruction = File(p.join(root.path, 'outside.md'));
       await outsideInstruction.writeAsString('Outside the bundle.\n');
-      await manifest.writeAsString(
-        (await manifest.readAsString()).replaceFirst(
-          'instructionPath: instruction.md',
-          'instructionPath: ../outside.md',
-        ),
+      await _replaceManifest(
+        manifest,
+        'instructionPath: instruction.md',
+        'instructionPath: ../outside.md',
+      );
+    case TaskBundleCompatibilityMutation.backslashDeclaredPath:
+      await _replaceManifest(
+        manifest,
+        '    lib/answer.dart: lib/answer.dart',
+        r'    lib\answer.dart: lib/answer.dart',
+      );
+    case TaskBundleCompatibilityMutation.allowedRootMismatch:
+      await _replaceManifest(manifest, '  root: baseline', '  root: qa');
+    case TaskBundleCompatibilityMutation.ignoredOsMetadata:
+      await _writeFile(bundle, 'baseline/.DS_Store', 'finder\n');
+      await _writeFile(bundle, 'hidden_tests/Thumbs.db', 'thumbs\n');
+      await _writeFile(bundle, 'solution/desktop.ini', 'desktop\n');
+      await _writeFile(bundle, 'negative_cases/noop/._answer.dart', 'apple\n');
+    case TaskBundleCompatibilityMutation.declaredIgnoredOsMetadata:
+      await _replaceManifest(
+        manifest,
+        '    pubspec.yaml: pubspec.yaml',
+        '''    .DS_Store: .DS_Store
+    pubspec.yaml: pubspec.yaml''',
+      );
+      await _writeFile(bundle, 'baseline/.DS_Store', 'finder\n');
+    case TaskBundleCompatibilityMutation.normalizedDuplicateSource:
+      await _replaceManifest(
+        manifest,
+        '    lib/answer.dart: lib/answer.dart',
+        '''    lib/answer.dart: lib/answer.dart
+    lib//answer.dart: lib/duplicate.dart''',
+      );
+    case TaskBundleCompatibilityMutation.normalizedDuplicateDestination:
+      await _replaceManifest(
+        manifest,
+        '    test/answer_test.dart: test/answer_test.dart',
+        '    test/answer_test.dart: lib/answer.dart',
       );
     case TaskBundleCompatibilityMutation.missingHiddenVerifier:
       await File(
@@ -93,8 +248,24 @@ Future<Directory> writeTaskBundleCompatibilityFixture(
       await outsideInstruction.writeAsString('Outside the bundle.\n');
       await instruction.delete();
       await Link(instruction.path).create(outsideInstruction.path);
+    case TaskBundleCompatibilityMutation.straySymlink:
+      await Link(
+        p.join(bundle.path, 'baseline', 'stray.dart'),
+      ).create('lib/answer.dart');
   }
   return bundle;
+}
+
+Future<void> _replaceManifest(
+  File manifest,
+  String original,
+  String replacement,
+) async {
+  final content = await manifest.readAsString();
+  if (!content.contains(original)) {
+    throw StateError('Manifest fixture text was not found: $original');
+  }
+  await manifest.writeAsString(content.replaceFirst(original, replacement));
 }
 
 Future<Directory> writeAnswerFileBackedBundle(

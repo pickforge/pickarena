@@ -246,6 +246,10 @@ Future<Map<String, String>> _writeBundle(
 
 String _taskYaml({required String workspaceRoot, String? judgeRubricPath}) =>
     '''
+schemaVersion: 1
+id: digest.fixture
+version: 1
+track: codegen
 instructionPath: instruction.md
 ${judgeRubricPath == null ? '' : 'judgeRubricPath: $judgeRubricPath\n'}workspace:
   root: $workspaceRoot

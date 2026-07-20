@@ -72,9 +72,9 @@ class FileBackedTask extends BenchmarkTask {
     return FileBackedTask._(
       bundleInspection: inspection,
       id: id,
-      version: _optionalInt(manifest, 'version') ?? 1,
+      version: inspection.taskVersion,
       category: _parseCategory(_requiredString(manifest, 'category')),
-      track: _parseTrack(_optionalString(manifest, 'track') ?? 'codegen'),
+      track: inspection.track,
       tags: {
         for (final tag in _optionalStringList(manifest, 'tags'))
           _parseTaskTag(tag),
@@ -472,13 +472,6 @@ Category _parseCategory(String value) {
   return Category.values.firstWhere(
     (category) => _matchesEnumName(category.name, value),
     orElse: () => throw FormatException('Unknown category: $value'),
-  );
-}
-
-BenchmarkTrack _parseTrack(String value) {
-  return BenchmarkTrack.values.firstWhere(
-    (track) => _matchesEnumName(track.name, value),
-    orElse: () => throw FormatException('Unknown track: $value'),
   );
 }
 

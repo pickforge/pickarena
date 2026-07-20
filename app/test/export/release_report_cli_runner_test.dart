@@ -1326,6 +1326,44 @@ void main() {
     expect(integrity['digestMatchedCount'], 0);
   });
 
+  test('rejects digest evidence for every task identity mismatch', () async {
+    final cases = <String, ({String taskId, int version, String track})>{
+      'id': (taskId: 'task.b', version: 1, track: 'agentic'),
+      'version': (taskId: 'task.a', version: 2, track: 'agentic'),
+      'track': (taskId: 'task.a', version: 1, track: 'codegen'),
+    };
+
+    for (final entry in cases.entries) {
+      final tmp = await Directory.systemTemp.createTemp(
+        'release_report_task_identity_${entry.key}_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+
+      final report = await _runTaskBundleIntegrityReleaseReport(
+        tmp,
+        includeDigest: true,
+        reportTaskId: entry.value.taskId,
+        reportTaskVersion: entry.value.version,
+        reportTrack: entry.value.track,
+      );
+
+      final blockers = (report['blockers']! as List<Object?>).join('\n');
+      expect(
+        blockers,
+        contains(
+          'digest evidence unavailable: loaded task identity does not match task QA report.',
+        ),
+        reason: entry.key,
+      );
+      final audit = report['verifierAudit']! as Map<String, Object?>;
+      final integrity = audit['taskBundleIntegrity']! as Map<String, Object?>;
+      expect(integrity['digestRecomputeMissingCount'], 1, reason: entry.key);
+      expect(integrity['digestMatchedCount'], 0, reason: entry.key);
+    }
+  });
+
   test('blocks report when admission environment is dirty', () async {
     final tmp = await Directory.systemTemp.createTemp(
       'release_report_task_bundle_git_dirty_',
@@ -12324,6 +12362,9 @@ Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
   _TaskQaInputMode inputMode = _TaskQaInputMode.summary,
   bool useBuildOutputLayout = false,
   bool includeTaskBundleRoot = true,
+  String reportTaskId = 'task.a',
+  int reportTaskVersion = 1,
+  String reportTrack = 'agentic',
 }) async {
   final leaderboardPath = p.join(tmp.path, 'leaderboard.v1.json');
   final taskQaDir = Directory(p.join(tmp.path, 'task_qa'));
@@ -12360,6 +12401,9 @@ Future<Map<String, Object?>> _runTaskBundleIntegrityReleaseReport(
   await File(reportPath).writeAsString(
     _prettyJson(
       _taskQaReportJson(
+        taskId: reportTaskId,
+        taskVersion: reportTaskVersion,
+        track: reportTrack,
         taskBundleDigest: includeDigest
             ? digestOverride ?? taskBundleDigest
             : null,

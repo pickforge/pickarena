@@ -7,6 +7,8 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+import 'benchmark_task.dart';
+
 const taskBundleInspectionFileRoots = [
   'task.yaml',
   'instruction.md',
@@ -27,6 +29,10 @@ class TaskBundleInspection {
   TaskBundleInspection._({
     required this.bundleDirectory,
     required this.manifest,
+    required this.schemaVersion,
+    required this.taskId,
+    required this.taskVersion,
+    required this.track,
     required this.instructionPath,
     required this.judgeRubricPath,
     required this.workspace,
@@ -34,12 +40,22 @@ class TaskBundleInspection {
     required this.reference,
     required this.negativeCases,
     required String root,
+    required Uint8List manifestBytes,
+    required String manifestIdentity,
+    required String declarationIdentity,
     required List<String> digestRelativePaths,
   }) : _root = root,
+       _manifestBytes = manifestBytes,
+       _manifestIdentity = manifestIdentity,
+       _declarationIdentity = declarationIdentity,
        _digestRelativePaths = digestRelativePaths;
 
   final Directory bundleDirectory;
   final YamlMap manifest;
+  final int schemaVersion;
+  final String taskId;
+  final int taskVersion;
+  final BenchmarkTrack track;
   final String instructionPath;
   final String? judgeRubricPath;
   final TaskBundleFileSet workspace;
@@ -47,17 +63,34 @@ class TaskBundleInspection {
   final TaskBundleFileSet? reference;
   final List<TaskBundleFileSet> negativeCases;
   final String _root;
+  final Uint8List _manifestBytes;
+  final String _manifestIdentity;
+  final String _declarationIdentity;
   final List<String> _digestRelativePaths;
 
   static Future<TaskBundleInspection> inspect(Directory bundleDirectory) async {
     final root = _validatedBundleRoot(bundleDirectory);
     final manifestFile = _resolveBundleFile(root, 'task.yaml');
-    final decoded = loadYaml(await manifestFile.readAsString());
+    final manifestBytes = await manifestFile.readAsBytes();
+    final decoded = loadYaml(utf8.decode(manifestBytes));
     if (decoded is! YamlMap) {
       throw FormatException(
         'Task manifest must be a YAML map: ${manifestFile.path}',
       );
     }
+
+    final schemaVersion = _requiredInt(decoded, 'schemaVersion');
+    if (schemaVersion != 1) {
+      throw FormatException(
+        'Unsupported task manifest schema version: $schemaVersion',
+      );
+    }
+    final taskId = _requiredString(decoded, 'id');
+    final taskVersion = _requiredInt(decoded, 'version');
+    if (taskVersion <= 0) {
+      throw const FormatException('version must be positive');
+    }
+    final track = _parseTrack(_requiredString(decoded, 'track'));
 
     final relativePaths = SplayTreeSet<String>()..add('task.yaml');
     final instructionPath = _addDeclaredFile(
@@ -102,6 +135,10 @@ class TaskBundleInspection {
     return TaskBundleInspection._(
       bundleDirectory: bundleDirectory,
       manifest: decoded,
+      schemaVersion: schemaVersion,
+      taskId: taskId,
+      taskVersion: taskVersion,
+      track: track,
       instructionPath: instructionPath,
       judgeRubricPath: judgeRubricPath,
       workspace: workspace,
@@ -109,6 +146,21 @@ class TaskBundleInspection {
       reference: reference,
       negativeCases: List.unmodifiable(negativeCases),
       root: root,
+      manifestBytes: manifestBytes,
+      manifestIdentity: jsonEncode([
+        schemaVersion,
+        taskId,
+        taskVersion,
+        track.name,
+      ]),
+      declarationIdentity: _buildDeclarationIdentity(
+        instructionPath: instructionPath,
+        judgeRubricPath: judgeRubricPath,
+        workspace: workspace,
+        hiddenVerifiers: hiddenVerifiers,
+        reference: reference,
+        negativeCases: negativeCases,
+      ),
       digestRelativePaths: List.unmodifiable(relativePaths),
     );
   }
@@ -121,13 +173,38 @@ class TaskBundleInspection {
   }
 
   Future<String> taskBundleDigestSha256() async {
+    final fresh = await TaskBundleInspection.inspect(bundleDirectory);
+    if (fresh._manifestIdentity != _manifestIdentity ||
+        fresh._declarationIdentity != _declarationIdentity) {
+      throw StateError(
+        'Task bundle manifest identity or declared paths changed since inspection',
+      );
+    }
+    return fresh._digestCurrentInspection();
+  }
+
+  Future<String> _digestCurrentInspection() async {
     await validateDeclaredFiles();
-    final bytesBuilder = BytesBuilder(copy: false);
+    final snapshots = <String, Uint8List>{};
     for (final relativePath in _digestRelativePaths) {
-      final file = _resolveBundleFile(_root, relativePath);
-      final bytes = await file.readAsBytes();
-      bytesBuilder.add(utf8.encode('$relativePath\u0000${bytes.length}\u0000'));
-      bytesBuilder.add(bytes);
+      snapshots[relativePath] = relativePath == 'task.yaml'
+          ? _manifestBytes
+          : await _resolveBundleFile(_root, relativePath).readAsBytes();
+    }
+    final currentManifestBytes = await _resolveBundleFile(
+      _root,
+      'task.yaml',
+    ).readAsBytes();
+    if (!_bytesEqual(currentManifestBytes, _manifestBytes)) {
+      throw StateError('Task bundle manifest changed while digesting');
+    }
+
+    final bytesBuilder = BytesBuilder(copy: false);
+    for (final entry in snapshots.entries) {
+      bytesBuilder.add(
+        utf8.encode('${entry.key}\u0000${entry.value.length}\u0000'),
+      );
+      bytesBuilder.add(entry.value);
       bytesBuilder.add(const [0]);
     }
     return sha256.convert(bytesBuilder.takeBytes()).toString();
@@ -219,12 +296,23 @@ TaskBundleFileSet _parseDeclaredFileSet(
   final root = taskBundleRelativePath(yaml['root'], '$field.root');
   final files = _requiredMap(yaml, 'files');
   final parsedFiles = <String, String>{};
+  final destinations = <String>{};
   for (final entry in files.entries) {
     final source = taskBundleRelativePath(entry.key, '$field.files key');
     final destination = taskBundleRelativePath(
       entry.value,
       '$field.files value',
     );
+    if (parsedFiles.containsKey(source)) {
+      throw FormatException(
+        '$field.files contains duplicate normalized source path: $source',
+      );
+    }
+    if (!destinations.add(destination)) {
+      throw FormatException(
+        '$field.files contains duplicate normalized destination path: $destination',
+      );
+    }
     _addDeclaredFile(paths, p.posix.join(root, source), field: '$field.files');
     parsedFiles[source] = destination;
   }
@@ -291,6 +379,46 @@ bool _isIgnoredBundleFile(String relativePath) {
       basename == 'Thumbs.db' ||
       basename == 'desktop.ini' ||
       basename.startsWith('._');
+}
+
+String _buildDeclarationIdentity({
+  required String instructionPath,
+  required String? judgeRubricPath,
+  required TaskBundleFileSet workspace,
+  required List<TaskBundleFileSet> hiddenVerifiers,
+  required TaskBundleFileSet? reference,
+  required List<TaskBundleFileSet> negativeCases,
+}) => jsonEncode({
+  'instructionPath': instructionPath,
+  'judgeRubricPath': judgeRubricPath,
+  'workspace': _fileSetIdentity(workspace),
+  'hiddenVerifiers': hiddenVerifiers.map(_fileSetIdentity).toList(),
+  'reference': reference == null ? null : _fileSetIdentity(reference),
+  'negativeCases': negativeCases.map(_fileSetIdentity).toList(),
+});
+
+Map<String, Object> _fileSetIdentity(TaskBundleFileSet fileSet) => {
+  'root': fileSet.root,
+  'files': SplayTreeMap<String, String>.of(fileSet.files),
+};
+
+bool _bytesEqual(Uint8List first, Uint8List second) {
+  if (first.length != second.length) return false;
+  for (var i = 0; i < first.length; i++) {
+    if (first[i] != second[i]) return false;
+  }
+  return true;
+}
+
+BenchmarkTrack _parseTrack(String value) {
+  return BenchmarkTrack.values.firstWhere(
+    (track) => _normalizeEnumName(track.name) == _normalizeEnumName(value),
+    orElse: () => throw FormatException('Unknown track: $value'),
+  );
+}
+
+String _normalizeEnumName(String value) {
+  return value.replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toLowerCase();
 }
 
 String _validatedBundleRoot(Directory bundleDirectory) {
@@ -411,4 +539,10 @@ String? _optionalString(YamlMap yaml, String field) {
   final value = yaml[field];
   if (value == null || value is String) return value as String?;
   throw FormatException('$field must be a string');
+}
+
+int _requiredInt(YamlMap yaml, String field) {
+  final value = yaml[field];
+  if (value is int) return value;
+  throw FormatException('$field must be an integer');
 }
