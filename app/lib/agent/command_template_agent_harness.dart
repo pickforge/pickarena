@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
 import 'package:dart_arena/agent/droid_agent_harness.dart';
@@ -111,6 +113,7 @@ class CommandTemplateAgentHarness
     'track': 'scaffold-dependent',
     'agent': config.name,
     'agentVersion': config.version,
+    'templateHash': _templateHash(config),
   };
 
   @override
@@ -215,6 +218,19 @@ class CommandTemplateAgentHarness
     if (!hasInstruction) {
       throw ArgumentError('command template must include {instruction}');
     }
+  }
+
+  /// Deterministic digest of the executable and argument-template shape,
+  /// so two custom command-template scaffolds with the same agent name and
+  /// version but different executables or argument templates (e.g.
+  /// differing permission flags) cannot be treated as aggregation-compatible.
+  ///
+  /// Only a hash is published, never the raw executable/argument template,
+  /// so permission flags, sandbox scopes, or other scaffold-specific
+  /// arguments are not exposed in published provenance.
+  static String _templateHash(CommandTemplateAgentConfig config) {
+    final digestInput = jsonEncode([config.executable, config.arguments]);
+    return sha256.convert(utf8.encode(digestInput)).toString();
   }
 
   static Iterable<String> _presetEnvironmentKeys(String name) => switch (name) {

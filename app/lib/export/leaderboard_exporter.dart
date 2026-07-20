@@ -210,30 +210,43 @@ _SelectedTaskRuns _selectTaskRuns({
         return const _SelectedTaskRuns(taskRuns: [], anchorRunId: null);
       }
       final anchorWeights = _parseEvaluatorWeights(anchorRun);
-      final anchorSignature = _RunCompatibilitySignature.fromTaskRuns(
-        taskRunsByRunId[anchorRun.id] ?? const <TaskRun>[],
-        scoringSchemaVersion: anchorWeights.scoringSchemaVersion,
-        corpusManifestDigest: _corpusManifestDigestForRun(anchorRun),
-        harnessKinds: _harnessKinds(
-          anchorRun,
-          taskRunsByRunId[anchorRun.id] ?? const <TaskRun>[],
-        ),
-        environmentKey: _environmentKeyForRun(anchorRun),
-      );
+      final anchorTaskRuns = taskRunsByRunId[anchorRun.id] ?? const <TaskRun>[];
+      final anchorGroups = _harnessGroupsForRun(anchorRun, anchorTaskRuns);
+      final anchorGroupSignatures = [
+        for (final group in anchorGroups)
+          _groupSignature(
+            group,
+            scoringSchemaVersion: anchorWeights.scoringSchemaVersion,
+            corpusManifestDigest: _corpusManifestDigestForRun(anchorRun),
+            environmentKey: _environmentKeyForRun(anchorRun),
+          ),
+      ];
       final warningKeys = <String>{};
       final selected = <TaskRun>[];
       for (final entry in taskRunsByRunId.entries) {
         final candidateRun = runsById[entry.key];
         if (candidateRun == null) continue;
         final candidateWeights = _parseEvaluatorWeights(candidateRun);
-        final candidateSignature = _RunCompatibilitySignature.fromTaskRuns(
-          entry.value,
-          scoringSchemaVersion: candidateWeights.scoringSchemaVersion,
-          corpusManifestDigest: _corpusManifestDigestForRun(candidateRun),
-          harnessKinds: _harnessKinds(candidateRun, entry.value),
-          environmentKey: _environmentKeyForRun(candidateRun),
+        final candidateCorpusManifestDigest = _corpusManifestDigestForRun(
+          candidateRun,
         );
-        if (!anchorSignature.isCompatibleWith(candidateSignature)) continue;
+        final candidateEnvironmentKey = _environmentKeyForRun(candidateRun);
+        final candidateGroups = _harnessGroupsForRun(candidateRun, entry.value);
+        final matchedTaskRuns = <TaskRun>[];
+        for (final group in candidateGroups) {
+          final groupSignature = _groupSignature(
+            group,
+            scoringSchemaVersion: candidateWeights.scoringSchemaVersion,
+            corpusManifestDigest: candidateCorpusManifestDigest,
+            environmentKey: candidateEnvironmentKey,
+          );
+          final isCompatible = anchorGroupSignatures.any(
+            (anchorSignature) =>
+                anchorSignature.isCompatibleWith(groupSignature),
+          );
+          if (isCompatible) matchedTaskRuns.addAll(group.taskRuns);
+        }
+        if (matchedTaskRuns.isEmpty) continue;
 
         if (anchorWeights.weights != null && candidateWeights.weights != null) {
           if (!shallowMapEquals(
@@ -254,7 +267,7 @@ _SelectedTaskRuns _selectTaskRuns({
             warnings: warnings,
           );
         }
-        selected.addAll(entry.value);
+        selected.addAll(matchedTaskRuns);
       }
       return _SelectedTaskRuns(
         taskRuns: selected,
@@ -1292,34 +1305,6 @@ class _RunCompatibilitySignature {
     required this.environmentKey,
   });
 
-  factory _RunCompatibilitySignature.fromTaskRuns(
-    List<TaskRun> taskRuns, {
-    required int? scoringSchemaVersion,
-    required String? corpusManifestDigest,
-    required Map<String, String> harnessKinds,
-    required String? environmentKey,
-  }) {
-    return _RunCompatibilitySignature(
-      taskKeys: (taskRuns.map((taskRun) => _taskKey(taskRun)).toSet().toList()
-        ..sort()),
-      harnessIds:
-          (taskRuns
-              .map((taskRun) => taskRun.harnessId)
-              .whereType<String>()
-              .toSet()
-              .toList()
-            ..sort()),
-      harnessKinds:
-          (harnessKinds.entries
-              .map((entry) => '${entry.key}:${entry.value}')
-              .toList()
-            ..sort()),
-      scoringSchemaVersion: scoringSchemaVersion,
-      corpusManifestDigest: corpusManifestDigest,
-      environmentKey: environmentKey,
-    );
-  }
-
   final List<String> taskKeys;
   final List<String> harnessIds;
   final List<String> harnessKinds;
@@ -1373,42 +1358,180 @@ String? _environmentKeyForRun(Run run) {
   return environmentCompatibilityKey(_objectMap(provenance['environment']));
 }
 
-Map<String, String> _harnessKinds(Run run, List<TaskRun> taskRuns) {
-  final provenanceJson = run.provenanceJson;
-  if (provenanceJson == null || provenanceJson.trim().isEmpty) return const {};
+/// A subset of one run's task-run results that share a single harness
+/// identity (harness id + kind label), used to scope aggregation
+/// compatibility to the selected results rather than the whole run.
+class _HarnessGroup {
+  const _HarnessGroup({
+    required this.harnessId,
+    required this.label,
+    required this.taskRuns,
+  });
+
+  final String? harnessId;
+  final String? label;
+  final List<TaskRun> taskRuns;
+}
+
+List<_HarnessGroup> _harnessGroupsForRun(Run run, List<TaskRun> taskRuns) {
+  final labels = _harnessLabelsByTaskRunId(run, taskRuns);
+  final groups = <String, List<TaskRun>>{};
+  final metaByKey = <String, ({String? harnessId, String? label})>{};
+  for (final taskRun in taskRuns) {
+    final harnessId = taskRun.harnessId;
+    final label = harnessId == null ? null : labels[taskRun.id];
+    final key = harnessId == null
+        ? '\u0000no-harness'
+        : '$harnessId\u0000$label';
+    groups.putIfAbsent(key, () => <TaskRun>[]).add(taskRun);
+    metaByKey[key] = (harnessId: harnessId, label: label);
+  }
+  return [
+    for (final entry in groups.entries)
+      _HarnessGroup(
+        harnessId: metaByKey[entry.key]!.harnessId,
+        label: metaByKey[entry.key]!.label,
+        taskRuns: entry.value,
+      ),
+  ];
+}
+
+_RunCompatibilitySignature _groupSignature(
+  _HarnessGroup group, {
+  required int? scoringSchemaVersion,
+  required String? corpusManifestDigest,
+  required String? environmentKey,
+}) {
+  final harnessId = group.harnessId;
+  return _RunCompatibilitySignature(
+    taskKeys: (group.taskRuns.map(_taskKey).toSet().toList()..sort()),
+    harnessIds: harnessId == null ? const [] : [harnessId],
+    harnessKinds: harnessId == null ? const [] : ['$harnessId:${group.label}'],
+    scoringSchemaVersion: scoringSchemaVersion,
+    corpusManifestDigest: corpusManifestDigest,
+    environmentKey: environmentKey,
+  );
+}
+
+/// Resolves the harness-kind label for each of [taskRuns] that carries a
+/// [TaskRun.harnessId], using [run]'s `config.agentHarnesses` provenance.
+///
+/// Runs recorded before the `agentHarnesses` provenance field existed have
+/// no such config key at all; those legacy task runs are treated as
+/// 'minimal' compatible (or 'droid' for the historical fixed `droid`
+/// harness id, the only other harness that predates this provenance field)
+/// so they remain aggregation-compatible with genuine same-kind runs that
+/// share the same harness id. This legacy fallback only applies when the
+/// run's provenance parses cleanly as an object with an object `config` that
+/// genuinely omits `agentHarnesses` (or has it explicitly `null`); it never
+/// applies to missing, malformed, or wrong-shaped provenance, which are
+/// fail-closed to 'unknown' instead of silently trusted as legacy. Task
+/// runs whose harness id is simply absent from an otherwise-present
+/// `agentHarnesses` map are also labeled 'unknown' and are not treated as
+/// minimal-compatible.
+Map<String, String> _harnessLabelsByTaskRunId(Run run, List<TaskRun> taskRuns) {
+  final parse = _parseAgentHarnessesProvenance(run.provenanceJson);
+  final labels = <String, String>{};
+  for (final taskRun in taskRuns) {
+    final harnessId = taskRun.harnessId;
+    if (harnessId == null) continue;
+    if (parse.legacyCompatible) {
+      labels[taskRun.id] = harnessId == 'droid'
+          ? _harnessKind(const {'kind': 'droid', 'agent': 'droid'})
+          : _harnessKind(const {'kind': 'minimal'});
+      continue;
+    }
+    final harnesses = parse.harnesses;
+    if (harnesses == null) {
+      labels[taskRun.id] = 'unknown';
+      continue;
+    }
+    final entry = harnesses[harnessId];
+    labels[taskRun.id] = entry is Map<String, Object?>
+        ? _harnessKind(entry)
+        : 'unknown';
+  }
+  return labels;
+}
+
+/// Result of inspecting a run's provenance JSON for `config.agentHarnesses`.
+///
+/// - [legacyCompatible] is true only when the provenance parsed cleanly as
+///   an object with an object `config` that genuinely has no `agentHarnesses`
+///   entry (key absent or explicitly `null`).
+/// - Otherwise [harnesses] holds the configured harness-provenance map when
+///   it parsed cleanly, or is `null` when the provenance (or the
+///   `agentHarnesses` value itself) is missing, malformed, or wrong-shaped,
+///   which must fail closed to 'unknown' rather than being trusted as legacy.
+class _AgentHarnessesProvenanceParse {
+  _AgentHarnessesProvenanceParse.legacy()
+    : legacyCompatible = true,
+      harnesses = null;
+
+  _AgentHarnessesProvenanceParse.harnesses(this.harnesses)
+    : legacyCompatible = false;
+
+  _AgentHarnessesProvenanceParse.corrupt()
+    : legacyCompatible = false,
+      harnesses = null;
+
+  final bool legacyCompatible;
+  final Map<String, Object?>? harnesses;
+}
+
+_AgentHarnessesProvenanceParse _parseAgentHarnessesProvenance(
+  String? provenanceJson,
+) {
+  if (provenanceJson == null || provenanceJson.trim().isEmpty) {
+    return _AgentHarnessesProvenanceParse.corrupt();
+  }
   try {
     final provenance = jsonDecode(provenanceJson);
-    if (provenance is! Map<String, Object?>) return const {};
+    if (provenance is! Map<String, Object?>) {
+      return _AgentHarnessesProvenanceParse.corrupt();
+    }
     final config = provenance['config'];
-    if (config is! Map<String, Object?>) return const {};
-    final harnesses = config['agentHarnesses'];
-    if (harnesses is! Map<String, Object?>) return const {};
-    final usedHarnessIds = taskRuns
-        .map((taskRun) => taskRun.harnessId)
-        .whereType<String>()
-        .toSet();
-    return {
-      for (final entry in harnesses.entries)
-        if (usedHarnessIds.contains(entry.key))
-          if (entry.value is Map<String, Object?>)
-            entry.key: _harnessKind(entry.value as Map<String, Object?>),
-    };
+    if (config is! Map<String, Object?>) {
+      return _AgentHarnessesProvenanceParse.corrupt();
+    }
+    if (!config.containsKey('agentHarnesses') ||
+        config['agentHarnesses'] == null) {
+      return _AgentHarnessesProvenanceParse.legacy();
+    }
+    final configuredHarnesses = config['agentHarnesses'];
+    if (configuredHarnesses is! Map<String, Object?>) {
+      return _AgentHarnessesProvenanceParse.corrupt();
+    }
+    return _AgentHarnessesProvenanceParse.harnesses(configuredHarnesses);
   } on Object {
-    return const {};
+    return _AgentHarnessesProvenanceParse.corrupt();
   }
 }
 
+/// Encodes a harness-provenance entry into an aggregation-compatibility
+/// label.
+///
+/// This uses a canonical JSON array encoding rather than delimiter-joined
+/// strings: arbitrary `agent`/`agentVersion` values could themselves contain
+/// the delimiter, so a naive join (e.g. `'$kind:$agent:$version'`) can
+/// produce identical labels for genuinely different provenance (for
+/// example `agent: 'a', agentVersion: 'b:c'` colliding with
+/// `agent: 'a:b', agentVersion: 'c'`), which would wrongly be treated as
+/// aggregation-compatible. JSON array encoding of individual fields is
+/// unambiguous because each string element is length-delimited by its own
+/// quoting/escaping.
 String _harnessKind(Map<String, Object?> value) {
   final kind = value['kind'];
+  if (kind is! String || kind.isEmpty) return 'unknown';
   final agent = value['agent'];
   final version = value['agentVersion'];
-  if (kind is! String || kind.isEmpty) return 'unknown';
-  final agentIdentity = agent is String && agent.isNotEmpty
-      ? '$kind:$agent'
-      : kind;
-  return version is String && version.isNotEmpty
-      ? '$agentIdentity:$version'
-      : agentIdentity;
+  final templateHash = value['templateHash'];
+  return jsonEncode([
+    kind,
+    agent is String && agent.isNotEmpty ? agent : null,
+    version is String && version.isNotEmpty ? version : null,
+    templateHash is String && templateHash.isNotEmpty ? templateHash : null,
+  ]);
 }
 
 bool _listEquals<T>(List<T> a, List<T> b) {
