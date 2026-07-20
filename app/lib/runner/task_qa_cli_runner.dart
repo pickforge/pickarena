@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/path_safety.dart';
-import 'package:dart_arena/core/task_bundle_digest.dart';
 import 'package:dart_arena/core/task_registry.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/run_provenance.dart';
@@ -221,7 +220,7 @@ Future<File> _writeTaskReport({
   await reportDir.create(recursive: true);
   final reportFile = File(p.join(reportDir.path, 'admission_report.json'));
   final taskBundleDigest = task is FileBackedTask
-      ? await taskBundleDigestSha256(task.bundleDirectory)
+      ? await task.bundleInspection.taskBundleDigestSha256()
       : null;
   await reportFile.writeAsString(
     _prettyJson(

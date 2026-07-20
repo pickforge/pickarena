@@ -1,8 +1,4 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:dart_arena/core/benchmark_task.dart';
-import 'package:dart_arena/core/task_bundle_digest.dart';
 import 'package:dart_arena/headless/headless_cli_config.dart';
 import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
 
@@ -20,33 +16,15 @@ Future<List<BenchmarkTask>> selectTaskPreset(
         task.track != BenchmarkTrack.agentic ||
         task.releaseMetadata.corpus != TaskCorpus.privateOfficial ||
         task.releaseMetadata.status != TaskReleaseStatus.active ||
-        !await _hasAdmittedQaReport(task)) {
+        !await task.bundleInspection.hasAdmittedQaReport(
+          taskId: task.id,
+          taskVersion: task.version,
+          track: task.track.name,
+        )) {
       continue;
     }
     selected.add(task);
   }
   selected.sort((a, b) => a.id.compareTo(b.id));
   return List.unmodifiable(selected);
-}
-
-Future<bool> _hasAdmittedQaReport(FileBackedTask task) async {
-  final report = File(
-    '${task.bundleDirectory.path}${Platform.pathSeparator}qa${Platform.pathSeparator}admission_report.json',
-  );
-  try {
-    final decoded = jsonDecode(await report.readAsString());
-    if (decoded is! Map ||
-        decoded['status'] != 'admitted' ||
-        decoded['taskId'] != task.id ||
-        decoded['taskVersion'] != task.version ||
-        decoded['track'] != task.track.name) {
-      return false;
-    }
-    final admission = decoded['admission'];
-    if (admission is! Map) return false;
-    final expectedDigest = await taskBundleDigestSha256(task.bundleDirectory);
-    return admission['taskBundleDigest'] == expectedDigest;
-  } on Object {
-    return false;
-  }
 }

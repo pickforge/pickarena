@@ -2,10 +2,106 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+enum TaskBundleCompatibilityMutation {
+  none,
+  missingManifest,
+  corruptManifest,
+  instructionTraversal,
+  missingHiddenVerifier,
+  instructionSymlink,
+}
+
+class TaskBundleCompatibilityFixture {
+  const TaskBundleCompatibilityFixture(
+    this.name, {
+    required this.accepted,
+    this.mutation = TaskBundleCompatibilityMutation.none,
+    this.requiresSymlink = false,
+  });
+
+  final String name;
+  final bool accepted;
+  final TaskBundleCompatibilityMutation mutation;
+  final bool requiresSymlink;
+}
+
+const taskBundleCompatibilityFixtures = [
+  TaskBundleCompatibilityFixture('valid bundle', accepted: true),
+  TaskBundleCompatibilityFixture(
+    'missing manifest',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.missingManifest,
+  ),
+  TaskBundleCompatibilityFixture(
+    'corrupt manifest',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.corruptManifest,
+  ),
+  TaskBundleCompatibilityFixture(
+    'traversing instruction path',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.instructionTraversal,
+  ),
+  TaskBundleCompatibilityFixture(
+    'missing hidden verifier fixture',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.missingHiddenVerifier,
+  ),
+  TaskBundleCompatibilityFixture(
+    'symlinked instruction',
+    accepted: false,
+    mutation: TaskBundleCompatibilityMutation.instructionSymlink,
+    requiresSymlink: true,
+  ),
+];
+
+Future<Directory> writeTaskBundleCompatibilityFixture(
+  Directory root,
+  TaskBundleCompatibilityFixture fixture,
+) async {
+  final bundle = await writeAnswerFileBackedBundle(root);
+  final manifest = File(p.join(bundle.path, 'task.yaml'));
+  switch (fixture.mutation) {
+    case TaskBundleCompatibilityMutation.none:
+      break;
+    case TaskBundleCompatibilityMutation.missingManifest:
+      await manifest.delete();
+    case TaskBundleCompatibilityMutation.corruptManifest:
+      await manifest.writeAsString('workspace: [\n');
+    case TaskBundleCompatibilityMutation.instructionTraversal:
+      final outsideInstruction = File(p.join(root.path, 'outside.md'));
+      await outsideInstruction.writeAsString('Outside the bundle.\n');
+      await manifest.writeAsString(
+        (await manifest.readAsString()).replaceFirst(
+          'instructionPath: instruction.md',
+          'instructionPath: ../outside.md',
+        ),
+      );
+    case TaskBundleCompatibilityMutation.missingHiddenVerifier:
+      await File(
+        p.join(
+          bundle.path,
+          'hidden_tests',
+          'test',
+          '_hidden',
+          'answer_hidden_test.dart',
+        ),
+      ).delete();
+    case TaskBundleCompatibilityMutation.instructionSymlink:
+      final instruction = File(p.join(bundle.path, 'instruction.md'));
+      final outsideInstruction = File(p.join(root.path, 'outside.md'));
+      await outsideInstruction.writeAsString('Outside the bundle.\n');
+      await instruction.delete();
+      await Link(instruction.path).create(outsideInstruction.path);
+  }
+  return bundle;
+}
+
 Future<Directory> writeAnswerFileBackedBundle(
   Directory root, {
   String directoryName = 'answer_fix',
   String id = 'file.answer_fix',
+  int version = 2,
   String category = 'bug_fix',
   String track = 'codegen',
   String generatedCodePath = 'lib/answer.dart',
@@ -32,7 +128,7 @@ requiredNegativeCaseKinds:
   await _writeFile(bundle, 'task.yaml', '''
 schemaVersion: 1
 id: $id
-version: 2
+version: $version
 category: $category
 track: $track
 tags:

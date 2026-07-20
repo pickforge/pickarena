@@ -235,7 +235,7 @@ Future<Map<String, Object?>?> _corpusManifest(
       CorpusManifestEntry(
         taskId: task.id,
         taskVersion: task.version,
-        taskBundleDigest: await taskBundleDigestSha256(task.bundleDirectory),
+        taskBundleDigest: await task.bundleInspection.taskBundleDigestSha256(),
       ),
     );
   }

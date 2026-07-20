@@ -4,6 +4,7 @@ import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/category.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/reference_solution.dart';
+import 'package:dart_arena/core/task_bundle_inspection.dart';
 import 'package:dart_arena/core/task_verifier.dart';
 import 'package:dart_arena/evaluators/analyze_evaluator.dart';
 import 'package:dart_arena/evaluators/compile_evaluator.dart';
@@ -17,7 +18,7 @@ import 'package:yaml/yaml.dart';
 
 class FileBackedTask extends BenchmarkTask {
   FileBackedTask._({
-    required this.bundleDirectory,
+    required this.bundleInspection,
     required this.id,
     required this.version,
     required this.category,
@@ -32,22 +33,19 @@ class FileBackedTask extends BenchmarkTask {
     required this.generatedCodePath,
     required this.isFlutter,
     required this.judgeRubric,
-    required String instructionPath,
-    required _WorkspaceSpec workspace,
+    required TaskBundleFileSet workspace,
     required List<_HiddenVerifierSpec> hiddenVerifierSpecs,
     required _ReferenceSpec? referenceSpec,
     required List<_NegativeCaseSpec> negativeCaseSpecs,
     required Set<TaskNegativeCaseKind> requiredNegativeCaseKinds,
-  }) : _instructionPath = instructionPath,
-       _workspaceSpec = workspace,
+  }) : _workspaceSpec = workspace,
        _hiddenVerifierSpecs = hiddenVerifierSpecs,
        _referenceSpec = referenceSpec,
        _negativeCaseSpecs = negativeCaseSpecs,
        _requiredNegativeCaseKinds = requiredNegativeCaseKinds;
 
-  final Directory bundleDirectory;
-  final String _instructionPath;
-  final _WorkspaceSpec _workspaceSpec;
+  final TaskBundleInspection bundleInspection;
+  final TaskBundleFileSet _workspaceSpec;
   final List<_HiddenVerifierSpec> _hiddenVerifierSpecs;
   final _ReferenceSpec? _referenceSpec;
   final List<_NegativeCaseSpec> _negativeCaseSpecs;
@@ -59,13 +57,20 @@ class FileBackedTask extends BenchmarkTask {
   ReferenceSolution? _loadedReferenceSolution;
   List<TaskNegativeCase>? _loadedNegativeCases;
 
+  Directory get bundleDirectory => bundleInspection.bundleDirectory;
+
   static Future<FileBackedTask> load(Directory bundleDirectory) async {
-    final manifest = await _readYamlMap(bundleDirectory, 'task.yaml');
-    final judgeRubricPath = _optionalString(manifest, 'judgeRubricPath');
+    return fromInspection(await TaskBundleInspection.inspect(bundleDirectory));
+  }
+
+  static Future<FileBackedTask> fromInspection(
+    TaskBundleInspection inspection,
+  ) async {
+    final manifest = inspection.manifest;
     final id = _requiredString(manifest, 'id');
     _validateTaskId(id, 'id');
     return FileBackedTask._(
-      bundleDirectory: bundleDirectory,
+      bundleInspection: inspection,
       id: id,
       version: _optionalInt(manifest, 'version') ?? 1,
       category: _parseCategory(_requiredString(manifest, 'category')),
@@ -96,22 +101,26 @@ class FileBackedTask extends BenchmarkTask {
         'generatedCodePath',
       ),
       isFlutter: _optionalBool(manifest, 'isFlutter') ?? false,
-      judgeRubric: judgeRubricPath == null
+      judgeRubric: inspection.judgeRubricPath == null
           ? _optionalString(manifest, 'judgeRubric')
-          : await _readBundleText(bundleDirectory, judgeRubricPath),
-      instructionPath: _requiredString(manifest, 'instructionPath'),
-      workspace: _WorkspaceSpec.fromYaml(_requiredMap(manifest, 'workspace')),
+          : await inspection.readText(inspection.judgeRubricPath!),
+      workspace: inspection.workspace,
       hiddenVerifierSpecs: [
-        for (final item in _optionalMapList(manifest, 'hiddenVerifiers'))
-          _HiddenVerifierSpec.fromYaml(item),
+        for (final (index, item) in _optionalMapList(
+          manifest,
+          'hiddenVerifiers',
+        ).indexed)
+          _HiddenVerifierSpec.fromYaml(item, inspection.hiddenVerifiers[index]),
       ],
-      referenceSpec: switch (_optionalMap(manifest, 'reference')) {
-        null => null,
-        final reference => _ReferenceSpec.fromYaml(reference),
-      },
+      referenceSpec: inspection.reference == null
+          ? null
+          : _ReferenceSpec(fileSet: inspection.reference!),
       negativeCaseSpecs: [
-        for (final item in _optionalMapList(manifest, 'negativeCases'))
-          _NegativeCaseSpec.fromYaml(item),
+        for (final (index, item) in _optionalMapList(
+          manifest,
+          'negativeCases',
+        ).indexed)
+          _NegativeCaseSpec.fromYaml(item, inspection.negativeCases[index]),
       ],
       requiredNegativeCaseKinds: {
         for (final kind in _optionalStringList(
@@ -189,30 +198,27 @@ class FileBackedTask extends BenchmarkTask {
   @override
   Future<void> ensureLoaded() async {
     if (_fixtures != null) return;
-    _prompt = await _readBundleText(bundleDirectory, _instructionPath);
-    _fixtures = await _readFiles(
-      bundleDirectory,
-      _workspaceSpec.root,
-      _workspaceSpec.files,
-    );
+    try {
+      await bundleInspection.validateDeclaredFiles();
+    } on FileSystemException catch (error) {
+      throw ArgumentError.value(error.path, 'bundle path', error.message);
+    }
+    _prompt = await bundleInspection.readText(bundleInspection.instructionPath);
+    _fixtures = await bundleInspection.readFiles(_workspaceSpec);
     _hiddenVerifiers = [
       for (final verifier in _hiddenVerifierSpecs)
         VerifierFixture(
           id: verifier.id,
           authoredId: verifier.authoredId,
           testPath: verifier.testPath,
-          files: await _readFiles(
-            bundleDirectory,
-            verifier.root,
-            verifier.files,
-          ),
+          files: await bundleInspection.readFiles(verifier.fileSet),
         ),
     ];
     _loadedReferenceSolution = switch (_referenceSpec) {
       null => null,
       final spec => ReferenceFileSolution(
-        await _readFiles(bundleDirectory, spec.root, spec.files),
-        rootPath: spec.root,
+        await bundleInspection.readFiles(spec.fileSet),
+        rootPath: spec.fileSet.root,
       ),
     };
     _loadedNegativeCases = [
@@ -221,9 +227,9 @@ class FileBackedTask extends BenchmarkTask {
           id: spec.id,
           description: spec.description,
           kind: spec.kind,
-          rootPath: spec.root,
+          rootPath: spec.fileSet.root,
           solution: ReferenceFileSolution(
-            await _readFiles(bundleDirectory, spec.root, spec.files),
+            await bundleInspection.readFiles(spec.fileSet),
           ),
         ),
     ];
@@ -245,30 +251,12 @@ class FileBackedTask extends BenchmarkTask {
 }
 
 Future<List<FileBackedTask>> loadFileBackedTasks(Directory root) async {
-  if (!await root.exists()) return const [];
   final tasks = <FileBackedTask>[];
-  await for (final entity in root.list(followLinks: false)) {
-    if (entity is! Directory) continue;
-    final manifest = File(p.join(entity.path, 'task.yaml'));
-    if (!await manifest.exists()) continue;
-    tasks.add(await FileBackedTask.load(entity));
+  for (final inspection in await inspectTaskBundles(root)) {
+    tasks.add(await FileBackedTask.fromInspection(inspection));
   }
   tasks.sort((a, b) => a.id.compareTo(b.id));
   return tasks;
-}
-
-class _WorkspaceSpec {
-  const _WorkspaceSpec({required this.root, required this.files});
-
-  final String root;
-  final Map<String, String> files;
-
-  factory _WorkspaceSpec.fromYaml(YamlMap yaml) {
-    return _WorkspaceSpec(
-      root: _requiredString(yaml, 'root'),
-      files: _parseFileMap(yaml['files'], field: 'workspace.files'),
-    );
-  }
 }
 
 class _HiddenVerifierSpec {
@@ -276,24 +264,24 @@ class _HiddenVerifierSpec {
     required this.id,
     required this.authoredId,
     required this.testPath,
-    required this.root,
-    required this.files,
+    required this.fileSet,
   });
 
   final String id;
   final String? authoredId;
   final String testPath;
-  final String root;
-  final Map<String, String> files;
+  final TaskBundleFileSet fileSet;
 
-  factory _HiddenVerifierSpec.fromYaml(YamlMap yaml) {
+  factory _HiddenVerifierSpec.fromYaml(
+    YamlMap yaml,
+    TaskBundleFileSet fileSet,
+  ) {
     final authoredId = _optionalString(yaml, 'id')?.trim();
     return _HiddenVerifierSpec(
       id: _normalizeHiddenVerifierId(authoredId),
       authoredId: authoredId,
       testPath: _requiredString(yaml, 'testPath'),
-      root: _requiredString(yaml, 'root'),
-      files: _parseFileMap(yaml['files'], field: 'hiddenVerifiers.files'),
+      fileSet: fileSet,
     );
   }
 }
@@ -309,21 +297,9 @@ String _normalizeHiddenVerifierId(String? id) {
 }
 
 class _ReferenceSpec {
-  const _ReferenceSpec({required this.root, required this.files});
+  const _ReferenceSpec({required this.fileSet});
 
-  final String root;
-  final Map<String, String> files;
-
-  factory _ReferenceSpec.fromYaml(YamlMap yaml) {
-    final type = _optionalString(yaml, 'type') ?? 'files';
-    if (type != 'files') {
-      throw FormatException('Unsupported reference type: $type');
-    }
-    return _ReferenceSpec(
-      root: _requiredString(yaml, 'root'),
-      files: _parseFileMap(yaml['files'], field: 'reference.files'),
-    );
-  }
+  final TaskBundleFileSet fileSet;
 }
 
 class _NegativeCaseSpec {
@@ -331,120 +307,35 @@ class _NegativeCaseSpec {
     required this.id,
     required this.description,
     required this.kind,
-    required this.root,
-    required this.files,
+    required this.fileSet,
   });
 
   final String id;
   final String description;
   final TaskNegativeCaseKind kind;
-  final String root;
-  final Map<String, String> files;
+  final TaskBundleFileSet fileSet;
 
-  factory _NegativeCaseSpec.fromYaml(YamlMap yaml) {
+  factory _NegativeCaseSpec.fromYaml(YamlMap yaml, TaskBundleFileSet fileSet) {
     return _NegativeCaseSpec(
       id: _requiredString(yaml, 'id'),
       description: _requiredString(yaml, 'description'),
       kind: TaskNegativeCaseKindLabel.fromWireName(
         _optionalString(yaml, 'kind') ?? 'custom',
       ),
-      root: _requiredString(yaml, 'root'),
-      files: _parseFileMap(yaml['files'], field: 'negativeCases.files'),
+      fileSet: fileSet,
     );
   }
 }
 
-Future<YamlMap> _readYamlMap(Directory bundleDirectory, String path) async {
-  final filePath = _resolveBundleFilePath(bundleDirectory, path);
-  final decoded = loadYaml(await File(filePath).readAsString());
-  if (decoded is YamlMap) return decoded;
-  throw FormatException('Task manifest must be a YAML map: $filePath');
-}
-
-Future<String> _readBundleText(Directory bundleDirectory, String path) async {
-  return File(_resolveBundleFilePath(bundleDirectory, path)).readAsString();
-}
-
-Future<Map<String, String>> _readFiles(
-  Directory bundleDirectory,
-  String root,
-  Map<String, String> files,
-) async {
-  final result = <String, String>{};
-  for (final entry in files.entries) {
-    result[entry.value] = await File(
-      _resolveBundleFilePath(bundleDirectory, p.join(root, entry.key)),
-    ).readAsString();
-  }
-  return Map.unmodifiable(result);
-}
-
-String _resolveBundleFilePath(Directory bundleDirectory, String relativePath) {
-  _validateRelativePath(relativePath, 'bundle path');
-  final root = p.normalize(p.absolute(bundleDirectory.path));
-  final rootType = FileSystemEntity.typeSync(root, followLinks: false);
-  if (rootType == FileSystemEntityType.link) {
-    throw ArgumentError.value(
-      bundleDirectory.path,
-      'bundleDirectory',
-      'must not be a symlink',
-    );
-  }
-  if (rootType != FileSystemEntityType.directory) {
-    throw ArgumentError.value(
-      bundleDirectory.path,
-      'bundleDirectory',
-      'must be an existing directory',
-    );
-  }
-
-  var current = root;
-  final parts = p.split(p.normalize(relativePath));
-  for (var i = 0; i < parts.length; i++) {
-    final part = parts[i];
-    final candidate = p.normalize(p.join(current, part));
-    if (!p.isWithin(root, candidate)) {
-      throw ArgumentError.value(relativePath, 'relativePath', 'escapes bundle');
-    }
-    final type = FileSystemEntity.typeSync(candidate, followLinks: false);
-    if (type == FileSystemEntityType.link) {
-      throw ArgumentError.value(
-        relativePath,
-        'relativePath',
-        'must not contain symlinks',
-      );
-    }
-    final isLast = i == parts.length - 1;
-    if (!isLast && type != FileSystemEntityType.directory) {
-      throw ArgumentError.value(
-        relativePath,
-        'relativePath',
-        'must have existing parent directories',
-      );
-    }
-    if (isLast && type != FileSystemEntityType.file) {
-      throw ArgumentError.value(
-        relativePath,
-        'relativePath',
-        'must be an existing file',
-      );
-    }
-    current = candidate;
-  }
-  final resolved = p.normalize(current);
-  if (!p.isWithin(root, resolved)) {
-    throw ArgumentError.value(relativePath, 'relativePath', 'escapes bundle');
-  }
-  return resolved;
-}
-
-void _validateRelativePath(String value, String field) {
+String _requiredPathString(Object? value, String field) {
+  if (value is! String) throw FormatException('$field must be a string');
   final normalized = p.normalize(value);
   if (normalized == '.' ||
       p.isAbsolute(value) ||
       p.split(normalized).contains('..')) {
     throw ArgumentError.value(value, field, 'must be a relative file path');
   }
+  return value;
 }
 
 void _validateTaskId(String value, String field) {
@@ -456,31 +347,6 @@ void _validateTaskId(String value, String field) {
       trimmed.contains(r'\')) {
     throw ArgumentError.value(value, field, 'must be a safe task id');
   }
-}
-
-Map<String, String> _parseFileMap(Object? yaml, {required String field}) {
-  if (yaml is! YamlMap) {
-    throw FormatException('$field must be a YAML map');
-  }
-  return {
-    for (final entry in yaml.entries)
-      _requiredPathString(entry.key, '$field key'): _requiredPathString(
-        entry.value,
-        '$field value',
-      ),
-  };
-}
-
-String _requiredPathString(Object? value, String field) {
-  if (value is! String) throw FormatException('$field must be a string');
-  _validateRelativePath(value, field);
-  return value;
-}
-
-YamlMap _requiredMap(YamlMap yaml, String field) {
-  final value = yaml[field];
-  if (value is YamlMap) return value;
-  throw FormatException('$field must be a YAML map');
 }
 
 YamlMap? _optionalMap(YamlMap yaml, String field) {
