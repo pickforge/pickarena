@@ -9,7 +9,7 @@ class WidgetTreeEvaluator implements Evaluator {
   WidgetTreeEvaluator({
     this.testDir = 'test/widget',
     this.timeout = defaultEvaluatorProcessTimeout,
-    this.maxOutputChars = defaultEvaluatorMaxOutputChars,
+    this.maxOutputBytes = defaultEvaluatorMaxOutputBytes,
     this.maxProcesses,
     this.maxMemoryMb,
     this.flutterExecutable = 'flutter',
@@ -17,7 +17,7 @@ class WidgetTreeEvaluator implements Evaluator {
 
   final String testDir;
   final Duration? timeout;
-  final int maxOutputChars;
+  final int maxOutputBytes;
   final int? maxProcesses;
   final int? maxMemoryMb;
   final String flutterExecutable;
@@ -39,7 +39,7 @@ class WidgetTreeEvaluator implements Evaluator {
       ),
       includeParentEnvironment: false,
       timeout: timeout,
-      maxOutputChars: maxOutputChars,
+      maxOutputBytes: maxOutputBytes,
       maxCpuCores: ctx.task.effectiveResourceLimits.cpus,
       maxProcesses: maxProcesses,
       maxMemoryMb: maxMemoryMb,
@@ -87,7 +87,7 @@ class WidgetTreeEvaluator implements Evaluator {
         if (res.timedOut && timeout != null)
           'timeout_ms': timeout!.inMilliseconds,
         if (res.outputLimitExceeded) 'output_limit_exceeded': true,
-        if (res.outputLimitExceeded) 'max_output_chars': maxOutputChars,
+        if (res.outputLimitExceeded) 'max_output_bytes': maxOutputBytes,
         if (res.processLimitExceeded) 'process_limit_exceeded': true,
         if (res.processLimitExceeded && maxProcesses != null)
           'max_processes': maxProcesses,

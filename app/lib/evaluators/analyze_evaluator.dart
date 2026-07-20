@@ -9,7 +9,7 @@ import 'package:dart_arena/runner/subprocess_environment.dart';
 class AnalyzeEvaluator implements Evaluator {
   const AnalyzeEvaluator({
     this.timeout = defaultEvaluatorProcessTimeout,
-    this.maxOutputChars = defaultEvaluatorMaxOutputChars,
+    this.maxOutputBytes = defaultEvaluatorMaxOutputBytes,
     this.maxProcesses,
     this.maxMemoryMb,
     this.dartExecutable = 'dart',
@@ -17,7 +17,7 @@ class AnalyzeEvaluator implements Evaluator {
   });
 
   final Duration? timeout;
-  final int maxOutputChars;
+  final int maxOutputBytes;
   final int? maxProcesses;
   final int? maxMemoryMb;
   final String dartExecutable;
@@ -41,7 +41,7 @@ class AnalyzeEvaluator implements Evaluator {
       ),
       includeParentEnvironment: false,
       timeout: timeout,
-      maxOutputChars: maxOutputChars,
+      maxOutputBytes: maxOutputBytes,
       maxCpuCores: ctx.task.effectiveResourceLimits.cpus,
       maxProcesses: maxProcesses,
       maxMemoryMb: maxMemoryMb,
@@ -77,7 +77,7 @@ class AnalyzeEvaluator implements Evaluator {
           if (res.timedOut && timeout != null)
             'timeout_ms': timeout!.inMilliseconds,
           if (res.outputLimitExceeded) 'output_limit_exceeded': true,
-          if (res.outputLimitExceeded) 'max_output_chars': maxOutputChars,
+          if (res.outputLimitExceeded) 'max_output_bytes': maxOutputBytes,
           if (res.processLimitExceeded) 'process_limit_exceeded': true,
           if (res.processLimitExceeded && maxProcesses != null)
             'max_processes': maxProcesses,

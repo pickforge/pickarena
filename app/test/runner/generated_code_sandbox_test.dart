@@ -622,7 +622,7 @@ except OSError:
         generatedCodeSandbox: const BubblewrapGeneratedCodeSandbox(),
         allowInternet: false,
         timeout: const Duration(seconds: 5),
-        maxOutputChars: 128,
+        maxOutputBytes: 128,
       );
 
       expect(result.exitCode, -1);

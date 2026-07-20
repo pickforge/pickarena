@@ -28,7 +28,7 @@ class TestAuthorEvaluator implements Evaluator {
     required this.testPath,
     required this.mutants,
     this.timeout = defaultEvaluatorProcessTimeout,
-    this.maxOutputChars = defaultEvaluatorMaxOutputChars,
+    this.maxOutputBytes = defaultEvaluatorMaxOutputBytes,
     this.maxProcesses,
     this.maxMemoryMb,
     this.dartExecutable = 'dart',
@@ -38,7 +38,7 @@ class TestAuthorEvaluator implements Evaluator {
   final String testPath;
   final List<TestMutant> mutants;
   final Duration? timeout;
-  final int maxOutputChars;
+  final int maxOutputBytes;
   final int? maxProcesses;
   final int? maxMemoryMb;
   final String dartExecutable;
@@ -96,7 +96,7 @@ class TestAuthorEvaluator implements Evaluator {
             'timeout_ms': timeout!.inMilliseconds,
           if (originalRun.outputLimitExceeded) 'output_limit_exceeded': true,
           if (originalRun.outputLimitExceeded)
-            'max_output_chars': maxOutputChars,
+            'max_output_bytes': maxOutputBytes,
           if (originalRun.processLimitExceeded) 'process_limit_exceeded': true,
           if (originalRun.processLimitExceeded && maxProcesses != null)
             'max_processes': maxProcesses,
@@ -197,7 +197,7 @@ class TestAuthorEvaluator implements Evaluator {
       ),
       includeParentEnvironment: false,
       timeout: timeout,
-      maxOutputChars: maxOutputChars,
+      maxOutputBytes: maxOutputBytes,
       maxCpuCores: maxCpuCores,
       maxProcesses: maxProcesses,
       maxMemoryMb: maxMemoryMb,

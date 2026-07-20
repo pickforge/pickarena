@@ -9,7 +9,7 @@ class TestEvaluator implements Evaluator {
   TestEvaluator({
     this.testPath,
     this.timeout,
-    this.maxOutputChars = defaultMaxOutputChars,
+    this.maxOutputBytes = defaultMaxOutputBytes,
     this.maxProcesses,
     this.maxMemoryMb,
     this.dartExecutable = 'dart',
@@ -17,13 +17,13 @@ class TestEvaluator implements Evaluator {
     this.readOnlyPaths = const [],
   });
 
-  static const defaultMaxOutputChars = defaultEvaluatorMaxOutputChars;
+  static const defaultMaxOutputBytes = defaultEvaluatorMaxOutputBytes;
 
   /// If provided, only this path is passed to `<tool> test`. When null, the
   /// runner runs the default test set (the entire `test/` directory).
   final String? testPath;
   final Duration? timeout;
-  final int maxOutputChars;
+  final int maxOutputBytes;
   final int? maxProcesses;
   final int? maxMemoryMb;
   final String dartExecutable;
@@ -53,7 +53,7 @@ class TestEvaluator implements Evaluator {
       ),
       includeParentEnvironment: false,
       timeout: timeout,
-      maxOutputChars: maxOutputChars,
+      maxOutputBytes: maxOutputBytes,
       maxCpuCores: ctx.task.effectiveResourceLimits.cpus,
       maxProcesses: maxProcesses,
       maxMemoryMb: maxMemoryMb,
@@ -101,7 +101,7 @@ class TestEvaluator implements Evaluator {
         if (res.timedOut && timeout != null)
           'timeout_ms': timeout!.inMilliseconds,
         if (res.outputLimitExceeded) 'output_limit_exceeded': true,
-        if (res.outputLimitExceeded) 'max_output_chars': maxOutputChars,
+        if (res.outputLimitExceeded) 'max_output_bytes': maxOutputBytes,
         if (res.processLimitExceeded) 'process_limit_exceeded': true,
         if (res.processLimitExceeded && maxProcesses != null)
           'max_processes': maxProcesses,

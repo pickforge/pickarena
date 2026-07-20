@@ -195,7 +195,7 @@ void main() {
       expect(evaluation.evaluatorId, 'test');
       expect(evaluation.rationale, 'test process output limit exceeded');
       expect(evaluation.details['output_limit_exceeded'], isTrue);
-      expect(evaluation.details['max_output_chars'], 1024);
+      expect(evaluation.details['max_output_bytes'], 1024);
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );

@@ -23,10 +23,12 @@ Evaluator applyResourceLimitsToEvaluator(
   Evaluator evaluator,
   TaskResourceLimits limits,
 ) {
-  final maxOutputBytes = limits.maxOutputBytes;
+  final taskMaxOutputBytes = limits.maxOutputBytes;
   final maxProcesses = limits.maxProcesses;
   final maxMemoryMb = limits.memoryMb;
-  if (maxOutputBytes == null && maxProcesses == null && maxMemoryMb == null) {
+  if (taskMaxOutputBytes == null &&
+      maxProcesses == null &&
+      maxMemoryMb == null) {
     return evaluator;
   }
 
@@ -34,7 +36,7 @@ Evaluator applyResourceLimitsToEvaluator(
     TestEvaluator(
       testPath: final testPath,
       timeout: final timeout,
-      maxOutputChars: final maxOutputChars,
+      maxOutputBytes: final evaluatorMaxOutputBytes,
       maxProcesses: final evaluatorMaxProcesses,
       maxMemoryMb: final evaluatorMaxMemoryMb,
       dartExecutable: final dartExecutable,
@@ -44,9 +46,9 @@ Evaluator applyResourceLimitsToEvaluator(
       TestEvaluator(
         testPath: testPath,
         timeout: timeout,
-        maxOutputChars: _effectiveMaxOutputChars(
-          maxOutputChars,
-          maxOutputBytes,
+        maxOutputBytes: _effectiveMaxOutputBytes(
+          evaluatorMaxOutputBytes,
+          taskMaxOutputBytes,
         ),
         maxProcesses: _effectiveMaxProcesses(
           evaluatorMaxProcesses,
@@ -60,16 +62,16 @@ Evaluator applyResourceLimitsToEvaluator(
     HiddenTestEvaluator(
       verifier: final verifier,
       timeout: final timeout,
-      maxOutputChars: final maxOutputChars,
+      maxOutputBytes: final evaluatorMaxOutputBytes,
       maxProcesses: final evaluatorMaxProcesses,
       maxMemoryMb: final evaluatorMaxMemoryMb,
     ) =>
       HiddenTestEvaluator(
         verifier,
         timeout: timeout,
-        maxOutputChars: _effectiveMaxOutputChars(
-          maxOutputChars,
-          maxOutputBytes,
+        maxOutputBytes: _effectiveMaxOutputBytes(
+          evaluatorMaxOutputBytes,
+          taskMaxOutputBytes,
         ),
         maxProcesses: _effectiveMaxProcesses(
           evaluatorMaxProcesses,
@@ -79,7 +81,7 @@ Evaluator applyResourceLimitsToEvaluator(
       ),
     AnalyzeEvaluator(
       timeout: final timeout,
-      maxOutputChars: final maxOutputChars,
+      maxOutputBytes: final evaluatorMaxOutputBytes,
       maxProcesses: final evaluatorMaxProcesses,
       maxMemoryMb: final evaluatorMaxMemoryMb,
       dartExecutable: final dartExecutable,
@@ -87,9 +89,9 @@ Evaluator applyResourceLimitsToEvaluator(
     ) =>
       AnalyzeEvaluator(
         timeout: timeout,
-        maxOutputChars: _effectiveMaxOutputChars(
-          maxOutputChars,
-          maxOutputBytes,
+        maxOutputBytes: _effectiveMaxOutputBytes(
+          evaluatorMaxOutputBytes,
+          taskMaxOutputBytes,
         ),
         maxProcesses: _effectiveMaxProcesses(
           evaluatorMaxProcesses,
@@ -101,7 +103,7 @@ Evaluator applyResourceLimitsToEvaluator(
       ),
     CompileEvaluator(
       timeout: final timeout,
-      maxOutputChars: final maxOutputChars,
+      maxOutputBytes: final evaluatorMaxOutputBytes,
       maxProcesses: final evaluatorMaxProcesses,
       maxMemoryMb: final evaluatorMaxMemoryMb,
       dartExecutable: final dartExecutable,
@@ -109,9 +111,9 @@ Evaluator applyResourceLimitsToEvaluator(
     ) =>
       CompileEvaluator(
         timeout: timeout,
-        maxOutputChars: _effectiveMaxOutputChars(
-          maxOutputChars,
-          maxOutputBytes,
+        maxOutputBytes: _effectiveMaxOutputBytes(
+          evaluatorMaxOutputBytes,
+          taskMaxOutputBytes,
         ),
         maxProcesses: _effectiveMaxProcesses(
           evaluatorMaxProcesses,
@@ -124,7 +126,7 @@ Evaluator applyResourceLimitsToEvaluator(
     WidgetTreeEvaluator(
       testDir: final testDir,
       timeout: final timeout,
-      maxOutputChars: final maxOutputChars,
+      maxOutputBytes: final evaluatorMaxOutputBytes,
       maxProcesses: final evaluatorMaxProcesses,
       maxMemoryMb: final evaluatorMaxMemoryMb,
       flutterExecutable: final flutterExecutable,
@@ -132,9 +134,9 @@ Evaluator applyResourceLimitsToEvaluator(
       WidgetTreeEvaluator(
         testDir: testDir,
         timeout: timeout,
-        maxOutputChars: _effectiveMaxOutputChars(
-          maxOutputChars,
-          maxOutputBytes,
+        maxOutputBytes: _effectiveMaxOutputBytes(
+          evaluatorMaxOutputBytes,
+          taskMaxOutputBytes,
         ),
         maxProcesses: _effectiveMaxProcesses(
           evaluatorMaxProcesses,
@@ -147,7 +149,7 @@ Evaluator applyResourceLimitsToEvaluator(
       testPath: final testPath,
       mutants: final mutants,
       timeout: final timeout,
-      maxOutputChars: final maxOutputChars,
+      maxOutputBytes: final evaluatorMaxOutputBytes,
       maxProcesses: final evaluatorMaxProcesses,
       maxMemoryMb: final evaluatorMaxMemoryMb,
       dartExecutable: final dartExecutable,
@@ -157,9 +159,9 @@ Evaluator applyResourceLimitsToEvaluator(
         testPath: testPath,
         mutants: mutants,
         timeout: timeout,
-        maxOutputChars: _effectiveMaxOutputChars(
-          maxOutputChars,
-          maxOutputBytes,
+        maxOutputBytes: _effectiveMaxOutputBytes(
+          evaluatorMaxOutputBytes,
+          taskMaxOutputBytes,
         ),
         maxProcesses: _effectiveMaxProcesses(
           evaluatorMaxProcesses,
@@ -173,9 +175,9 @@ Evaluator applyResourceLimitsToEvaluator(
   };
 }
 
-int _effectiveMaxOutputChars(int evaluatorMax, int? taskMax) {
+int _effectiveMaxOutputBytes(int evaluatorMax, int? taskMax) {
   if (taskMax == null) return evaluatorMax;
-  if (evaluatorMax == TestEvaluator.defaultMaxOutputChars) return taskMax;
+  if (evaluatorMax == TestEvaluator.defaultMaxOutputBytes) return taskMax;
   return math.min(evaluatorMax, taskMax);
 }
 

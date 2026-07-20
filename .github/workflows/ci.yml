@@ -89,6 +89,7 @@ jobs:
             test/storage/settings_readme_test.dart \
             test/storage/settings_test.dart
           dart test --concurrency=1 \
+            test/runner/bounded_subprocess_test.dart \
             test/runner/codegen_task_executor_blocking_test.dart \
             test/runner/corpus_task_qa_test.dart \
             test/runner/evaluator_resource_limits_test.dart \

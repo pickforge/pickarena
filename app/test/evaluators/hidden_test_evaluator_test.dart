@@ -390,14 +390,14 @@ void main() {
           },
           testPath: 'test/_hidden/answer_hidden_test.dart',
         ),
-        maxOutputChars: 1024,
+        maxOutputBytes: 1024,
       ).evaluate(_ctx(dir));
 
       expect(result.passed, isFalse);
       expect(result.rationale, 'hidden verifier output limit exceeded');
       expect(result.score, 0.0);
       expect(result.details['output_limit_exceeded'], isTrue);
-      expect(result.details['max_output_chars'], 1024);
+      expect(result.details['max_output_bytes'], 1024);
       expect(result.details['injected_files'], [
         'test/_hidden/answer_hidden_test.dart',
       ]);

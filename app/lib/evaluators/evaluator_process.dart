@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
-
+import 'package:dart_arena/runner/bounded_subprocess.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
 import 'package:dart_arena/runner/subprocess_environment.dart';
 
 const defaultEvaluatorProcessTimeout = Duration(minutes: 5);
-const defaultEvaluatorMaxOutputChars = 1024 * 1024;
+const defaultEvaluatorMaxOutputBytes = 1024 * 1024;
 
 class EvaluatorProcessResult {
   const EvaluatorProcessResult({
@@ -39,7 +38,7 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
   required Map<String, String> environment,
   bool includeParentEnvironment = false,
   Duration? timeout = defaultEvaluatorProcessTimeout,
-  int maxOutputChars = defaultEvaluatorMaxOutputChars,
+  int maxOutputBytes = defaultEvaluatorMaxOutputBytes,
   int? maxCpuCores,
   int? maxProcesses,
   int? maxMemoryMb,
@@ -73,206 +72,86 @@ Future<EvaluatorProcessResult> runEvaluatorProcess(
           ),
           extraReadOnlyPaths: extraReadOnlyPaths,
         );
-  final process = await Process.start(
-    processStart.executable,
-    processStart.arguments,
-    workingDirectory: processStart.workingDirectory,
-    runInShell: false,
-    environment: processStart.environment,
-    includeParentEnvironment: generatedCodeSandbox == null
-        ? includeParentEnvironment
-        : false,
-  );
-  final stdoutBuffer = _BoundedTextCollector(maxOutputChars);
-  final stderrBuffer = _BoundedTextCollector(maxOutputChars);
-  final outputLimitExceeded = Completer<_EvaluatorProcessSignal>();
-  final processLimitExceeded = Completer<_EvaluatorProcessSignal>();
-  final memoryLimitExceeded = Completer<_EvaluatorProcessSignal>();
-  int? observedProcessCount;
-  int? observedMemoryMb;
-  void markOutputLimitExceeded() {
-    if (!outputLimitExceeded.isCompleted) {
-      outputLimitExceeded.complete(
-        const _EvaluatorProcessOutputLimitExceeded(),
-      );
-    }
-  }
-
-  void markProcessLimitExceeded(int count) {
-    observedProcessCount = count;
-    if (!processLimitExceeded.isCompleted) {
-      processLimitExceeded.complete(
-        _EvaluatorProcessLimitExceeded(processCount: count),
-      );
-    }
-  }
-
-  void markMemoryLimitExceeded(int memoryMb) {
-    observedMemoryMb = memoryMb;
-    if (!memoryLimitExceeded.isCompleted) {
-      memoryLimitExceeded.complete(
-        _EvaluatorMemoryLimitExceeded(memoryMb: memoryMb),
-      );
-    }
-  }
-
-  final stdoutDone = process.stdout.listen((chunk) {
-    stdoutBuffer.writeBytes(chunk);
-    if (stdoutBuffer.exceeded) markOutputLimitExceeded();
-  }).asFuture<void>();
-  final stderrDone = process.stderr.listen((chunk) {
-    stderrBuffer.writeBytes(chunk);
-    if (stderrBuffer.exceeded) markOutputLimitExceeded();
-  }).asFuture<void>();
-
-  if (timeout != null && timeout.compareTo(Duration.zero) <= 0) {
-    await _terminateProcessTree(
-      process.pid,
-      ProcessSignal.sigterm,
-      environment: helperEnvironment,
-    );
-    await _awaitProcessExit(process, environment: helperEnvironment);
-    await Future.wait([stdoutDone, stderrDone]);
-    return EvaluatorProcessResult(
-      stdout: stdoutBuffer.text,
-      stderr: stderrBuffer.text,
-      exitCode: -1,
-      timedOut: true,
-      outputLimitExceeded: false,
-      processLimitExceeded: false,
-      memoryLimitExceeded: false,
-      observedProcessCount: null,
-      observedMemoryMb: null,
-    );
-  }
-
-  Timer? resourceLimitTimer;
-  var resourceCheckRunning = false;
-  if (maxProcesses != null || maxMemoryMb != null) {
-    resourceLimitTimer = Timer.periodic(const Duration(milliseconds: 100), (
-      _,
-    ) async {
+  BoundedSubprocessMonitor resourceMonitor(int pid) {
+    final limitExceeded = Completer<Object>();
+    final observedLimits = _EvaluatorObservedLimits();
+    var resourceCheckRunning = false;
+    final timer = Timer.periodic(const Duration(milliseconds: 100), (_) async {
       if (resourceCheckRunning) return;
       resourceCheckRunning = true;
       try {
         final descendants = await _descendantPids(
-          process.pid,
+          pid,
           environment: helperEnvironment,
         );
         final processCount = 1 + descendants.length;
         if (maxProcesses != null && processCount > maxProcesses) {
-          markProcessLimitExceeded(processCount);
+          observedLimits.processCount = processCount;
         }
         if (maxMemoryMb != null) {
           final memoryMb = await _processTreeMemoryMb(
-            process.pid,
+            pid,
             descendants,
             environment: helperEnvironment,
           );
           if (memoryMb != null && memoryMb > maxMemoryMb) {
-            markMemoryLimitExceeded(memoryMb);
+            observedLimits.memoryMb = memoryMb;
           }
+        }
+        if (observedLimits.exceeded && !limitExceeded.isCompleted) {
+          limitExceeded.complete(observedLimits);
         }
       } finally {
         resourceCheckRunning = false;
       }
     });
-  }
-  final timeoutExceeded = Completer<_EvaluatorProcessSignal>();
-  final timeoutTimer = timeout == null
-      ? null
-      : Timer(timeout, () {
-          if (!timeoutExceeded.isCompleted) {
-            timeoutExceeded.complete(const _EvaluatorProcessTimedOut());
-          }
-        });
-  late final _EvaluatorProcessSignal signal;
-  try {
-    signal = await Future.any<_EvaluatorProcessSignal>([
-      process.exitCode.then(_EvaluatorProcessExit.new),
-      if (timeout != null) timeoutExceeded.future,
-      outputLimitExceeded.future,
-      if (maxProcesses != null) processLimitExceeded.future,
-      if (maxMemoryMb != null) memoryLimitExceeded.future,
-    ]);
-  } finally {
-    timeoutTimer?.cancel();
-    resourceLimitTimer?.cancel();
-  }
-
-  if (signal is _EvaluatorProcessExit) {
-    await Future.wait([stdoutDone, stderrDone]);
-    return EvaluatorProcessResult(
-      stdout: stdoutBuffer.text,
-      stderr: stderrBuffer.text,
-      exitCode: signal.exitCode,
-      timedOut: false,
-      outputLimitExceeded: stdoutBuffer.exceeded || stderrBuffer.exceeded,
-      processLimitExceeded: observedProcessCount != null,
-      memoryLimitExceeded: observedMemoryMb != null,
-      observedProcessCount: observedProcessCount,
-      observedMemoryMb: observedMemoryMb,
+    return BoundedSubprocessMonitor(
+      signal: limitExceeded.future,
+      observed: () => observedLimits.exceeded ? observedLimits : null,
+      dispose: timer.cancel,
     );
   }
 
-  await _terminateProcessTree(
-    process.pid,
-    ProcessSignal.sigterm,
-    environment: helperEnvironment,
+  final result = await runBoundedSubprocess(
+    executable: processStart.executable,
+    arguments: processStart.arguments,
+    workingDirectory: processStart.workingDirectory,
+    environment: processStart.environment,
+    includeParentEnvironment: generatedCodeSandbox == null
+        ? includeParentEnvironment
+        : false,
+    timeout: timeout,
+    maxOutputBytes: maxOutputBytes,
+    helperEnvironment: helperEnvironment,
+    monitor: maxProcesses != null || maxMemoryMb != null
+        ? resourceMonitor
+        : null,
   );
-  await _awaitProcessExit(process, environment: helperEnvironment);
-  await Future.wait([stdoutDone, stderrDone]);
+  final externalLimit = result.externalLimit;
   return EvaluatorProcessResult(
-    stdout: stdoutBuffer.text,
-    stderr: stderrBuffer.text,
-    exitCode: -1,
-    timedOut: signal is _EvaluatorProcessTimedOut,
-    outputLimitExceeded: signal is _EvaluatorProcessOutputLimitExceeded,
-    processLimitExceeded: signal is _EvaluatorProcessLimitExceeded,
-    memoryLimitExceeded: signal is _EvaluatorMemoryLimitExceeded,
-    observedProcessCount: signal is _EvaluatorProcessLimitExceeded
-        ? signal.processCount
+    stdout: result.stdout,
+    stderr: result.stderr,
+    exitCode: result.termination == BoundedSubprocessTermination.exited
+        ? result.exitCode
+        : -1,
+    timedOut: result.termination == BoundedSubprocessTermination.timedOut,
+    outputLimitExceeded:
+        result.outputLimitExceeded ||
+        (result.termination == BoundedSubprocessTermination.exited &&
+            (result.stdoutLimitExceeded || result.stderrLimitExceeded)),
+    processLimitExceeded:
+        externalLimit is _EvaluatorObservedLimits &&
+        externalLimit.processCount != null,
+    memoryLimitExceeded:
+        externalLimit is _EvaluatorObservedLimits &&
+        externalLimit.memoryMb != null,
+    observedProcessCount: externalLimit is _EvaluatorObservedLimits
+        ? externalLimit.processCount
         : null,
-    observedMemoryMb: signal is _EvaluatorMemoryLimitExceeded
-        ? signal.memoryMb
+    observedMemoryMb: externalLimit is _EvaluatorObservedLimits
+        ? externalLimit.memoryMb
         : null,
   );
-}
-
-Future<void> _awaitProcessExit(
-  Process process, {
-  Map<String, String>? environment,
-}) async {
-  await process.exitCode.timeout(
-    const Duration(seconds: 2),
-    onTimeout: () async {
-      await _terminateProcessTree(
-        process.pid,
-        ProcessSignal.sigkill,
-        environment: environment,
-      );
-      return -1;
-    },
-  );
-}
-
-Future<void> _terminateProcessTree(
-  int pid,
-  ProcessSignal signal, {
-  Map<String, String>? environment,
-}) async {
-  if (Platform.isWindows) {
-    final args = ['/PID', '$pid', '/T'];
-    if (signal == ProcessSignal.sigkill) args.add('/F');
-    await _tryRunProcess('taskkill', args, environment: environment);
-    return;
-  }
-
-  final descendants = await _descendantPids(pid, environment: environment);
-  for (final childPid in descendants.reversed) {
-    _killPid(childPid, signal);
-  }
-  _killPid(pid, signal);
 }
 
 Future<List<int>> _descendantPids(
@@ -355,78 +234,9 @@ List<int> _parsePids(String output) => output
     .whereType<int>()
     .toList(growable: false);
 
-void _killPid(int pid, ProcessSignal signal) {
-  if (!_tryKillPid(pid, signal)) _tryKillPid(pid, null);
-}
+class _EvaluatorObservedLimits {
+  int? processCount;
+  int? memoryMb;
 
-bool _tryKillPid(int pid, ProcessSignal? signal) {
-  try {
-    return signal == null ? Process.killPid(pid) : Process.killPid(pid, signal);
-  } on Object {
-    return false;
-  }
-}
-
-/// Collects raw process output, enforcing the limit on undecoded bytes so
-/// multibyte encodings cannot exceed the byte contract before decode.
-class _BoundedTextCollector {
-  _BoundedTextCollector(this.maxBytes) : assert(maxBytes > 0);
-
-  final int maxBytes;
-  final _bytes = BytesBuilder(copy: false);
-  bool exceeded = false;
-
-  String get text {
-    final bytes = _bytes.toBytes();
-    try {
-      return systemEncoding.decode(bytes);
-    } on Object {
-      return String.fromCharCodes(bytes);
-    }
-  }
-
-  void writeBytes(List<int> chunk) {
-    if (exceeded) return;
-    final remaining = maxBytes - _bytes.length;
-    if (remaining <= 0) {
-      exceeded = true;
-      return;
-    }
-    if (chunk.length <= remaining) {
-      _bytes.add(chunk);
-      return;
-    }
-    _bytes.add(chunk.sublist(0, remaining));
-    exceeded = true;
-  }
-}
-
-sealed class _EvaluatorProcessSignal {
-  const _EvaluatorProcessSignal();
-}
-
-class _EvaluatorProcessExit extends _EvaluatorProcessSignal {
-  const _EvaluatorProcessExit(this.exitCode);
-
-  final int exitCode;
-}
-
-class _EvaluatorProcessTimedOut extends _EvaluatorProcessSignal {
-  const _EvaluatorProcessTimedOut();
-}
-
-class _EvaluatorProcessOutputLimitExceeded extends _EvaluatorProcessSignal {
-  const _EvaluatorProcessOutputLimitExceeded();
-}
-
-class _EvaluatorProcessLimitExceeded extends _EvaluatorProcessSignal {
-  const _EvaluatorProcessLimitExceeded({required this.processCount});
-
-  final int processCount;
-}
-
-class _EvaluatorMemoryLimitExceeded extends _EvaluatorProcessSignal {
-  const _EvaluatorMemoryLimitExceeded({required this.memoryMb});
-
-  final int memoryMb;
+  bool get exceeded => processCount != null || memoryMb != null;
 }
