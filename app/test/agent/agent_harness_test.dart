@@ -813,12 +813,14 @@ printf '%s' "$1" > result.txt
           await File(p.join(workspace.path, 'result.txt')).readAsString(),
           'edit this file',
         );
-        expect(result.metadata['agentHarness'], {
-          'kind': 'command-template',
-          'track': 'scaffold-dependent',
-          'agent': 'fake-cli',
-          'agentVersion': '1.2.3',
-        });
+        final harnessProvenance =
+            result.metadata['agentHarness']! as Map<String, Object?>;
+        expect(harnessProvenance['kind'], 'command-template');
+        expect(harnessProvenance['track'], 'scaffold-dependent');
+        expect(harnessProvenance['agent'], 'fake-cli');
+        expect(harnessProvenance['agentVersion'], '1.2.3');
+        expect(harnessProvenance['templateHash'], isA<String>());
+        expect(harnessProvenance['templateHash'].toString(), hasLength(64));
       },
       skip: Platform.isWindows ? 'POSIX shell script test' : false,
     );
@@ -960,6 +962,133 @@ printf %s "$PATH"
         );
       },
       skip: Platform.isWindows ? 'POSIX shell script test' : false,
+    );
+
+    test(
+      'provenance templateHash is deterministic and distinguishes '
+      'different executables and argument templates',
+      () {
+        final permissive = CommandTemplateAgentHarness(
+          providerId: 'fake-cli',
+          config: const CommandTemplateAgentConfig(
+            name: 'claude-code',
+            executable: 'claude',
+            arguments: [
+              '-p',
+              '--permission-mode',
+              'bypassPermissions',
+              '--model',
+              '{model}',
+              '{instruction}',
+            ],
+            version: '1.0.0',
+          ),
+        );
+        final permissiveAgain = CommandTemplateAgentHarness(
+          providerId: 'fake-cli',
+          config: const CommandTemplateAgentConfig(
+            name: 'claude-code',
+            executable: 'claude',
+            arguments: [
+              '-p',
+              '--permission-mode',
+              'bypassPermissions',
+              '--model',
+              '{model}',
+              '{instruction}',
+            ],
+            version: '1.0.0',
+          ),
+        );
+        final restricted = CommandTemplateAgentHarness(
+          providerId: 'fake-cli',
+          config: const CommandTemplateAgentConfig(
+            name: 'claude-code',
+            executable: 'claude',
+            arguments: [
+              '-p',
+              '--permission-mode',
+              'plan',
+              '--model',
+              '{model}',
+              '{instruction}',
+            ],
+            version: '1.0.0',
+          ),
+        );
+        final differentExecutable = CommandTemplateAgentHarness(
+          providerId: 'fake-cli',
+          config: const CommandTemplateAgentConfig(
+            name: 'claude-code',
+            executable: '/opt/custom/claude',
+            arguments: [
+              '-p',
+              '--permission-mode',
+              'bypassPermissions',
+              '--model',
+              '{model}',
+              '{instruction}',
+            ],
+            version: '1.0.0',
+          ),
+        );
+
+        final permissiveHash = permissive.provenance['templateHash'];
+        expect(
+          permissiveAgain.provenance['templateHash'],
+          permissiveHash,
+          reason: 'identical executable/args must hash identically',
+        );
+        expect(
+          restricted.provenance['templateHash'],
+          isNot(permissiveHash),
+          reason: 'different permission flags must hash differently',
+        );
+        expect(
+          differentExecutable.provenance['templateHash'],
+          isNot(permissiveHash),
+          reason: 'different executables must hash differently',
+        );
+
+        // 'agent'/'agentVersion' alone are identical across these variants,
+        // so without templateHash all four would be indistinguishable.
+        expect(permissive.provenance['agent'], restricted.provenance['agent']);
+        expect(
+          permissive.provenance['agentVersion'],
+          restricted.provenance['agentVersion'],
+        );
+      },
+    );
+
+    test(
+      'published provenance never contains the raw executable or argument '
+      'template',
+      () {
+        final harness = CommandTemplateAgentHarness(
+          providerId: 'fake-cli',
+          config: const CommandTemplateAgentConfig(
+            name: 'claude-code',
+            executable: '/opt/secret-scaffold/claude',
+            arguments: [
+              '-p',
+              '--permission-mode',
+              'bypassPermissions',
+              '--dangerously-skip-permissions',
+              '--model',
+              '{model}',
+              '{instruction}',
+            ],
+            version: '1.0.0',
+          ),
+        );
+
+        final encoded = jsonEncode(harness.provenance);
+        expect(encoded, isNot(contains('/opt/secret-scaffold/claude')));
+        expect(encoded, isNot(contains('bypassPermissions')));
+        expect(encoded, isNot(contains('--dangerously-skip-permissions')));
+        expect(harness.provenance.keys, isNot(contains('arguments')));
+        expect(harness.provenance.keys, isNot(contains('executable')));
+      },
     );
 
     test('resolves built-in command presets', () {

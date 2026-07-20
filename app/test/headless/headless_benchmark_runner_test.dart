@@ -436,6 +436,58 @@ void main() {
     },
   );
 
+  test(
+    'direct runner callers derive agent harness provenance from the '
+    'configured harnesses',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'dart_arena_headless_direct_provenance_',
+      );
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(() async {
+        await db.close();
+        if (await tmp.exists()) {
+          await tmp.delete(recursive: true);
+        }
+      });
+
+      final runDao = RunDao(db);
+      final workdirRoot = Directory(p.join(tmp.path, 'workdirs'))
+        ..createSync(recursive: true);
+      final outputParent = Directory(p.join(tmp.path, 'bundles'))
+        ..createSync(recursive: true);
+      final provider = DeterministicFakeProvider();
+      final harness = _ProvenanceStubAgentHarness(
+        harnessId: provider.id,
+        modelId: provider.modelId,
+      );
+
+      final result = await const HeadlessBenchmarkRunner().run(
+        _config(
+          runId: 'headless-direct-provenance-run',
+          runDao: runDao,
+          workdirManager: NoOpPrepareWorkdirManager(root: workdirRoot),
+          outputParent: outputParent,
+          allowedTrajectoryRoots: [workdirRoot],
+          provider: provider,
+          modelId: provider.modelId,
+          tasks: [_AgenticHeadlessSmokeTask()],
+          agentHarnesses: [harness],
+        ),
+      );
+
+      final provenance =
+          jsonDecode(result.finalSummary.run.provenanceJson!)
+              as Map<String, Object?>;
+      final config = provenance['config'] as Map<String, Object?>;
+      final agentHarnesses = config['agentHarnesses'] as Map<String, Object?>;
+      expect(agentHarnesses[provider.id], {
+        'kind': 'stub-harness',
+        'track': 'scaffold-dependent',
+      });
+    },
+  );
+
   test('persists reference plans for headless runs', () async {
     final tmp = await Directory.systemTemp.createTemp(
       'dart_arena_headless_plan_',
@@ -901,6 +953,17 @@ void main() {
   test('exposes the standalone dart run CLI entrypoint', () {
     expect(File('bin/dart_arena_headless.dart').existsSync(), isTrue);
   });
+}
+
+class _ProvenanceStubAgentHarness extends DeterministicFakeAgentHarness
+    implements AgentHarnessProvenance {
+  _ProvenanceStubAgentHarness({required super.harnessId, required super.modelId});
+
+  @override
+  Map<String, Object?> get provenance => const {
+    'kind': 'stub-harness',
+    'track': 'scaffold-dependent',
+  };
 }
 
 HeadlessBenchmarkConfig _config({

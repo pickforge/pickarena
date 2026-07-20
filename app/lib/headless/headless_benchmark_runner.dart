@@ -22,6 +22,32 @@ import 'package:path/path.dart' as p;
 
 const _timeoutCleanupGrace = Duration(milliseconds: 2500);
 
+/// Agent harness provenance for [config], derived from the actual
+/// configured harnesses for any harness id not already covered by
+/// [HeadlessBenchmarkConfig.agentHarnessProvenance].
+///
+/// [runHeadlessCli] always supplies harness provenance explicitly, but
+/// callers invoking [HeadlessBenchmarkRunner] directly may omit it. Without
+/// this, two runs sharing a provider/harness id but backed by different
+/// harness implementations would carry identical (empty) harness-kind
+/// provenance and could wrongly be treated as aggregation-compatible.
+Map<String, Map<String, Object?>> _agentHarnessProvenance(
+  HeadlessBenchmarkConfig config,
+) {
+  final provenance = Map<String, Map<String, Object?>>.of(
+    config.agentHarnessProvenance,
+  );
+  for (final harness in config.agentHarnesses) {
+    provenance.putIfAbsent(
+      harness.id,
+      () => harness is AgentHarnessProvenance
+          ? (harness as AgentHarnessProvenance).provenance
+          : const {'kind': 'unknown', 'track': 'scaffold-dependent'},
+    );
+  }
+  return provenance;
+}
+
 class HeadlessBenchmarkConfig {
   HeadlessBenchmarkConfig({
     required this.runId,
@@ -226,7 +252,7 @@ class HeadlessBenchmarkRunner {
       generatedCodeSandboxRequired: config.generatedCodeSandboxRequired,
       generatedCodeSandboxEnforced: config.generatedCodeSandboxEnforced,
       generatedCodeSandboxBackend: config.generatedCodeSandboxBackend,
-      agentHarnessProvenance: config.agentHarnessProvenance,
+      agentHarnessProvenance: _agentHarnessProvenance(config),
       preset: config.preset,
       corpusManifest: config.corpusManifest,
     );

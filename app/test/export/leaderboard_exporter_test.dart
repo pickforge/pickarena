@@ -171,6 +171,165 @@ void main() {
     },
   );
 
+  test(
+    'aggregate-compatible scopes harness-kind compatibility to selected '
+    'results in a mixed-harness run',
+    () async {
+      await _seedRun(
+        db,
+        id: 'mixed',
+        completedAt: DateTime.utc(2026, 5, 1),
+        provenanceJson: _multiHarnessProvenanceJson({
+          'harness-minimal': {'kind': 'minimal'},
+          'harness-template': {
+            'kind': 'command-template',
+            'agent': 'codex',
+            'agentVersion': '1.0.0',
+          },
+        }),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'mixed-minimal-a',
+        runId: 'mixed',
+        taskId: 'task.a',
+        providerId: 'openai',
+        harnessId: 'harness-minimal',
+      );
+      await _seedTaskRun(
+        db,
+        id: 'mixed-template-a',
+        runId: 'mixed',
+        taskId: 'task.a',
+        providerId: 'anthropic',
+        harnessId: 'harness-template',
+      );
+      await _seedRun(
+        db,
+        id: 'other-droid',
+        completedAt: DateTime.utc(2026, 5, 2),
+        provenanceJson: _multiHarnessProvenanceJson({
+          'harness-droid': {'kind': 'droid', 'agent': 'droid'},
+        }),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'other-droid-a',
+        runId: 'other-droid',
+        taskId: 'task.a',
+        providerId: 'droid-provider',
+        harnessId: 'harness-droid',
+      );
+      await _seedRun(
+        db,
+        id: 'other-minimal',
+        completedAt: DateTime.utc(2026, 5, 3),
+        provenanceJson: _multiHarnessProvenanceJson({
+          'harness-minimal': {'kind': 'minimal'},
+        }),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'other-minimal-a',
+        runId: 'other-minimal',
+        taskId: 'task.a',
+        providerId: 'openai',
+        harnessId: 'harness-minimal',
+      );
+
+      final export = await buildLeaderboardExport(
+        db,
+        options: const LeaderboardExportOptions(track: 'agentic'),
+        now: () => DateTime.utc(2026, 5, 31),
+      );
+
+      final source = export['source']! as Map<String, Object?>;
+      // The mixed run's minimal results combine with the minimal-only run,
+      // but its command-template results (and the unrelated droid run) do
+      // not join in, proving minimal never aggregates with
+      // command-template/droid even within the same source run.
+      expect(source['anchorRunId'], 'other-minimal');
+      expect(source['runIds'], ['mixed', 'other-minimal']);
+      expect(source['taskRunCount'], 2);
+      final providerIds = {
+        for (final row in (export['models']! as List<Object?>)
+            .cast<Map<String, Object?>>())
+          row['providerId'],
+      };
+      expect(providerIds, {'openai'});
+    },
+  );
+
+  test(
+    'aggregate-compatible treats legacy runs missing agentHarnesses '
+    'provenance as minimal-compatible for the same harness id',
+    () async {
+      await _seedRun(
+        db,
+        id: 'legacy-no-provenance',
+        completedAt: DateTime.utc(2026, 5, 1),
+        provenanceJson: _weightsProvenanceJson(
+          scoringSchemaVersion: 2,
+          evaluatorWeights: {'compile': 1.0},
+        ),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'legacy-no-provenance-a',
+        runId: 'legacy-no-provenance',
+        taskId: 'task.a',
+        harnessId: 'harness-minimal',
+      );
+      // agentHarnesses is present but has no entry for the harness id this
+      // run's task run actually uses: this must stay 'unknown', not fall
+      // back to 'minimal', even though it shares a harness id namespace.
+      await _seedRun(
+        db,
+        id: 'declared-unknown',
+        completedAt: DateTime.utc(2026, 5, 2),
+        provenanceJson: _multiHarnessProvenanceJson({
+          'harness-other': {'kind': 'droid', 'agent': 'droid'},
+        }),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'declared-unknown-a',
+        runId: 'declared-unknown',
+        taskId: 'task.a',
+        harnessId: 'harness-minimal',
+      );
+      await _seedRun(
+        db,
+        id: 'declared-minimal',
+        completedAt: DateTime.utc(2026, 5, 3),
+        provenanceJson: _multiHarnessProvenanceJson({
+          'harness-minimal': {'kind': 'minimal'},
+        }),
+      );
+      await _seedTaskRun(
+        db,
+        id: 'declared-minimal-a',
+        runId: 'declared-minimal',
+        taskId: 'task.a',
+        harnessId: 'harness-minimal',
+      );
+
+      final export = await buildLeaderboardExport(
+        db,
+        options: const LeaderboardExportOptions(track: 'agentic'),
+        now: () => DateTime.utc(2026, 5, 31),
+      );
+
+      final source = export['source']! as Map<String, Object?>;
+      expect(source['anchorRunId'], 'declared-minimal');
+      expect(source['runIds'], [
+        'declared-minimal',
+        'legacy-no-provenance',
+      ]);
+      expect(source['taskRunCount'], 2);
+    },
+  );
+
   test('aggregate-compatible separates corpus manifest digests', () async {
     await _seedRun(
       db,
@@ -1542,6 +1701,17 @@ String _harnessProvenanceJson(String kind, {String? agent, String? version}) =>
         },
       },
     });
+
+String _multiHarnessProvenanceJson(
+  Map<String, Map<String, Object?>> agentHarnesses,
+) => jsonEncode({
+  'schemaVersion': 1,
+  'config': {
+    'scoringSchemaVersion': 2,
+    'evaluatorWeights': {'compile': 1.0},
+    'agentHarnesses': agentHarnesses,
+  },
+});
 
 String _environmentProvenanceJson({
   String dartVersion = '3.11.4',
