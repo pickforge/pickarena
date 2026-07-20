@@ -71,6 +71,28 @@ void main() {
   );
 
   test(
+    'mvp preserves admitted QA reports reached through symlinks',
+    () async {
+      final root = Directory(
+        p.join(Directory.current.path, '..', 'tasks', 'flutter'),
+      );
+      final source = (await loadFileBackedTasks(root)).first;
+      final tmp = await Directory.systemTemp.createTemp('dart_arena_preset_');
+      addTearDown(() => tmp.delete(recursive: true));
+      final bundle = Directory(p.join(tmp.path, 'task'));
+      await _copyDirectory(source.bundleDirectory, bundle);
+      final report = File(p.join(bundle.path, 'qa', 'admission_report.json'));
+      final target = File(p.join(tmp.path, 'admission_report.json'));
+      await report.rename(target.path);
+      await Link(report.path).create(target.path);
+      final task = await FileBackedTask.load(bundle);
+
+      expect(await selectTaskPreset('mvp', [task]), [task]);
+    },
+    skip: Platform.isWindows ? 'POSIX symlink test' : false,
+  );
+
+  test(
     'mvp excludes tasks whose bundle drifted from the admitted digest',
     () async {
       final root = Directory(

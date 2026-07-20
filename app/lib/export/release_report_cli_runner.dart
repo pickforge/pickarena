@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dart_arena/core/task_bundle_digest.dart';
+import 'package:dart_arena/core/task_bundle_inspection.dart';
 import 'package:dart_arena/core/task_integrity.dart';
 import 'package:dart_arena/export/leaderboard_cli_runner.dart';
 import 'package:dart_arena/export/release_report.dart';
@@ -299,11 +299,21 @@ Future<Map<String, Object?>> _taskBundleDigestEvidence(
     };
   }
   try {
-    final task = await FileBackedTask.load(bundleDirectory);
+    final inspection = await TaskBundleInspection.inspect(bundleDirectory);
+    final task = await FileBackedTask.fromInspection(inspection);
     await task.ensureLoaded();
+    if (task.id != report['taskId'] ||
+        task.version != report['taskVersion'] ||
+        task.track.name != report['track']) {
+      return {
+        ...evidence,
+        'taskBundleDigestUnavailableReason':
+            'loaded task identity does not match task QA report',
+      };
+    }
     return {
       ...evidence,
-      'taskBundleDigest': await taskBundleDigestSha256(bundleDirectory),
+      'taskBundleDigest': await inspection.taskBundleDigestSha256(),
       'hiddenVerifierDigests': <String, Object?>{
         for (final entry in hiddenVerifierDigests(task).entries)
           entry.key: entry.value,

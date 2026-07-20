@@ -222,6 +222,10 @@ Future<void> _expectOfficialAdmissionReportSatisfied(
     'schemaVersion': 2,
     'version': '2026-05-31-master-spec',
   });
+  expect(
+    admissionProvenance['taskBundleDigest'],
+    await task.bundleInspection.taskBundleDigestSha256(),
+  );
   final environment =
       admissionProvenance['environment'] as Map<String, Object?>;
   expect(environment['dartVersion'], isA<String>());

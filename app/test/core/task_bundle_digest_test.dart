@@ -7,7 +7,34 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
+import '../support/file_backed_bundle_fixture.dart';
+
 void main() {
+  group('task bundle compatibility fixtures', () {
+    for (final fixture in taskBundleCompatibilityFixtures) {
+      test(fixture.name, () async {
+        if (fixture.requiresSymlink && Platform.isWindows) return;
+        final root = await Directory.systemTemp.createTemp(
+          'task_bundle_digest_compatibility_',
+        );
+        addTearDown(() async {
+          if (await root.exists()) await root.delete(recursive: true);
+        });
+        final bundle = await writeTaskBundleCompatibilityFixture(root, fixture);
+
+        final digest = taskBundleDigestSha256(bundle);
+        if (!fixture.accepted) {
+          await expectLater(digest, throwsA(isA<Object>()));
+          return;
+        }
+        expect(
+          await digest,
+          'f83f631b52c7acfd254b7dd4af7bf9e271c930c2f882bd0997104a7888485637',
+        );
+      });
+    }
+  });
+
   group('corpus manifest digest', () {
     test('is deterministic and changes with task version or bundle digest', () {
       final a = List.filled(64, 'a').join();
@@ -219,6 +246,10 @@ Future<Map<String, String>> _writeBundle(
 
 String _taskYaml({required String workspaceRoot, String? judgeRubricPath}) =>
     '''
+schemaVersion: 1
+id: digest.fixture
+version: 1
+track: codegen
 instructionPath: instruction.md
 ${judgeRubricPath == null ? '' : 'judgeRubricPath: $judgeRubricPath\n'}workspace:
   root: $workspaceRoot

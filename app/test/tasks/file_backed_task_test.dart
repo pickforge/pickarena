@@ -8,7 +8,151 @@ import 'package:dart_arena/tasks/file_backed/file_backed_task.dart';
 import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
+import '../support/file_backed_bundle_fixture.dart';
+
 void main() {
+  group('task bundle compatibility fixtures', () {
+    for (final fixture in taskBundleCompatibilityFixtures) {
+      test(fixture.name, () async {
+        if (fixture.requiresSymlink && Platform.isWindows) return;
+        final root = await Directory.systemTemp.createTemp(
+          'file_backed_compatibility_',
+        );
+        addTearDown(() async {
+          if (await root.exists()) await root.delete(recursive: true);
+        });
+        final bundle = await writeTaskBundleCompatibilityFixture(root, fixture);
+
+        Future<FileBackedTask> load() async {
+          final task = await FileBackedTask.load(bundle);
+          await task.ensureLoaded();
+          return task;
+        }
+
+        if (!fixture.accepted) {
+          await expectLater(load(), throwsA(isA<Object>()));
+          return;
+        }
+
+        final task = await load();
+        expect(task.version, 2);
+        expect(task.track, BenchmarkTrack.codegen);
+        expect(task.fixtures, contains('lib/answer.dart'));
+        expect(
+          task.fixtures,
+          isNot(contains(task.hiddenVerifiers.single.testPath)),
+        );
+      });
+    }
+  });
+
+  test('rejects digesting a byte-changed manifest after task load', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'file_backed_manifest_bytes_drift_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final bundle = await writeAnswerFileBackedBundle(root);
+    final task = await FileBackedTask.load(bundle);
+    await task.ensureLoaded();
+    final manifest = File(p.join(bundle.path, 'task.yaml'));
+    await manifest.writeAsString('${await manifest.readAsString()}# changed\n');
+
+    await expectLater(
+      task.bundleInspection.taskBundleDigestSha256(),
+      throwsStateError,
+    );
+  });
+
+  test('rejects digesting a changed declaration after task load', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'file_backed_manifest_digest_drift_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final bundle = await writeAnswerFileBackedBundle(root);
+    final task = await FileBackedTask.load(bundle);
+    await task.ensureLoaded();
+    await File(
+      p.join(bundle.path, 'baseline', 'instruction-v2.md'),
+    ).writeAsString('Updated instruction.\n');
+    final manifest = File(p.join(bundle.path, 'task.yaml'));
+    await manifest.writeAsString(
+      (await manifest.readAsString()).replaceFirst(
+        'instructionPath: instruction.md',
+        'instructionPath: baseline/instruction-v2.md',
+      ),
+    );
+
+    await expectLater(
+      task.bundleInspection.taskBundleDigestSha256(),
+      throwsStateError,
+    );
+  });
+
+  test(
+    'rejects reads and digests after the bundle root becomes a symlink',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'file_backed_root_symlink_swap_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final bundle = await writeAnswerFileBackedBundle(root);
+      final task = await FileBackedTask.load(bundle);
+      final relocated = Directory('${bundle.path}_relocated');
+      await bundle.rename(relocated.path);
+      await Link(bundle.path).create(relocated.path);
+
+      expect(
+        () => task.bundleInspection.readText(
+          task.bundleInspection.instructionPath,
+        ),
+        throwsArgumentError,
+      );
+      await expectLater(
+        task.bundleInspection.taskBundleDigestSha256(),
+        throwsArgumentError,
+      );
+    },
+    skip: Platform.isWindows ? 'POSIX symlink test' : false,
+  );
+
+  test(
+    'discovers tasks deterministically with manifest versions and tracks',
+    () async {
+      final root = await Directory.systemTemp.createTemp('file_backed_order_');
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      await writeAnswerFileBackedBundle(
+        root,
+        directoryName: 'first_on_disk',
+        id: 'task.z',
+        version: 3,
+        track: 'agentic',
+      );
+      await writeAnswerFileBackedBundle(
+        root,
+        directoryName: 'second_on_disk',
+        id: 'task.a',
+        version: 1,
+      );
+
+      final tasks = await loadFileBackedTasks(root);
+
+      expect(tasks.map((task) => task.id), ['task.a', 'task.z']);
+      expect(tasks.map((task) => task.version), [1, 3]);
+      expect(tasks.map((task) => task.track), [
+        BenchmarkTrack.codegen,
+        BenchmarkTrack.agentic,
+      ]);
+    },
+  );
+
   test('loads a DeepSWE-style task bundle without private leakage', () async {
     final root = await Directory.systemTemp.createTemp('file_backed_task_');
     addTearDown(() async {
@@ -106,6 +250,38 @@ void main() {
       generatedCodePath: '../lib/answer.dart',
     );
     await expectLater(FileBackedTask.load(badPath), throwsArgumentError);
+  });
+
+  test('preserves workspace metadata path forms', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'file_backed_metadata_paths_',
+    );
+    addTearDown(() async {
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+    final bundle = await writeAnswerFileBackedBundle(root);
+    final manifest = File(p.join(bundle.path, 'task.yaml'));
+    await manifest.writeAsString(
+      (await manifest.readAsString())
+          .replaceFirst(
+            'generatedCodePath: lib/answer.dart',
+            r'generatedCodePath: lib\answer.dart',
+          )
+          .replaceFirst(
+            'testPath: test/_hidden/answer_hidden_test.dart',
+            r'testPath: test\_hidden\answer_hidden_test.dart',
+          ),
+    );
+
+    final task = await FileBackedTask.load(bundle);
+
+    expect(task.generatedCodePath, r'lib\answer.dart');
+    expect(task.hiddenVerifiers, isEmpty);
+    await task.ensureLoaded();
+    expect(
+      task.hiddenVerifiers.single.testPath,
+      r'test\_hidden\answer_hidden_test.dart',
+    );
   });
 
   test('rejects invalid network and resource policy fields', () async {

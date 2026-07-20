@@ -19,6 +19,8 @@ import 'package:dart_arena/runner/task_qa_cli_runner.dart';
 import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
+import '../support/file_backed_bundle_fixture.dart';
+
 void main() {
   test('task QA CLI help emits one JSON object', () async {
     final stdoutLines = <String>[];
@@ -207,6 +209,70 @@ void main() {
         'referenceHiddenFailureCount': 0,
       });
       expect(report['failureMessages'], isEmpty);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'file-backed QA admission uses the inspected bundle digest',
+    () async {
+      final tmp = await Directory.systemTemp.createTemp(
+        'task_qa_cli_file_backed_',
+      );
+      addTearDown(() async {
+        if (await tmp.exists()) await tmp.delete(recursive: true);
+      });
+      final bundleRoot = Directory(p.join(tmp.path, 'bundles'));
+      await writeAnswerFileBackedBundle(bundleRoot);
+      final outputDir = Directory(p.join(tmp.path, 'reports'));
+      final stdoutLines = <String>[];
+      final stderrLines = <String>[];
+
+      final exitCode = await runTaskQaCli(
+        [
+          '--out',
+          outputDir.path,
+          '--task-bundle-root',
+          bundleRoot.path,
+          '--hidden-flake-runs',
+          '1',
+          '--evaluator-timeout-seconds',
+          '30',
+        ],
+        dependencies: TaskQaCliDependencies(
+          environmentProviderBuilder: () =>
+              const _FixedTaskQaEnvironmentProvider(),
+          now: () => DateTime.utc(2026, 6, 3, 12),
+        ),
+        stdoutWriter: stdoutLines.add,
+        stderrWriter: stderrLines.add,
+      );
+
+      expect(exitCode, 0, reason: stderrLines.join('\n'));
+      expect(stderrLines, isEmpty);
+      final cliResult = jsonDecode(stdoutLines.single) as Map<String, Object?>;
+      final summary =
+          jsonDecode(
+                await File(
+                  cliResult['admissionSummaryPath']! as String,
+                ).readAsString(),
+              )
+              as Map<String, Object?>;
+      final reportEntry =
+          (summary['reports']! as List<Object?>).single!
+              as Map<String, Object?>;
+      final report =
+          jsonDecode(
+                await File(
+                  p.join(outputDir.path, reportEntry['reportPath']! as String),
+                ).readAsString(),
+              )
+              as Map<String, Object?>;
+      final admission = report['admission']! as Map<String, Object?>;
+      expect(
+        admission['taskBundleDigest'],
+        'f83f631b52c7acfd254b7dd4af7bf9e271c930c2f882bd0997104a7888485637',
+      );
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );
