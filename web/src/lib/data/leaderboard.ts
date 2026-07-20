@@ -2,7 +2,7 @@ import { base } from '$app/paths';
 
 import {
   emptyLeaderboard,
-  parseLeaderboardArtifact,
+  parseLeaderboardArtifactResult,
   type LeaderboardData
 } from './leaderboard-contract';
 
@@ -27,12 +27,16 @@ export async function loadLeaderboard(
       return withWarning(`Leaderboard data is unavailable (${response.status}).`);
     }
 
-    const leaderboard = parseLeaderboardArtifact(await response.text());
-    if (!leaderboard) {
-      return withWarning('Leaderboard data is malformed.');
+    const parsed = parseLeaderboardArtifactResult(await response.text());
+    if (!parsed.ok) {
+      return withWarning(
+        parsed.error === 'syntax'
+          ? 'Leaderboard data could not be loaded.'
+          : 'Leaderboard data is malformed.'
+      );
     }
 
-    return { leaderboard, warning: null };
+    return { leaderboard: parsed.value, warning: null };
   } catch {
     return withWarning('Leaderboard data could not be loaded.');
   }

@@ -9,6 +9,8 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:test/test.dart';
 
+import 'leaderboard_fixture_oracle.dart' as fixture_oracle;
+
 void main() {
   late AppDatabase db;
 
@@ -24,6 +26,21 @@ void main() {
     'shared leaderboard compatibility corpus matches its manifest',
     () async {
       final manifest = await _loadLeaderboardFixtureManifest();
+      final fixtureDirectory = Directory.fromUri(manifest.uri.resolve('.'));
+      final files = await fixtureDirectory
+          .list()
+          .where((entry) => entry is File && entry.path.endsWith('.json'))
+          .map((entry) => entry.uri.pathSegments.last)
+          .where((file) => file != 'manifest.v1.json')
+          .toList();
+      files.sort();
+      final listedFiles = [
+        for (final entry in _fixtureEntries(manifest.decoded))
+          entry['file']! as String,
+      ]..sort();
+      expect(listedFiles, files);
+      expect(listedFiles.toSet(), hasLength(listedFiles.length));
+
       for (final entry in _fixtureEntries(manifest.decoded)) {
         final fixtureBytes = await File.fromUri(
           manifest.uri.resolve(entry['file']! as String),
@@ -34,7 +51,7 @@ void main() {
           reason: entry['id']! as String,
         );
 
-        final normalized = _normalizeLeaderboardFixture(
+        final normalized = fixture_oracle.normalizeLeaderboardFixture(
           utf8.decode(fixtureBytes),
         );
         expect(
@@ -56,14 +73,147 @@ void main() {
       db,
       id: 'compat-run',
       completedAt: DateTime.utc(2026, 5, 1),
-      provenanceJson: _presetProvenanceJson(includeTaskB: false),
+      provenanceJson: _compatibilityProvenanceJson(),
     );
     await _seedTaskRun(
       db,
-      id: 'compat-trial',
+      id: 'deepseek-a',
+      runId: 'compat-run',
+      taskId: 'task.a',
+      providerId: 'deepseek',
+      modelId: 'deepseek-v4-pro',
+      completedAt: DateTime.utc(2026, 5, 1, 10),
+      latencyMs: 700,
+      promptTokens: 12,
+      completionTokens: 18,
+    );
+    await _seedTaskRun(
+      db,
+      id: 'deepseek-b',
+      runId: 'compat-run',
+      taskId: 'task.b',
+      providerId: 'deepseek',
+      modelId: 'deepseek-v4-pro',
+      completedAt: DateTime.utc(2026, 5, 1, 11),
+      latencyMs: 900,
+      promptTokens: 14,
+      completionTokens: 22,
+      trialIndex: 1,
+    );
+    await _seedTaskRun(
+      db,
+      id: 'openai-a',
       runId: 'compat-run',
       taskId: 'task.a',
       completedAt: DateTime.utc(2026, 5, 1, 12),
+      latencyMs: 1000,
+      promptTokens: 10,
+      completionTokens: 20,
+    );
+    await _seedTaskRun(
+      db,
+      id: 'openai-b',
+      runId: 'compat-run',
+      taskId: 'task.b',
+      completedAt: DateTime.utc(2026, 5, 1, 13),
+      primaryPass: false,
+      failureTag: 'public_tests_failed',
+      latencyMs: 3000,
+      promptTokens: 30,
+      completionTokens: 40,
+      aggregateScore: 0.4,
+      trialIndex: 1,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-a',
+      evaluatorId: 'test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-a',
+      evaluatorId: 'agent_harness',
+      passed: true,
+      details: const {'step_count': 4, 'peak_context_tokens': 8000},
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-a',
+      evaluatorId: 'hidden_test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-b',
+      evaluatorId: 'test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-b',
+      evaluatorId: 'agent_harness',
+      passed: true,
+      details: const {'step_count': 6, 'peak_context_tokens': 12000},
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-b',
+      evaluatorId: 'hidden_test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-a',
+      evaluatorId: 'test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-a',
+      evaluatorId: 'agent_harness',
+      passed: true,
+      details: const {'step_count': 5, 'peak_context_tokens': 10000},
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-a',
+      evaluatorId: 'hidden_test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-a',
+      evaluatorId: 'llm_judge',
+      passed: true,
+      details: const {
+        'judge_overhead': {
+          'prompt_tokens': 100,
+          'completion_tokens': 20,
+          'estimated_cost_micros': 325,
+          'pricing_status': 'exact',
+        },
+      },
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-b',
+      evaluatorId: 'test',
+      passed: false,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-b',
+      evaluatorId: 'agent_harness',
+      passed: true,
+      details: const {'step_count': 9, 'peak_context_tokens': 16000},
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-b',
+      evaluatorId: 'hidden_test',
+      passed: false,
+      details: const {'blocked': true, 'blocked_by': 'test'},
     );
 
     final export = await buildLeaderboardExport(
@@ -81,8 +231,45 @@ void main() {
 
     expect(jsonDecode(utf8.decode(fixtureBytes)), export);
     expect(
-      _normalizeLeaderboardFixture(jsonEncode(export)),
+      fixture_oracle.normalizeLeaderboardFixture(jsonEncode(export)),
       current['normalizedProjection'],
+    );
+    expect(
+      fixture_oracle
+          .objectList(export['models'])
+          .map((row) => '${row['providerId']}:${row['modelId']}'),
+      ['deepseek:deepseek-v4-pro', 'openai:gpt-5'],
+    );
+    expect(
+      fixture_oracle.objectList(export['tasks']).map((row) => row['taskId']),
+      ['task.a', 'task.b'],
+    );
+    expect(
+      fixture_oracle
+          .objectList(export['taskModelCells'])
+          .map(
+            (row) => '${row['providerId']}:${row['modelId']}:${row['taskId']}',
+          ),
+      [
+        'deepseek:deepseek-v4-pro:task.a',
+        'deepseek:deepseek-v4-pro:task.b',
+        'openai:gpt-5:task.a',
+        'openai:gpt-5:task.b',
+      ],
+    );
+    expect(
+      fixture_oracle
+          .objectList(export['trialSummaries'])
+          .map(
+            (row) =>
+                '${row['providerId']}:${row['modelId']}:${row['taskId']}:${row['trialIndex']}',
+          ),
+      [
+        'deepseek:deepseek-v4-pro:task.a:0',
+        'deepseek:deepseek-v4-pro:task.b:1',
+        'openai:gpt-5:task.a:0',
+        'openai:gpt-5:task.b:1',
+      ],
     );
   });
 
@@ -2183,6 +2370,58 @@ String _environmentProvenanceJson({
   },
 });
 
+String _compatibilityProvenanceJson() => jsonEncode({
+  'schemaVersion': 2,
+  'providers': [
+    {
+      'id': 'deepseek',
+      'selectedModelConfigs': [
+        {
+          'modelId': 'deepseek-v4-pro',
+          'baseModelId': 'deepseek-v4-pro',
+          'modelConfig': {
+            'customModelDisplayName': 'DeepSeek Pro',
+            'customModelProvider': 'DeepSeek',
+          },
+        },
+      ],
+    },
+    {
+      'id': 'openai',
+      'selectedModelConfigs': [
+        {
+          'modelId': 'gpt-5',
+          'baseModelId': 'gpt-5',
+          'modelConfig': {
+            'customModelDisplayName': 'GPT-5',
+            'customModelProvider': 'OpenAI',
+          },
+        },
+      ],
+    },
+  ],
+  'config': {
+    'scoringSchemaVersion': 2,
+    'evaluatorWeights': {'compile': 1.0},
+    'corpusManifest': {
+      'preset': 'mvp',
+      'tasks': [
+        {
+          'taskId': 'task.a',
+          'taskVersion': 1,
+          'taskBundleDigest': List.filled(64, 'a').join(),
+        },
+        {
+          'taskId': 'task.b',
+          'taskVersion': 1,
+          'taskBundleDigest': List.filled(64, 'b').join(),
+        },
+      ],
+      'digestSha256': List.filled(64, 'c').join(),
+    },
+  },
+});
+
 String _presetProvenanceJson({
   String corpusDigest = 'c',
   bool includeTaskB = true,
@@ -2293,198 +2532,20 @@ _loadLeaderboardFixtureManifest() async {
     '../../../fixtures/leaderboard/compatibility/v1/manifest.v1.json',
   );
   final bytes = await File.fromUri(manifestUri).readAsBytes();
-  final decoded = _objectMap(jsonDecode(utf8.decode(bytes)));
+  final decoded = fixture_oracle.objectMap(jsonDecode(utf8.decode(bytes)));
   expect(decoded['fixtureManifestVersion'], 1);
   expect(decoded['artifactFamily'], 'leaderboard.v1.json');
-  expect(decoded['supportedArtifactSchemaVersions'], [1, 2]);
+  expect(
+    decoded['supportedArtifactSchemaVersions'],
+    supportedLeaderboardArtifactSchemaVersions,
+  );
+  expect(decoded['acceptedDataPolicies'], acceptedLeaderboardDataPolicies);
+  expect(
+    LeaderboardExportStrategy.values.map((strategy) => strategy.kebabName),
+    acceptedLeaderboardDataPolicies,
+  );
   return (uri: manifestUri, decoded: decoded);
 }
 
 List<Map<String, Object?>> _fixtureEntries(Map<String, Object?> manifest) =>
-    _objectList(manifest['entries']);
-
-Map<String, Object?>? _normalizeLeaderboardFixture(String text) {
-  try {
-    final value = jsonDecode(text);
-    if (value is! Map) return null;
-    final artifact = _objectMap(value);
-    final schemaVersionValue = artifact['schemaVersion'];
-    if (!_isNonNegativeInteger(schemaVersionValue)) return null;
-    final schemaVersion = (schemaVersionValue as num).toInt();
-    if (schemaVersion != 1 && schemaVersion != 2) return null;
-    if (artifact['benchmark'] is! Map || artifact['source'] is! Map) {
-      return null;
-    }
-    if (artifact['models'] is! List || artifact['tasks'] is! List) return null;
-
-    final benchmark = _objectMap(artifact['benchmark']);
-    final source = _objectMap(artifact['source']);
-    final title = benchmark['title'];
-    final track = benchmark['track'];
-    final dataPolicy = benchmark['dataPolicy'];
-    final taskCount = source['taskCount'];
-    final taskRunCount = source['taskRunCount'];
-    if (!_isNonEmptyString(title) ||
-        !_isNonEmptyString(track) ||
-        !_leaderboardDataPolicies.contains(dataPolicy) ||
-        !_isNonNegativeInteger(taskCount) ||
-        !_isNonNegativeInteger(taskRunCount)) {
-      return null;
-    }
-
-    final models = _objectList(artifact['models']);
-    final tasks = _objectList(artifact['tasks']);
-    final scoring = _objectMap(artifact['scoring']);
-    return <String, Object?>{
-      'schemaVersion': schemaVersion,
-      'generatedAt': _nullableString(artifact['generatedAt']),
-      'benchmark': <String, Object?>{
-        'title': title,
-        'version': _nullableString(benchmark['version']),
-        'taskSetId': _nullableString(benchmark['taskSetId']),
-        'evaluatorSchemaVersion':
-            _finiteNumber(benchmark['evaluatorSchemaVersion']) ?? 0,
-        'track': track,
-        'dataPolicy': dataPolicy,
-        'preset': _nullableString(benchmark['preset']),
-        'selectedTasks': [
-          for (final task in _objectList(benchmark['selectedTasks']))
-            <String, Object?>{
-              'taskId': _stringOr(task['taskId'], 'unknown-task'),
-              'taskVersion': _stringOrNumber(task['taskVersion']),
-              'taskBundleDigest': _nullableString(task['taskBundleDigest']),
-            },
-        ],
-        'corpusManifestDigestSha256': _nullableString(
-          benchmark['corpusManifestDigestSha256'],
-        ),
-      },
-      'source': <String, Object?>{
-        'anchorRunId': _nullableString(source['anchorRunId']),
-        'runIds': _stringList(source['runIds']),
-        'taskCount': taskCount,
-        'taskRunCount': taskRunCount,
-        'modelCount': _finiteNumber(source['modelCount']) ?? models.length,
-      },
-      'scoring': <String, Object?>{
-        'schemaVersion': _finiteNumber(scoring['schemaVersion']) ?? 0,
-        'primaryMetric': _nullableString(scoring['primaryMetric']),
-        'rankingMetric': _nullableString(scoring['rankingMetric']),
-      },
-      'models': [for (final model in models) _projectModel(model)],
-      'tasks': [for (final task in tasks) _projectTask(task)],
-      'taskModelCells': [
-        for (final cell in _objectList(artifact['taskModelCells']))
-          _projectTaskModelCell(cell),
-      ],
-      'trialSummaries': [
-        for (final trial in _objectList(artifact['trialSummaries']))
-          _projectTrialSummary(trial),
-      ],
-    };
-  } on Object {
-    return null;
-  }
-}
-
-Map<String, Object?> _projectModel(Map<String, Object?> model) => {
-  'providerId': _stringOr(model['providerId'], 'unknown-provider'),
-  'modelId': _stringOr(model['modelId'], 'unknown-model'),
-  'rank': _finiteNumber(model['rank']),
-  'score': _finiteNumber(model['score']),
-  'passRate': _finiteNumber(model['passRate']),
-  'trialCount':
-      _finiteNumber(model['trialCount']) ??
-      _finiteNumber(model['sampleCount']) ??
-      0,
-  'passCount': _finiteNumber(model['passCount']) ?? 0,
-  'sampleCount': _finiteNumber(model['sampleCount']) ?? 0,
-};
-
-Map<String, Object?> _projectTask(Map<String, Object?> task) => {
-  'taskId': _stringOr(task['taskId'], 'unknown-task'),
-  'taskVersion': _stringOrNumber(task['taskVersion']),
-  'taskBundleDigest': _nullableString(task['taskBundleDigest']),
-  'benchmarkTrack': _nullableString(task['benchmarkTrack']),
-  'trialCount':
-      _finiteNumber(task['trialCount']) ??
-      _finiteNumber(task['sampleCount']) ??
-      0,
-  'sampleCount': _finiteNumber(task['sampleCount']) ?? 0,
-  'modelCount': _finiteNumber(task['modelCount']) ?? 0,
-  'passRate': _finiteNumber(task['passRate']),
-};
-
-Map<String, Object?> _projectTaskModelCell(Map<String, Object?> cell) => {
-  'providerId': _stringOr(cell['providerId'], 'unknown-provider'),
-  'modelId': _stringOr(cell['modelId'], 'unknown-model'),
-  'taskId': _stringOr(cell['taskId'], 'unknown-task'),
-  'taskVersion': _stringOrNumber(cell['taskVersion']),
-  'benchmarkTrack': _nullableString(cell['benchmarkTrack']),
-  'trialCount':
-      _finiteNumber(cell['trialCount']) ??
-      _finiteNumber(cell['sampleCount']) ??
-      0,
-  'passCount': _finiteNumber(cell['passCount']) ?? 0,
-  'sampleCount': _finiteNumber(cell['sampleCount']) ?? 0,
-  'passRate': _finiteNumber(cell['passRate']),
-  'errorCount': _finiteNumber(cell['errorCount']) ?? 0,
-};
-
-Map<String, Object?> _projectTrialSummary(Map<String, Object?> trial) => {
-  'trialId': _stringOr(trial['trialId'], 'unknown-trial'),
-  'runId': _stringOr(trial['runId'], 'unknown-run'),
-  'providerId': _stringOr(trial['providerId'], 'unknown-provider'),
-  'modelId': _stringOr(trial['modelId'], 'unknown-model'),
-  'taskId': _stringOr(trial['taskId'], 'unknown-task'),
-  'taskVersion': _stringOrNumber(trial['taskVersion']),
-  'benchmarkTrack': _nullableString(trial['benchmarkTrack']),
-  'trialIndex': _finiteNumber(trial['trialIndex']) ?? 0,
-  'completedAt': _nullableString(trial['completedAt']),
-  'primaryPass': trial['primaryPass'] is bool ? trial['primaryPass'] : null,
-  'failureTag': _stringOr(trial['failureTag'], 'unknown'),
-  'aggregateScore': _finiteNumber(trial['aggregateScore']),
-};
-
-const _leaderboardDataPolicies = {
-  'aggregate-compatible',
-  'latest-run',
-  'best-observed',
-};
-
-bool _isNonEmptyString(Object? value) =>
-    value is String && value.trim().isNotEmpty;
-
-bool _isNonNegativeInteger(Object? value) =>
-    value is num && value.isFinite && value >= 0 && value == value.truncate();
-
-String? _nullableString(Object? value) => value is String ? value : null;
-
-Object? _stringOrNumber(Object? value) =>
-    value is String || value is num ? value : null;
-
-String _stringOr(Object? value, String fallback) =>
-    value is String && value.isNotEmpty ? value : fallback;
-
-num? _finiteNumber(Object? value) =>
-    value is num && value.isFinite ? value : null;
-
-List<String> _stringList(Object? value) => value is List
-    ? [
-        for (final entry in value)
-          if (entry is String) entry,
-      ]
-    : const [];
-
-Map<String, Object?> _objectMap(Object? value) {
-  if (value is! Map) return const {};
-  return value.map((key, value) => MapEntry('$key', value));
-}
-
-List<Map<String, Object?>> _objectList(Object? value) {
-  if (value is! List) return const [];
-  return [
-    for (final entry in value)
-      if (entry is Map) _objectMap(entry),
-  ];
-}
+    fixture_oracle.objectList(manifest['entries']);

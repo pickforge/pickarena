@@ -1,20 +1,29 @@
 {
   "fixtureManifestVersion": 1,
   "artifactFamily": "leaderboard.v1.json",
-  "supportedArtifactSchemaVersions": [1, 2],
+  "supportedArtifactSchemaVersions": [
+    1,
+    2
+  ],
+  "acceptedDataPolicies": [
+    "aggregate-compatible",
+    "latest-run",
+    "best-observed"
+  ],
   "entries": [
     {
       "id": "current-v2",
       "file": "current-v2.json",
-      "sha256": "e72f33bbee8bc8bde116ddf3426b9e64c27140d9362e28f895648b50433d9720",
+      "sha256": "4e1e3e598f6773d38142df430aecc6e6d214ec63fde54262f3839721ddceca19",
       "outcome": "accept",
       "normalizedProjection": {
         "schemaVersion": 2,
+        "provisional": false,
         "generatedAt": "2026-05-31T00:00:00.000Z",
         "benchmark": {
           "title": "PickArena by Pickforge Studio",
           "version": "2026-05-31-master-spec",
-          "taskSetId": "taskset-8cc0f1685901d8a6",
+          "taskSetId": "taskset-de65ea47f84dc052",
           "evaluatorSchemaVersion": 2,
           "track": "agentic",
           "dataPolicy": "aggregate-compatible",
@@ -24,32 +33,212 @@
               "taskId": "task.a",
               "taskVersion": 1,
               "taskBundleDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            {
+              "taskId": "task.b",
+              "taskVersion": 1,
+              "taskBundleDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
             }
           ],
           "corpusManifestDigestSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
         },
         "source": {
           "anchorRunId": "compat-run",
-          "runIds": ["compat-run"],
-          "taskCount": 1,
-          "taskRunCount": 1,
-          "modelCount": 1
+          "runIds": [
+            "compat-run"
+          ],
+          "taskCount": 2,
+          "taskRunCount": 4,
+          "modelCount": 2,
+          "trialSummaryCount": 4,
+          "trialSummaryTotalCount": 4,
+          "trialSummaryTruncated": false,
+          "trialSummaryLimit": 1000,
+          "warnings": [],
+          "judgeOverhead": {
+            "evaluationCount": 1,
+            "promptTokens": 100,
+            "completionTokens": 20,
+            "knownEstimatedCostCount": 1,
+            "unknownEstimatedCostCount": 0,
+            "totalEstimatedCostMicros": 325,
+            "pricingStatusCounts": {
+              "exact": 1
+            }
+          },
+          "runProvenance": {
+            "runCount": 1,
+            "embeddedRunCount": 1,
+            "sandboxEnforcedRunCount": 0,
+            "taskExecutionPolicyRunCount": 0,
+            "networkDisabledTaskPolicyRunCount": 0,
+            "taskResourceLimitRunCount": 0,
+            "sdkVersionRunCount": 0,
+            "dependencySnapshotRunCount": 0,
+            "pricingRegistryRunCount": 0,
+            "generatedCodeSandboxBackends": [],
+            "dartVersions": [],
+            "flutterVersions": [],
+            "environmentIds": [],
+            "warnings": [
+              "Run compat-run does not record generated-code sandbox enforcement.",
+              "Run compat-run does not record network-disabled task execution policy.",
+              "Run compat-run has incomplete SDK version provenance.",
+              "Run compat-run has incomplete dependency lockfile provenance.",
+              "Run compat-run has incomplete or unenforced task resource limit provenance.",
+              "Run compat-run has incomplete pricing registry provenance.",
+              "Run compat-run has incomplete task execution policy provenance."
+            ]
+          }
         },
         "scoring": {
           "schemaVersion": 2,
           "primaryMetric": "primary_pass",
-          "rankingMetric": "primary_pass_rate"
+          "rankingMetric": "primary_pass_rate",
+          "confidenceInterval": "wilson_95",
+          "llmJudgePolicy": "diagnostic_only",
+          "objectiveEvaluatorIds": [
+            "analyze",
+            "compile",
+            "hidden_test",
+            "test",
+            "test_author",
+            "widget_tree"
+          ],
+          "secondaryEvaluatorIds": [
+            "diff_size",
+            "llm_judge"
+          ],
+          "hiddenVerifierPattern": "*_hidden",
+          "failureTags": [
+            "pass",
+            "hidden_verifier_failed",
+            "public_tests_failed",
+            "analysis_failed",
+            "compile_failed",
+            "harness_timeout",
+            "harness_error",
+            "no_patch",
+            "invalid_output",
+            "environment_error",
+            "unknown"
+          ],
+          "objectiveFailureCaps": {
+            "compile": 0.2,
+            "analyze": 0.35,
+            "public_test": 0.6,
+            "hidden_verifier": 0.6
+          },
+          "defaultEvaluatorWeights": {
+            "analyze": 0.5,
+            "compile": 0.5,
+            "hidden_test": 1,
+            "llm_judge": 0.7,
+            "test": 1,
+            "test_author": 4,
+            "widget_tree": 1
+          }
+        },
+        "pricingRegistry": {
+          "version": "2026-05-31",
+          "currency": "USD",
+          "modelCount": 7
         },
         "models": [
           {
+            "providerId": "deepseek",
+            "modelId": "deepseek-v4-pro",
+            "displayName": "DeepSeek Pro",
+            "providerLabel": "DeepSeek",
+            "rank": 1,
+            "score": 1,
+            "passRate": 1,
+            "trialCount": 2,
+            "passCount": 2,
+            "sampleCount": 2,
+            "passAtK": {
+              "1": {
+                "k": 1,
+                "passCount": 2,
+                "sampleCount": 2,
+                "passRate": 1
+              }
+            },
+            "medianStepCount": 5,
+            "medianPeakContextTokens": 10000,
+            "publicPassCount": 2,
+            "publicSampleCount": 2,
+            "publicPassRate": 1,
+            "hiddenPassCount": 2,
+            "hiddenSampleCount": 2,
+            "hiddenPassRate": 1,
+            "confidenceInterval": {
+              "lower": 0.3423811429771653,
+              "upper": 1
+            },
+            "lowSample": true,
+            "medianLatencyMs": 800,
+            "medianPromptTokens": 13,
+            "medianCompletionTokens": 20,
+            "medianEstimatedCostMicros": 73,
+            "knownEstimatedCostCount": 2,
+            "unknownEstimatedCostCount": 0,
+            "totalEstimatedCostMicros": 146,
+            "costPerSolvedTaskMicros": 73,
+            "cheapestPassingEstimatedCostMicros": 66,
+            "failureBreakdown": {
+              "pass": 2
+            },
+            "blockedEvaluationCount": 0,
+            "blockedTaskRunCount": 0
+          },
+          {
             "providerId": "openai",
             "modelId": "gpt-5",
-            "rank": 1,
-            "score": 1.0,
-            "passRate": 1.0,
-            "trialCount": 1,
+            "displayName": "GPT-5",
+            "providerLabel": "OpenAI",
+            "rank": 2,
+            "score": 0.5,
+            "passRate": 0.5,
+            "trialCount": 2,
             "passCount": 1,
-            "sampleCount": 1
+            "sampleCount": 2,
+            "passAtK": {
+              "1": {
+                "k": 1,
+                "passCount": 1,
+                "sampleCount": 2,
+                "passRate": 0.5
+              }
+            },
+            "medianStepCount": 7,
+            "medianPeakContextTokens": 13000,
+            "publicPassCount": 1,
+            "publicSampleCount": 2,
+            "publicPassRate": 0.5,
+            "hiddenPassCount": 1,
+            "hiddenSampleCount": 1,
+            "hiddenPassRate": 1,
+            "confidenceInterval": {
+              "lower": 0.09453148796027494,
+              "upper": 0.905468512039725
+            },
+            "lowSample": true,
+            "medianLatencyMs": 2000,
+            "medianPromptTokens": 20,
+            "medianCompletionTokens": 30,
+            "medianEstimatedCostMicros": 326,
+            "knownEstimatedCostCount": 2,
+            "unknownEstimatedCostCount": 0,
+            "totalEstimatedCostMicros": 651,
+            "costPerSolvedTaskMicros": 651,
+            "cheapestPassingEstimatedCostMicros": 213,
+            "failureBreakdown": {
+              "pass": 1,
+              "public_tests_failed": 1
+            },
+            "blockedEvaluationCount": 1,
+            "blockedTaskRunCount": 1
           }
         ],
         "tasks": [
@@ -58,32 +247,306 @@
             "taskVersion": 1,
             "taskBundleDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "benchmarkTrack": "agentic",
-            "trialCount": 1,
-            "sampleCount": 1,
-            "modelCount": 1,
-            "passRate": 1.0
+            "trialCount": 2,
+            "sampleCount": 2,
+            "modelCount": 2,
+            "passRate": 1,
+            "confidenceInterval": {
+              "lower": 0.3423811429771653,
+              "upper": 1
+            },
+            "passAtK": {
+              "1": {
+                "k": 1,
+                "passCount": 2,
+                "sampleCount": 2,
+                "passRate": 1
+              }
+            },
+            "medianStepCount": 5,
+            "medianPeakContextTokens": 9000,
+            "publicPassCount": 2,
+            "publicSampleCount": 2,
+            "publicPassRate": 1,
+            "hiddenPassCount": 2,
+            "hiddenSampleCount": 2,
+            "hiddenPassRate": 1,
+            "blockedEvaluationCount": 0,
+            "blockedTaskRunCount": 0
+          },
+          {
+            "taskId": "task.b",
+            "taskVersion": 1,
+            "taskBundleDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "benchmarkTrack": "agentic",
+            "trialCount": 2,
+            "sampleCount": 2,
+            "modelCount": 2,
+            "passRate": 0.5,
+            "confidenceInterval": {
+              "lower": 0.09453148796027494,
+              "upper": 0.905468512039725
+            },
+            "passAtK": {
+              "1": {
+                "k": 1,
+                "passCount": 1,
+                "sampleCount": 2,
+                "passRate": 0.5
+              }
+            },
+            "medianStepCount": 8,
+            "medianPeakContextTokens": 14000,
+            "publicPassCount": 1,
+            "publicSampleCount": 2,
+            "publicPassRate": 0.5,
+            "hiddenPassCount": 1,
+            "hiddenSampleCount": 1,
+            "hiddenPassRate": 1,
+            "blockedEvaluationCount": 1,
+            "blockedTaskRunCount": 1
           }
         ],
         "taskModelCells": [
           {
-            "providerId": "openai",
-            "modelId": "gpt-5",
+            "providerId": "deepseek",
+            "modelId": "deepseek-v4-pro",
+            "displayName": "DeepSeek Pro",
+            "providerLabel": "DeepSeek",
             "taskId": "task.a",
             "taskVersion": 1,
             "benchmarkTrack": "agentic",
             "trialCount": 1,
             "passCount": 1,
             "sampleCount": 1,
-            "passRate": 1.0,
-            "errorCount": 0
+            "passRate": 1,
+            "confidenceInterval": {
+              "lower": 0.20654998073085312,
+              "upper": 1
+            },
+            "errorCount": 0,
+            "passAtK": {
+              "1": {
+                "k": 1,
+                "passCount": 1,
+                "sampleCount": 1,
+                "passRate": 1
+              }
+            },
+            "medianStepCount": 4,
+            "medianPeakContextTokens": 8000,
+            "publicPassCount": 1,
+            "publicSampleCount": 1,
+            "publicPassRate": 1,
+            "hiddenPassCount": 1,
+            "hiddenSampleCount": 1,
+            "hiddenPassRate": 1,
+            "blockedEvaluationCount": 0,
+            "blockedTaskRunCount": 0,
+            "medianLatencyMs": 700,
+            "medianPromptTokens": 12,
+            "medianCompletionTokens": 18,
+            "medianEstimatedCostMicros": 66,
+            "knownEstimatedCostCount": 1,
+            "unknownEstimatedCostCount": 0,
+            "failureBreakdown": {
+              "pass": 1
+            }
+          },
+          {
+            "providerId": "deepseek",
+            "modelId": "deepseek-v4-pro",
+            "displayName": "DeepSeek Pro",
+            "providerLabel": "DeepSeek",
+            "taskId": "task.b",
+            "taskVersion": 1,
+            "benchmarkTrack": "agentic",
+            "trialCount": 1,
+            "passCount": 1,
+            "sampleCount": 1,
+            "passRate": 1,
+            "confidenceInterval": {
+              "lower": 0.20654998073085312,
+              "upper": 1
+            },
+            "errorCount": 0,
+            "passAtK": {
+              "1": {
+                "k": 1,
+                "passCount": 1,
+                "sampleCount": 1,
+                "passRate": 1
+              }
+            },
+            "medianStepCount": 6,
+            "medianPeakContextTokens": 12000,
+            "publicPassCount": 1,
+            "publicSampleCount": 1,
+            "publicPassRate": 1,
+            "hiddenPassCount": 1,
+            "hiddenSampleCount": 1,
+            "hiddenPassRate": 1,
+            "blockedEvaluationCount": 0,
+            "blockedTaskRunCount": 0,
+            "medianLatencyMs": 900,
+            "medianPromptTokens": 14,
+            "medianCompletionTokens": 22,
+            "medianEstimatedCostMicros": 80,
+            "knownEstimatedCostCount": 1,
+            "unknownEstimatedCostCount": 0,
+            "failureBreakdown": {
+              "pass": 1
+            }
+          },
+          {
+            "providerId": "openai",
+            "modelId": "gpt-5",
+            "displayName": "GPT-5",
+            "providerLabel": "OpenAI",
+            "taskId": "task.a",
+            "taskVersion": 1,
+            "benchmarkTrack": "agentic",
+            "trialCount": 1,
+            "passCount": 1,
+            "sampleCount": 1,
+            "passRate": 1,
+            "confidenceInterval": {
+              "lower": 0.20654998073085312,
+              "upper": 1
+            },
+            "errorCount": 0,
+            "passAtK": {
+              "1": {
+                "k": 1,
+                "passCount": 1,
+                "sampleCount": 1,
+                "passRate": 1
+              }
+            },
+            "medianStepCount": 5,
+            "medianPeakContextTokens": 10000,
+            "publicPassCount": 1,
+            "publicSampleCount": 1,
+            "publicPassRate": 1,
+            "hiddenPassCount": 1,
+            "hiddenSampleCount": 1,
+            "hiddenPassRate": 1,
+            "blockedEvaluationCount": 0,
+            "blockedTaskRunCount": 0,
+            "medianLatencyMs": 1000,
+            "medianPromptTokens": 10,
+            "medianCompletionTokens": 20,
+            "medianEstimatedCostMicros": 213,
+            "knownEstimatedCostCount": 1,
+            "unknownEstimatedCostCount": 0,
+            "failureBreakdown": {
+              "pass": 1
+            }
+          },
+          {
+            "providerId": "openai",
+            "modelId": "gpt-5",
+            "displayName": "GPT-5",
+            "providerLabel": "OpenAI",
+            "taskId": "task.b",
+            "taskVersion": 1,
+            "benchmarkTrack": "agentic",
+            "trialCount": 1,
+            "passCount": 0,
+            "sampleCount": 1,
+            "passRate": 0,
+            "confidenceInterval": {
+              "lower": 0,
+              "upper": 0.7934500192691468
+            },
+            "errorCount": 1,
+            "passAtK": {
+              "1": {
+                "k": 1,
+                "passCount": 0,
+                "sampleCount": 1,
+                "passRate": 0
+              }
+            },
+            "medianStepCount": 9,
+            "medianPeakContextTokens": 16000,
+            "publicPassCount": 0,
+            "publicSampleCount": 1,
+            "publicPassRate": 0,
+            "hiddenPassCount": 0,
+            "hiddenSampleCount": 0,
+            "hiddenPassRate": null,
+            "blockedEvaluationCount": 1,
+            "blockedTaskRunCount": 1,
+            "medianLatencyMs": 3000,
+            "medianPromptTokens": 30,
+            "medianCompletionTokens": 40,
+            "medianEstimatedCostMicros": 438,
+            "knownEstimatedCostCount": 1,
+            "unknownEstimatedCostCount": 0,
+            "failureBreakdown": {
+              "public_tests_failed": 1
+            }
           }
         ],
         "trialSummaries": [
           {
-            "trialId": "a3a0d363b206",
+            "trialId": "ea26b7d144aa",
+            "runId": "compat-run",
+            "providerId": "deepseek",
+            "modelId": "deepseek-v4-pro",
+            "displayName": "DeepSeek Pro",
+            "providerLabel": "DeepSeek",
+            "taskId": "task.a",
+            "taskVersion": 1,
+            "benchmarkTrack": "agentic",
+            "trialIndex": 0,
+            "completedAt": "2026-05-01T10:00:00.000Z",
+            "primaryPass": true,
+            "failureTag": "pass",
+            "aggregateScore": 1,
+            "publicPassed": true,
+            "hiddenPassed": true,
+            "blockedEvaluationCount": 0,
+            "stepCount": 4,
+            "peakContextTokens": 8000,
+            "latencyMs": 700,
+            "promptTokens": 12,
+            "completionTokens": 18,
+            "estimatedCostMicros": 66
+          },
+          {
+            "trialId": "e8540dd0aba4",
+            "runId": "compat-run",
+            "providerId": "deepseek",
+            "modelId": "deepseek-v4-pro",
+            "displayName": "DeepSeek Pro",
+            "providerLabel": "DeepSeek",
+            "taskId": "task.b",
+            "taskVersion": 1,
+            "benchmarkTrack": "agentic",
+            "trialIndex": 1,
+            "completedAt": "2026-05-01T11:00:00.000Z",
+            "primaryPass": true,
+            "failureTag": "pass",
+            "aggregateScore": 1,
+            "publicPassed": true,
+            "hiddenPassed": true,
+            "blockedEvaluationCount": 0,
+            "stepCount": 6,
+            "peakContextTokens": 12000,
+            "latencyMs": 900,
+            "promptTokens": 14,
+            "completionTokens": 22,
+            "estimatedCostMicros": 80
+          },
+          {
+            "trialId": "0694cb931ace",
             "runId": "compat-run",
             "providerId": "openai",
             "modelId": "gpt-5",
+            "displayName": "GPT-5",
+            "providerLabel": "OpenAI",
             "taskId": "task.a",
             "taskVersion": 1,
             "benchmarkTrack": "agentic",
@@ -91,7 +554,41 @@
             "completedAt": "2026-05-01T12:00:00.000Z",
             "primaryPass": true,
             "failureTag": "pass",
-            "aggregateScore": 1.0
+            "aggregateScore": 1,
+            "publicPassed": true,
+            "hiddenPassed": true,
+            "blockedEvaluationCount": 0,
+            "stepCount": 5,
+            "peakContextTokens": 10000,
+            "latencyMs": 1000,
+            "promptTokens": 10,
+            "completionTokens": 20,
+            "estimatedCostMicros": 213
+          },
+          {
+            "trialId": "1b0a30bef532",
+            "runId": "compat-run",
+            "providerId": "openai",
+            "modelId": "gpt-5",
+            "displayName": "GPT-5",
+            "providerLabel": "OpenAI",
+            "taskId": "task.b",
+            "taskVersion": 1,
+            "benchmarkTrack": "agentic",
+            "trialIndex": 1,
+            "completedAt": "2026-05-01T13:00:00.000Z",
+            "primaryPass": false,
+            "failureTag": "public_tests_failed",
+            "aggregateScore": 0.4,
+            "publicPassed": false,
+            "hiddenPassed": null,
+            "blockedEvaluationCount": 1,
+            "stepCount": 9,
+            "peakContextTokens": 16000,
+            "latencyMs": 3000,
+            "promptTokens": 30,
+            "completionTokens": 40,
+            "estimatedCostMicros": 438
           }
         ]
       }
@@ -103,6 +600,7 @@
       "outcome": "accept",
       "normalizedProjection": {
         "schemaVersion": 1,
+        "provisional": false,
         "generatedAt": null,
         "benchmark": {
           "title": "Legacy leaderboard",
@@ -120,12 +618,55 @@
           "runIds": [],
           "taskCount": 0,
           "taskRunCount": 0,
-          "modelCount": 0
+          "modelCount": 0,
+          "trialSummaryCount": 0,
+          "trialSummaryTotalCount": 0,
+          "trialSummaryTruncated": false,
+          "trialSummaryLimit": 0,
+          "warnings": [],
+          "judgeOverhead": {
+            "evaluationCount": 0,
+            "promptTokens": 0,
+            "completionTokens": 0,
+            "knownEstimatedCostCount": 0,
+            "unknownEstimatedCostCount": 0,
+            "totalEstimatedCostMicros": 0,
+            "pricingStatusCounts": {}
+          },
+          "runProvenance": {
+            "runCount": 0,
+            "embeddedRunCount": 0,
+            "sandboxEnforcedRunCount": 0,
+            "taskExecutionPolicyRunCount": 0,
+            "networkDisabledTaskPolicyRunCount": 0,
+            "taskResourceLimitRunCount": 0,
+            "sdkVersionRunCount": 0,
+            "dependencySnapshotRunCount": 0,
+            "pricingRegistryRunCount": 0,
+            "generatedCodeSandboxBackends": [],
+            "dartVersions": [],
+            "flutterVersions": [],
+            "environmentIds": [],
+            "warnings": []
+          }
         },
         "scoring": {
           "schemaVersion": 0,
           "primaryMetric": null,
-          "rankingMetric": null
+          "rankingMetric": null,
+          "confidenceInterval": null,
+          "llmJudgePolicy": null,
+          "objectiveEvaluatorIds": [],
+          "secondaryEvaluatorIds": [],
+          "hiddenVerifierPattern": null,
+          "failureTags": [],
+          "objectiveFailureCaps": {},
+          "defaultEvaluatorWeights": {}
+        },
+        "pricingRegistry": {
+          "version": null,
+          "currency": null,
+          "modelCount": 0
         },
         "models": [],
         "tasks": [],
@@ -133,24 +674,512 @@
         "trialSummaries": []
       }
     },
-    {"id":"malformed-json","file":"malformed-json.json","sha256":"a8530a511bd06e418f4bc6562d9f5345ad3aa12916bdc1988c3b80dd62ef14f7","outcome":"reject","normalizedProjection":null},
-    {"id":"non-object-root","file":"non-object-root.json","sha256":"1fb3ffcf3df89e31f56932d4a64a23eede8a2f6707898bf14d1fc42a78286868","outcome":"reject","normalizedProjection":null},
-    {"id":"missing-schema-version","file":"missing-schema-version.json","sha256":"15de34a293823e9630b777cd12a9f3a841263be812e027f1169e3102aa211c3c","outcome":"reject","normalizedProjection":null},
-    {"id":"fractional-schema-version","file":"fractional-schema-version.json","sha256":"8e0f81531341d44487cbbc5fcdfbe0e106aa82cebf508bbabccf1847ddea79a8","outcome":"reject","normalizedProjection":null},
-    {"id":"future-schema-version","file":"future-schema-version.json","sha256":"5177a9116a16c016945c2736e195127201c976fd68a76f7062c1643dfc8b387f","outcome":"reject","normalizedProjection":null},
-    {"id":"past-schema-version","file":"past-schema-version.json","sha256":"3cb1101a58c5be6ac3612695334a2326fc9dc804717969219299666b82ba1e04","outcome":"reject","normalizedProjection":null},
-    {"id":"string-schema-version","file":"string-schema-version.json","sha256":"f7dcf2b2534a250c8582231d83702c6cacdbd364e99bc9ea609d955fecbc4b36","outcome":"reject","normalizedProjection":null},
-    {"id":"missing-benchmark","file":"missing-benchmark.json","sha256":"4f08cd697de544aecd8deb33fe80927250acf7d32f141e84cc6b9ac097c31283","outcome":"reject","normalizedProjection":null},
-    {"id":"invalid-benchmark","file":"invalid-benchmark.json","sha256":"5fe66f791b08d76566546a1e5e9f1fc8efd4794cab01cd4ce731ce48dc6286eb","outcome":"reject","normalizedProjection":null},
-    {"id":"missing-source","file":"missing-source.json","sha256":"c3d5d5656989d76f8027a66d0d8b1bc1fdb2a08352a5550fdecf90da69a45712","outcome":"reject","normalizedProjection":null},
-    {"id":"invalid-source","file":"invalid-source.json","sha256":"ffca0bc9e3242e4a5dbc9476a3a35a0b2693355e58446553ae8c4504d12db3e1","outcome":"reject","normalizedProjection":null},
-    {"id":"missing-count","file":"missing-count.json","sha256":"df9907b5e355997885caaecb061a7fa7095e9ed5f6d866277a10967bcfd3a08d","outcome":"reject","normalizedProjection":null},
-    {"id":"negative-count","file":"negative-count.json","sha256":"bcb1f83b96520a716cd0e2938de1133a1d7cb5920dc6aa07239fc4f06a5fe431","outcome":"reject","normalizedProjection":null},
-    {"id":"fractional-count","file":"fractional-count.json","sha256":"15a418c731c8bab719e06b7bd1891c790cdf402500bd4f5469b69c6452f67c67","outcome":"reject","normalizedProjection":null},
-    {"id":"invalid-models","file":"invalid-models.json","sha256":"778a201b337dd82e567fae8f52499965e66dca36d7a2a6106f45cc83a118a7ab","outcome":"reject","normalizedProjection":null},
-    {"id":"invalid-tasks","file":"invalid-tasks.json","sha256":"36ec4dcb76a84f48d74d051a84bbcc0c05735b59356fd11809aa9a249bcd4d41","outcome":"reject","normalizedProjection":null},
-    {"id":"empty-title","file":"empty-title.json","sha256":"00ab3c9e9517c1deb73609e67c59efb5668a1bd76c4b3e870b64c5b3b23dc635","outcome":"reject","normalizedProjection":null},
-    {"id":"empty-track","file":"empty-track.json","sha256":"c2005cb5239b976b657b4fb07ff7141ff37300c5161a95151fa53b6efd2dfd50","outcome":"reject","normalizedProjection":null},
-    {"id":"invalid-data-policy","file":"invalid-data-policy.json","sha256":"86bbe939bf55a2f240ac3e199786446276a19f28a25d126bdfb47c9278a5dc2c","outcome":"reject","normalizedProjection":null}
+    {
+      "id": "legacy-v1-populated",
+      "file": "legacy-v1-populated.json",
+      "sha256": "7f7289ad2e167b1fb662a86df141c9513ed7532a06ab9bc85081cbbb4ae7b5ed",
+      "outcome": "accept",
+      "normalizedProjection": {
+        "schemaVersion": 1,
+        "provisional": true,
+        "generatedAt": "2025-12-01T00:00:00.000Z",
+        "benchmark": {
+          "title": "Historical PickArena leaderboard",
+          "version": "2025-12",
+          "taskSetId": null,
+          "evaluatorSchemaVersion": 0,
+          "track": "agentic",
+          "dataPolicy": "latest-run",
+          "preset": null,
+          "selectedTasks": [],
+          "corpusManifestDigestSha256": null
+        },
+        "source": {
+          "anchorRunId": "legacy-run",
+          "runIds": [
+            "legacy-run"
+          ],
+          "taskCount": 1,
+          "taskRunCount": 2,
+          "modelCount": 1,
+          "trialSummaryCount": 1,
+          "trialSummaryTotalCount": 2,
+          "trialSummaryTruncated": false,
+          "trialSummaryLimit": 0,
+          "warnings": [
+            "Historical fixture"
+          ],
+          "judgeOverhead": {
+            "evaluationCount": 0,
+            "promptTokens": 0,
+            "completionTokens": 0,
+            "knownEstimatedCostCount": 0,
+            "unknownEstimatedCostCount": 0,
+            "totalEstimatedCostMicros": 0,
+            "pricingStatusCounts": {}
+          },
+          "runProvenance": {
+            "runCount": 0,
+            "embeddedRunCount": 0,
+            "sandboxEnforcedRunCount": 0,
+            "taskExecutionPolicyRunCount": 0,
+            "networkDisabledTaskPolicyRunCount": 0,
+            "taskResourceLimitRunCount": 0,
+            "sdkVersionRunCount": 0,
+            "dependencySnapshotRunCount": 0,
+            "pricingRegistryRunCount": 0,
+            "generatedCodeSandboxBackends": [],
+            "dartVersions": [],
+            "flutterVersions": [],
+            "environmentIds": [],
+            "warnings": []
+          }
+        },
+        "scoring": {
+          "schemaVersion": 0,
+          "primaryMetric": null,
+          "rankingMetric": null,
+          "confidenceInterval": null,
+          "llmJudgePolicy": null,
+          "objectiveEvaluatorIds": [],
+          "secondaryEvaluatorIds": [],
+          "hiddenVerifierPattern": null,
+          "failureTags": [],
+          "objectiveFailureCaps": {},
+          "defaultEvaluatorWeights": {}
+        },
+        "pricingRegistry": {
+          "version": null,
+          "currency": null,
+          "modelCount": 0
+        },
+        "models": [
+          {
+            "providerId": "legacy-provider",
+            "modelId": "legacy-model",
+            "displayName": null,
+            "providerLabel": null,
+            "rank": 1,
+            "score": 0.5,
+            "passRate": 0.5,
+            "trialCount": 2,
+            "passCount": 1,
+            "sampleCount": 2,
+            "passAtK": {},
+            "medianStepCount": null,
+            "medianPeakContextTokens": null,
+            "publicPassCount": 0,
+            "publicSampleCount": 0,
+            "publicPassRate": null,
+            "hiddenPassCount": 0,
+            "hiddenSampleCount": 0,
+            "hiddenPassRate": null,
+            "confidenceInterval": {
+              "lower": null,
+              "upper": null
+            },
+            "lowSample": false,
+            "medianLatencyMs": null,
+            "medianPromptTokens": null,
+            "medianCompletionTokens": null,
+            "medianEstimatedCostMicros": null,
+            "knownEstimatedCostCount": 0,
+            "unknownEstimatedCostCount": 0,
+            "totalEstimatedCostMicros": null,
+            "costPerSolvedTaskMicros": null,
+            "cheapestPassingEstimatedCostMicros": null,
+            "failureBreakdown": {},
+            "blockedEvaluationCount": 0,
+            "blockedTaskRunCount": 0
+          }
+        ],
+        "tasks": [
+          {
+            "taskId": "legacy.task",
+            "taskVersion": "v1",
+            "taskBundleDigest": null,
+            "benchmarkTrack": "agentic",
+            "trialCount": 2,
+            "sampleCount": 2,
+            "modelCount": 1,
+            "passRate": 0.5,
+            "confidenceInterval": {
+              "lower": null,
+              "upper": null
+            },
+            "passAtK": {},
+            "medianStepCount": null,
+            "medianPeakContextTokens": null,
+            "publicPassCount": 0,
+            "publicSampleCount": 0,
+            "publicPassRate": null,
+            "hiddenPassCount": 0,
+            "hiddenSampleCount": 0,
+            "hiddenPassRate": null,
+            "blockedEvaluationCount": 0,
+            "blockedTaskRunCount": 0
+          }
+        ],
+        "taskModelCells": [
+          {
+            "providerId": "legacy-provider",
+            "modelId": "legacy-model",
+            "displayName": null,
+            "providerLabel": null,
+            "taskId": "legacy.task",
+            "taskVersion": "v1",
+            "benchmarkTrack": "agentic",
+            "trialCount": 2,
+            "passCount": 1,
+            "sampleCount": 2,
+            "passRate": 0.5,
+            "confidenceInterval": {
+              "lower": null,
+              "upper": null
+            },
+            "errorCount": 1,
+            "passAtK": {},
+            "medianStepCount": null,
+            "medianPeakContextTokens": null,
+            "publicPassCount": 0,
+            "publicSampleCount": 0,
+            "publicPassRate": null,
+            "hiddenPassCount": 0,
+            "hiddenSampleCount": 0,
+            "hiddenPassRate": null,
+            "blockedEvaluationCount": 0,
+            "blockedTaskRunCount": 0,
+            "medianLatencyMs": null,
+            "medianPromptTokens": null,
+            "medianCompletionTokens": null,
+            "medianEstimatedCostMicros": null,
+            "knownEstimatedCostCount": 0,
+            "unknownEstimatedCostCount": 0,
+            "failureBreakdown": {}
+          }
+        ],
+        "trialSummaries": [
+          {
+            "trialId": "legacy-trial-0",
+            "runId": "legacy-run",
+            "providerId": "legacy-provider",
+            "modelId": "legacy-model",
+            "displayName": null,
+            "providerLabel": null,
+            "taskId": "legacy.task",
+            "taskVersion": "v1",
+            "benchmarkTrack": "agentic",
+            "trialIndex": 0,
+            "completedAt": "2025-11-30T12:00:00.000Z",
+            "primaryPass": false,
+            "failureTag": "public_tests_failed",
+            "aggregateScore": 0.4,
+            "publicPassed": null,
+            "hiddenPassed": null,
+            "blockedEvaluationCount": 0,
+            "stepCount": null,
+            "peakContextTokens": null,
+            "latencyMs": 1500,
+            "promptTokens": 100,
+            "completionTokens": 50,
+            "estimatedCostMicros": 25
+          }
+        ]
+      }
+    },
+    {
+      "id": "empty-title",
+      "file": "empty-title.json",
+      "sha256": "00ab3c9e9517c1deb73609e67c59efb5668a1bd76c4b3e870b64c5b3b23dc635",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "empty-track",
+      "file": "empty-track.json",
+      "sha256": "c2005cb5239b976b657b4fb07ff7141ff37300c5161a95151fa53b6efd2dfd50",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "fractional-count",
+      "file": "fractional-count.json",
+      "sha256": "15a418c731c8bab719e06b7bd1891c790cdf402500bd4f5469b69c6452f67c67",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "fractional-model-count",
+      "file": "fractional-model-count.json",
+      "sha256": "8c239ef9cb6547689cbf83d6edad7f4237f15378913fcf0900d272fb5022b3c3",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "fractional-pass-at-k-count",
+      "file": "fractional-pass-at-k-count.json",
+      "sha256": "4f177d66ddd983c28b73b319aa3602c3acf242571845d916cd3685c4dcbc440b",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "fractional-schema-version",
+      "file": "fractional-schema-version.json",
+      "sha256": "8e0f81531341d44487cbbc5fcdfbe0e106aa82cebf508bbabccf1847ddea79a8",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "fractional-trial-index",
+      "file": "fractional-trial-index.json",
+      "sha256": "c8ac71301cb94251c854232c8bf7c0571b1a04dd69da0b69d58892c5361fbb7a",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "future-schema-version",
+      "file": "future-schema-version.json",
+      "sha256": "5177a9116a16c016945c2736e195127201c976fd68a76f7062c1643dfc8b387f",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "invalid-benchmark",
+      "file": "invalid-benchmark.json",
+      "sha256": "5fe66f791b08d76566546a1e5e9f1fc8efd4794cab01cd4ce731ce48dc6286eb",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "invalid-data-policy",
+      "file": "invalid-data-policy.json",
+      "sha256": "86bbe939bf55a2f240ac3e199786446276a19f28a25d126bdfb47c9278a5dc2c",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "invalid-models",
+      "file": "invalid-models.json",
+      "sha256": "778a201b337dd82e567fae8f52499965e66dca36d7a2a6106f45cc83a118a7ab",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "invalid-pass-at-k-array",
+      "file": "invalid-pass-at-k-array.json",
+      "sha256": "4881a2288a4552ca41b5d09cfef18341e7d47f9887ddec26b537816a9948e474",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "invalid-selected-tasks-array",
+      "file": "invalid-selected-tasks-array.json",
+      "sha256": "e36cad9a89afed70116baf1048f26be10b304744a2bf5a80e13bbffe24b23ce2",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "invalid-source",
+      "file": "invalid-source.json",
+      "sha256": "ffca0bc9e3242e4a5dbc9476a3a35a0b2693355e58446553ae8c4504d12db3e1",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "invalid-task-model-cells-array",
+      "outcome": "reject",
+      "normalizedProjection": null,
+      "file": "invalid-task-model-cells-array.json",
+      "sha256": "b7acbb2e938e00e4f1c9409e24fa74420ba3c1eb276135fb08e18f2ff3ac9e27"
+    },
+    {
+      "id": "invalid-tasks",
+      "file": "invalid-tasks.json",
+      "sha256": "36ec4dcb76a84f48d74d051a84bbcc0c05735b59356fd11809aa9a249bcd4d41",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "invalid-trial-summaries-array",
+      "outcome": "reject",
+      "normalizedProjection": null,
+      "file": "invalid-trial-summaries-array.json",
+      "sha256": "59aa276fe9a4ed648b9e3b4bc7896d6f5a5b94093588cfcca81625ad3f570289"
+    },
+    {
+      "id": "invalid-warning-array-entry",
+      "file": "invalid-warning-array-entry.json",
+      "sha256": "f33f851e0dfcd22f3e04ae900b94d36accddd844116d37f53ee25fc3b7b7d3ba",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "malformed-json",
+      "file": "malformed-json.json",
+      "sha256": "a8530a511bd06e418f4bc6562d9f5345ad3aa12916bdc1988c3b80dd62ef14f7",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "missing-benchmark",
+      "file": "missing-benchmark.json",
+      "sha256": "4f08cd697de544aecd8deb33fe80927250acf7d32f141e84cc6b9ac097c31283",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "missing-cell-identity",
+      "file": "missing-cell-identity.json",
+      "sha256": "0ec246a60d89ec3cfc2c02e02f9a67402fdb948ba487c3b7fde09796aa31dbb0",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "missing-count",
+      "file": "missing-count.json",
+      "sha256": "df9907b5e355997885caaecb061a7fa7095e9ed5f6d866277a10967bcfd3a08d",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "missing-model-identity",
+      "file": "missing-model-identity.json",
+      "sha256": "51a71879277732335fae4d4f53a8fd1a109749b5c550bf992d408d8ce7a9d587",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "missing-schema-version",
+      "file": "missing-schema-version.json",
+      "sha256": "15de34a293823e9630b777cd12a9f3a841263be812e027f1169e3102aa211c3c",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "missing-source",
+      "file": "missing-source.json",
+      "sha256": "c3d5d5656989d76f8027a66d0d8b1bc1fdb2a08352a5550fdecf90da69a45712",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "missing-task-identity",
+      "file": "missing-task-identity.json",
+      "sha256": "107477dffe07ed90ad408bdb7752edc1ed18708ba6bc64f4107d624f5dfd2d6d",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "missing-trial-identity",
+      "file": "missing-trial-identity.json",
+      "sha256": "d993a5675395424f4965401a34b27dc79c7809dfb5c3d78744cdaade9a977d25",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "negative-blocked-count",
+      "file": "negative-blocked-count.json",
+      "sha256": "74d6831bbfb40b23fefddbf9ddc833a4c23cbf5232321ed22025ebcfabb744ef",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "negative-count",
+      "file": "negative-count.json",
+      "sha256": "bcb1f83b96520a716cd0e2938de1133a1d7cb5920dc6aa07239fc4f06a5fe431",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "negative-sample-count",
+      "file": "negative-sample-count.json",
+      "sha256": "ee16963daa3ee2cd8ba83705e054c0c9e4de3cc35388f7319f11077b7eda6f47",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "negative-trial-index",
+      "file": "negative-trial-index.json",
+      "sha256": "52cd4a82c6a912ad717660fabc85dd912830bd6d9e1c5380d82596b2b917211b",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "negative-trial-summary-limit",
+      "file": "negative-trial-summary-limit.json",
+      "sha256": "b0e21d371879f497ab3be508e11b830c13131c8b23e47ac1eb15c767c52628d9",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "nested-fractional-count",
+      "file": "nested-fractional-count.json",
+      "sha256": "6247cd2878d589f2457abdac6fd8ed2da64a01aee27bf8d4bc2b89e7145d7b20",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "nested-negative-count",
+      "file": "nested-negative-count.json",
+      "sha256": "b572095de9a9a10913e7df86465e60fa896c5635d7a4d74899c721e72f2bac5f",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "non-finite-score",
+      "file": "non-finite-score.json",
+      "sha256": "529f91c27c11d16629e50799bd6a92979374aca59de1e4c28c7a83f3f9e36508",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "non-object-cell-entry",
+      "file": "non-object-cell-entry.json",
+      "sha256": "8c0cdaacb217355df6828edc921bf19c501f4387a0df8ce8d8acf78db173b5c4",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "non-object-model-entry",
+      "file": "non-object-model-entry.json",
+      "sha256": "825e8747f8f0261b9d63f7ba98dbfd42d9feb05d0c847fa55803be114cd90c14",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "non-object-root",
+      "file": "non-object-root.json",
+      "sha256": "1fb3ffcf3df89e31f56932d4a64a23eede8a2f6707898bf14d1fc42a78286868",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "non-object-task-entry",
+      "outcome": "reject",
+      "normalizedProjection": null,
+      "file": "non-object-task-entry.json",
+      "sha256": "1566a34a918e11116a37ece5c8cd36bfe91c8633fc1282f1372b35d2f648bb20"
+    },
+    {
+      "id": "non-object-trial-entry",
+      "outcome": "reject",
+      "normalizedProjection": null,
+      "file": "non-object-trial-entry.json",
+      "sha256": "c991c8465e10c605b8baee013d4e849709ff52df9e7fb4ed8e564a0017a788ce"
+    },
+    {
+      "id": "past-schema-version",
+      "file": "past-schema-version.json",
+      "sha256": "3cb1101a58c5be6ac3612695334a2326fc9dc804717969219299666b82ba1e04",
+      "outcome": "reject",
+      "normalizedProjection": null
+    },
+    {
+      "id": "string-schema-version",
+      "file": "string-schema-version.json",
+      "sha256": "f7dcf2b2534a250c8582231d83702c6cacdbd364e99bc9ea609d955fecbc4b36",
+      "outcome": "reject",
+      "normalizedProjection": null
+    }
   ]
 }

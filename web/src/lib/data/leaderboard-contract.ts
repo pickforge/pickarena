@@ -1,3 +1,10 @@
+export const supportedArtifactSchemaVersions = [1, 2] as const;
+export const acceptedDataPolicies = [
+  'aggregate-compatible',
+  'latest-run',
+  'best-observed'
+] as const;
+
 export type LeaderboardBenchmark = {
   title: string;
   version: string | null;
@@ -10,10 +17,7 @@ export type LeaderboardBenchmark = {
   corpusManifestDigestSha256: string | null;
 };
 
-export type LeaderboardDataPolicy =
-  | 'aggregate-compatible'
-  | 'latest-run'
-  | 'best-observed';
+export type LeaderboardDataPolicy = (typeof acceptedDataPolicies)[number];
 
 export type LeaderboardSelectedTask = {
   taskId: string;
@@ -230,6 +234,10 @@ export type LeaderboardData = {
   trialSummaries: LeaderboardTrialSummary[];
 };
 
+export type LeaderboardArtifactParseResult =
+  | { ok: true; value: LeaderboardData }
+  | { ok: false; error: 'syntax' | 'shape' };
+
 export const emptyLeaderboard: LeaderboardData = {
   schemaVersion: 1,
   provisional: false,
@@ -260,136 +268,124 @@ export const emptyLeaderboard: LeaderboardData = {
     runProvenance: emptyRunProvenance()
   },
   scoring: emptyScoring(),
-  pricingRegistry: {
-    version: null,
-    currency: null,
-    modelCount: 0
-  },
+  pricingRegistry: { version: null, currency: null, modelCount: 0 },
   models: [],
   tasks: [],
   taskModelCells: [],
   trialSummaries: []
 };
 
-export function parseLeaderboardArtifact(text: string): LeaderboardData | null {
+export function parseLeaderboardArtifactResult(
+  text: string
+): LeaderboardArtifactParseResult {
+  let decoded: unknown;
   try {
-    const decoded: unknown = JSON.parse(text);
-    return parseLeaderboard(decoded);
+    decoded = JSON.parse(text);
+  } catch {
+    return { ok: false, error: 'syntax' };
+  }
+  const value = parseLeaderboardValue(decoded);
+  return value === null
+    ? { ok: false, error: 'shape' }
+    : { ok: true, value };
+}
+
+export function parseLeaderboardArtifact(text: string): LeaderboardData | null {
+  const result = parseLeaderboardArtifactResult(text);
+  return result.ok ? result.value : null;
+}
+
+export function parseLeaderboardValue(value: unknown): LeaderboardData | null {
+  try {
+    return parseLeaderboardRecord(requiredRecord(value));
   } catch {
     return null;
   }
 }
 
-function parseLeaderboard(value: unknown): LeaderboardData | null {
-  if (!isRecord(value)) return null;
-  const schemaVersion = value.schemaVersion;
-  if (
-    typeof schemaVersion !== 'number' ||
-    !Number.isInteger(schemaVersion) ||
-    (schemaVersion !== 1 && schemaVersion !== 2)
-  ) {
-    return null;
+function parseLeaderboardRecord(value: Record<string, unknown>): LeaderboardData {
+  const schemaVersion = requiredNonNegativeInteger(value, 'schemaVersion');
+  if (!supportedArtifactSchemaVersions.includes(schemaVersion as 1 | 2)) {
+    invalid();
   }
-  if (!isRecord(value.benchmark)) return null;
-  if (!isRecord(value.source)) return null;
-  if (!Array.isArray(value.models)) return null;
-  if (!Array.isArray(value.tasks)) return null;
-
-  const title = value.benchmark.title;
-  const track = value.benchmark.track;
-  const dataPolicy = value.benchmark.dataPolicy;
-  const taskCount = value.source.taskCount;
-  const taskRunCount = value.source.taskRunCount;
-  const pricingRegistry = isRecord(value.pricingRegistry)
-    ? value.pricingRegistry
-    : {};
-  const scoring = isRecord(value.scoring) ? value.scoring : {};
-  const judgeOverhead = isRecord(value.source.judgeOverhead)
-    ? value.source.judgeOverhead
-    : {};
-  const runProvenance = isRecord(value.source.runProvenance)
-    ? value.source.runProvenance
-    : {};
-
-  if (
-    !isNonEmptyString(title) ||
-    !isNonEmptyString(track) ||
-    !isDataPolicy(dataPolicy) ||
-    !isNonNegativeInteger(taskCount) ||
-    !isNonNegativeInteger(taskRunCount)
-  ) {
-    return null;
-  }
-
-  const models = value.models.filter(isRecord).map(parseModelRow);
-  const tasks = value.tasks.filter(isRecord).map(parseTaskRow);
-  const taskModelCells = Array.isArray(value.taskModelCells)
-    ? value.taskModelCells.filter(isRecord).map(parseTaskModelCell)
-    : [];
-  const trialSummaries = Array.isArray(value.trialSummaries)
-    ? value.trialSummaries.filter(isRecord).map(parseTrialSummary)
-    : [];
+  const current = schemaVersion === 2;
+  const benchmark = requiredRecord(value.benchmark);
+  const source = requiredRecord(value.source);
+  const modelValues = requiredArray(value, 'models');
+  const taskValues = requiredArray(value, 'tasks');
+  const modelRecords = records(modelValues);
+  const taskRecords = records(taskValues);
+  const cellRecords = records(arrayField(value, 'taskModelCells', current));
+  const trialRecords = records(arrayField(value, 'trialSummaries', current));
+  const scoring = recordField(value, 'scoring', current);
+  const pricingRegistry = recordField(value, 'pricingRegistry', current);
+  const judgeOverhead = recordField(source, 'judgeOverhead', current);
+  const runProvenance = recordField(source, 'runProvenance', current);
 
   return {
     schemaVersion,
-    provisional: value.provisional === true,
-    generatedAt: typeof value.generatedAt === 'string' ? value.generatedAt : null,
+    provisional: booleanField(value, 'provisional', false),
+    generatedAt: nullableStringField(value, 'generatedAt'),
     benchmark: {
-      title,
-      version:
-        typeof value.benchmark.version === 'string'
-          ? value.benchmark.version
-          : null,
-      taskSetId:
-        typeof value.benchmark.taskSetId === 'string'
-          ? value.benchmark.taskSetId
-          : null,
-      evaluatorSchemaVersion:
-        parseNumber(value.benchmark.evaluatorSchemaVersion) ?? 0,
-      track,
-      dataPolicy,
-      preset:
-        typeof value.benchmark.preset === 'string'
-          ? value.benchmark.preset
-          : null,
-      selectedTasks: parseSelectedTasks(value.benchmark.selectedTasks),
-      corpusManifestDigestSha256:
-        typeof value.benchmark.corpusManifestDigestSha256 === 'string'
-          ? value.benchmark.corpusManifestDigestSha256
-          : null
+      title: requiredString(benchmark, 'title'),
+      version: nullableStringField(benchmark, 'version'),
+      taskSetId: nullableStringField(benchmark, 'taskSetId'),
+      evaluatorSchemaVersion: countField(
+        benchmark,
+        'evaluatorSchemaVersion',
+        current,
+        0
+      ),
+      track: requiredString(benchmark, 'track'),
+      dataPolicy: dataPolicyField(benchmark, 'dataPolicy'),
+      preset: nullableStringField(benchmark, 'preset'),
+      selectedTasks: parseSelectedTasks(arrayField(benchmark, 'selectedTasks')),
+      corpusManifestDigestSha256: nullableStringField(
+        benchmark,
+        'corpusManifestDigestSha256'
+      )
     },
     source: {
-      anchorRunId:
-        typeof value.source.anchorRunId === 'string' ? value.source.anchorRunId : null,
-      runIds: parseStringArray(value.source.runIds),
-      taskCount,
-      taskRunCount,
-      modelCount: parseNumber(value.source.modelCount) ?? models.length,
-      trialSummaryCount:
-        parseNumber(value.source.trialSummaryCount) ?? trialSummaries.length,
-      trialSummaryTotalCount:
-        parseNumber(value.source.trialSummaryTotalCount) ?? taskRunCount,
-      trialSummaryTruncated:
-        typeof value.source.trialSummaryTruncated === 'boolean'
-          ? value.source.trialSummaryTruncated
-          : false,
-      trialSummaryLimit: parseNumber(value.source.trialSummaryLimit) ?? 0,
-      warnings: parseWarnings(value.source.warnings),
-      judgeOverhead: parseJudgeOverhead(judgeOverhead),
-      runProvenance: parseRunProvenance(runProvenance)
+      anchorRunId: nullableStringField(source, 'anchorRunId'),
+      runIds: stringArrayField(source, 'runIds', current),
+      taskCount: requiredNonNegativeInteger(source, 'taskCount'),
+      taskRunCount: requiredNonNegativeInteger(source, 'taskRunCount'),
+      modelCount: countField(source, 'modelCount', current, modelRecords.length),
+      trialSummaryCount: countField(
+        source,
+        'trialSummaryCount',
+        current,
+        trialRecords.length
+      ),
+      trialSummaryTotalCount: countField(
+        source,
+        'trialSummaryTotalCount',
+        current,
+        requiredNonNegativeInteger(source, 'taskRunCount')
+      ),
+      trialSummaryTruncated: booleanField(
+        source,
+        'trialSummaryTruncated',
+        false,
+        current
+      ),
+      trialSummaryLimit: countField(source, 'trialSummaryLimit', current, 0),
+      warnings: stringArrayField(source, 'warnings', current),
+      judgeOverhead: parseJudgeOverhead(judgeOverhead, current),
+      runProvenance: parseRunProvenance(runProvenance, current)
     },
-    scoring: parseScoring(scoring),
+    scoring: parseScoring(scoring, current),
     pricingRegistry: {
-      version:
-        typeof pricingRegistry.version === 'string' ? pricingRegistry.version : null,
-      currency:
-        typeof pricingRegistry.currency === 'string' ? pricingRegistry.currency : null,
-      modelCount: parseNumber(pricingRegistry.modelCount) ?? 0
+      version: nullableStringField(pricingRegistry, 'version'),
+      currency: nullableStringField(pricingRegistry, 'currency'),
+      modelCount: countField(pricingRegistry, 'modelCount', current, 0)
     },
-    models,
-    tasks,
-    taskModelCells,
-    trialSummaries
+    models: modelRecords.map((entry) => parseModelRow(entry, current)),
+    tasks: taskRecords.map((entry) => parseTaskRow(entry, current)),
+    taskModelCells: cellRecords.map((entry) =>
+      parseTaskModelCell(entry, current)
+    ),
+    trialSummaries: trialRecords.map((entry) => parseTrialSummary(entry, current))
   };
 }
 
@@ -440,329 +436,623 @@ function emptyRunProvenance(): LeaderboardRunProvenance {
   };
 }
 
-function parseScoring(value: Record<string, unknown>): LeaderboardScoring {
+function parseScoring(
+  value: Record<string, unknown>,
+  current: boolean
+): LeaderboardScoring {
   return {
-    schemaVersion: parseNumber(value.schemaVersion) ?? 0,
-    primaryMetric:
-      typeof value.primaryMetric === 'string' ? value.primaryMetric : null,
-    rankingMetric:
-      typeof value.rankingMetric === 'string' ? value.rankingMetric : null,
-    confidenceInterval:
-      typeof value.confidenceInterval === 'string'
-        ? value.confidenceInterval
-        : null,
-    llmJudgePolicy:
-      typeof value.llmJudgePolicy === 'string' ? value.llmJudgePolicy : null,
-    objectiveEvaluatorIds: parseStringArray(value.objectiveEvaluatorIds),
-    secondaryEvaluatorIds: parseStringArray(value.secondaryEvaluatorIds),
-    hiddenVerifierPattern:
-      typeof value.hiddenVerifierPattern === 'string'
-        ? value.hiddenVerifierPattern
-        : null,
-    failureTags: parseStringArray(value.failureTags),
-    objectiveFailureCaps: parseNumberRecord(value.objectiveFailureCaps),
-    defaultEvaluatorWeights: parseNumberRecord(value.defaultEvaluatorWeights)
+    schemaVersion: countField(value, 'schemaVersion', current, 0),
+    primaryMetric: nullableStringField(value, 'primaryMetric'),
+    rankingMetric: nullableStringField(value, 'rankingMetric'),
+    confidenceInterval: nullableStringField(value, 'confidenceInterval'),
+    llmJudgePolicy: nullableStringField(value, 'llmJudgePolicy'),
+    objectiveEvaluatorIds: stringArrayField(
+      value,
+      'objectiveEvaluatorIds',
+      current
+    ),
+    secondaryEvaluatorIds: stringArrayField(
+      value,
+      'secondaryEvaluatorIds',
+      current
+    ),
+    hiddenVerifierPattern: nullableStringField(value, 'hiddenVerifierPattern'),
+    failureTags: stringArrayField(value, 'failureTags', current),
+    objectiveFailureCaps: numberRecordField(
+      value,
+      'objectiveFailureCaps',
+      current
+    ),
+    defaultEvaluatorWeights: numberRecordField(
+      value,
+      'defaultEvaluatorWeights',
+      current
+    )
   };
 }
 
 function parseJudgeOverhead(
-  value: Record<string, unknown>
+  value: Record<string, unknown>,
+  current: boolean
 ): LeaderboardJudgeOverhead {
   return {
-    evaluationCount: parseNumber(value.evaluationCount) ?? 0,
-    promptTokens: parseNumber(value.promptTokens) ?? 0,
-    completionTokens: parseNumber(value.completionTokens) ?? 0,
-    knownEstimatedCostCount: parseNumber(value.knownEstimatedCostCount) ?? 0,
-    unknownEstimatedCostCount: parseNumber(value.unknownEstimatedCostCount) ?? 0,
-    totalEstimatedCostMicros: parseNumber(value.totalEstimatedCostMicros) ?? 0,
-    pricingStatusCounts: parseNumberRecord(value.pricingStatusCounts)
+    evaluationCount: countField(value, 'evaluationCount', current, 0),
+    promptTokens: countField(value, 'promptTokens', current, 0),
+    completionTokens: countField(value, 'completionTokens', current, 0),
+    knownEstimatedCostCount: countField(
+      value,
+      'knownEstimatedCostCount',
+      current,
+      0
+    ),
+    unknownEstimatedCostCount: countField(
+      value,
+      'unknownEstimatedCostCount',
+      current,
+      0
+    ),
+    totalEstimatedCostMicros: countField(
+      value,
+      'totalEstimatedCostMicros',
+      current,
+      0
+    ),
+    pricingStatusCounts: countRecordField(
+      value,
+      'pricingStatusCounts',
+      current
+    )
   };
 }
 
 function parseRunProvenance(
-  value: Record<string, unknown>
+  value: Record<string, unknown>,
+  current: boolean
 ): LeaderboardRunProvenance {
   return {
-    runCount: parseNumber(value.runCount) ?? 0,
-    embeddedRunCount: parseNumber(value.embeddedRunCount) ?? 0,
-    sandboxEnforcedRunCount: parseNumber(value.sandboxEnforcedRunCount) ?? 0,
-    taskExecutionPolicyRunCount:
-      parseNumber(value.taskExecutionPolicyRunCount) ?? 0,
-    networkDisabledTaskPolicyRunCount:
-      parseNumber(value.networkDisabledTaskPolicyRunCount) ?? 0,
-    taskResourceLimitRunCount:
-      parseNumber(value.taskResourceLimitRunCount) ?? 0,
-    sdkVersionRunCount: parseNumber(value.sdkVersionRunCount) ?? 0,
-    dependencySnapshotRunCount:
-      parseNumber(value.dependencySnapshotRunCount) ?? 0,
-    pricingRegistryRunCount: parseNumber(value.pricingRegistryRunCount) ?? 0,
-    generatedCodeSandboxBackends: parseStringArray(
-      value.generatedCodeSandboxBackends
+    runCount: countField(value, 'runCount', current, 0),
+    embeddedRunCount: countField(value, 'embeddedRunCount', current, 0),
+    sandboxEnforcedRunCount: countField(
+      value,
+      'sandboxEnforcedRunCount',
+      current,
+      0
     ),
-    dartVersions: parseStringArray(value.dartVersions),
-    flutterVersions: parseStringArray(value.flutterVersions),
-    environmentIds: parseStringArray(value.environmentIds),
-    warnings: parseWarnings(value.warnings)
+    taskExecutionPolicyRunCount: countField(
+      value,
+      'taskExecutionPolicyRunCount',
+      current,
+      0
+    ),
+    networkDisabledTaskPolicyRunCount: countField(
+      value,
+      'networkDisabledTaskPolicyRunCount',
+      current,
+      0
+    ),
+    taskResourceLimitRunCount: countField(
+      value,
+      'taskResourceLimitRunCount',
+      current,
+      0
+    ),
+    sdkVersionRunCount: countField(value, 'sdkVersionRunCount', current, 0),
+    dependencySnapshotRunCount: countField(
+      value,
+      'dependencySnapshotRunCount',
+      current,
+      0
+    ),
+    pricingRegistryRunCount: countField(
+      value,
+      'pricingRegistryRunCount',
+      current,
+      0
+    ),
+    generatedCodeSandboxBackends: stringArrayField(
+      value,
+      'generatedCodeSandboxBackends',
+      current
+    ),
+    dartVersions: stringArrayField(value, 'dartVersions', current),
+    flutterVersions: stringArrayField(value, 'flutterVersions', current),
+    environmentIds: stringArrayField(value, 'environmentIds', current),
+    warnings: stringArrayField(value, 'warnings', current)
   };
 }
 
-function parseModelIdentity(value: Record<string, unknown>): {
-  displayName: string | null;
-  providerLabel: string | null;
-} {
-  const config = isRecord(value.modelConfig) ? value.modelConfig : {};
-  const displayName =
-    typeof config.customModelDisplayName === 'string' &&
-    config.customModelDisplayName.length > 0
-      ? config.customModelDisplayName
-      : null;
-  const providerLabel =
-    typeof config.customModelProvider === 'string' &&
-    config.customModelProvider.length > 0
-      ? config.customModelProvider
-      : null;
-  return { displayName, providerLabel };
-}
-
-function parseModelRow(value: Record<string, unknown>): LeaderboardModel {
+function parseModelIdentity(
+  value: Record<string, unknown>,
+  current: boolean
+): { displayName: string | null; providerLabel: string | null } {
+  const config = recordField(value, 'modelConfig', current);
   return {
-    providerId: parseString(value.providerId, 'unknown-provider'),
-    modelId: parseString(value.modelId, 'unknown-model'),
-    ...parseModelIdentity(value),
-    rank: parseNumber(value.rank),
-    score: parseNumber(value.score),
-    passRate: parseNumber(value.passRate),
-    trialCount: parseNumber(value.trialCount) ?? parseNumber(value.sampleCount) ?? 0,
-    passCount: parseNumber(value.passCount) ?? 0,
-    sampleCount: parseNumber(value.sampleCount) ?? 0,
-    passAtK: parsePassAtK(value.passAtK),
-    medianStepCount: parseNumber(value.medianStepCount),
-    medianPeakContextTokens: parseNumber(value.medianPeakContextTokens),
-    publicPassCount: parseNumber(value.publicPassCount) ?? 0,
-    publicSampleCount: parseNumber(value.publicSampleCount) ?? 0,
-    publicPassRate: parseNumber(value.publicPassRate),
-    hiddenPassCount: parseNumber(value.hiddenPassCount) ?? 0,
-    hiddenSampleCount: parseNumber(value.hiddenSampleCount) ?? 0,
-    hiddenPassRate: parseNumber(value.hiddenPassRate),
-    confidenceInterval: parseConfidenceInterval(value.confidenceInterval),
-    lowSample: typeof value.lowSample === 'boolean' ? value.lowSample : false,
-    medianLatencyMs: parseNumber(value.medianLatencyMs),
-    medianPromptTokens: parseNumber(value.medianPromptTokens),
-    medianCompletionTokens: parseNumber(value.medianCompletionTokens),
-    medianEstimatedCostMicros: parseNumber(value.medianEstimatedCostMicros),
-    knownEstimatedCostCount: parseNumber(value.knownEstimatedCostCount) ?? 0,
-    unknownEstimatedCostCount: parseNumber(value.unknownEstimatedCostCount) ?? 0,
-    totalEstimatedCostMicros: parseNumber(value.totalEstimatedCostMicros),
-    costPerSolvedTaskMicros: parseNumber(value.costPerSolvedTaskMicros),
-    cheapestPassingEstimatedCostMicros: parseNumber(
-      value.cheapestPassingEstimatedCostMicros
+    displayName: nullableNonEmptyStringField(
+      config,
+      'customModelDisplayName'
     ),
-    failureBreakdown: parseNumberRecord(value.failureBreakdown),
-    blockedEvaluationCount: parseNumber(value.blockedEvaluationCount) ?? 0,
-    blockedTaskRunCount: parseNumber(value.blockedTaskRunCount) ?? 0
+    providerLabel: nullableNonEmptyStringField(config, 'customModelProvider')
   };
 }
 
-function parseTaskRow(value: Record<string, unknown>): LeaderboardTask {
+function parseModelRow(
+  value: Record<string, unknown>,
+  current: boolean
+): LeaderboardModel {
+  const sampleCount = countField(value, 'sampleCount', current, 0);
   return {
-    taskId: parseString(value.taskId, 'unknown-task'),
-    taskVersion:
-      typeof value.taskVersion === 'string' || typeof value.taskVersion === 'number'
-        ? value.taskVersion
-        : null,
-    taskBundleDigest:
-      typeof value.taskBundleDigest === 'string'
-        ? value.taskBundleDigest
-        : null,
-    benchmarkTrack:
-      typeof value.benchmarkTrack === 'string' ? value.benchmarkTrack : null,
-    trialCount: parseNumber(value.trialCount) ?? parseNumber(value.sampleCount) ?? 0,
-    sampleCount: parseNumber(value.sampleCount) ?? 0,
-    modelCount: parseNumber(value.modelCount) ?? 0,
-    passRate: parseNumber(value.passRate),
-    confidenceInterval: parseConfidenceInterval(value.confidenceInterval),
-    passAtK: parsePassAtK(value.passAtK),
-    medianStepCount: parseNumber(value.medianStepCount),
-    medianPeakContextTokens: parseNumber(value.medianPeakContextTokens),
-    publicPassCount: parseNumber(value.publicPassCount) ?? 0,
-    publicSampleCount: parseNumber(value.publicSampleCount) ?? 0,
-    publicPassRate: parseNumber(value.publicPassRate),
-    hiddenPassCount: parseNumber(value.hiddenPassCount) ?? 0,
-    hiddenSampleCount: parseNumber(value.hiddenSampleCount) ?? 0,
-    hiddenPassRate: parseNumber(value.hiddenPassRate),
-    blockedEvaluationCount: parseNumber(value.blockedEvaluationCount) ?? 0,
-    blockedTaskRunCount: parseNumber(value.blockedTaskRunCount) ?? 0
+    providerId: requiredString(value, 'providerId'),
+    modelId: requiredString(value, 'modelId'),
+    ...parseModelIdentity(value, current),
+    rank: nullableNonNegativeIntegerField(value, 'rank'),
+    score: nullableFiniteNumberField(value, 'score'),
+    passRate: nullableFiniteNumberField(value, 'passRate'),
+    trialCount: countField(value, 'trialCount', current, sampleCount),
+    passCount: countField(value, 'passCount', current, 0),
+    sampleCount,
+    passAtK: parsePassAtK(recordField(value, 'passAtK', current), current),
+    medianStepCount: nullableNonNegativeIntegerField(value, 'medianStepCount'),
+    medianPeakContextTokens: nullableNonNegativeIntegerField(
+      value,
+      'medianPeakContextTokens'
+    ),
+    publicPassCount: countField(value, 'publicPassCount', current, 0),
+    publicSampleCount: countField(value, 'publicSampleCount', current, 0),
+    publicPassRate: nullableFiniteNumberField(value, 'publicPassRate'),
+    hiddenPassCount: countField(value, 'hiddenPassCount', current, 0),
+    hiddenSampleCount: countField(value, 'hiddenSampleCount', current, 0),
+    hiddenPassRate: nullableFiniteNumberField(value, 'hiddenPassRate'),
+    confidenceInterval: parseConfidenceInterval(
+      recordField(value, 'confidenceInterval', current)
+    ),
+    lowSample: booleanField(value, 'lowSample', false, current),
+    medianLatencyMs: nullableNonNegativeIntegerField(value, 'medianLatencyMs'),
+    medianPromptTokens: nullableNonNegativeIntegerField(
+      value,
+      'medianPromptTokens'
+    ),
+    medianCompletionTokens: nullableNonNegativeIntegerField(
+      value,
+      'medianCompletionTokens'
+    ),
+    medianEstimatedCostMicros: nullableNonNegativeIntegerField(
+      value,
+      'medianEstimatedCostMicros'
+    ),
+    knownEstimatedCostCount: countField(
+      value,
+      'knownEstimatedCostCount',
+      current,
+      0
+    ),
+    unknownEstimatedCostCount: countField(
+      value,
+      'unknownEstimatedCostCount',
+      current,
+      0
+    ),
+    totalEstimatedCostMicros: nullableNonNegativeIntegerField(
+      value,
+      'totalEstimatedCostMicros'
+    ),
+    costPerSolvedTaskMicros: nullableNonNegativeIntegerField(
+      value,
+      'costPerSolvedTaskMicros'
+    ),
+    cheapestPassingEstimatedCostMicros: nullableNonNegativeIntegerField(
+      value,
+      'cheapestPassingEstimatedCostMicros'
+    ),
+    failureBreakdown: countRecordField(value, 'failureBreakdown', current),
+    blockedEvaluationCount: countField(
+      value,
+      'blockedEvaluationCount',
+      current,
+      0
+    ),
+    blockedTaskRunCount: countField(
+      value,
+      'blockedTaskRunCount',
+      current,
+      0
+    )
+  };
+}
+
+function parseTaskRow(
+  value: Record<string, unknown>,
+  current: boolean
+): LeaderboardTask {
+  const sampleCount = countField(value, 'sampleCount', current, 0);
+  return {
+    taskId: requiredString(value, 'taskId'),
+    taskVersion: nullableVersionField(value, 'taskVersion'),
+    taskBundleDigest: nullableStringField(value, 'taskBundleDigest'),
+    benchmarkTrack: nullableStringField(value, 'benchmarkTrack'),
+    trialCount: countField(value, 'trialCount', current, sampleCount),
+    sampleCount,
+    modelCount: countField(value, 'modelCount', current, 0),
+    passRate: nullableFiniteNumberField(value, 'passRate'),
+    confidenceInterval: parseConfidenceInterval(
+      recordField(value, 'confidenceInterval', current)
+    ),
+    passAtK: parsePassAtK(recordField(value, 'passAtK', current), current),
+    medianStepCount: nullableNonNegativeIntegerField(value, 'medianStepCount'),
+    medianPeakContextTokens: nullableNonNegativeIntegerField(
+      value,
+      'medianPeakContextTokens'
+    ),
+    publicPassCount: countField(value, 'publicPassCount', current, 0),
+    publicSampleCount: countField(value, 'publicSampleCount', current, 0),
+    publicPassRate: nullableFiniteNumberField(value, 'publicPassRate'),
+    hiddenPassCount: countField(value, 'hiddenPassCount', current, 0),
+    hiddenSampleCount: countField(value, 'hiddenSampleCount', current, 0),
+    hiddenPassRate: nullableFiniteNumberField(value, 'hiddenPassRate'),
+    blockedEvaluationCount: countField(
+      value,
+      'blockedEvaluationCount',
+      current,
+      0
+    ),
+    blockedTaskRunCount: countField(
+      value,
+      'blockedTaskRunCount',
+      current,
+      0
+    )
   };
 }
 
 function parseTaskModelCell(
-  value: Record<string, unknown>
+  value: Record<string, unknown>,
+  current: boolean
 ): LeaderboardTaskModelCell {
+  const sampleCount = countField(value, 'sampleCount', current, 0);
   return {
-    providerId: parseString(value.providerId, 'unknown-provider'),
-    modelId: parseString(value.modelId, 'unknown-model'),
-    ...parseModelIdentity(value),
-    taskId: parseString(value.taskId, 'unknown-task'),
-    taskVersion:
-      typeof value.taskVersion === 'string' || typeof value.taskVersion === 'number'
-        ? value.taskVersion
-        : null,
-    benchmarkTrack:
-      typeof value.benchmarkTrack === 'string' ? value.benchmarkTrack : null,
-    trialCount: parseNumber(value.trialCount) ?? parseNumber(value.sampleCount) ?? 0,
-    passCount: parseNumber(value.passCount) ?? 0,
-    sampleCount: parseNumber(value.sampleCount) ?? 0,
-    passRate: parseNumber(value.passRate),
-    confidenceInterval: parseConfidenceInterval(value.confidenceInterval),
-    errorCount: parseNumber(value.errorCount) ?? 0,
-    passAtK: parsePassAtK(value.passAtK),
-    medianStepCount: parseNumber(value.medianStepCount),
-    medianPeakContextTokens: parseNumber(value.medianPeakContextTokens),
-    publicPassCount: parseNumber(value.publicPassCount) ?? 0,
-    publicSampleCount: parseNumber(value.publicSampleCount) ?? 0,
-    publicPassRate: parseNumber(value.publicPassRate),
-    hiddenPassCount: parseNumber(value.hiddenPassCount) ?? 0,
-    hiddenSampleCount: parseNumber(value.hiddenSampleCount) ?? 0,
-    hiddenPassRate: parseNumber(value.hiddenPassRate),
-    blockedEvaluationCount: parseNumber(value.blockedEvaluationCount) ?? 0,
-    blockedTaskRunCount: parseNumber(value.blockedTaskRunCount) ?? 0,
-    medianLatencyMs: parseNumber(value.medianLatencyMs),
-    medianPromptTokens: parseNumber(value.medianPromptTokens),
-    medianCompletionTokens: parseNumber(value.medianCompletionTokens),
-    medianEstimatedCostMicros: parseNumber(value.medianEstimatedCostMicros),
-    knownEstimatedCostCount: parseNumber(value.knownEstimatedCostCount) ?? 0,
-    unknownEstimatedCostCount: parseNumber(value.unknownEstimatedCostCount) ?? 0,
-    failureBreakdown: parseNumberRecord(value.failureBreakdown)
-  };
-}
-
-function parseConfidenceInterval(value: unknown): LeaderboardConfidenceInterval {
-  const confidenceInterval = isRecord(value) ? value : {};
-  return {
-    lower: parseNumber(confidenceInterval.lower),
-    upper: parseNumber(confidenceInterval.upper)
+    providerId: requiredString(value, 'providerId'),
+    modelId: requiredString(value, 'modelId'),
+    ...parseModelIdentity(value, current),
+    taskId: requiredString(value, 'taskId'),
+    taskVersion: nullableVersionField(value, 'taskVersion'),
+    benchmarkTrack: nullableStringField(value, 'benchmarkTrack'),
+    trialCount: countField(value, 'trialCount', current, sampleCount),
+    passCount: countField(value, 'passCount', current, 0),
+    sampleCount,
+    passRate: nullableFiniteNumberField(value, 'passRate'),
+    confidenceInterval: parseConfidenceInterval(
+      recordField(value, 'confidenceInterval', current)
+    ),
+    errorCount: countField(value, 'errorCount', current, 0),
+    passAtK: parsePassAtK(recordField(value, 'passAtK', current), current),
+    medianStepCount: nullableNonNegativeIntegerField(value, 'medianStepCount'),
+    medianPeakContextTokens: nullableNonNegativeIntegerField(
+      value,
+      'medianPeakContextTokens'
+    ),
+    publicPassCount: countField(value, 'publicPassCount', current, 0),
+    publicSampleCount: countField(value, 'publicSampleCount', current, 0),
+    publicPassRate: nullableFiniteNumberField(value, 'publicPassRate'),
+    hiddenPassCount: countField(value, 'hiddenPassCount', current, 0),
+    hiddenSampleCount: countField(value, 'hiddenSampleCount', current, 0),
+    hiddenPassRate: nullableFiniteNumberField(value, 'hiddenPassRate'),
+    blockedEvaluationCount: countField(
+      value,
+      'blockedEvaluationCount',
+      current,
+      0
+    ),
+    blockedTaskRunCount: countField(
+      value,
+      'blockedTaskRunCount',
+      current,
+      0
+    ),
+    medianLatencyMs: nullableNonNegativeIntegerField(value, 'medianLatencyMs'),
+    medianPromptTokens: nullableNonNegativeIntegerField(
+      value,
+      'medianPromptTokens'
+    ),
+    medianCompletionTokens: nullableNonNegativeIntegerField(
+      value,
+      'medianCompletionTokens'
+    ),
+    medianEstimatedCostMicros: nullableNonNegativeIntegerField(
+      value,
+      'medianEstimatedCostMicros'
+    ),
+    knownEstimatedCostCount: countField(
+      value,
+      'knownEstimatedCostCount',
+      current,
+      0
+    ),
+    unknownEstimatedCostCount: countField(
+      value,
+      'unknownEstimatedCostCount',
+      current,
+      0
+    ),
+    failureBreakdown: countRecordField(value, 'failureBreakdown', current)
   };
 }
 
 function parseTrialSummary(
-  value: Record<string, unknown>
+  value: Record<string, unknown>,
+  current: boolean
 ): LeaderboardTrialSummary {
   return {
-    trialId: parseString(value.trialId, 'unknown-trial'),
-    runId: parseString(value.runId, 'unknown-run'),
-    providerId: parseString(value.providerId, 'unknown-provider'),
-    modelId: parseString(value.modelId, 'unknown-model'),
-    ...parseModelIdentity(value),
-    taskId: parseString(value.taskId, 'unknown-task'),
-    taskVersion:
-      typeof value.taskVersion === 'string' || typeof value.taskVersion === 'number'
-        ? value.taskVersion
-        : null,
-    benchmarkTrack:
-      typeof value.benchmarkTrack === 'string' ? value.benchmarkTrack : null,
-    trialIndex: parseNumber(value.trialIndex) ?? 0,
-    completedAt: typeof value.completedAt === 'string' ? value.completedAt : null,
-    primaryPass:
-      typeof value.primaryPass === 'boolean' ? value.primaryPass : null,
-    failureTag: parseString(value.failureTag, 'unknown'),
-    aggregateScore: parseNumber(value.aggregateScore),
-    publicPassed:
-      typeof value.publicPassed === 'boolean' ? value.publicPassed : null,
-    hiddenPassed:
-      typeof value.hiddenPassed === 'boolean' ? value.hiddenPassed : null,
-    blockedEvaluationCount: parseNumber(value.blockedEvaluationCount) ?? 0,
-    stepCount: parseNumber(value.stepCount),
-    peakContextTokens: parseNumber(value.peakContextTokens),
-    latencyMs: parseNumber(value.latencyMs),
-    promptTokens: parseNumber(value.promptTokens),
-    completionTokens: parseNumber(value.completionTokens),
-    estimatedCostMicros: parseNumber(value.estimatedCostMicros)
+    trialId: requiredString(value, 'trialId'),
+    runId: requiredString(value, 'runId'),
+    providerId: requiredString(value, 'providerId'),
+    modelId: requiredString(value, 'modelId'),
+    ...parseModelIdentity(value, current),
+    taskId: requiredString(value, 'taskId'),
+    taskVersion: nullableVersionField(value, 'taskVersion'),
+    benchmarkTrack: nullableStringField(value, 'benchmarkTrack'),
+    trialIndex: requiredNonNegativeInteger(value, 'trialIndex'),
+    completedAt: nullableStringField(value, 'completedAt'),
+    primaryPass: nullableBooleanField(value, 'primaryPass'),
+    failureTag: requiredString(value, 'failureTag'),
+    aggregateScore: nullableFiniteNumberField(value, 'aggregateScore'),
+    publicPassed: nullableBooleanField(value, 'publicPassed'),
+    hiddenPassed: nullableBooleanField(value, 'hiddenPassed'),
+    blockedEvaluationCount: countField(
+      value,
+      'blockedEvaluationCount',
+      current,
+      0
+    ),
+    stepCount: nullableNonNegativeIntegerField(value, 'stepCount'),
+    peakContextTokens: nullableNonNegativeIntegerField(
+      value,
+      'peakContextTokens'
+    ),
+    latencyMs: nullableNonNegativeIntegerField(value, 'latencyMs'),
+    promptTokens: nullableNonNegativeIntegerField(value, 'promptTokens'),
+    completionTokens: nullableNonNegativeIntegerField(
+      value,
+      'completionTokens'
+    ),
+    estimatedCostMicros: nullableNonNegativeIntegerField(
+      value,
+      'estimatedCostMicros'
+    )
   };
 }
 
-function parsePassAtK(value: unknown): LeaderboardPassAtK {
-  if (!isRecord(value)) return {};
+function parseConfidenceInterval(
+  value: Record<string, unknown>
+): LeaderboardConfidenceInterval {
+  return {
+    lower: nullableFiniteNumberField(value, 'lower'),
+    upper: nullableFiniteNumberField(value, 'upper')
+  };
+}
 
-  const parsed: [string, LeaderboardPassAtKEntry][] = [];
+function parsePassAtK(
+  value: Record<string, unknown>,
+  current: boolean
+): LeaderboardPassAtK {
+  const result: LeaderboardPassAtK = {};
   for (const [key, rawEntry] of Object.entries(value)) {
-    if (!isRecord(rawEntry)) continue;
-
-    const k = parseNumber(rawEntry.k) ?? Number.parseInt(key, 10);
-    if (!Number.isFinite(k)) continue;
-
-    parsed.push([
-      key,
-      {
-        k,
-        passCount: parseNumber(rawEntry.passCount) ?? 0,
-        sampleCount: parseNumber(rawEntry.sampleCount) ?? 0,
-        passRate: parseNumber(rawEntry.passRate)
-      }
-    ]);
+    const entry = requiredRecord(rawEntry);
+    const parsedKey = Number.parseInt(key, 10);
+    const fallback = Number.isInteger(parsedKey) && parsedKey >= 0 ? parsedKey : 0;
+    result[key] = {
+      k: countField(entry, 'k', current, fallback),
+      passCount: countField(entry, 'passCount', current, 0),
+      sampleCount: countField(entry, 'sampleCount', current, 0),
+      passRate: nullableFiniteNumberField(entry, 'passRate')
+    };
   }
-
-  return Object.fromEntries(parsed);
+  return result;
 }
 
-function parseString(value: unknown, fallback: string): string {
-  return typeof value === 'string' && value.length > 0 ? value : fallback;
-}
-
-function parseNumber(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-function parseWarnings(value: unknown): string[] {
-  return parseStringArray(value);
-}
-
-function parseSelectedTasks(value: unknown): LeaderboardSelectedTask[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter(isRecord).map((entry) => ({
-    taskId: parseString(entry.taskId, 'unknown-task'),
-    taskVersion:
-      typeof entry.taskVersion === 'string' || typeof entry.taskVersion === 'number'
-        ? entry.taskVersion
-        : null,
-    taskBundleDigest:
-      typeof entry.taskBundleDigest === 'string'
-        ? entry.taskBundleDigest
-        : null
+function parseSelectedTasks(value: unknown[]): LeaderboardSelectedTask[] {
+  return records(value).map((entry) => ({
+    taskId: requiredString(entry, 'taskId'),
+    taskVersion: nullableVersionField(entry, 'taskVersion'),
+    taskBundleDigest: nullableStringField(entry, 'taskBundleDigest')
   }));
 }
 
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
+function requiredRecord(value: unknown): Record<string, unknown> {
+  if (!isRecord(value)) invalid();
+  return value;
 }
 
-function isNonNegativeInteger(value: unknown): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+function recordField(
+  value: Record<string, unknown>,
+  key: string,
+  required: boolean
+): Record<string, unknown> {
+  if (!has(value, key)) {
+    if (required) invalid();
+    return {};
+  }
+  return requiredRecord(value[key]);
 }
 
-function isDataPolicy(value: unknown): value is LeaderboardDataPolicy {
-  return (
-    value === 'aggregate-compatible' ||
-    value === 'latest-run' ||
-    value === 'best-observed'
-  );
+function records(values: unknown[]): Record<string, unknown>[] {
+  return values.map(requiredRecord);
 }
 
-function parseStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((entry): entry is string => typeof entry === 'string');
+function requiredArray(value: Record<string, unknown>, key: string): unknown[] {
+  if (!Array.isArray(value[key])) invalid();
+  return value[key];
 }
 
-function parseNumberRecord(value: unknown): Record<string, number> {
-  if (!isRecord(value)) return {};
+function arrayField(
+  value: Record<string, unknown>,
+  key: string,
+  required = false
+): unknown[] {
+  if (!has(value, key)) {
+    if (required) invalid();
+    return [];
+  }
+  return requiredArray(value, key);
+}
 
-  return Object.fromEntries(
-    Object.entries(value).filter(
-      (entry): entry is [string, number] =>
-        typeof entry[1] === 'number' && Number.isFinite(entry[1])
-    )
-  );
+function stringArrayField(
+  value: Record<string, unknown>,
+  key: string,
+  required = false
+): string[] {
+  const entries = arrayField(value, key, required);
+  if (!entries.every((entry) => typeof entry === 'string')) invalid();
+  return entries as string[];
+}
+
+function requiredString(value: Record<string, unknown>, key: string): string {
+  const entry = value[key];
+  if (typeof entry !== 'string' || entry.trim().length === 0) invalid();
+  return entry;
+}
+
+function nullableStringField(
+  value: Record<string, unknown>,
+  key: string
+): string | null {
+  if (!has(value, key) || value[key] === null) return null;
+  if (typeof value[key] !== 'string') invalid();
+  return value[key];
+}
+
+function nullableNonEmptyStringField(
+  value: Record<string, unknown>,
+  key: string
+): string | null {
+  const entry = nullableStringField(value, key);
+  if (entry !== null && entry.trim().length === 0) invalid();
+  return entry;
+}
+
+function nullableVersionField(
+  value: Record<string, unknown>,
+  key: string
+): number | string | null {
+  if (!has(value, key) || value[key] === null) return null;
+  const entry = value[key];
+  if (typeof entry === 'string') {
+    if (entry.trim().length === 0) invalid();
+    return entry;
+  }
+  if (typeof entry !== 'number' || !Number.isFinite(entry)) invalid();
+  return entry;
+}
+
+function requiredNonNegativeInteger(
+  value: Record<string, unknown>,
+  key: string
+): number {
+  const entry = value[key];
+  if (
+    typeof entry !== 'number' ||
+    !Number.isInteger(entry) ||
+    entry < 0 ||
+    !Number.isFinite(entry)
+  ) {
+    invalid();
+  }
+  return entry;
+}
+
+function countField(
+  value: Record<string, unknown>,
+  key: string,
+  required: boolean,
+  fallback: number
+): number {
+  if (!has(value, key)) {
+    if (required) invalid();
+    return fallback;
+  }
+  return requiredNonNegativeInteger(value, key);
+}
+
+function nullableNonNegativeIntegerField(
+  value: Record<string, unknown>,
+  key: string
+): number | null {
+  if (!has(value, key) || value[key] === null) return null;
+  return requiredNonNegativeInteger(value, key);
+}
+
+function nullableFiniteNumberField(
+  value: Record<string, unknown>,
+  key: string
+): number | null {
+  if (!has(value, key) || value[key] === null) return null;
+  const entry = value[key];
+  if (typeof entry !== 'number' || !Number.isFinite(entry)) invalid();
+  return entry;
+}
+
+function booleanField(
+  value: Record<string, unknown>,
+  key: string,
+  fallback: boolean,
+  required = false
+): boolean {
+  if (!has(value, key)) {
+    if (required) invalid();
+    return fallback;
+  }
+  if (typeof value[key] !== 'boolean') invalid();
+  return value[key];
+}
+
+function nullableBooleanField(
+  value: Record<string, unknown>,
+  key: string
+): boolean | null {
+  if (!has(value, key) || value[key] === null) return null;
+  if (typeof value[key] !== 'boolean') invalid();
+  return value[key];
+}
+
+function numberRecordField(
+  value: Record<string, unknown>,
+  key: string,
+  required: boolean
+): Record<string, number> {
+  const record = recordField(value, key, required);
+  for (const entry of Object.values(record)) {
+    if (typeof entry !== 'number' || !Number.isFinite(entry)) invalid();
+  }
+  return record as Record<string, number>;
+}
+
+function countRecordField(
+  value: Record<string, unknown>,
+  key: string,
+  required: boolean
+): Record<string, number> {
+  const record = recordField(value, key, required);
+  for (const entry of Object.values(record)) {
+    if (!Number.isInteger(entry) || (entry as number) < 0) invalid();
+  }
+  return record as Record<string, number>;
+}
+
+function dataPolicyField(
+  value: Record<string, unknown>,
+  key: string
+): LeaderboardDataPolicy {
+  const entry = value[key];
+  if (!acceptedDataPolicies.includes(entry as LeaderboardDataPolicy)) invalid();
+  return entry as LeaderboardDataPolicy;
+}
+
+function has(value: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function invalid(): never {
+  throw new TypeError('Malformed leaderboard artifact');
 }

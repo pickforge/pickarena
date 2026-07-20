@@ -1,14 +1,19 @@
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, mock, test } from 'bun:test';
 
 import {
+  acceptedDataPolicies,
   parseLeaderboardArtifact,
+  supportedArtifactSchemaVersions,
   type LeaderboardData
 } from '../src/lib/data/leaderboard-contract';
+
+mock.module('$app/paths', () => ({ base: '' }));
+const { loadLeaderboard } = await import('../src/lib/data/leaderboard');
 
 type FixtureEntry = {
   id: string;
@@ -22,26 +27,46 @@ type FixtureManifest = {
   fixtureManifestVersion: number;
   artifactFamily: string;
   supportedArtifactSchemaVersions: number[];
+  acceptedDataPolicies: string[];
   entries: FixtureEntry[];
 };
 
 const manifestPath = fileURLToPath(
-  new URL('../../fixtures/leaderboard/compatibility/v1/manifest.v1.json', import.meta.url)
+  new URL(
+    '../../fixtures/leaderboard/compatibility/v1/manifest.v1.json',
+    import.meta.url
+  )
 );
+const fixtureDirectory = dirname(manifestPath);
 const manifestBytes = await readFile(manifestPath);
 const manifest = JSON.parse(manifestBytes.toString('utf8')) as FixtureManifest;
 
 describe('leaderboard compatibility corpus', () => {
-  test('uses the versioned manifest', () => {
+  test('uses the versioned manifest and runtime contract constants', () => {
     expect(manifest.fixtureManifestVersion).toBe(1);
     expect(manifest.artifactFamily).toBe('leaderboard.v1.json');
-    expect(manifest.supportedArtifactSchemaVersions).toEqual([1, 2]);
+    expect(manifest.supportedArtifactSchemaVersions).toEqual([
+      ...supportedArtifactSchemaVersions
+    ]);
+    expect(manifest.acceptedDataPolicies).toEqual([...acceptedDataPolicies]);
     expect(manifest.entries.length).toBeGreaterThan(0);
+  });
+
+  test('lists every fixture exactly once and every listed fixture exists', async () => {
+    const files = (await readdir(fixtureDirectory))
+      .filter((file) => file !== 'manifest.v1.json')
+      .sort();
+    const listed = manifest.entries.map((entry) => entry.file).sort();
+    expect(listed).toEqual(files);
+    expect(new Set(listed).size).toBe(listed.length);
+    await Promise.all(
+      listed.map((file) => readFile(resolve(fixtureDirectory, file)))
+    );
   });
 
   for (const entry of manifest.entries) {
     test(entry.id, async () => {
-      const fixturePath = resolve(dirname(manifestPath), entry.file);
+      const fixturePath = resolve(fixtureDirectory, entry.file);
       const bytes = await readFile(fixturePath);
       expect(createHash('sha256').update(bytes).digest('hex')).toBe(entry.sha256);
 
@@ -52,80 +77,60 @@ describe('leaderboard compatibility corpus', () => {
       );
     });
   }
+
+  test('preserves fixture ordering in every current collection', () => {
+    const current = manifest.entries.find((entry) => entry.id === 'current-v2');
+    if (!current || current.outcome !== 'accept') throw new Error('missing current-v2');
+    const projection = current.normalizedProjection as LeaderboardData;
+    expect(projection.models.map((row) => `${row.providerId}:${row.modelId}`)).toEqual([
+      'deepseek:deepseek-v4-pro',
+      'openai:gpt-5'
+    ]);
+    expect(projection.tasks.map((row) => row.taskId)).toEqual(['task.a', 'task.b']);
+    expect(
+      projection.taskModelCells.map(
+        (row) => `${row.providerId}:${row.modelId}:${row.taskId}`
+      )
+    ).toEqual([
+      'deepseek:deepseek-v4-pro:task.a',
+      'deepseek:deepseek-v4-pro:task.b',
+      'openai:gpt-5:task.a',
+      'openai:gpt-5:task.b'
+    ]);
+    expect(
+      projection.trialSummaries.map(
+        (row) => `${row.providerId}:${row.modelId}:${row.taskId}:${row.trialIndex}`
+      )
+    ).toEqual([
+      'deepseek:deepseek-v4-pro:task.a:0',
+      'deepseek:deepseek-v4-pro:task.b:1',
+      'openai:gpt-5:task.a:0',
+      'openai:gpt-5:task.b:1'
+    ]);
+  });
 });
 
-function normalizedProjection(value: LeaderboardData): unknown {
-  return {
-    schemaVersion: value.schemaVersion,
-    generatedAt: value.generatedAt,
-    benchmark: {
-      title: value.benchmark.title,
-      version: value.benchmark.version,
-      taskSetId: value.benchmark.taskSetId,
-      evaluatorSchemaVersion: value.benchmark.evaluatorSchemaVersion,
-      track: value.benchmark.track,
-      dataPolicy: value.benchmark.dataPolicy,
-      preset: value.benchmark.preset,
-      selectedTasks: value.benchmark.selectedTasks,
-      corpusManifestDigestSha256: value.benchmark.corpusManifestDigestSha256
-    },
-    source: {
-      anchorRunId: value.source.anchorRunId,
-      runIds: value.source.runIds,
-      taskCount: value.source.taskCount,
-      taskRunCount: value.source.taskRunCount,
-      modelCount: value.source.modelCount
-    },
-    scoring: {
-      schemaVersion: value.scoring.schemaVersion,
-      primaryMetric: value.scoring.primaryMetric,
-      rankingMetric: value.scoring.rankingMetric
-    },
-    models: value.models.map((model) => ({
-      providerId: model.providerId,
-      modelId: model.modelId,
-      rank: model.rank,
-      score: model.score,
-      passRate: model.passRate,
-      trialCount: model.trialCount,
-      passCount: model.passCount,
-      sampleCount: model.sampleCount
-    })),
-    tasks: value.tasks.map((task) => ({
-      taskId: task.taskId,
-      taskVersion: task.taskVersion,
-      taskBundleDigest: task.taskBundleDigest,
-      benchmarkTrack: task.benchmarkTrack,
-      trialCount: task.trialCount,
-      sampleCount: task.sampleCount,
-      modelCount: task.modelCount,
-      passRate: task.passRate
-    })),
-    taskModelCells: value.taskModelCells.map((cell) => ({
-      providerId: cell.providerId,
-      modelId: cell.modelId,
-      taskId: cell.taskId,
-      taskVersion: cell.taskVersion,
-      benchmarkTrack: cell.benchmarkTrack,
-      trialCount: cell.trialCount,
-      passCount: cell.passCount,
-      sampleCount: cell.sampleCount,
-      passRate: cell.passRate,
-      errorCount: cell.errorCount
-    })),
-    trialSummaries: value.trialSummaries.map((trial) => ({
-      trialId: trial.trialId,
-      runId: trial.runId,
-      providerId: trial.providerId,
-      modelId: trial.modelId,
-      taskId: trial.taskId,
-      taskVersion: trial.taskVersion,
-      benchmarkTrack: trial.benchmarkTrack,
-      trialIndex: trial.trialIndex,
-      completedAt: trial.completedAt,
-      primaryPass: trial.primaryPass,
-      failureTag: trial.failureTag,
-      aggregateScore: trial.aggregateScore
-    }))
-  };
+describe('leaderboard runtime loader warnings', () => {
+  test('preserves the load warning for malformed JSON syntax', async () => {
+    const result = await loadLeaderboard(async () => new Response('{', { status: 200 }));
+    expect(result.warning).toBe('Leaderboard data could not be loaded.');
+  });
+
+  test('uses the malformed warning for a decoded schema error', async () => {
+    const result = await loadLeaderboard(
+      async () => new Response('{"schemaVersion":2}', { status: 200 })
+    );
+    expect(result.warning).toBe('Leaderboard data is malformed.');
+  });
+
+  test('preserves the load warning for a fetch failure', async () => {
+    const result = await loadLeaderboard(async () => {
+      throw new Error('offline');
+    });
+    expect(result.warning).toBe('Leaderboard data could not be loaded.');
+  });
+});
+
+function normalizedProjection(value: LeaderboardData): LeaderboardData {
+  return value;
 }

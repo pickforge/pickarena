@@ -15,6 +15,12 @@ import 'package:crypto/crypto.dart';
 
 enum LeaderboardExportStrategy { aggregateCompatible, latestRun, bestObserved }
 
+const supportedLeaderboardArtifactSchemaVersions = [1, 2];
+const acceptedLeaderboardDataPolicies = [
+  'aggregate-compatible',
+  'latest-run',
+  'best-observed',
+];
 const dartArenaBenchmarkVersion = '2026-05-31-master-spec';
 const dartArenaEvaluatorSchemaVersion = 2;
 const _diagnosticOnlyScoringSchemaVersion = 2;
