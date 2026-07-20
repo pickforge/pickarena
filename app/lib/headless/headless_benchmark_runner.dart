@@ -22,15 +22,19 @@ import 'package:path/path.dart' as p;
 
 const _timeoutCleanupGrace = Duration(milliseconds: 2500);
 
-/// Agent harness provenance for [config], derived from the actual
-/// configured harnesses for any harness id not already covered by
-/// [HeadlessBenchmarkConfig.agentHarnessProvenance].
+/// Agent harness provenance for [config], derived from the actually
+/// configured harnesses, with [HeadlessBenchmarkConfig.agentHarnessProvenance]
+/// only filling in harness ids that [HeadlessBenchmarkConfig.agentHarnesses]
+/// does not configure.
 ///
 /// [runHeadlessCli] always supplies harness provenance explicitly, but
-/// callers invoking [HeadlessBenchmarkRunner] directly may omit it. Without
-/// this, two runs sharing a provider/harness id but backed by different
-/// harness implementations would carry identical (empty) harness-kind
-/// provenance and could wrongly be treated as aggregation-compatible.
+/// callers invoking [HeadlessBenchmarkRunner] directly may omit it, or
+/// (accidentally or maliciously) supply a caller map entry for a harness id
+/// that is actually configured. The actually configured harness always
+/// wins for its own id: trusting an unverified caller-supplied map for an id
+/// backed by a real (and possibly non-provenance-emitting) harness would let
+/// a caller spoof provenance and falsely make two runs backed by different
+/// harness implementations look aggregation-compatible.
 Map<String, Map<String, Object?>> _agentHarnessProvenance(
   HeadlessBenchmarkConfig config,
 ) {
@@ -38,12 +42,9 @@ Map<String, Map<String, Object?>> _agentHarnessProvenance(
     config.agentHarnessProvenance,
   );
   for (final harness in config.agentHarnesses) {
-    provenance.putIfAbsent(
-      harness.id,
-      () => harness is AgentHarnessProvenance
-          ? (harness as AgentHarnessProvenance).provenance
-          : const {'kind': 'unknown', 'track': 'scaffold-dependent'},
-    );
+    provenance[harness.id] = harness is AgentHarnessProvenance
+        ? (harness as AgentHarnessProvenance).provenance
+        : const {'kind': 'unknown', 'track': 'scaffold-dependent'};
   }
   return provenance;
 }

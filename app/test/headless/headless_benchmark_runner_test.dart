@@ -485,6 +485,132 @@ void main() {
     });
   });
 
+  test('direct runner callers fall back to unknown/scaffold-dependent '
+      'provenance for a harness that does not implement '
+      'AgentHarnessProvenance', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'dart_arena_headless_no_provenance_harness_',
+    );
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(() async {
+      await db.close();
+      if (await tmp.exists()) {
+        await tmp.delete(recursive: true);
+      }
+    });
+
+    final runDao = RunDao(db);
+    final workdirRoot = Directory(p.join(tmp.path, 'workdirs'))
+      ..createSync(recursive: true);
+    final outputParent = Directory(p.join(tmp.path, 'bundles'))
+      ..createSync(recursive: true);
+    final provider = DeterministicFakeProvider();
+    // DeterministicFakeAgentHarness does not implement
+    // AgentHarnessProvenance, unlike _ProvenanceStubAgentHarness above.
+    final harness = DeterministicFakeAgentHarness(
+      harnessId: provider.id,
+      modelId: provider.modelId,
+    );
+
+    final result = await const HeadlessBenchmarkRunner().run(
+      _config(
+        runId: 'headless-no-provenance-harness-run',
+        runDao: runDao,
+        workdirManager: NoOpPrepareWorkdirManager(root: workdirRoot),
+        outputParent: outputParent,
+        allowedTrajectoryRoots: [workdirRoot],
+        provider: provider,
+        modelId: provider.modelId,
+        tasks: [_AgenticHeadlessSmokeTask()],
+        agentHarnesses: [harness],
+      ),
+    );
+
+    final provenance =
+        jsonDecode(result.finalSummary.run.provenanceJson!)
+            as Map<String, Object?>;
+    final config = provenance['config'] as Map<String, Object?>;
+    final agentHarnesses = config['agentHarnesses'] as Map<String, Object?>;
+    expect(agentHarnesses[provider.id], {
+      'kind': 'unknown',
+      'track': 'scaffold-dependent',
+    });
+  });
+
+  test('actually configured harness provenance overrides a caller-supplied '
+      'spoof for the same harness id', () async {
+    final tmp = await Directory.systemTemp.createTemp(
+      'dart_arena_headless_spoof_provenance_',
+    );
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(() async {
+      await db.close();
+      if (await tmp.exists()) {
+        await tmp.delete(recursive: true);
+      }
+    });
+
+    final runDao = RunDao(db);
+    final workdirRoot = Directory(p.join(tmp.path, 'workdirs'))
+      ..createSync(recursive: true);
+    final outputParent = Directory(p.join(tmp.path, 'bundles'))
+      ..createSync(recursive: true);
+    final provider = DeterministicFakeProvider();
+    // A harness with no real provenance, backed by a caller that supplies
+    // a spoofed provenance map claiming it is a genuine 'minimal' harness.
+    final harness = DeterministicFakeAgentHarness(
+      harnessId: provider.id,
+      modelId: provider.modelId,
+    );
+
+    final result = await const HeadlessBenchmarkRunner().run(
+      _config(
+        runId: 'headless-spoof-provenance-run',
+        runDao: runDao,
+        workdirManager: NoOpPrepareWorkdirManager(root: workdirRoot),
+        outputParent: outputParent,
+        allowedTrajectoryRoots: [workdirRoot],
+        provider: provider,
+        modelId: provider.modelId,
+        tasks: [_AgenticHeadlessSmokeTask()],
+        agentHarnesses: [harness],
+        agentHarnessProvenance: {
+          provider.id: const {
+            'kind': 'minimal',
+            'track': 'official-comparable',
+          },
+          'unconfigured-id': const {
+            'kind': 'droid',
+            'track': 'scaffold-dependent',
+            'agent': 'droid',
+          },
+        },
+      ),
+    );
+
+    final provenance =
+        jsonDecode(result.finalSummary.run.provenanceJson!)
+            as Map<String, Object?>;
+    final config = provenance['config'] as Map<String, Object?>;
+    final agentHarnesses = config['agentHarnesses'] as Map<String, Object?>;
+    // The actually configured harness for provider.id wins over the
+    // caller's spoofed 'minimal' claim: it does not implement
+    // AgentHarnessProvenance, so it must stay unknown/scaffold-dependent
+    // rather than falsely appearing aggregation-compatible with genuine
+    // minimal-harness runs.
+    expect(agentHarnesses[provider.id], {
+      'kind': 'unknown',
+      'track': 'scaffold-dependent',
+    });
+    // The caller map may still fill in provenance for a harness id that
+    // is not actually configured.
+    expect(agentHarnesses['unconfigured-id'], {
+      'kind': 'droid',
+      'track': 'scaffold-dependent',
+      'agent': 'droid',
+    });
+  });
+
   test('persists reference plans for headless runs', () async {
     final tmp = await Directory.systemTemp.createTemp(
       'dart_arena_headless_plan_',
@@ -977,6 +1103,7 @@ HeadlessBenchmarkConfig _config({
   required String modelId,
   List<BenchmarkTask>? tasks,
   List<AgentHarness> agentHarnesses = const [],
+  Map<String, Map<String, Object?>> agentHarnessProvenance = const {},
   bool useReferencePlan = false,
   Duration timeout = const Duration(seconds: 5),
 }) {
@@ -989,6 +1116,7 @@ HeadlessBenchmarkConfig _config({
       provider.id: [modelId],
     },
     agentHarnesses: agentHarnesses,
+    agentHarnessProvenance: agentHarnessProvenance,
     evaluatorConfig: const EvaluatorConfig(),
     evaluatorWeights: _weights,
     workdirManager: workdirManager,
