@@ -9,6 +9,7 @@ import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/reference_solution.dart';
+import 'package:dart_arena/core/task_run_result.dart';
 import 'package:dart_arena/core/task_verifier.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/providers/model_provider.dart';
@@ -373,6 +374,52 @@ void main() {
         kernelEnforcementAvailable: false,
       ),
     });
+  });
+
+  test('result provenance pins the frozen corpus task bundle digest', () {
+    const frozenDigest =
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    final provenanceJson = jsonEncode({
+      'config': {
+        'corpusManifest': {
+          'tasks': const [
+            {
+              'taskId': 'task.a',
+              'taskVersion': 1,
+              'taskBundleDigest': frozenDigest,
+            },
+          ],
+        },
+      },
+    });
+    final updated = appendResultProvenance(provenanceJson, [
+      TaskRunResult(
+        runId: 'run-1',
+        providerId: 'p',
+        modelId: 'm',
+        taskId: 'task.a',
+        response: const ModelResponse(
+          rawText: '',
+          extractedCode: null,
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration.zero,
+        ),
+        evaluations: const [],
+        aggregateScore: 0,
+        completedAt: DateTime.utc(2026, 6, 1),
+        benchmarkTrack: 'agentic',
+        provenance: const {
+          'taskBundleDigest':
+              'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        },
+      ),
+    ]);
+
+    final decoded = jsonDecode(updated) as Map<String, Object?>;
+    final result =
+        (decoded['resultProvenance'] as List).single as Map<String, Object?>;
+    expect(result['taskBundleDigest'], frozenDigest);
   });
 
   test(

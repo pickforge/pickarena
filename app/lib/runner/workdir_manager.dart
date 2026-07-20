@@ -224,8 +224,9 @@ class WorkdirManager {
   }
 
   Future<WorkdirIsolationEvidence> collectWorkspaceIsolationEvidence(
-    Directory workDir,
-  ) async {
+    Directory workDir, {
+    bool ignoreBenchmarkInfrastructure = false,
+  }) async {
     final rootPath = p.normalize(p.absolute(root.path));
     final runsRoot = p.normalize(p.join(rootPath, 'runs'));
     final workDirPath = p.normalize(p.absolute(workDir.path));
@@ -258,6 +259,15 @@ class WorkdirManager {
           relativePathsOnly = false;
         }
 
+        if (_isRestrictedContentPath(normalizedRelativePath)) {
+          restrictedPathCount++;
+          continue;
+        }
+        if (ignoreBenchmarkInfrastructure &&
+            _isBenchmarkInfrastructurePath(normalizedRelativePath)) {
+          continue;
+        }
+
         final restricted = _shouldExcludeWorkspacePath(normalizedRelativePath);
         if (restricted) {
           restrictedPathCount++;
@@ -271,13 +281,19 @@ class WorkdirManager {
 
         if (entity is File) {
           try {
-            final bytes = await entity.readAsBytes();
-            final fileDigest = sha256.convert(bytes).toString();
+            final fileSize = (await entity.stat()).size;
+            final fileDigest = ignoreBenchmarkInfrastructure
+                ? sha256
+                      .convert(
+                        utf8.encode('$normalizedRelativePath\u0000$fileSize'),
+                      )
+                      .toString()
+                : (await sha256.bind(entity.openRead()).first).toString();
             manifestEntries.add(
-              '$normalizedRelativePath\u0000$fileDigest\u0000${bytes.length}',
+              '$normalizedRelativePath\u0000$fileDigest\u0000$fileSize',
             );
             visibleFileCount++;
-            visibleBytes += bytes.length;
+            visibleBytes += fileSize;
           } on FileSystemException {
             unreadableFileCount++;
           }
@@ -633,25 +649,62 @@ class WorkdirManager {
     return p.equals(parent, child) || p.isWithin(parent, child);
   }
 
-  bool _shouldExcludeWorkspacePath(String relativePath) {
-    final parts = p.split(p.normalize(relativePath));
-    final lowerParts = parts.map((s) => s.toLowerCase()).toList();
+  bool _isBenchmarkInfrastructurePath(String relativePath) {
+    final normalized = p
+        .normalize(relativePath)
+        .replaceAll('\\', '/')
+        .toLowerCase();
+    final topLevel = normalized.split('/').first;
+    if (const {
+      '.git',
+      '.dart_tool',
+      '.dart_arena',
+      '.cache',
+      '.dartserver',
+      'appdata',
+      'build',
+    }.contains(topLevel)) {
+      return true;
+    }
+    return normalized == '.config/tool_state' ||
+        normalized == '.flutter' ||
+        normalized == '.flutter-plugins' ||
+        normalized == '.flutter-plugins-dependencies' ||
+        normalized == '.packages' ||
+        normalized == 'pubspec.lock';
+  }
+
+  bool _isRestrictedContentPath(String relativePath) {
+    final lowerParts = p
+        .split(p.normalize(relativePath))
+        .map((part) => part.toLowerCase())
+        .toList();
     if (lowerParts.any(
-      (s) =>
-          s == '.git' ||
-          s == '_hidden' ||
-          s == 'reference' ||
-          s == '_reference' ||
-          s == 'author_notes' ||
-          s == '_author' ||
-          s == 'task_qa',
+      (part) => const {
+        '_hidden',
+        'reference',
+        '_reference',
+        'author_notes',
+        '_author',
+        'task_qa',
+      }.contains(part),
     )) {
       return true;
     }
     final basename = lowerParts.isEmpty ? '' : lowerParts.last;
-    return basename == 'author_notes.md' ||
-        basename == 'qa_report.md' ||
-        basename == 'task_qa_report.md';
+    return const {
+      'author_notes.md',
+      'qa_report.md',
+      'task_qa_report.md',
+    }.contains(basename);
+  }
+
+  bool _shouldExcludeWorkspacePath(String relativePath) {
+    final lowerParts = p
+        .split(p.normalize(relativePath))
+        .map((part) => part.toLowerCase());
+    return lowerParts.contains('.git') ||
+        _isRestrictedContentPath(relativePath);
   }
 
   Future<void> _recreateCleanRunDirectory(Directory dir) async {

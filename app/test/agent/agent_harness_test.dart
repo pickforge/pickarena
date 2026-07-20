@@ -251,7 +251,7 @@ wait
           if (await workspace.exists()) await workspace.delete(recursive: true);
         });
         final provider = _ScriptedStreamingProvider([
-          '```bash\nprintf 1234567890\n```',
+          '```bash\nwhile :; do printf xxxxxxxxxx; done\n```',
           'FINISH',
         ]);
         final harness = MinimalAgentHarness(
@@ -269,7 +269,7 @@ wait
 
         expect(result.status, AgentRunStatus.failure);
         expect(result.metadata['terminal_reason'], 'output_limit');
-        expect(result.stdoutPreview, '7890');
+        expect(result.stdoutPreview, 'xxxx');
         expect(result.metadata['output_truncated'], isTrue);
       },
       skip: Platform.isWindows ? 'bash harness requires POSIX shell' : false,

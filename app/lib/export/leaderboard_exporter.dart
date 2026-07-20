@@ -4,6 +4,7 @@ import 'package:dart_arena/analytics/benchmark_statistics.dart';
 import 'package:dart_arena/analytics/confidence_interval.dart';
 import 'package:dart_arena/analytics/cost_estimator.dart';
 import 'package:dart_arena/analytics/result_primitives.dart';
+import 'package:dart_arena/core/collection_equality.dart';
 import 'package:dart_arena/core/evaluation_status.dart';
 import 'package:dart_arena/core/evaluator_classification.dart';
 import 'package:dart_arena/core/model_identity.dart';
@@ -235,7 +236,10 @@ _SelectedTaskRuns _selectTaskRuns({
         if (!anchorSignature.isCompatibleWith(candidateSignature)) continue;
 
         if (anchorWeights.weights != null && candidateWeights.weights != null) {
-          if (!_mapEquals(anchorWeights.weights!, candidateWeights.weights!)) {
+          if (!shallowMapEquals(
+            anchorWeights.weights!,
+            candidateWeights.weights!,
+          )) {
             continue;
           }
         } else {
@@ -793,14 +797,6 @@ int _compareNullableIntAsc(int? a, int? b) {
   if (a == null) return 1;
   if (b == null) return -1;
   return a.compareTo(b);
-}
-
-bool _mapEquals(Map<String, Object?> a, Map<String, Object?> b) {
-  if (a.length != b.length) return false;
-  for (final entry in a.entries) {
-    if (b[entry.key] != entry.value) return false;
-  }
-  return true;
 }
 
 void _addProvenanceWarning(

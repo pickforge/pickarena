@@ -1953,9 +1953,11 @@ void main() {
     final hiddenDigests = hiddenVerifierDigests(task);
     final reportPath = p.join(taskBundle.path, 'qa', 'admission_report.json');
     await Directory(p.dirname(reportPath)).create(recursive: true);
-    await File(
-      leaderboardPath,
-    ).writeAsString(_prettyJson(_leaderboardJson(sampleCount: 2)));
+    await File(leaderboardPath).writeAsString(
+      _prettyJson(
+        _leaderboardJson(sampleCount: 2, taskBundleDigest: taskBundleDigest),
+      ),
+    );
     await File(taskQaSummaryPath).writeAsString(
       _prettyJson(
         _taskQaSummaryJson(
@@ -1971,7 +1973,11 @@ void main() {
     final databasePath = p.join(tmp.path, 'dart_arena.sqlite');
     await _seedDatabase(
       databasePath,
-      resultProvenance: _cleanReplayResultProvenance(hiddenDigests, 2),
+      resultProvenance: _cleanReplayResultProvenance(
+        hiddenDigests,
+        2,
+        taskBundleDigest: taskBundleDigest,
+      ),
     );
     final artifactManifestPath = p.join(tmp.path, 'manifest.json');
     await File(
@@ -2782,9 +2788,11 @@ void main() {
       final hiddenDigests = hiddenVerifierDigests(task);
       final reportPath = p.join(taskBundle.path, 'qa', 'admission_report.json');
       await Directory(p.dirname(reportPath)).create(recursive: true);
-      await File(
-        leaderboardPath,
-      ).writeAsString(_prettyJson(_multiRunLeaderboardJson()));
+      await File(leaderboardPath).writeAsString(
+        _prettyJson(
+          _multiRunLeaderboardJson(taskBundleDigest: taskBundleDigest),
+        ),
+      );
       await File(taskQaSummaryPath).writeAsString(
         _prettyJson(
           _taskQaSummaryJson(
@@ -2801,7 +2809,11 @@ void main() {
       await _seedDatabase(
         databasePath,
         runIds: const ['run-1', 'run-2'],
-        resultProvenance: _cleanReplayResultProvenance(hiddenDigests, 2),
+        resultProvenance: _cleanReplayResultProvenance(
+          hiddenDigests,
+          2,
+          taskBundleDigest: taskBundleDigest,
+        ),
       );
       final firstBundleRoot = p.join(tmp.path, 'bundle_run_1');
       final secondBundleRoot = p.join(tmp.path, 'bundle_run_2');
@@ -11004,6 +11016,7 @@ void main() {
 
 Map<String, Object?> _leaderboardJson({
   required int sampleCount,
+  String taskBundleDigest = _fixtureTaskBundleDigest,
   bool includeJudgeOverhead = true,
   bool includeSourceRunProvenance = true,
   bool includeTaskModelCells = true,
@@ -11031,10 +11044,16 @@ Map<String, Object?> _leaderboardJson({
         {
           'taskId': 'task.a',
           'taskVersion': 1,
-          'taskBundleDigest': _fixtureTaskBundleDigest,
+          'taskBundleDigest': taskBundleDigest,
         },
       ],
-      'corpusManifestDigestSha256': _fixtureCorpusManifestDigest,
+      'corpusManifestDigestSha256': corpusManifestDigestSha256([
+        CorpusManifestEntry(
+          taskId: 'task.a',
+          taskVersion: 1,
+          taskBundleDigest: taskBundleDigest,
+        ),
+      ]),
     },
     'track': 'agentic',
     'dataPolicy': 'aggregate-compatible',
@@ -11124,7 +11143,7 @@ Map<String, Object?> _leaderboardJson({
     {
       'taskId': 'task.a',
       'taskVersion': 1,
-      'taskBundleDigest': _fixtureTaskBundleDigest,
+      'taskBundleDigest': taskBundleDigest,
       'benchmarkTrack': 'agentic',
       'trialCount': sampleCount,
       'sampleCount': sampleCount,
@@ -11256,9 +11275,18 @@ Map<String, Object?> _leaderboardJson({
     ],
 };
 
-Map<String, Object?> _multiRunLeaderboardJson() {
+Map<String, Object?> _multiRunLeaderboardJson({
+  String taskBundleDigest = _fixtureTaskBundleDigest,
+}) {
   final leaderboard =
-      jsonDecode(jsonEncode(_leaderboardJson(sampleCount: 4)))
+      jsonDecode(
+            jsonEncode(
+              _leaderboardJson(
+                sampleCount: 4,
+                taskBundleDigest: taskBundleDigest,
+              ),
+            ),
+          )
           as Map<String, Object?>;
   final source = leaderboard['source']! as Map<String, Object?>;
   source['anchorRunId'] = 'run-2';
@@ -12763,8 +12791,9 @@ Future<void> _seedDatabase(
 
 List<Map<String, Object?>> _cleanReplayResultProvenance(
   Map<String, String> hiddenVerifierDigests,
-  int count,
-) => [
+  int count, {
+  required String taskBundleDigest,
+}) => [
   for (var trialIndex = 0; trialIndex < count; trialIndex++)
     {
       'taskId': 'task.a',
@@ -12774,24 +12803,40 @@ List<Map<String, Object?>> _cleanReplayResultProvenance(
       'modelId': 'gpt-5',
       'trialIndex': trialIndex,
       'gradingMode': 'clean_replay',
+      'taskBundleDigest': taskBundleDigest,
+      'workspacePaths': {
+        'agent': '/work/trial_$trialIndex',
+        'grading': '/work/trial_${trialIndex}_grading',
+      },
+      'agentWorkspaceIsolation': _releaseWorkspaceIsolationEvidence(),
       'hiddenFixtureIsolation': const {
         'asserted': true,
         'leakedPaths': <String>[],
+        'preAgentManifestSha256':
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        'postAgentManifestSha256':
+            'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       },
       'hiddenVerifierDigests': hiddenVerifierDigests,
     },
 ];
 
+Map<String, Object?> _releaseWorkspaceIsolationEvidence() => {
+  for (final stage in const ['preAgent', 'postAgent'])
+    stage: const {
+      'workdirUnderRunsRoot': true,
+      'rootConfined': true,
+      'relativePathsOnly': true,
+      'restrictedPathsAbsent': true,
+      'restrictedPathCount': 0,
+      'symlinkCount': 0,
+      'unreadableFileCount': 0,
+      'symlinksFollowed': false,
+    },
+};
+
 const _fixtureTaskBundleDigest =
     '0000000000000000000000000000000000000000000000000000000000000000';
-
-final _fixtureCorpusManifestDigest = corpusManifestDigestSha256(const [
-  CorpusManifestEntry(
-    taskId: 'task.a',
-    taskVersion: 1,
-    taskBundleDigest: _fixtureTaskBundleDigest,
-  ),
-]);
 
 String _prettyJson(Object? value) =>
     '${const JsonEncoder.withIndent('  ').convert(value)}\n';

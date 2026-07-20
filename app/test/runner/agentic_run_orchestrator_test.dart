@@ -11,6 +11,7 @@ import 'package:dart_arena/core/evaluation_result.dart';
 import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/task_verifier.dart';
+import 'package:dart_arena/core/task_workspace.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/evaluators/hidden_test_evaluator.dart';
 import 'package:dart_arena/runner/agentic_run_orchestrator.dart';
@@ -289,6 +290,36 @@ class _FailingPrepareWorkdirManager extends NoOpPrepareWorkdirManager {
   }
 }
 
+class _LeakingWorkdirManager extends NoOpPrepareWorkdirManager {
+  _LeakingWorkdirManager({required super.root});
+
+  @override
+  Future<Directory> createAgenticTaskWorkdir({
+    required String runId,
+    required String providerId,
+    required String modelId,
+    required String taskId,
+    required TaskWorkspace workspace,
+    int trialIndex = 0,
+  }) async {
+    final workDir = await super.createAgenticTaskWorkdir(
+      runId: runId,
+      providerId: providerId,
+      modelId: modelId,
+      taskId: taskId,
+      workspace: workspace,
+      trialIndex: trialIndex,
+    );
+    await File(
+      p.join(workDir.path, 'test', '_hidden', 'answer_hidden_test.dart'),
+    ).create(recursive: true);
+    await File(
+      p.join(workDir.path, 'test', '_hidden', 'answer_hidden_test.dart'),
+    ).writeAsString('leaked');
+    return workDir;
+  }
+}
+
 class _ArtifactPrepareWorkdirManager extends NoOpPrepareWorkdirManager {
   _ArtifactPrepareWorkdirManager({required super.root});
 
@@ -478,12 +509,69 @@ void main() {
       isFalse,
     );
     expect(result.provenance['gradingMode'], 'clean_replay');
+    final workspacePaths =
+        result.provenance['workspacePaths'] as Map<String, Object?>;
+    expect(
+      workspacePaths['agent'],
+      p.relative(harness.workspace!.path, from: root.path),
+    );
+    expect(
+      workspacePaths['grading'],
+      p.relative(evaluator.workDir!.path, from: root.path),
+    );
+    expect(workspacePaths['grading'], isNot(workspacePaths['agent']));
     expect(result.provenance['patchApplied'], isTrue);
     expect(
       result.provenance['patchSha256'],
       matches(RegExp(r'^[0-9a-f]{64}$')),
     );
   });
+
+  test(
+    'detects a hidden fixture present before the agent reads and deletes it',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'agentic_orch_fixture_toctou_',
+      );
+      addTearDown(() async {
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final task = _AgenticBlockingTask(const []);
+      final result =
+          await AgenticRunOrchestrator(
+            workdirManager: _LeakingWorkdirManager(root: root),
+          ).run(
+            runId: 'run-fixture-toctou',
+            task: task,
+            harness: _FakeHarness((workspace) async {
+              final hidden = File(
+                p.join(
+                  workspace.path,
+                  'test',
+                  '_hidden',
+                  'answer_hidden_test.dart',
+                ),
+              );
+              expect(await hidden.readAsString(), 'leaked');
+              await hidden.delete();
+            }),
+            providerId: 'fake_agent',
+            modelId: 'm',
+            trialIndex: 0,
+            evaluatorConfig: const EvaluatorConfig(),
+          );
+
+      final isolation =
+          result.provenance['hiddenFixtureIsolation'] as Map<String, Object?>;
+      expect(isolation['asserted'], isTrue);
+      expect(isolation['leakedPaths'], [
+        'test/_hidden/answer_hidden_test.dart',
+      ]);
+      expect(isolation['removedFileCount'], greaterThan(0));
+      expect(isolation['preAgentManifestSha256'], hasLength(64));
+      expect(isolation['postAgentManifestSha256'], hasLength(64));
+    },
+  );
 
   test('records hidden fixture leaks from the agent workspace', () async {
     final root = await Directory.systemTemp.createTemp(
