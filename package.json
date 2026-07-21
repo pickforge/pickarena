@@ -11,11 +11,13 @@
     "web:install": "cd web && bun install",
     "web:dev": "cd web && bun run dev",
     "web:check": "cd web && bun run check",
+    "web:test": "cd web && bun run test",
     "web:build": "cd web && bun run build",
     "web:smoke": "cd web && bun run smoke",
     "bench:official:bubblewrap": "bash scripts/run-official-bubblewrap-benchmark.sh",
     "bench:publish:web": "bash scripts/publish-benchmark-to-web.sh",
     "leaderboard:export": "cd app && dart run --verbosity=error dart_arena:dart_arena_export_leaderboard --database .dart_arena/dart_arena.sqlite --out ../web/static/data/leaderboard.v1.json --track agentic",
+    "leaderboard:fixtures:hash": "bun run scripts/update-leaderboard-fixture-hashes.ts",
     "check": "bun run app:analyze && bun run app:test && bun run web:check",
     "build": "bun run web:build"
   }

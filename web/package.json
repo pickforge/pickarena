@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "smoke": "bun run build && bun run scripts/smoke-static.ts",
+    "test": "bun test scripts/leaderboard-contract.test.ts",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "devDependencies": {

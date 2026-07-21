@@ -1,10 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:isolate';
 
 import 'package:dart_arena/export/leaderboard_exporter.dart';
 import 'package:dart_arena/storage/database.dart';
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:test/test.dart';
+
+import 'leaderboard_fixture_oracle.dart' as fixture_oracle;
 
 void main() {
   late AppDatabase db;
@@ -15,6 +20,257 @@ void main() {
 
   tearDown(() async {
     await db.close();
+  });
+
+  test(
+    'shared leaderboard compatibility corpus matches its manifest',
+    () async {
+      final manifest = await _loadLeaderboardFixtureManifest();
+      final fixtureDirectory = Directory.fromUri(manifest.uri.resolve('.'));
+      final files = await fixtureDirectory
+          .list()
+          .where((entry) => entry is File && entry.path.endsWith('.json'))
+          .map((entry) => entry.uri.pathSegments.last)
+          .where((file) => file != 'manifest.v1.json')
+          .toList();
+      files.sort();
+      final listedFiles = [
+        for (final entry in _fixtureEntries(manifest.decoded))
+          entry['file']! as String,
+      ]..sort();
+      expect(listedFiles, files);
+      expect(listedFiles.toSet(), hasLength(listedFiles.length));
+
+      for (final entry in _fixtureEntries(manifest.decoded)) {
+        final fixtureBytes = await File.fromUri(
+          manifest.uri.resolve(entry['file']! as String),
+        ).readAsBytes();
+        expect(
+          sha256.convert(fixtureBytes).toString(),
+          entry['sha256'],
+          reason: entry['id']! as String,
+        );
+
+        final normalized = fixture_oracle.normalizeLeaderboardFixture(
+          utf8.decode(fixtureBytes),
+        );
+        expect(
+          normalized == null ? 'reject' : 'accept',
+          entry['outcome'],
+          reason: entry['id']! as String,
+        );
+        expect(
+          normalized,
+          entry['normalizedProjection'],
+          reason: entry['id']! as String,
+        );
+      }
+    },
+  );
+
+  test('fixed current export matches the current-v2 projection', () async {
+    await _seedRun(
+      db,
+      id: 'compat-run',
+      completedAt: DateTime.utc(2026, 5, 1),
+      provenanceJson: _compatibilityProvenanceJson(),
+    );
+    await _seedTaskRun(
+      db,
+      id: 'deepseek-a',
+      runId: 'compat-run',
+      taskId: 'task.a',
+      providerId: 'deepseek',
+      modelId: 'deepseek-v4-pro',
+      completedAt: DateTime.utc(2026, 5, 1, 10),
+      latencyMs: 700,
+      promptTokens: 12,
+      completionTokens: 18,
+    );
+    await _seedTaskRun(
+      db,
+      id: 'deepseek-b',
+      runId: 'compat-run',
+      taskId: 'task.b',
+      providerId: 'deepseek',
+      modelId: 'deepseek-v4-pro',
+      completedAt: DateTime.utc(2026, 5, 1, 11),
+      latencyMs: 900,
+      promptTokens: 14,
+      completionTokens: 22,
+      trialIndex: 1,
+    );
+    await _seedTaskRun(
+      db,
+      id: 'openai-a',
+      runId: 'compat-run',
+      taskId: 'task.a',
+      completedAt: DateTime.utc(2026, 5, 1, 12),
+      latencyMs: 1000,
+      promptTokens: 10,
+      completionTokens: 20,
+    );
+    await _seedTaskRun(
+      db,
+      id: 'openai-b',
+      runId: 'compat-run',
+      taskId: 'task.b',
+      completedAt: DateTime.utc(2026, 5, 1, 13),
+      primaryPass: false,
+      failureTag: 'public_tests_failed',
+      latencyMs: 3000,
+      promptTokens: 30,
+      completionTokens: 40,
+      aggregateScore: 0.4,
+      trialIndex: 1,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-a',
+      evaluatorId: 'test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-a',
+      evaluatorId: 'agent_harness',
+      passed: true,
+      details: const {'step_count': 4, 'peak_context_tokens': 8000},
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-a',
+      evaluatorId: 'hidden_test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-b',
+      evaluatorId: 'test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-b',
+      evaluatorId: 'agent_harness',
+      passed: true,
+      details: const {'step_count': 6, 'peak_context_tokens': 12000},
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'deepseek-b',
+      evaluatorId: 'hidden_test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-a',
+      evaluatorId: 'test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-a',
+      evaluatorId: 'agent_harness',
+      passed: true,
+      details: const {'step_count': 5, 'peak_context_tokens': 10000},
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-a',
+      evaluatorId: 'hidden_test',
+      passed: true,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-a',
+      evaluatorId: 'llm_judge',
+      passed: true,
+      details: const {
+        'judge_overhead': {
+          'prompt_tokens': 100,
+          'completion_tokens': 20,
+          'estimated_cost_micros': 325,
+          'pricing_status': 'exact',
+        },
+      },
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-b',
+      evaluatorId: 'test',
+      passed: false,
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-b',
+      evaluatorId: 'agent_harness',
+      passed: true,
+      details: const {'step_count': 9, 'peak_context_tokens': 16000},
+    );
+    await _seedEvaluation(
+      db,
+      taskRunId: 'openai-b',
+      evaluatorId: 'hidden_test',
+      passed: false,
+      details: const {'blocked': true, 'blocked_by': 'test'},
+    );
+
+    final export = await buildLeaderboardExport(
+      db,
+      options: const LeaderboardExportOptions(track: 'agentic'),
+      now: () => DateTime.utc(2026, 5, 31),
+    );
+    final manifest = await _loadLeaderboardFixtureManifest();
+    final current = _fixtureEntries(
+      manifest.decoded,
+    ).singleWhere((entry) => entry['id'] == 'current-v2');
+    final fixtureBytes = await File.fromUri(
+      manifest.uri.resolve(current['file']! as String),
+    ).readAsBytes();
+
+    expect(jsonDecode(utf8.decode(fixtureBytes)), export);
+    expect(
+      fixture_oracle.normalizeLeaderboardFixture(jsonEncode(export)),
+      current['normalizedProjection'],
+    );
+    expect(
+      fixture_oracle
+          .objectList(export['models'])
+          .map((row) => '${row['providerId']}:${row['modelId']}'),
+      ['deepseek:deepseek-v4-pro', 'openai:gpt-5'],
+    );
+    expect(
+      fixture_oracle.objectList(export['tasks']).map((row) => row['taskId']),
+      ['task.a', 'task.b'],
+    );
+    expect(
+      fixture_oracle
+          .objectList(export['taskModelCells'])
+          .map(
+            (row) => '${row['providerId']}:${row['modelId']}:${row['taskId']}',
+          ),
+      [
+        'deepseek:deepseek-v4-pro:task.a',
+        'deepseek:deepseek-v4-pro:task.b',
+        'openai:gpt-5:task.a',
+        'openai:gpt-5:task.b',
+      ],
+    );
+    expect(
+      fixture_oracle
+          .objectList(export['trialSummaries'])
+          .map(
+            (row) =>
+                '${row['providerId']}:${row['modelId']}:${row['taskId']}:${row['trialIndex']}',
+          ),
+      [
+        'deepseek:deepseek-v4-pro:task.a:0',
+        'deepseek:deepseek-v4-pro:task.b:1',
+        'openai:gpt-5:task.a:0',
+        'openai:gpt-5:task.b:1',
+      ],
+    );
   });
 
   test('aggregate-compatible aggregates compatible completed runs', () async {
@@ -2114,8 +2370,36 @@ String _environmentProvenanceJson({
   },
 });
 
-String _presetProvenanceJson({String corpusDigest = 'c'}) => jsonEncode({
+String _compatibilityProvenanceJson() => jsonEncode({
   'schemaVersion': 2,
+  'providers': [
+    {
+      'id': 'deepseek',
+      'selectedModelConfigs': [
+        {
+          'modelId': 'deepseek-v4-pro',
+          'baseModelId': 'deepseek-v4-pro',
+          'modelConfig': {
+            'customModelDisplayName': 'DeepSeek Pro',
+            'customModelProvider': 'DeepSeek',
+          },
+        },
+      ],
+    },
+    {
+      'id': 'openai',
+      'selectedModelConfigs': [
+        {
+          'modelId': 'gpt-5',
+          'baseModelId': 'gpt-5',
+          'modelConfig': {
+            'customModelDisplayName': 'GPT-5',
+            'customModelProvider': 'OpenAI',
+          },
+        },
+      ],
+    },
+  ],
   'config': {
     'scoringSchemaVersion': 2,
     'evaluatorWeights': {'compile': 1.0},
@@ -2132,6 +2416,34 @@ String _presetProvenanceJson({String corpusDigest = 'c'}) => jsonEncode({
           'taskVersion': 1,
           'taskBundleDigest': List.filled(64, 'b').join(),
         },
+      ],
+      'digestSha256': List.filled(64, 'c').join(),
+    },
+  },
+});
+
+String _presetProvenanceJson({
+  String corpusDigest = 'c',
+  bool includeTaskB = true,
+}) => jsonEncode({
+  'schemaVersion': 2,
+  'config': {
+    'scoringSchemaVersion': 2,
+    'evaluatorWeights': {'compile': 1.0},
+    'corpusManifest': {
+      'preset': 'mvp',
+      'tasks': [
+        {
+          'taskId': 'task.a',
+          'taskVersion': 1,
+          'taskBundleDigest': List.filled(64, 'a').join(),
+        },
+        if (includeTaskB)
+          {
+            'taskId': 'task.b',
+            'taskVersion': 1,
+            'taskBundleDigest': List.filled(64, 'b').join(),
+          },
       ],
       'digestSha256': List.filled(64, corpusDigest).join(),
     },
@@ -2207,3 +2519,33 @@ Future<void> _seedEvaluation(
         ),
       );
 }
+
+Future<({Uri uri, Map<String, Object?> decoded})>
+_loadLeaderboardFixtureManifest() async {
+  final exporterUri = await Isolate.resolvePackageUri(
+    Uri.parse('package:dart_arena/export/leaderboard_exporter.dart'),
+  );
+  if (exporterUri == null) {
+    throw StateError('Could not resolve the dart_arena package location.');
+  }
+  final manifestUri = exporterUri.resolve(
+    '../../../fixtures/leaderboard/compatibility/v1/manifest.v1.json',
+  );
+  final bytes = await File.fromUri(manifestUri).readAsBytes();
+  final decoded = fixture_oracle.objectMap(jsonDecode(utf8.decode(bytes)));
+  expect(decoded['fixtureManifestVersion'], 1);
+  expect(decoded['artifactFamily'], 'leaderboard.v1.json');
+  expect(
+    decoded['supportedArtifactSchemaVersions'],
+    supportedLeaderboardArtifactSchemaVersions,
+  );
+  expect(decoded['acceptedDataPolicies'], acceptedLeaderboardDataPolicies);
+  expect(
+    LeaderboardExportStrategy.values.map((strategy) => strategy.kebabName),
+    acceptedLeaderboardDataPolicies,
+  );
+  return (uri: manifestUri, decoded: decoded);
+}
+
+List<Map<String, Object?>> _fixtureEntries(Map<String, Object?> manifest) =>
+    fixture_oracle.objectList(manifest['entries']);
