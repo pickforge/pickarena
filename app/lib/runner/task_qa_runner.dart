@@ -5,7 +5,6 @@ import 'package:crypto/crypto.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
-import 'package:dart_arena/core/evaluator_blocking.dart';
 import 'package:dart_arena/core/evaluator_config.dart';
 import 'package:dart_arena/core/model_response.dart';
 import 'package:dart_arena/core/reference_solution.dart';
@@ -15,6 +14,7 @@ import 'package:dart_arena/evaluators/hidden_test_evaluator.dart';
 import 'package:dart_arena/evaluators/test_evaluator.dart';
 import 'package:dart_arena/runner/evaluator_resource_limits.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
+import 'package:dart_arena/runner/objective_evaluation.dart';
 import 'package:dart_arena/runner/prompt_safety.dart';
 import 'package:dart_arena/runner/prompts/plan_aware_prompt.dart';
 import 'package:dart_arena/runner/resource_enforcement_policy.dart';
@@ -804,38 +804,26 @@ class TaskQaRunner {
     BenchmarkTask task,
     Directory workDir,
     Iterable<Evaluator> evaluators,
-  ) async {
-    final results = <EvaluationResult>[];
-    for (final evaluator in evaluators.map((e) => _qaEvaluator(task, e))) {
-      final blocked = blockedEvaluationFor(
-        evaluatorId: evaluator.id,
-        previousResults: results,
-      );
-      if (blocked != null) {
-        results.add(blocked);
-        continue;
-      }
-      results.add(
-        await evaluator.evaluate(
-          EvaluationContext(
-            workDir: workDir,
-            response: const ModelResponse(
-              rawText: '',
-              extractedCode: null,
-              promptTokens: null,
-              completionTokens: null,
-              latency: Duration.zero,
-            ),
-            task: task,
-            previousResults: results,
-            deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
-            allowReentrantFlutterTool: allowReentrantFlutterTool,
-            generatedCodeSandbox: generatedCodeSandbox,
-          ),
+  ) {
+    return runObjectiveEvaluators(
+      evaluators: evaluators.map((e) => _qaEvaluator(task, e)),
+      evaluations: <EvaluationResult>[],
+      contextFor: (previousResults) => EvaluationContext(
+        workDir: workDir,
+        response: const ModelResponse(
+          rawText: '',
+          extractedCode: null,
+          promptTokens: null,
+          completionTokens: null,
+          latency: Duration.zero,
         ),
-      );
-    }
-    return results;
+        task: task,
+        previousResults: previousResults,
+        deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
+        allowReentrantFlutterTool: allowReentrantFlutterTool,
+        generatedCodeSandbox: generatedCodeSandbox,
+      ),
+    );
   }
 
   Evaluator _qaEvaluator(BenchmarkTask task, Evaluator evaluator) {

@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:dart_arena/agent/agent_harness.dart';
 import 'package:dart_arena/agent/agent_run_result.dart';
-import 'package:dart_arena/analytics/result_primitives.dart';
 import 'package:dart_arena/core/benchmark_task.dart';
 import 'package:dart_arena/core/evaluation_context.dart';
 import 'package:dart_arena/core/evaluation_result.dart';
@@ -19,6 +18,7 @@ import 'package:dart_arena/core/workspace_path.dart';
 import 'package:dart_arena/evaluators/evaluator.dart';
 import 'package:dart_arena/runner/evaluator_resource_limits.dart';
 import 'package:dart_arena/runner/generated_code_sandbox.dart';
+import 'package:dart_arena/runner/objective_evaluation.dart';
 import 'package:dart_arena/runner/workdir_manager.dart';
 import 'package:path/path.dart' as p;
 
@@ -333,35 +333,24 @@ class AgenticRunOrchestrator {
       );
     } else {
       resultProvenance['gradingMode'] = 'clean_replay';
-      for (final evaluator in evaluators) {
-        final blocked = blockedEvaluationFor(
-          evaluatorId: evaluator.id,
-          previousResults: evaluations,
-        );
-        if (blocked != null) {
-          evaluations.add(blocked);
-          continue;
-        }
-        evaluations.add(
-          await evaluator.evaluate(
-            EvaluationContext(
-              workDir: gradingWorkspace,
-              response: response,
-              task: task,
-              previousResults: evaluations,
-              deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
-              generatedCodeSandbox: generatedCodeSandbox,
-            ),
-          ),
-        );
-      }
+      await runObjectiveEvaluators(
+        evaluators: evaluators,
+        evaluations: evaluations,
+        contextFor: (previousResults) => EvaluationContext(
+          workDir: gradingWorkspace,
+          response: response,
+          task: task,
+          previousResults: previousResults,
+          deniedEnvironmentKeys: workdirManager.deniedEnvironmentKeys,
+          generatedCodeSandbox: generatedCodeSandbox,
+        ),
+      );
     }
 
     cancellationCheck?.call();
-    final aggregateScore = aggregate(evaluations, weights);
-    final primitives = determineResultPrimitives(
+    final outcome = finalizeObjectiveEvaluation(
       evaluations: evaluations,
-      aggregateScore: aggregateScore,
+      weights: weights,
       response: response,
     );
 
@@ -371,15 +360,15 @@ class AgenticRunOrchestrator {
       modelId: modelId,
       taskId: task.id,
       response: response,
-      evaluations: evaluations,
-      aggregateScore: aggregateScore,
+      evaluations: outcome.evaluations,
+      aggregateScore: outcome.aggregateScore,
       completedAt: now(),
       trialIndex: trialIndex,
       taskVersion: task.version,
       benchmarkTrack: task.track.name,
       harnessId: harness.id,
-      primaryPass: primitives.primaryPass,
-      failureTag: primitives.failureTag,
+      primaryPass: outcome.primaryPass,
+      failureTag: outcome.failureTag,
       patchText: patchText,
       trajectoryLogPath: agentResult.trajectoryLogPath,
       planId: planId,
@@ -434,10 +423,9 @@ class AgenticRunOrchestrator {
       rationale: rationale,
       details: {'error': error.toString()},
     );
-    final aggregateScore = aggregate([evaluation], weights);
-    final primitives = determineResultPrimitives(
+    final outcome = finalizeObjectiveEvaluation(
       evaluations: [evaluation],
-      aggregateScore: aggregateScore,
+      weights: weights,
       response: response,
     );
     return TaskRunResult(
@@ -446,15 +434,15 @@ class AgenticRunOrchestrator {
       modelId: modelId,
       taskId: task.id,
       response: response,
-      evaluations: [evaluation],
-      aggregateScore: aggregateScore,
+      evaluations: outcome.evaluations,
+      aggregateScore: outcome.aggregateScore,
       completedAt: now(),
       trialIndex: trialIndex,
       taskVersion: task.version,
       benchmarkTrack: task.track.name,
       harnessId: harnessId,
-      primaryPass: primitives.primaryPass,
-      failureTag: primitives.failureTag,
+      primaryPass: outcome.primaryPass,
+      failureTag: outcome.failureTag,
       planId: planId,
       provenance: provenance,
     );
@@ -481,29 +469,21 @@ class AgenticRunOrchestrator {
       completionTokens: null,
       latency: Duration.zero,
     );
-    final evaluations = <EvaluationResult>[
-      environmentFailureEvaluation(
+    final evaluations = blockEvaluatorsForHardFailure(
+      evaluations: <EvaluationResult>[],
+      evaluators: applyTaskResourceLimitsToEvaluators(
+        task.evaluatorsFor(evaluatorConfig),
+        task,
+      ),
+      failure: environmentFailureEvaluation(
         rationale: rationale,
         stderr: error.toString(),
         phase: phase,
       ),
-    ];
-    for (final evaluator in applyTaskResourceLimitsToEvaluators(
-      task.evaluatorsFor(evaluatorConfig),
-      task,
-    )) {
-      evaluations.add(
-        blockedEvaluationFor(
-          evaluatorId: evaluator.id,
-          previousResults: evaluations,
-          blockAllDownstream: true,
-        )!,
-      );
-    }
-    final aggregateScore = aggregate(evaluations, weights);
-    final primitives = determineResultPrimitives(
+    );
+    final outcome = finalizeObjectiveEvaluation(
       evaluations: evaluations,
-      aggregateScore: aggregateScore,
+      weights: weights,
       response: response,
     );
     return TaskRunResult(
@@ -512,15 +492,15 @@ class AgenticRunOrchestrator {
       modelId: modelId,
       taskId: task.id,
       response: response,
-      evaluations: evaluations,
-      aggregateScore: aggregateScore,
+      evaluations: outcome.evaluations,
+      aggregateScore: outcome.aggregateScore,
       completedAt: now(),
       trialIndex: trialIndex,
       taskVersion: task.version,
       benchmarkTrack: task.track.name,
       harnessId: harnessId,
-      primaryPass: primitives.primaryPass,
-      failureTag: primitives.failureTag,
+      primaryPass: outcome.primaryPass,
+      failureTag: outcome.failureTag,
       planId: planId,
       provenance: provenance,
     );
@@ -614,24 +594,15 @@ class AgenticRunOrchestrator {
     required PrepareFailed failure,
     required String phase,
   }) {
-    if (!hasHardDownstreamBlocker(evaluations)) {
-      evaluations.add(
-        environmentFailureEvaluation(
-          rationale: 'prepare failed',
-          stderr: failure.stderr,
-          phase: phase,
-        ),
-      );
-    }
-    for (final evaluator in evaluators) {
-      evaluations.add(
-        blockedEvaluationFor(
-          evaluatorId: evaluator.id,
-          previousResults: evaluations,
-          blockAllDownstream: true,
-        )!,
-      );
-    }
+    blockEvaluatorsForHardFailure(
+      evaluations: evaluations,
+      evaluators: evaluators,
+      failure: environmentFailureEvaluation(
+        rationale: 'prepare failed',
+        stderr: failure.stderr,
+        phase: phase,
+      ),
+    );
   }
 
   EvaluationResult _harnessEvaluation(AgentRunResult result) {
