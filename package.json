@@ -3,6 +3,11 @@
   "workspaces": [
     "web"
   ],
+  "overrides": {
+    "cookie": "0.7.2",
+    "esbuild": "0.28.1",
+    "vite": "7.3.6"
+  },
   "scripts": {
     "app:pub": "cd app && dart pub get",
     "app:analyze": "cd app && dart analyze",
