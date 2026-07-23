@@ -1,0 +1,5 @@
+# Synthetic benchmark metadata; retained visibly under pickforge/pickarena#43.
+3b582f9a76e52a9ffd292a6d072c65c894877e65:tasks/flutter/navigation.auth_redirect_race/qa/admission_report.json:generic-api-key:88
+51168b84f198e58135f4a891807249143e84f38f:web/static/data/release_report.v1.json:generic-api-key:1612
+51168b84f198e58135f4a891807249143e84f38f:web/static/data/release_report.v1.json:generic-api-key:1621
+51168b84f198e58135f4a891807249143e84f38f:web/static/data/release_report.v1.json:generic-api-key:1623
