@@ -44,7 +44,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - run: dart pub get
+      - run: dart pub get --enforce-lockfile
         working-directory: app
       - run: bash scripts/warm-flutter-task-pub-cache.sh
       - run: dart format --set-exit-if-changed bin lib/core lib/export lib/headless lib/runner lib/storage lib/tasks test/core test/headless test/runner test/support test/tasks
