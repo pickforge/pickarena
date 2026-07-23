@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "smoke": "bun run build && bun run scripts/smoke-static.ts",
-    "test": "bun test scripts/leaderboard-contract.test.ts",
+    "test": "vitest run",
     "lint": "eslint src scripts vite.config.ts",
     "check": "bun run lint && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },

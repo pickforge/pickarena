@@ -3,7 +3,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { describe, expect, mock, test } from 'bun:test';
+import { describe, expect, test, vi } from 'vitest';
 
 import {
   acceptedDataPolicies,
@@ -12,7 +12,7 @@ import {
   type LeaderboardData
 } from '../src/lib/data/leaderboard-contract';
 
-mock.module('$app/paths', () => ({ base: '' }));
+vi.mock('$app/paths', () => ({ base: '' }));
 const { loadLeaderboard } = await import('../src/lib/data/leaderboard');
 
 type FixtureEntry = {
