@@ -10,6 +10,33 @@ permissions:
   contents: read
 
 jobs:
+  gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Gitleaks
+        run: |
+          curl --fail --silent --show-error --location --output gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tar.gz' | sha256sum --check
+          tar --extract --gzip --file gitleaks.tar.gz --directory "$RUNNER_TEMP" gitleaks
+      - run: |
+          "$RUNNER_TEMP/gitleaks" git --redact --no-banner .
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google/osv-scanner-action/osv-scanner-action@8dded7155905cd666190a12dc9997000e58d163d # v2.0.2
+        with:
+          scan-args: |-
+            --recursive
+            ./
+
   headless-smoke:
     runs-on: ubuntu-latest
     steps:
@@ -17,7 +44,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - run: dart pub get
+      - run: dart pub get --enforce-lockfile
         working-directory: app
       - run: bash scripts/warm-flutter-task-pub-cache.sh
       - run: dart format --set-exit-if-changed bin lib/core lib/export lib/headless lib/runner lib/storage lib/tasks test/core test/headless test/runner test/support test/tasks
